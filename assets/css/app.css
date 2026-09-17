@@ -1,0 +1,482 @@
+/* Application styles.
+ *
+ * Components consume tokens from tokens.css. Nothing here names a quest, a region or a
+ * badge: adding content must never require a CSS change, so the only content-derived hooks
+ * are the generic `accent-*` and `state-*` classes the view model supplies.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text);
+  background: var(--background);
+  font-synthesis: none;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-serif);
+  line-height: var(--leading-tight);
+  margin: 0 0 var(--space-3);
+  color: var(--ink-950);
+}
+
+h1 { font-size: var(--text-3xl); }
+h2 { font-size: var(--text-2xl); }
+h3 { font-size: var(--text-xl); }
+h4 { font-size: var(--text-lg); }
+
+p, ul, ol, dl, table, pre, blockquote {
+  margin: 0 0 var(--space-4);
+}
+
+a {
+  color: var(--blue-700);
+  text-underline-offset: 0.2em;
+}
+
+a:hover { color: var(--ink-900); }
+
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+  font-size: 0.925em;
+}
+
+pre {
+  overflow-x: auto;
+  padding: var(--space-4);
+  background: var(--ink-950);
+  color: var(--paper);
+  border-radius: var(--radius-md);
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+code {
+  background: var(--surface-muted);
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
+}
+
+/* Focus is always visible. Never removed, only shaped. */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+
+/* ---------------------------------------------------------------- App shell (C01) */
+
+.skip-link {
+  position: absolute;
+  left: var(--space-3);
+  top: -4rem;
+  z-index: 100;
+  padding: var(--space-3) var(--space-4);
+  background: var(--ink-900);
+  color: var(--paper);
+  border-radius: var(--radius-sm);
+  transition: top var(--duration-fast) var(--easing);
+}
+
+.skip-link:focus { top: var(--space-3); color: var(--paper); }
+
+.app {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  min-height: 100vh;
+  max-width: var(--content-max);
+  margin: 0 auto;
+}
+
+.app-sidebar {
+  background: var(--ink-900);
+  color: var(--paper);
+  padding: var(--space-5) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.app-brand { display: block; color: var(--paper); text-decoration: none; }
+.app-brand strong { display: block; font-family: var(--font-serif); font-size: var(--text-lg); }
+.app-brand span { display: block; font-size: var(--text-xs); color: var(--gold-300); letter-spacing: 0.06em; text-transform: uppercase; }
+
+.app-nav ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); }
+
+.app-nav a {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--paper);
+  text-decoration: none;
+  /* 44px minimum target. Reachable, not cramped. */
+  min-height: 2.75rem;
+}
+
+.app-nav a:hover { background: var(--ink-800); color: var(--paper); }
+
+.app-nav a[aria-current="page"] {
+  background: var(--ink-800);
+  color: var(--gold-300);
+  box-shadow: inset 3px 0 0 var(--gold-500);
+}
+
+.app-main { padding: var(--space-6) var(--space-6) var(--space-8); min-width: 0; }
+
+.app-topbar { display: none; }
+
+.app-footer {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--line);
+  padding: var(--space-4) var(--space-6);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  justify-content: space-between;
+}
+
+/* ---------------------------------------------------------------- Page furniture */
+
+.page-heading { margin-bottom: var(--space-6); max-width: var(--prose-max); }
+.page-heading .eyebrow {
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+.page-heading p { color: var(--text-muted); font-size: var(--text-lg); margin-bottom: 0; }
+
+.prose { max-width: var(--prose-max); }
+.prose > :last-child { margin-bottom: 0; }
+
+.stack { display: grid; gap: var(--space-5); }
+.card-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20rem;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+/* ---------------------------------------------------------------- Status (C06) */
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.2em 0.7em;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+/* The glyph is generated content beside the label, so status never depends on colour and
+ * never depends on an image loading. */
+.state::before { font-weight: 700; }
+
+.state-verified { background: var(--gold-100); color: var(--gold-700); border-color: var(--gold-300); }
+.state-verified::before { content: "\2713"; }
+
+.state-locally_validated { background: var(--green-100); color: var(--green-700); border-color: var(--green-700); }
+.state-locally_validated::before { content: "\2713"; }
+
+.state-submitted { background: var(--blue-100); color: var(--blue-700); border-color: var(--blue-700); }
+.state-submitted::before { content: "\2192"; }
+
+.state-evidence_ready { background: var(--blue-100); color: var(--blue-700); border-color: var(--blue-700); }
+.state-evidence_ready::before { content: "\25C6"; }
+
+.state-in_progress { background: var(--violet-100); color: var(--violet-700); border-color: var(--violet-700); }
+.state-in_progress::before { content: "\25D0"; }
+
+.state-needs_changes { background: var(--orange-100); color: var(--orange-700); border-color: var(--orange-700); }
+.state-needs_changes::before { content: "!"; }
+
+.state-available { background: var(--surface-muted); color: var(--ink-700); border-color: var(--line-strong); }
+.state-available::before { content: "\25CB"; }
+
+.state-locked { background: var(--surface-muted); color: var(--ink-600); border-color: var(--line); }
+.state-locked::before { content: "\1F512"; }
+
+.authority { font-size: var(--text-xs); color: var(--text-muted); }
+
+/* ---------------------------------------------------------------- Progress (C03) */
+
+.meter { display: grid; gap: var(--space-2); }
+.meter-label { display: flex; justify-content: space-between; gap: var(--space-3); font-size: var(--text-sm); }
+.meter-track { height: 0.6rem; background: var(--surface-muted); border-radius: var(--radius-pill); overflow: hidden; border: 1px solid var(--line); }
+.meter-fill { height: 100%; background: var(--gold-500); }
+.meter-fill.is-claimed { background: var(--ink-500); }
+
+/* Claimed and verified totals are never merged into one unlabelled number (C02). */
+.totals { display: flex; gap: var(--space-5); flex-wrap: wrap; }
+.total { display: grid; gap: var(--space-1); }
+.total dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+.total dd { margin: 0; font-family: var(--font-serif); font-size: var(--text-2xl); }
+.total.is-verified dd { color: var(--gold-700); }
+
+/* ---------------------------------------------------------------- Cards (C04, C05) */
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* The accent strip is the only place a region's colour appears structurally. */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--region-accent, var(--ink-500));
+}
+
+.card-header { display: flex; justify-content: space-between; gap: var(--space-3); align-items: flex-start; }
+.card h3 { margin: 0; font-size: var(--text-lg); }
+.card h3 a { color: inherit; text-decoration: none; }
+.card h3 a:hover { text-decoration: underline; }
+.card p { margin: 0; color: var(--text-muted); font-size: var(--text-sm); }
+.card-footer { margin-top: auto; display: flex; justify-content: space-between; gap: var(--space-3); font-size: var(--text-sm); color: var(--text-muted); }
+
+.card.is-recommended { border-color: var(--gold-500); box-shadow: var(--shadow-md); }
+
+.accent-slate { --region-accent: var(--accent-slate); }
+.accent-blue { --region-accent: var(--accent-blue); }
+.accent-teal { --region-accent: var(--accent-teal); }
+.accent-violet { --region-accent: var(--accent-violet); }
+.accent-amber { --region-accent: var(--accent-amber); }
+.accent-rust { --region-accent: var(--accent-rust); }
+.accent-green { --region-accent: var(--accent-green); }
+.accent-rose { --region-accent: var(--accent-rose); }
+
+/* ---------------------------------------------------------------- Tags (C07) */
+
+.tag-list { list-style: none; display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0; margin: 0; }
+
+.tag {
+  font-size: var(--text-xs);
+  padding: 0.15em 0.6em;
+  border-radius: var(--radius-pill);
+  background: var(--surface-muted);
+  color: var(--ink-700);
+  border: 1px solid var(--line);
+}
+
+/* Informational tags are not focusable; only a filter control is. */
+a.tag, button.tag { cursor: pointer; }
+a.tag:hover, button.tag:hover { background: var(--line); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  padding: 0.25em 0.5em 0.25em 0.75em;
+  border-radius: var(--radius-pill);
+  background: var(--blue-100);
+  border: 1px solid var(--blue-700);
+  color: var(--blue-700);
+}
+
+/* ---------------------------------------------------------------- Buttons */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-900);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:hover { background: var(--surface-muted); color: var(--ink-900); }
+
+.button-primary { background: var(--ink-800); border-color: var(--ink-800); color: var(--paper); }
+.button-primary:hover { background: var(--ink-900); color: var(--paper); }
+
+/* An action that writes outside the participant's own files never looks like navigation. */
+.button-consequential { background: var(--orange-700); border-color: var(--orange-700); color: var(--paper); }
+.button-consequential:hover { background: var(--red-700); color: var(--paper); }
+
+.button[disabled], .button[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: var(--surface-muted);
+  color: var(--ink-600);
+  border-color: var(--line);
+}
+
+.button-row { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+
+/* ---------------------------------------------------------------- Alerts (C17) */
+
+.alert {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid;
+  border-left-width: 4px;
+}
+
+.alert h2, .alert h3 { margin: 0; font-size: var(--text-base); font-family: var(--font-sans); }
+.alert p:last-child { margin-bottom: 0; }
+.alert-information { background: var(--information-surface); border-color: var(--information); }
+.alert-success { background: var(--success-surface); border-color: var(--success); }
+.alert-warning { background: var(--warning-surface); border-color: var(--warning); }
+.alert-error { background: var(--danger-surface); border-color: var(--danger); }
+
+/* ---------------------------------------------------------------- Lists and tables */
+
+.definition-list { display: grid; grid-template-columns: auto 1fr; gap: var(--space-2) var(--space-4); margin: 0; }
+.definition-list dt { font-size: var(--text-sm); color: var(--text-muted); }
+.definition-list dd { margin: 0; font-size: var(--text-sm); }
+
+table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+th, td { text-align: left; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--ink-700); }
+
+.table-scroll { overflow-x: auto; }
+
+.checklist { list-style: none; padding: 0; display: grid; gap: var(--space-3); }
+.checklist li { display: grid; gap: var(--space-1); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); }
+
+/* ---------------------------------------------------------------- Disclosure */
+
+details { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: var(--space-3) var(--space-4); background: var(--surface); }
+summary { cursor: pointer; font-weight: 600; min-height: 2.75rem; display: flex; align-items: center; }
+details[open] summary { margin-bottom: var(--space-3); }
+
+/* ---------------------------------------------------------------- Forms */
+
+.field { display: grid; gap: var(--space-2); margin-bottom: var(--space-4); }
+.field label { font-weight: 600; font-size: var(--text-sm); }
+.field .hint { font-size: var(--text-sm); color: var(--text-muted); }
+.field .error { font-size: var(--text-sm); color: var(--danger); }
+
+input[type="text"], input[type="search"], input[type="number"], select, textarea {
+  font: inherit;
+  padding: var(--space-2) var(--space-3);
+  min-height: 2.75rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  width: 100%;
+}
+
+textarea { min-height: 8rem; resize: vertical; }
+
+.filter-form { display: grid; gap: var(--space-4); }
+.filter-row { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: end; }
+.filter-row .field { margin-bottom: 0; min-width: 11rem; flex: 1 1 11rem; }
+
+/* ---------------------------------------------------------------- Empty states (C20) */
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-7) var(--space-5);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text-muted);
+}
+
+.empty-state h2 { font-size: var(--text-lg); color: var(--ink-800); }
+
+/* ---------------------------------------------------------------- Visually hidden */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------------------------------------------------------- Responsive */
+
+@media (max-width: 64rem) {
+  .workbench { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 48rem) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+
+  .app-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--ink-900);
+    color: var(--paper);
+  }
+
+  .app-sidebar { padding: var(--space-4); }
+
+  /* Without JavaScript the navigation is simply present. The drawer is an enhancement,
+   * applied by a class the script adds, so nothing is hidden from a browser that never
+   * runs it. */
+  .js .app-sidebar[data-drawer="closed"] { display: none; }
+
+  .app-main { padding: var(--space-5) var(--space-4) var(--space-7); }
+  .card-grid { grid-template-columns: minmax(0, 1fr); }
+  .filter-row { flex-direction: column; align-items: stretch; }
+  h1 { font-size: var(--text-2xl); }
+}
+
+@media print {
+  .app { display: block; }
+  .app-sidebar, .app-topbar, .button-row { display: none; }
+}
