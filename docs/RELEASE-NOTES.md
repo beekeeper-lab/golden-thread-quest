@@ -17,7 +17,7 @@ them. It does not own them.
 ## What works
 
 - **Curriculum as content.** Adding a quest is one Markdown file. It appears in its region,
-  the catalogue, the filters, its tag page, the search index, the relationship graph and the
+  the catalog, the filters, its tag page, the search index, the relationship graph and the
   prerequisite calculation with no change to Python, Jinja2, JavaScript or CSS. A test
   asserts those three directories are byte-identical after a quest is added.
 - **Content that does not validate is never published.** Schema and cross-document
@@ -74,7 +74,7 @@ here.
    blurring of authority the product exists to prevent.
 4. **Validator isolation is policy plus process boundaries**, not a container or seccomp. The
    architecture permits adding one without changing quest content.
-5. **Catalogue filtering needs JavaScript.** A static page cannot filter itself. The routes
+5. **Catalog filtering needs JavaScript.** A static page cannot filter itself. The routes
    that work without it are real pages: regions and tags, linked from every card and quest.
 6. **No coverage reporting** and **no glossary content type** (D1, D2).
 7. **Clean-clone installation is not tested automatically.** It needs a fresh checkout and a

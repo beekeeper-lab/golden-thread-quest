@@ -71,7 +71,7 @@ is itself the finding.
 | **UI1** All required screens implemented | twelve page templates | `integration/test_build.py::test_a_clean_build_produces_every_page` |
 | **UI2** Primary navigation works with keyboard only | semantic links | `ui/test_browser_flows.py::TestKeyboardAndFocus` |
 | **UI3** Visible focus and skip navigation | `:focus-visible`, skip link | `test_focus_is_always_visible`, `test_the_skip_link_moves_focus_to_the_main_landmark` |
-| **UI4** Status is not expressed by colour alone | label plus `::before` glyph | `test_status_is_never_communicated_by_colour_alone` |
+| **UI4** Status is not expressed by color alone | label plus `::before` glyph | `test_status_is_never_communicated_by_colour_alone` |
 | **UI5** Key contrast meets WCAG 2.2 AA | design tokens, light and inverse pairs | `ui/test_contrast.py` (20 pairings) and axe `color-contrast` |
 | **UI6** Usable at 200% zoom and 390-pixel width | responsive CSS | `ui/test_browser_flows.py::TestResponsive` (four viewports plus 200%) |
 | **UI7** Motion honours reduced-motion | `prefers-reduced-motion` block | `test_reduced_motion_is_respected` |
@@ -84,7 +84,7 @@ is itself the finding.
 | **DH1** Setup works from a clean clone | `docs/SETUP.md`, `make setup` | **no test** — open, Stage 9 |
 | **DH2** Content-authoring instructions with a full example | `docs/CONTENT-AUTHORING-GUIDE.md` | — |
 | **DH3** Validator-authoring instructions describe the safety boundary | `docs/VALIDATOR-CONTRACT.md`, `docs/guides/VALIDATOR-AUTHORING.md` | — |
-| **DH4** Update and migration behaviour documented | `docs/guides/UPDATING.md` | `integration/test_update_and_migration.py` |
+| **DH4** Update and migration behavior documented | `docs/guides/UPDATING.md` | `integration/test_update_and_migration.py` |
 | **DH5** `IMPLEMENTATION-DETAILS.md` describes what exists | this repository | — |
 | **DH6** `TRACEABILITY.md` connects criteria to code and tests | this file | — |
 | **DH7** Final audit reports no unresolved blocking or high findings | `docs/audits/` | pending Stage 10 |

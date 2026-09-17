@@ -212,7 +212,7 @@ class TestAtomicWrites:
 def test_a_participant_cannot_write_verified_through_the_store(
     store: ProgressStore, schemas: SchemaSet
 ) -> None:
-    """The last line of defence: even a direct call cannot reach the reviewer's state."""
+    """The last line of defense: even a direct call cannot reach the reviewer's state."""
     with pytest.raises(StoreError):
         transition_attempt(
             store, quest_id=VERIFIED, action="start-quest", schemas=schemas, guard=no_guard

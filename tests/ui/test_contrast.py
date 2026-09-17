@@ -1,6 +1,6 @@
 """WCAG 2.2 AA contrast, computed from the design tokens.
 
-No browser needed: the tokens are the source of every colour in the product, so checking
+No browser needed: the tokens are the source of every color in the product, so checking
 them checks every component that consumes them. A pairing that fails here fails everywhere
 it is used, which is the point of having tokens at all.
 """
@@ -18,10 +18,10 @@ AA_NON_TEXT = 3.0
 
 
 def tokens(repo_root: Path) -> dict[str, str]:
-    """Every colour token, with one level of `var()` aliasing resolved.
+    """Every color token, with one level of `var()` aliasing resolved.
 
     Semantic tokens such as `--meter-fill` point at a palette token rather than repeating a
-    hex value, so following the alias is what makes this check test the colour that actually
+    hex value, so following the alias is what makes this check test the color that actually
     renders.
     """
     text = (repo_root / "assets" / "css" / "tokens.css").read_text()
@@ -37,8 +37,8 @@ def _channel(value: int) -> float:
     return fraction / 12.92 if fraction <= 0.03928 else ((fraction + 0.055) / 1.055) ** 2.4
 
 
-def luminance(colour: str) -> float:
-    red, green, blue = (int(colour[index : index + 2], 16) for index in (1, 3, 5))
+def luminance(color: str) -> float:
+    red, green, blue = (int(color[index : index + 2], 16) for index in (1, 3, 5))
     return 0.2126 * _channel(red) + 0.7152 * _channel(green) + 0.0722 * _channel(blue)
 
 
@@ -51,7 +51,7 @@ def contrast(foreground: str, background: str) -> float:
 @pytest.fixture(scope="module")
 def palette(repo_root: Path) -> dict[str, str]:
     values = tokens(repo_root)
-    assert values, "no colour tokens were found"
+    assert values, "no color tokens were found"
     return values
 
 

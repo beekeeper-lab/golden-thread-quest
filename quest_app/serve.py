@@ -5,7 +5,7 @@ an evidence package, read Git status, run a registered validator, rebuild. Every
 *not* allowed to do is enforced here rather than assumed, because a localhost service is
 still reachable by every program and every page on the machine.
 
-The shape of the defence, in the order a request meets it:
+The shape of the defense, in the order a request meets it:
 
 1. **Loopback only.** A non-loopback bind address is refused at startup, not warned about.
 2. **Same-origin.** `Origin` and `Referer`, when present, must match the address actually
@@ -161,7 +161,7 @@ class ActionHandler(BaseHTTPRequestHandler):
 
         Checked for `Origin` and `Referer` both, because a browser sends one or the other
         depending on the request. A missing header is accepted: a command-line client sends
-        neither, and the token is what actually authorises the request.
+        neither, and the token is what actually authorizes the request.
         """
         port = self.state.bound_port or self.state.config.service_port
         expected = {

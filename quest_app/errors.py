@@ -71,7 +71,7 @@ class ContentProblem:
 
     @classmethod
     def build(cls, *, received: object = None, **kwargs: Any) -> Self:
-        """Preferred constructor: summarises and redacts `received` before it is stored."""
+        """Preferred constructor: summarizes and redacts `received` before it is stored."""
         return cls(received=summarize_received(received), **kwargs)
 
     @property
@@ -132,7 +132,7 @@ def _looks_absolute(text: str) -> bool:
 def summarize_received(value: object) -> str | None:
     """A short, redacted rendering of what was actually found.
 
-    An author needs to see enough to recognise their mistake. Nobody needs to see a whole
+    An author needs to see enough to recognize their mistake. Nobody needs to see a whole
     document, and nothing needs to see a credential that ended up in content by accident.
     """
     if value is None:

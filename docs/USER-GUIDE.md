@@ -13,7 +13,7 @@ Read the first three sections before you start. The rest is reference.
 A training program you work through in your own Git repository, on your own machine.
 
 Most training either gives you videos or grades a quiz. This does neither. You do real work
-— synchronise a Jira board, write a test, normalise a transcript into context an agent can
+— synchronize a Jira board, write a test, normalize a transcript into context an agent can
 use — and you leave behind **evidence**: files, commands someone else can run, results from
 automated checks. A human reviewer reads that evidence and decides whether it demonstrates
 what the quest asked for.
@@ -147,7 +147,7 @@ they are the standard you will be judged against. If you cannot point at the evi
 satisfies criterion 4, you are not ready to submit.
 
 **Write `PROOF.md` as you go, not at the end.** It asks what you built, where the artifacts
-are, how to reproduce the behaviour, what you validated, and what limitations remain. Writing
+are, how to reproduce the behavior, what you validated, and what limitations remain. Writing
 it last means reconstructing it; writing it as you go means it is true.
 
 **A reviewer should not have to hunt.** Repository-relative paths, exact commands, and say
@@ -195,7 +195,7 @@ generated pages load no remote script, font or image.
 
 Preferred, strongest first:
 
-1. **A repository artifact** — code, a test, a config, a normalised context file.
+1. **A repository artifact** — code, a test, a config, a normalized context file.
 2. **Reproducible instructions** — exact commands, ideally from a clean clone.
 3. **Automated execution evidence** — a validation result, a test run, a log.
 4. **A demonstration** — you walking someone through it.
@@ -304,7 +304,7 @@ reasons, is in `docs/RELEASE-NOTES.md`.
 4. **Environment Health reports what was true at build time**, not live.
 5. **Validator isolation is policy plus process boundaries**, not a container. A validator is
    program-owned and reviewed like code; it is not sandboxed against a hostile author.
-6. **Catalogue filtering needs JavaScript.** Region and tag pages work without it.
+6. **Catalog filtering needs JavaScript.** Region and tag pages work without it.
 7. **The secret scanner is a safety net**, not a guarantee. It will not catch every shape.
 8. **Clean-clone installation is not automatically tested.** It is the one acceptance
    criterion without a test, and it is named as such in `docs/TRACEABILITY.md`.

@@ -7,7 +7,7 @@ Two different things are hashed and they answer different questions:
 * an **evidence hash** answers "has the evidence changed since it was reviewed?", so it
   covers file names and contents across an evidence directory.
 
-Both are stable across machines and runs: sorted traversal, normalised line endings, no
+Both are stable across machines and runs: sorted traversal, normalized line endings, no
 timestamps, no absolute paths.
 """
 

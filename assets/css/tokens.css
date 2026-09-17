@@ -4,8 +4,8 @@
  * palette is the approved prototype's: deep ink, warm parchment, restrained gold for
  * verified achievement, muted region accents. A professional field guide, not a cartoon.
  *
- * Every status has a colour AND a text label AND an icon glyph, because status must never
- * be carried by colour alone.
+ * Every status has a color AND a text label AND an icon glyph, because status must never
+ * be carried by color alone.
  */
 
 :root {
@@ -55,7 +55,7 @@
   --text-muted: var(--ink-600);
   --text-inverse: var(--paper);
   /* The same components appear on the dark sidebar as on light surfaces — the participant
-     summary is rendered in both. Light-surface muted and accent colours fail badly there
+     summary is rendered in both. Light-surface muted and accent colors fail badly there
      (2.58:1 and 2.91:1), so the inverse pair exists and is used wherever ink is the
      background. Found by axe, not by pairing tokens on paper. */
   --text-muted-inverse: #b4c0cc;

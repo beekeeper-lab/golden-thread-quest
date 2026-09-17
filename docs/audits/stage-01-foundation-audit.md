@@ -164,7 +164,7 @@ resumed, and the Stage 2 modules were not committed until Stage 1 passed.
 
 - [x] Dependency necessity and license compatibility reviewed; `LICENSE` added, unused
       dependency removed.
-- [x] Scripts reviewed for destructive behaviour; two real deletion paths closed and covered
+- [x] Scripts reviewed for destructive behavior; two real deletion paths closed and covered
       by tests.
 - [x] `.gitignore` and example configuration reviewed for secret leakage.
 - [x] CI verified to invoke the documented local commands.

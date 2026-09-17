@@ -1,4 +1,4 @@
-"""YAML reading, with the two behaviours PyYAML gets wrong for reviewable content.
+"""YAML reading, with the two behaviors PyYAML gets wrong for reviewable content.
 
 `safe_load` is required (ADR-025) but not sufficient. Two of its defaults are dangerous
 specifically because this content arrives through pull requests:

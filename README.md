@@ -11,7 +11,7 @@ them, and presents them. It does not own them.
 The Golden Thread Quest trains the two bookends of software delivery:
 
 1. Turning stakeholder intent into structured, traceable work.
-2. Validating delivered behaviour against that intent and preserving credible evidence.
+2. Validating delivered behavior against that intent and preserving credible evidence.
 
 The thread running through it:
 
@@ -65,7 +65,7 @@ address. Open it.
 
 These are not aspirations. Each one has a test, and `docs/TRACEABILITY.md` names it.
 
-- **Adding a quest is one Markdown file.** It appears in its region, the catalogue, the
+- **Adding a quest is one Markdown file.** It appears in its region, the catalog, the
   filters, its tag page, the search index and the prerequisite graph with no change to
   Python, Jinja2, JavaScript or CSS. A test asserts those directories are byte-identical
   after a quest is added.
@@ -84,10 +84,10 @@ These are not aspirations. Each one has a test, and `docs/TRACEABILITY.md` names
 
 | Area | Source of truth | Owner | In Git |
 |---|---|---|---|
-| Curriculum content | `content/` | Programme maintainers | yes |
-| Data contracts | `schemas/` | Programme maintainers | yes |
-| Application and templates | `quest_app/`, `templates/`, `assets/` | Programme maintainers | yes |
-| Registered validators | `validators/` | Programme maintainers | yes |
+| Curriculum content | `content/` | Program maintainers | yes |
+| Data contracts | `schemas/` | Program maintainers | yes |
+| Application and templates | `quest_app/`, `templates/`, `assets/` | Program maintainers | yes |
+| Registered validators | `validators/` | Program maintainers | yes |
 | Your work and evidence | `participant/` | **You** | yes — it is your portfolio |
 | Generated site and caches | `generated/`, `local-data/` | Machine; disposable | no |
 

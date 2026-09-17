@@ -58,7 +58,7 @@ def test_every_storable_state_renders_on_the_map(config: AppConfig, state: str) 
     from quest_app.models import STATE_LABELS
 
     label = STATE_LABELS[QuestState(state)]
-    assert f'data-state="{state}"' in catalog, f"{state} does not reach the catalogue"
+    assert f'data-state="{state}"' in catalog, f"{state} does not reach the catalog"
     assert label in catalog, f"{state} renders no readable label"
 
 

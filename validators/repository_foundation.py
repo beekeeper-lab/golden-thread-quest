@@ -1,7 +1,7 @@
 """Checks the repository foundations every later quest depends on.
 
 Deliberately not a file-existence checker. `docs/VALIDATOR-CONTRACT.md` warns against checks
-that "merely restate file existence when the quest is about behaviour", so each check below
+that "merely restate file existence when the quest is about behavior", so each check below
 looks at what the file *says* — that the ignore rules actually cover the categories that
 matter, that the evidence package answers the questions a reviewer will ask.
 """

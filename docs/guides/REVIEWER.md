@@ -16,7 +16,7 @@ Open `/review/` for the queue, then the quest you are reviewing.
 ## What you are deciding
 
 Whether the evidence in front of you demonstrates the quest's outcomes strongly enough to
-be called verified. Automated checks establish facts and support that judgement. They cannot
+be called verified. Automated checks establish facts and support that judgment. They cannot
 make it, and the application will not let them.
 
 ## Before you decide
@@ -36,7 +36,7 @@ submission and the evidence hash at the moment it was submitted. Check:
 ## Deciding
 
 **Approve** requires a verification statement of at least twenty characters, in your own
-words, saying what you checked and how. It is the record that the approval was a judgement
+words, saying what you checked and how. It is the record that the approval was a judgment
 and not a formality. Approval is the only thing in this application that produces verified
 completion and verified XP.
 

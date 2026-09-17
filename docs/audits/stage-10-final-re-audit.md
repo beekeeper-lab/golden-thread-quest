@@ -70,7 +70,7 @@ path, with a test that makes the directory read-only.
 |---|---|---|
 | R5 | An approval whose `quest_version` disagreed with the attempt was accepted, conferring verified XP for a version nobody attempted | Fixed and tested |
 | R6 | The transition guard defaulted to `None`, so the invariant its docstring claimed did not exist | Required now, with a named `no_guard`; a test asserts it has no default |
-| R7 | The stale-approval warning never reached a page | Open — deferred (D12 neighbours it); the warning reaches the CLI and the reviewer page |
+| R7 | The stale-approval warning never reached a page | Open — deferred (D12 neighbors it); the warning reaches the CLI and the reviewer page |
 | R8 | One deleted evidence directory makes the whole site unbuildable | Deferred as D12 |
 | R9 | The reviewer guide never mentioned the service; the participant guide claimed commands were printed that were not | Both rewritten |
 | R10 | A service-built site left on disk shows enabled forms that do nothing | Open — inherent to a generated site that records service state; the token placeholder makes them refuse rather than misfire |

@@ -7,7 +7,7 @@ with no knowledge of how the code was written, and the whole release was audited
 way at Stage 10. Stages 4 to 9 were verified by the implementer against the plan's own
 checklists. That is weaker, and this file exists so nobody has to infer which is which.
 
-`CLAUDE.md` rule 7 requires an audit record per stage. This is that record, honestly labelled.
+`CLAUDE.md` rule 7 requires an audit record per stage. This is that record, honestly labeled.
 
 ## Why these stages were not independently audited
 
@@ -56,12 +56,12 @@ inconclusive.
 **Verified by execution:** 31 browser-driven tests including axe-core over eleven pages with
 serious and critical impacts failing; WCAG contrast computed from the tokens across twenty
 pairings; four named viewports and 200% zoom with no horizontal scrolling; keyboard-only
-navigation and skip-link focus; no-JavaScript browsing of the catalogue and tag pages; no
+navigation and skip-link focus; no-JavaScript browsing of the catalog and tag pages; no
 control hidden behind hover.
 
 **Found and fixed during the stage:** three heading-outline defects; three contrast failures
 in the inherited palette; and — found by axe, not by the token check — the participant
-summary renders on the dark sidebar where the muted and accent colours sit at 2.58:1 and
+summary renders on the dark sidebar where the muted and accent colors sit at 2.58:1 and
 2.91:1.
 
 **Still open:** the eight quest states are all rendered, but `submitted` and `needs_changes`
@@ -96,7 +96,7 @@ participant's files are byte-identical afterwards.
 ## Stage 9 — Documentation, hardening, release candidate
 
 **Verified by execution:** 203 quests load and build in under a second; a page about one
-entity does not grow with the catalogue; the content-error screen renders and does not
+entity does not grow with the catalog; the content-error screen renders and does not
 overwrite the published site.
 
 **Found and fixed during the stage:** the content-error screen had never been rendered and

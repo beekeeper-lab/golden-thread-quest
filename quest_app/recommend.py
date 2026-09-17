@@ -192,7 +192,7 @@ def _signals(
         side = (
             "turning intent into structured work"
             if weakest_bookend == "intent"
-            else "validating delivered behaviour"
+            else "validating delivered behavior"
         )
         signals.append(
             Signal(W_BOOKEND_BALANCE, f"It builds the side you have demonstrated least: {side}")

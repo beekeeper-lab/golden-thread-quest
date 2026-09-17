@@ -27,7 +27,7 @@ Worth stating, because it bounds the work: the generation engine itself is sound
 - **Empty participant.** Building against an empty directory succeeds with no crash and no
   divide-by-zero.
 - **Accessibility.** Skip-link target focusable, `aria-current` on every page, every control
-  labelled, tables captioned with scopes, status never colour-only. The meter's
+  labeled, tables captioned with scopes, status never color-only. The meter's
   `role="img"` plus `aria-label` is the right choice over `progressbar`, which can expose
   only one value and would collapse the claimed-versus-verified distinction.
 
@@ -107,7 +107,7 @@ Verified at HEAD: no heading remains in that alert.
 |---|---|
 | S2-R1 | A list inside a **blockquote** is treated as the first list, so a quoted example silently becomes the acceptance criteria — the exact failure ADR-016 exists to prevent. Refuse to open the first list inside `blockquote_open` |
 | S3-M1 | `pages/content_error.html.j2` (U11/C22) has no producer: `build_site` never renders it and `routes.ERRORS` is unused. The screen exists in source, unreachable and untested |
-| S3-M2 | C21 Confirmation is `window.confirm` and JavaScript-only. Its Rule is honoured — bound to submit, immediately before the write — but with JS off the form posts with no confirmation, for the one component whose entire purpose is a safety gate. Must not reach the live service in this shape |
+| S3-M2 | C21 Confirmation is `window.confirm` and JavaScript-only. Its Rule is honored — bound to submit, immediately before the write — but with JS off the form posts with no confirmation, for the one component whose entire purpose is a safety gate. Must not reach the live service in this shape |
 | S3-M3 | Acceptance criteria render as plain text, so inline Markdown leaks through as literal asterisks and backticks. `render_inline()` is the right tool and has no caller |
 | S3-M4 | U09 Environment Health covers five of eight required sections. The deferral is deliberate and explained in the code, but is not in the deferred-work register |
 | S3-M5 | U10 Reviewer: no redaction status, no submission identity, the findings editor is one text input, and `verification_statement` is not `required` client-side |

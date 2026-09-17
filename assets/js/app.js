@@ -48,7 +48,7 @@
     });
 
     // Escape closes the drawer and returns focus to the button that opened it, which is
-    // the behaviour the UI specification requires.
+    // the behavior the UI specification requires.
     document.addEventListener("keydown", function (event) {
       if (event.key !== "Escape") return;
       if (toggle.getAttribute("aria-expanded") !== "true") return;

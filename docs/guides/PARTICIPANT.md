@@ -49,7 +49,7 @@ and nothing a validator returns can produce it.
    file is created if you did not have one.
 3. **Do the work in your repository**, not in the application.
 4. **Fill in `PROOF.md`.** It asks what you built, where the artifacts are, how to reproduce
-   the behaviour, what you validated and what remains. A reviewer should not have to hunt.
+   the behavior, what you validated and what remains. A reviewer should not have to hunt.
 5. **Run the checks.** A failing check is never a failed quest — it tells you what to fix,
    and your work is untouched.
 6. **Mark the evidence ready.**

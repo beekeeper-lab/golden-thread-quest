@@ -85,4 +85,4 @@ downloads Chromium.
 
 **The secret scan fails on a file you know is safe.** It reports a pattern and a truncated excerpt,
 never the value. If the value really is documentation, use one of the placeholder forms the scanner
-recognises (`<your-token>`, `${VAR}`, `changeme`) rather than loosening the scanner.
+recognizes (`<your-token>`, `${VAR}`, `changeme`) rather than loosening the scanner.

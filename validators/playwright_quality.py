@@ -1,7 +1,7 @@
-"""Checks that a submitted test targets behaviour rather than markup.
+"""Checks that a submitted test targets behavior rather than markup.
 
 The quest is about writing a test someone else can maintain, so the checks are about the
-properties that make a test survive a refactor: it asserts on user-visible behaviour, it
+properties that make a test survive a refactor: it asserts on user-visible behavior, it
 does not wait on the clock, and it leaves enough behind to diagnose a failure.
 """
 
@@ -94,7 +94,7 @@ def _check_selectors(
     if brittle:
         output.add(
             Check(
-                id="selectors-target-behaviour",
+                id="selectors-target-behavior",
                 outcome="fail",
                 severity="high",
                 summary="The test selects elements by markup structure.",
@@ -108,7 +108,7 @@ def _check_selectors(
     elif not role_based:
         output.add(
             Check(
-                id="selectors-target-behaviour",
+                id="selectors-target-behavior",
                 outcome="warning",
                 severity="low",
                 summary="No role, label or text query was found.",
@@ -119,7 +119,7 @@ def _check_selectors(
     else:
         output.add(
             Check(
-                id="selectors-target-behaviour",
+                id="selectors-target-behavior",
                 outcome="pass",
                 summary="The test queries by role, label or visible text.",
                 evidence=f"{len(role_based)} file(s) use accessible queries.",

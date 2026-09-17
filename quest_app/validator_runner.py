@@ -418,7 +418,7 @@ def _explaining_check(outcome: str, definition: ValidatorDefinition, reason: str
 
 
 def _redact_stderr(text: str) -> str:
-    """A child's stderr, summarised. Never reproduced: it may carry absolute paths."""
+    """A child's stderr, summarized. Never reproduced: it may carry absolute paths."""
     lines = [line for line in text.strip().splitlines() if line.strip()]
     return f"The validator wrote {len(lines)} line(s) to standard error."
 

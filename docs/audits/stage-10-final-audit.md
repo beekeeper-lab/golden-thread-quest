@@ -58,10 +58,10 @@ test that builds with an attempt in `submitted` and re-runs the link check.
 
 | ID | Finding | Resolution |
 |---|---|---|
-| H1 | The guides described behaviour the code did not have | True once B1–B3 were fixed; the reviewer guide's decision step is also now listed as needing the service |
+| H1 | The guides described behavior the code did not have | True once B1–B3 were fixed; the reviewer guide's decision step is also now listed as needing the service |
 | H2 | Five of fourteen traceability rows were false or weaker than the criterion | Four were fixed by writing the test that did not exist — `git_status` had none, `.gitignore` was only copied and never read, `recommend.py` was untested, and the quest-page row rested on one string |
 | H3 | Evidence edited after approval kept `verified` silently | `progress._check_stale_approval` compares at load time and warns; four tests, including a tampered review hash |
-| H4 | Stages 4–9 had no audit record | `docs/audits/stage-04-to-09-implementation-audits.md`, labelled in its first line as self-audit rather than independent review |
+| H4 | Stages 4–9 had no audit record | `docs/audits/stage-04-to-09-implementation-audits.md`, labeled in its first line as self-audit rather than independent review |
 
 ## Medium
 

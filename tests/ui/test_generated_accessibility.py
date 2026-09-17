@@ -6,7 +6,7 @@ control with no label, a table with no headers, a skip link pointing at nothing 
 most of what goes wrong and all of what a template can get wrong once and then repeat on
 every page.
 
-Browser-driven behaviour (focus management, keyboard flows, live regions, axe) is in
+Browser-driven behavior (focus management, keyboard flows, live regions, axe) is in
 `test_participant_flows.py`, which needs Playwright.
 """
 
@@ -156,12 +156,12 @@ def test_every_form_control_has_a_label(generated: Path) -> None:
         collector = parse(page)
         for control in collector.controls:
             identifier = control.get("id")
-            labelled = (
+            labeled = (
                 (identifier and identifier in collector.labels_for)
                 or control.get("aria-label")
                 or control.get("aria-labelledby")
             )
-            assert labelled, f"{page.relative_to(generated)}: unlabelled {control['tag']}"
+            assert labeled, f"{page.relative_to(generated)}: unlabelled {control['tag']}"
 
 
 def test_every_table_has_header_cells(generated: Path) -> None:

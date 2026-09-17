@@ -57,7 +57,7 @@ validators:
     version: 1
     display_name: Playwright test quality
     description: >-
-      Checks that the submitted test targets behaviour rather than markup, has no arbitrary
+      Checks that the submitted test targets behavior rather than markup, has no arbitrary
       waits, and carries the evidence needed to reproduce a failure.
     entrypoint: validators.playwright_quality:run
     working_directory: participant

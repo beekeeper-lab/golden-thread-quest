@@ -249,7 +249,7 @@ Attempt: `{attempt_id}`
 
 <!-- Repository-relative paths. A reviewer should not have to hunt. -->
 
-## How to reproduce the behaviour
+## How to reproduce the behavior
 
 <!-- Exact commands, from a clean clone where possible. -->
 

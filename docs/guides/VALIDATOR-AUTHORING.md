@@ -63,7 +63,7 @@ links are followed, so a link planted inside a read root is not a way out.
 
 Each check states what it evaluated, why that matters, what it observed, and what to do.
 `docs/VALIDATOR-CONTRACT.md` warns against checks that restate file existence when the quest
-is about behaviour — look at what the file *says*, not whether it is there.
+is about behavior — look at what the file *says*, not whether it is there.
 
 Choose the outcome honestly:
 

@@ -310,7 +310,7 @@ def schema_message(message: str) -> str:
     """jsonschema's message, with its repr of the whole instance removed.
 
     The default message embeds the offending value, which for a large document means the
-    document. The value is reported separately, summarised and redacted.
+    document. The value is reported separately, summarized and redacted.
     """
     trimmed = message.split(" is not of type ")[0]
     if len(trimmed) > 200:

@@ -2,7 +2,7 @@
 
 What was actually built, as opposed to what was planned. `docs/ARCHITECTURE.md` describes the
 intended shape; where the implementation diverges, this file says so and points at the
-decision that authorised it.
+decision that authorized it.
 
 ## Shape
 
@@ -118,7 +118,7 @@ is atomic, validated before it lands, and recorded in `participant/ACTIVITY.md`.
 | Content-hash mismatch | (Implied error) | Warning, with distinct wording for a verified attempt | ADR-028 — `CONTENT-MODEL.md` keeps verified attempts verified, and the hash covers editorial fields |
 | Reviewer identity | — | Display name and Git history, not signatures | ADR-030 — a half-implemented signature invites trust it has not earned |
 | Catalog filtering without JavaScript | "Works by reloading with a query string" | Region and tag pages are the scripting-free routes; live filtering is an enhancement | A static page cannot filter itself; the honest routes are real pages |
-| Environment Health | Live checks | Build-time facts, labelled as such | Deferred (D7) — a generated page cannot inspect the machine when it is read |
+| Environment Health | Live checks | Build-time facts, labeled as such | Deferred (D7) — a generated page cannot inspect the machine when it is read |
 | Badge awards | Reviewer-awarded badges | Always "pending" | Release one has no badge-award record; granting one by arithmetic would be the blurring ADR-011 forbids |
 
 ## Test layers

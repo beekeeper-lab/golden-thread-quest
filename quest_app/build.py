@@ -5,7 +5,7 @@ Two properties matter more than anything else here.
 **Determinism.** Two builds from the same inputs must produce the same bytes, so a diff of
 `generated/` means content changed and nothing else. Every traversal is sorted, every
 mapping is written with sorted keys, and the one genuinely varying value — the build time —
-is confined to the manifest and the footer, where it is labelled.
+is confined to the manifest and the footer, where it is labeled.
 
 **Atomicity.** A failed build must leave the last good site intact. The whole site is
 rendered into a sibling directory and swapped in at the end, so a participant reading a page
@@ -244,7 +244,7 @@ def build_site(
                 "quest-map",
                 PageView(
                     title="Quest map",
-                    description="The whole journey, and how far you have travelled.",
+                    description="The whole journey, and how far you have traveled.",
                     route=routes.MAP,
                     nav_id="quest-map",
                     heading="Quest map",
@@ -964,7 +964,7 @@ def _capability_gaps(bundle: Any, states: dict[str, QuestProgress]) -> tuple[str
     verified = [entry.quest for entry in states.values() if entry.is_verified]
     for bookend, label in (
         ("intent", "turning intent into structured work"),
-        ("validation", "validating delivered behaviour"),
+        ("validation", "validating delivered behavior"),
     ):
         if not any(q.bookend == bookend for q in verified):
             gaps.append(f"No verified work yet on {label}.")

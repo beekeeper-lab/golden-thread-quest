@@ -47,8 +47,8 @@ relatively. A repository-root `media/` directory would leave every image on the 
   recording validation and submitting, while you do the actual work in your own repository and
   commit and push it yourself. The application never touches your Git history."
 - **Description**: A horizontal band divided into two lanes that share one continuous path.
-  The upper lane is labelled "in the app" and holds four small filled ink-navy markers; the
-  lower lane is labelled "in your terminal" and holds three outlined ink-navy markers. The
+  The upper lane is labeled "in the app" and holds four small filled ink-navy markers; the
+  lower lane is labeled "in your terminal" and holds three outlined ink-navy markers. The
   single path weaves between the two lanes, crossing the divider each time authority changes
   hands, so the eye follows one route rather than reading two rows. The final marker sits in
   the lower lane after a visible gap, alone, in amber-gold outline — it is the participant's
@@ -58,7 +58,7 @@ relatively. A repository-root `media/` directory would leave every image on the 
   Goal: Make clear which steps the application performs and which the participant performs
     themselves, especially that committing and pushing is theirs alone and the application
     never does it.
-  Scene: Two horizontal lanes labelled "in the app" and "in your terminal", with one
+  Scene: Two horizontal lanes labeled "in the app" and "in your terminal", with one
     continuous thin path weaving between them and crossing the divider whenever authority
     changes; filled markers in the upper lane, outlined markers in the lower; a visible gap
     before a final solitary amber-gold outlined marker in the lower lane.
@@ -81,9 +81,9 @@ relatively. A repository-root `media/` directory would leave every image on the 
 - **Alt text**: "Eight quest states in three columns by who sets them: the application sets
   locked and available; you set in progress, evidence ready, locally validated and submitted;
   only a reviewer sets needs changes and verified."
-- **Description**: Eight state chips arranged in three labelled columns by authority: the
+- **Description**: Eight state chips arranged in three labeled columns by authority: the
   application, you, the reviewer. Each chip is a rounded pill carrying its state name, in the
-  muted colour that state uses in the real interface — slate for locked and available, violet
+  muted color that state uses in the real interface — slate for locked and available, violet
   for in progress, blue for evidence ready and submitted, green for locally validated, orange
   for needs changes, amber-gold for verified. A thin vertical rule separates the reviewer
   column from the other two, and the gap at that rule is wider than the gap between the first
@@ -92,10 +92,10 @@ relatively. A repository-root `media/` directory would leave every image on the 
 - **Prompt**:
   Goal: Show at a glance that verified completion is the reviewer's alone, and that the
     participant cannot reach it however much work they do.
-  Scene: Eight rounded state chips in three labelled authority columns; a thin vertical rule
+  Scene: Eight rounded state chips in three labeled authority columns; a thin vertical rule
     before the reviewer column with noticeably wider spacing at that rule; every chip outlined
     except the verified chip, which is solid amber-gold.
-  Style: Flat vector, rounded pills, muted status colours, thin rules, generous whitespace,
+  Style: Flat vector, rounded pills, muted status colors, thin rules, generous whitespace,
     no shadows, no gradients.
   Aspect ratio: 3:2
   Background: warm parchment #f7f4ec
@@ -117,17 +117,17 @@ relatively. A repository-root `media/` directory would leave every image on the 
 - **Description**: Three adjacent rectangular regions in a single row, drawn as areas on a
   field map rather than boxes in a diagram, separated by narrow parchment gutters and never
   overlapping or nested. Left: program-owned, flat ink-navy fill with a solid border.
-  Centre: participant-owned, warm parchment fill with an amber-gold border, drawn noticeably
-  taller and wider than its neighbours so it anchors the composition. Right: machine-owned,
-  pale grey fill with a dashed border to suggest impermanence. Small folder glyphs sit inside
+  Center: participant-owned, warm parchment fill with an amber-gold border, drawn noticeably
+  taller and wider than its neighbors so it anchors the composition. Right: machine-owned,
+  pale gray fill with a dashed border to suggest impermanence. Small folder glyphs sit inside
   each region with short labels. A compact two-line key in the lower right corner marks which
   zones are in Git, using a filled dot and a hollow dot rather than words repeated per region.
 - **Prompt**:
   Goal: Make it immediately obvious which files belong to the participant, and that the
     machine-owned zone is disposable and safe to delete.
   Scene: Three adjacent map regions in one row, not nested and not overlapping — left solid
-    ink-navy with a solid border, centre warm parchment with an amber-gold border and visibly
-    larger than both neighbours, right pale grey with a dashed border — each holding two or
+    ink-navy with a solid border, center warm parchment with an amber-gold border and visibly
+    larger than both neighbors, right pale gray with a dashed border — each holding two or
     three small folder glyphs, plus a compact key in the lower right using a filled dot and a
     hollow dot.
   Style: Flat vector field-guide map, thin precise borders, dashed border on the disposable
@@ -155,8 +155,8 @@ relatively. A repository-root `media/` directory would leave every image on the 
   demonstration at the bottom as the narrowest and palest, its border dashed to mark it as the
   weakest form on its own. Above the four, separated by a clear empty gap that no connector or
   arrow crosses, sits a single amber-gold band for reviewer approval — the participant builds
-  the four, and cannot build the fifth. A slim vertical scale runs up the left edge, labelled
-  only at its ends. The stack sits left of centre with open parchment to the right, so it
+  the four, and cannot build the fifth. A slim vertical scale runs up the left edge, labeled
+  only at its ends. The stack sits left of center with open parchment to the right, so it
   reads as a field-guide plate rather than a marketing pyramid.
 - **Prompt**:
   Goal: Show that evidence has a strength order with a repository artifact strongest and a
@@ -165,7 +165,7 @@ relatively. A repository-root `media/` directory would leave every image on the 
   Scene: Four stacked horizontal bands, widest and most solid at the top narrowing and paling
     downward, the bottom band with a dashed border; above them a clear empty gap with nothing
     crossing it; above that gap a single solid amber-gold band; a slim vertical scale at the
-    left edge labelled only at its two ends; the stack positioned left of centre.
+    left edge labeled only at its two ends; the stack positioned left of center.
   Style: Flat vector, flat fills, thin precise strokes, muted palette, generous whitespace,
     subtle paper texture, no shadows, no gradients.
   Aspect ratio: 3:2
@@ -185,11 +185,11 @@ relatively. A repository-root `media/` directory would leave every image on the 
 - **Alt text**: "The passport shows claimed and verified progress as two separate totals that
   are never added together: a set of region marks, some outlined for claimed and some filled
   amber for verified, with the two counts kept deliberately apart."
-- **Description**: A single flat passport page, centred, with a restrained ruled header. Its
+- **Description**: A single flat passport page, centered, with a restrained ruled header. Its
   body is one row of eight small square region marks: five outlined in ink-navy for claimed,
   three filled solid amber-gold for verified, so the difference is visible without reading a
   legend. Beneath the row sit two separate totals, set well apart with clear parchment between
-  them and no bar, no arrow and no plus sign joining them — one labelled claimed, one labelled
+  them and no bar, no arrow and no plus sign joining them — one labeled claimed, one labeled
   verified. The composition holds nothing else: no document stack, no reviewer column, no
   secondary panel. It should read as a surveyor's record, formal and slightly sparse, and the
   emptiness between the two totals is the point of the image.
@@ -232,7 +232,7 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
   running checks, recording the result and submitting, while you do the work in your own
   repository, write PROOF.md, and commit and push it yourself."
 - **Description**: A horizontal band divided into two lanes by a thin rule. The upper lane is
-  labelled "in the app" and the lower lane "in your terminal". One continuous thin path runs
+  labeled "in the app" and the lower lane "in your terminal". One continuous thin path runs
   left to right, crossing the divider exactly three times, visiting seven markers in this
   fixed order and no other: start quest in the upper lane, do the work in the lower lane,
   write proof in the lower lane, run checks in the upper lane, record result in the upper
@@ -244,8 +244,8 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
 - **Prompt**:
   Goal: Make clear which steps the application performs and which the participant performs
     themselves, especially that committing and pushing is theirs alone.
-  Scene: Two horizontal lanes separated by a thin rule, upper labelled "in the app", lower
-    labelled "in your terminal". Seven markers in this exact placement, left to right —
+  Scene: Two horizontal lanes separated by a thin rule, upper labeled "in the app", lower
+    labeled "in your terminal". Seven markers in this exact placement, left to right —
     marker 1 "start quest" in the UPPER lane, marker 2 "do the work" in the LOWER lane,
     marker 3 "write proof" in the LOWER lane, marker 4 "run checks" in the UPPER lane,
     marker 5 "record result" in the UPPER lane, marker 6 "submit" in the UPPER lane, marker 7
@@ -276,14 +276,14 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
 - **Alt text**: "Eight quest states in three columns by who sets them: the application sets
   locked and available; you set in progress, evidence ready, locally validated and submitted;
   only a reviewer sets needs changes and verified."
-- **Description**: Three labelled columns of rounded state chips. The first column is headed
+- **Description**: Three labeled columns of rounded state chips. The first column is headed
   "application" and contains exactly two chips: locked, available. The second is headed "you"
   and contains exactly four chips: in progress, evidence ready, locally validated, submitted.
   The third is headed "reviewer" and contains exactly two chips and no others: needs changes,
   verified. Column headings are plain text above each column, not chips. One single thin
   vertical rule sits between the second and third columns and nowhere else, with wider
   spacing at that rule than between the first two columns. Every chip is outlined in its
-  muted status colour except verified, which is solid amber-gold with light text.
+  muted status color except verified, which is solid amber-gold with light text.
 - **Prompt**:
   Goal: Show at a glance that verified completion is the reviewer's alone, and that the
     participant cannot reach it however much work they do.
@@ -294,7 +294,7 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
     verified. Exactly one thin vertical rule, placed between column 2 and column 3, with a
     wider gap there than between columns 1 and 2. All chips outlined except verified, which
     is solid amber-gold.
-  Style: Flat vector, rounded pills, muted status colours, thin rules, generous whitespace,
+  Style: Flat vector, rounded pills, muted status colors, thin rules, generous whitespace,
     no shadows, no gradients.
   Aspect ratio: 3:2
   Background: warm parchment #f7f4ec
@@ -313,11 +313,11 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
 - **Fixes**: v1 invented the figures 10601 and 10602, showing verified higher than claimed.
   Verified is always a subset of claimed, so the image asserted something the application
   cannot produce. The two figures are now fixed values that agree with the marks drawn, and
-  v1's large empty centre is filled by enlarging the mark row.
+  v1's large empty center is filled by enlarging the mark row.
 - **Alt text**: "The passport shows claimed and verified progress as two separate totals that
   are never added together: eight region marks, five outlined for claimed and three filled
   amber for verified, with claimed at eight and verified at three kept deliberately apart."
-- **Description**: A single flat passport page, centred, with a thin ruled header carrying the
+- **Description**: A single flat passport page, centered, with a thin ruled header carrying the
   word passport. Its body is one row of eight square region marks, sized large enough to fill
   the page width comfortably: the first five outlined in ink-navy, the last three solid
   amber-gold. Beneath the row sit two separate boxed totals, set far apart with open parchment
@@ -348,7 +348,7 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
 ### Image 9: 03-ownership-zones-v2
 
 - **File**: docs/media/images/03-ownership-zones-v2.png
-- **Fixes**: v1 labelled the left zone "programme". In British English that word most often
+- **Fixes**: v1 labeled the left zone "program". In British English that word most often
   means a television or radio broadcast, and it is not the project's term either — the
   codebase and `CLAUDE.md` say "program-owned" throughout, 42 uses against zero. The label is
   now "program".
@@ -357,13 +357,13 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
   code, your own work and evidence, and machine-owned generated output that is disposable.
   Only the middle zone is yours, and nothing the application does replaces it."
 - **Description**: Identical in every respect to v1, which was otherwise correct, with the
-  single change that the left zone is labelled "program" rather than "programme". Three
+  single change that the left zone is labeled "program" rather than "program". Three
   adjacent rectangular regions in a single row, drawn as areas on a field map rather than
   boxes in a diagram, separated by narrow parchment gutters and never overlapping or nested.
   Left: program-owned, flat ink-navy fill with a solid border, holding folder glyphs for
-  content and quest app. Centre: participant-owned, warm parchment fill with an amber-gold
-  border, drawn noticeably taller and wider than its neighbours so it anchors the composition,
-  holding folder glyphs for participant and evidence. Right: machine-owned, pale grey fill
+  content and quest app. Center: participant-owned, warm parchment fill with an amber-gold
+  border, drawn noticeably taller and wider than its neighbors so it anchors the composition,
+  holding folder glyphs for participant and evidence. Right: machine-owned, pale gray fill
   with a dashed border to suggest impermanence, holding folder glyphs for generated and local
   data. A compact two-line key in the lower right corner marks which zones are in Git, using a
   filled dot and a hollow dot.
@@ -371,8 +371,8 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
   Goal: Make it immediately obvious which files belong to the participant, and that the
     machine-owned zone is disposable and safe to delete.
   Scene: Three adjacent map regions in one row, not nested and not overlapping — left solid
-    ink-navy with a solid border, centre warm parchment with an amber-gold border and visibly
-    larger than both neighbours, right pale grey with a dashed border — each holding two small
+    ink-navy with a solid border, center warm parchment with an amber-gold border and visibly
+    larger than both neighbors, right pale gray with a dashed border — each holding two small
     folder glyphs, plus a compact key in the lower right using a filled dot and a hollow dot.
   Style: Flat vector field-guide map, thin precise borders, dashed border on the disposable
     zone only, muted palette, generous whitespace, no shadows.
@@ -381,7 +381,7 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
   Text in image: three zone names "program", "yours", "machine"; six short folder labels —
     content, quest app, participant, evidence, generated, local data; key words "in git" and
     "not in git". No other text.
-  Avoid: the word "programme" in any form, cloud icons, server racks, padlocks, database
+  Avoid: the word "program" in any form, cloud icons, server racks, padlocks, database
     cylinders, 3D isometric views, nested or overlapping regions, any sentence-length text
 
 ---

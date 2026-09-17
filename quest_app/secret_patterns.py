@@ -5,7 +5,7 @@ about files, evidence packages or the repository. `tools/secret_scan.py` uses it
 secrets out of the repository; the evidence workspace uses it to keep secrets out of a
 submission, and the validator runner uses it to redact captured output.
 
-Detection here is a safety net, not a guarantee. A pattern list cannot recognise every
+Detection here is a safety net, not a guarantee. A pattern list cannot recognize every
 secret, so the surrounding policy — credentials come from the environment or an
 authenticated CLI, never from content — is what actually protects the participant.
 """

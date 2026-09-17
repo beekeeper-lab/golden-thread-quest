@@ -8,4 +8,4 @@ CI and on a developer machine without a Node toolchain or network access, and a 
 silently skips is a check nobody notices has stopped running.
 
 It is never served, never referenced by a generated page, and never loaded by the
-application. Licence: Mozilla Public License 2.0.
+application. License: Mozilla Public License 2.0.

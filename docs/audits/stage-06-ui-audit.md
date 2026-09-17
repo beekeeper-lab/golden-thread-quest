@@ -28,12 +28,12 @@ break opportunity at all — pushed the page wider than the viewport. Fixed with
 | ID | Severity | Finding | Resolution |
 |---|---|---|---|
 | F1 | Blocking | No state-changing action was reachable through the UI: zero POST forms, every action hard-coded disabled, because `build_site` always used `offline_service_view()` — including when the running service built the page | Closed as B2 of the final audit |
-| F2 | High | axe `color-contrast`, **serious, on all twelve pages**: sidebar labels at 2.58:1 | Closed by the inverse colour tokens; re-run gives zero serious or critical findings |
+| F2 | High | axe `color-contrast`, **serious, on all twelve pages**: sidebar labels at 2.58:1 | Closed by the inverse color tokens; re-run gives zero serious or critical findings |
 | F3 | High | Evidence workspace overflowed at 390px and 200% zoom, invisible to the suite | Fixed; both responsive tests now cover every audited page |
 | F4 | Medium | All eight states render, but four appear only as legend text — no fixture and no test put a real quest in them | `tests/ui/test_states.py`: every storable state, plus locked, needs-changes, failed validation and service-unavailable |
 | F5 | Medium | `role="alert"` — assertive — on five statically rendered blocks, so some screen readers interrupt on load | All changed to `role="status"`; `alert` is reserved for script-injected urgent messages |
 | F6 | Medium | `/health/` offered a scroll container with no `tabindex` and no accessible name, so a keyboard user could not scroll it | Every `.table-scroll` is focusable, has `role="region"` and a label, with a visible focus ring; asserted by test |
-| F7 | Low | Two `<section>` landmarks on a quest page both labelled "Required evidence" | The proof-list macro takes a slug, so the two sections have distinct anchors |
+| F7 | Low | Two `<section>` landmarks on a quest page both labeled "Required evidence" | The proof-list macro takes a slug, so the two sections have distinct anchors |
 | — | Low | `routes.catalog_filtered()` had no caller; `__import__` in the build manifest | Both wired and removed |
 
 ## Also corrected
@@ -53,7 +53,7 @@ Keyboard: the drawer opens on Enter, Escape closes it and returns focus to the t
 **zero** focusable elements lack a focus indicator. Responsive at 1440×900, 1280×720 and
 768×1024 across every route. No-JavaScript: every page renders its heading, navigation and
 content, and the sidebar is visible without script. Hover: no essential workflow depends on
-it — every `:hover` rule changes colour or underline only, nothing toggles visibility, and no
+it — every `:hover` rule changes color or underline only, nothing toggles visibility, and no
 page uses `title` as its only source of information.
 
 ## Sub-finding accepted as-is
@@ -69,5 +69,5 @@ stylesheet knows it was noticed.
 
 - [x] `docs/ui/PROTOTYPE-REVIEW.md` completed against the production UI (see that file).
 - [x] Text, states, authority labels and actions compared to specification.
-- [x] Responsive behaviour and keyboard flow reviewed in a real browser.
+- [x] Responsive behavior and keyboard flow reviewed in a real browser.
 - [x] Findings fixed and re-verified: 467 tests plus 42 browser-driven.

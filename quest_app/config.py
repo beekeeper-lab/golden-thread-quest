@@ -82,7 +82,7 @@ class AppConfig:
         With a participant root outside the repository, falling straight back to the file
         name made every review problem report `source: "review.yaml"` with no way to tell
         which attempt it came from (Stage 2 audit M13). The participant root is therefore
-        tried second, and labelled with the `participant/` prefix the schemas already use.
+        tried second, and labeled with the `participant/` prefix the schemas already use.
         """
         resolved = path.resolve()
         try:

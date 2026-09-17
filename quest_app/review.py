@@ -197,7 +197,7 @@ def record_decision(
     """Record a reviewer's decision, refusing every incomplete or inconsistent form.
 
     The guards are the product requirement. An approval without a statement is a formality
-    wearing the clothes of a judgement; a needs-changes without a finding tells a participant
+    wearing the clothes of a judgment; a needs-changes without a finding tells a participant
     nothing; and approving evidence that changed since submission approves something the
     reviewer has not seen.
     """

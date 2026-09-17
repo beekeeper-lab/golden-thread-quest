@@ -66,12 +66,12 @@ that the prototype is a design reference and the production pages are what must 
   proof-detection status; the labels beside them are correct, but the reuse is worth removing
   the next time the stylesheet is touched
 - **Approved deviations:**
-  - Catalogue filtering requires JavaScript. A static page cannot filter itself; the
+  - Catalog filtering requires JavaScript. A static page cannot filter itself; the
     scripting-free routes are real generated pages — regions and tags — linked from every card
     and every quest.
   - Environment Health reports what was true at build time and labels itself as such. Live
     checks are deferred (D7).
-  - Two prototype colours were darkened and two inverse tokens added, to meet WCAG 2.2 AA.
+  - Two prototype colors were darkened and two inverse tokens added, to meet WCAG 2.2 AA.
     Documented in `docs/audits/stage-06-ui-audit.md`.
 
 Every state in the list above is exercised by `tests/ui/test_states.py` rather than inspected

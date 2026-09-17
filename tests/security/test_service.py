@@ -1,4 +1,4 @@
-"""The loopback service's defences, each one exercised rather than assumed.
+"""The loopback service's defenses, each one exercised rather than assumed.
 
 A localhost service is reachable by every program and every page on the machine, so each of
 these is a real attack surface and not a formality.
@@ -28,7 +28,7 @@ def service(config: AppConfig) -> Iterator[tuple[str, str]]:
         config.repo_root, participant_root=config.participant_root, service_port=0
     )
     # The service serves what a build produced, so a fixture that never builds would test
-    # a 404 rather than the static-file defences.
+    # a 404 rather than the static-file defenses.
     report = ProblemReport()
     world = load_world(bound, report)
     assert world is not None, report.to_text()

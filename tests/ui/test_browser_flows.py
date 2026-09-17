@@ -100,8 +100,8 @@ def page_for(browser: object, url: str):  # type: ignore[no-untyped-def]
 class TestStylesActuallyApply:
     def test_the_stylesheet_loads_when_served(self, browser: object, served: str) -> None:
         page = page_for(browser, f"{served}/")
-        colour = page.evaluate("getComputedStyle(document.body).backgroundColor")
-        assert colour not in ("rgba(0, 0, 0, 0)", "rgb(255, 255, 255)"), (
+        color = page.evaluate("getComputedStyle(document.body).backgroundColor")
+        assert color not in ("rgba(0, 0, 0, 0)", "rgb(255, 255, 255)"), (
             "the stylesheet did not apply, so the CSP is blocking it"
         )
         page.close()
@@ -137,9 +137,9 @@ class TestStylesActuallyApply:
         guide's claim is false. It is asserted rather than assumed either way.
         """
         page = page_for(browser, (site.generated_root / "index.html").as_uri())
-        colour = page.evaluate("getComputedStyle(document.body).backgroundColor")
+        color = page.evaluate("getComputedStyle(document.body).backgroundColor")
         page.close()
-        assert colour not in ("rgba(0, 0, 0, 0)", "rgb(255, 255, 255)"), (
+        assert color not in ("rgba(0, 0, 0, 0)", "rgb(255, 255, 255)"), (
             "the CSP blocks the stylesheet on file://; either relax it or stop claiming "
             "disk-opening works"
         )
@@ -292,7 +292,7 @@ def test_no_serious_accessibility_violation(browser: object, served: str, route:
     """The plan's requirement, as a check rather than an intention.
 
     Only serious and critical impacts fail the build. Minor and moderate findings are worth
-    reading but are judgement calls, and a suite that fails on all of them is a suite people
+    reading but are judgment calls, and a suite that fails on all of them is a suite people
     learn to ignore.
 
     The context bypasses the Content Security Policy because axe is injected as an inline
@@ -325,7 +325,7 @@ class TestResponsive:
     def test_no_horizontal_scrolling(self, browser: object, served: str, name: str) -> None:
         """Every audited page, not a hand-picked four.
 
-        The first version checked home, catalogue, one quest and the passport. The evidence
+        The first version checked home, catalog, one quest and the passport. The evidence
         workspace overflowed by 179px at phone width and nothing saw it, because it was not
         on the list. The list is now the same one the accessibility audit uses.
         """
@@ -349,7 +349,7 @@ class TestResponsive:
     ) -> None:
         """Doubling the scale factor halves the effective viewport, which is what 200% means.
 
-        Every audited page, for the same reason as above: checking only the catalogue is how
+        Every audited page, for the same reason as above: checking only the catalog is how
         a 246px overflow on the evidence workspace went unnoticed.
         """
         context = browser.new_context(viewport={"width": 720, "height": 450})  # type: ignore[attr-defined]

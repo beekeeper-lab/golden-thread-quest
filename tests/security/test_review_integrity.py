@@ -1,7 +1,7 @@
 """Verified completion is the reviewer's to give, and nobody else's.
 
 Every test here is an attempt to obtain `verified` or verified XP without a reviewer having
-actually made a judgement about this attempt's evidence.
+actually made a judgment about this attempt's evidence.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from quest_app.review import (
 from quest_app.store import ProgressStore
 
 QUEST = "jira-read-assigned-stories"
-STATEMENT = "I ran the documented command on a clean clone and reproduced the stated behaviour."
+STATEMENT = "I ran the documented command on a clean clone and reproduced the stated behavior."
 FINDING = {
     "id": "finding-1",
     "severity": "high",
@@ -118,7 +118,7 @@ class TestApprovalGuards:
             )
 
     def test_a_token_verification_statement_is_refused(self, setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
-        """ "ok" is not a judgement."""
+        """ "ok" is not a judgment."""
         submit(setup, config)
         world, attempt = reload_attempt(config)
         _, schemas, store, quest, _ = setup

@@ -202,7 +202,7 @@ code {
   white-space: nowrap;
 }
 
-/* The glyph is generated content beside the label, so status never depends on colour and
+/* The glyph is generated content beside the label, so status never depends on color and
  * never depends on an image loading. */
 .state::before { font-weight: 700; }
 
@@ -272,7 +272,7 @@ code {
 .total dd { margin: 0; font-family: var(--font-serif); font-size: var(--text-2xl); }
 .total.is-verified dd { color: var(--gold-700); }
 
-/* On ink, the light-surface muted and accent colours are unreadable. */
+/* On ink, the light-surface muted and accent colors are unreadable. */
 .app-sidebar .total dt { color: var(--text-muted-inverse); }
 .app-sidebar .total dd { color: var(--paper); }
 .app-sidebar .total.is-verified dd { color: var(--accent-inverse); }
@@ -294,7 +294,7 @@ code {
   overflow: hidden;
 }
 
-/* The accent strip is the only place a region's colour appears structurally. */
+/* The accent strip is the only place a region's color appears structurally. */
 .card::before {
   content: "";
   position: absolute;

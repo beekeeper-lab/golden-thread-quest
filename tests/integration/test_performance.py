@@ -1,4 +1,4 @@
-"""Build performance with a catalogue larger than the pilot will ever have.
+"""Build performance with a catalog larger than the pilot will ever have.
 
 The budget exists so that a slow build is a caught regression rather than a thing people
 gradually stop noticing. It is generous on purpose: the point is to catch an accidental
@@ -23,7 +23,7 @@ QUEST_TEMPLATE = """---
 id: {quest_id}
 version: 1
 title: Synthetic Quest Number {number}
-summary: A generated quest used only to measure build time with a large catalogue present.
+summary: A generated quest used only to measure build time with a large catalog present.
 region: {region}
 level: explorer
 xp: 20
@@ -31,7 +31,7 @@ estimated_minutes: 45
 bookend: {bookend}
 tags: [generated, {tag}]
 outcomes:
-  - Demonstrate that a large catalogue builds in reasonable time.
+  - Demonstrate that a large catalog builds in reasonable time.
 proof:
   required:
     - id: generated-artifact
@@ -102,8 +102,8 @@ def test_a_large_catalogue_builds_within_budget(large_catalogue: AppConfig) -> N
     assert result.page_count > QUEST_COUNT * 2
 
 
-# A page about one thing must not grow with the size of the catalogue. A page that lists a
-# collection is proportional to that collection by definition — the catalogue, a tag, a
+# A page about one thing must not grow with the size of the catalog. A page that lists a
+# collection is proportional to that collection by definition — the catalog, a tag, a
 # region, the map — so the rule is about the first kind, not the second.
 COLLECTION_PREFIXES = (
     "catalog",
@@ -123,7 +123,7 @@ def test_a_page_about_one_thing_does_not_grow_with_the_catalogue(
     """The invariant that matters: a quest page is the same size whatever else exists.
 
     A page that lists a collection is allowed to be large, because that is what it is for.
-    A quest detail page that grew with the catalogue would mean something was leaking the
+    A quest detail page that grew with the catalog would mean something was leaking the
     whole content set into every page.
     """
     report = ProblemReport()
