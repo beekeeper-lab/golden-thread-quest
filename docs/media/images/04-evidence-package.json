@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-17T13:25:18",
+  "provider": "gemini",
+  "model": "gemini-3-pro-image-preview",
+  "prompt": "Goal: Show that evidence has a strength order with a repository artifact strongest and a\ndemonstration weakest, and that reviewer approval sits above the whole scale and is\nreached only by the reviewer.\nScene: Four stacked horizontal bands, widest and most solid at the top narrowing and paling\ndownward, the bottom band with a dashed border; above them a clear empty gap with nothing\ncrossing it; above that gap a single solid amber-gold band; a slim vertical scale at the\nleft edge labelled only at its two ends; the stack positioned left of centre.\nStyle: Flat vector, flat fills, thin precise strokes, muted palette, generous whitespace,\nsubtle paper texture, no shadows, no gradients.\nAspect ratio: 3:2\nBackground: warm parchment #f7f4ec\nText in image: five band labels \u2014 reviewer approval, an artifact, instructions to reproduce,\nexecution evidence, a demonstration; and two scale end words \"stronger\" at the top and\n\"weaker\" at the bottom. No other text.\nAvoid: classic marketing funnel shapes, Maslow pyramid styling, arrows climbing the stack,\nnumbered tiers, trophies, checkmark clipart, any sentence-length text",
+  "output_file": "04-evidence-package.png",
+  "generation_time_ms": 16026,
+  "usage": {
+    "prompt_tokens": 251,
+    "candidates_tokens": 1460,
+    "total_tokens": 1940
+  }
+}

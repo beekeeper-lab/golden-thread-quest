@@ -211,6 +211,141 @@ relatively. A repository-root `media/` directory would leave every image on the 
 
 ---
 
+## Round 2 — corrections
+
+Round 1 generated all five. `03-ownership-zones` and `04-evidence-package` are correct and
+final. The other three each rendered clean text but got the content wrong, so each gets a v2
+entry rather than an edit. The v1 files stay on disk for comparison.
+
+What went wrong, and the lesson for later entries: a prompt that describes a *pattern*
+("filled markers in the upper lane") lets the generator choose which item goes where. Every
+v2 entry below assigns each item to its position by name, leaving nothing to infer.
+
+---
+
+### Image 6: 01-first-hour-flow-v2
+
+- **File**: docs/media/images/01-first-hour-flow-v2.png
+- **Page**: User guide, Section 3 — Your first hour
+- **Fixes**: v1 placed "run checks" and "submit" in the terminal lane. Both happen in the
+  application (guide steps 6 and 7). Lane membership is now stated per marker.
+- **Alt text**: "Your first hour splits in two: the application handles starting the quest,
+  running checks, recording the result and submitting, while you do the work in your own
+  repository, write PROOF.md, and commit and push it yourself."
+- **Description**: A horizontal band divided into two lanes by a thin rule. The upper lane is
+  labelled "in the app" and the lower lane "in your terminal". One continuous thin path runs
+  left to right, crossing the divider exactly three times, visiting seven markers in this
+  fixed order and no other: start quest in the upper lane, do the work in the lower lane,
+  write proof in the lower lane, run checks in the upper lane, record result in the upper
+  lane, submit in the upper lane, and finally commit and push in the lower lane. Markers in
+  the upper lane are solid filled ink-navy; markers in the lower lane are outlined ink-navy.
+  The last marker, commit and push, sits after a clear horizontal gap that the path does not
+  cross, and it alone is amber-gold — it is the participant's own act, and the path from the
+  application never reaches it.
+- **Prompt**:
+  Goal: Make clear which steps the application performs and which the participant performs
+    themselves, especially that committing and pushing is theirs alone.
+  Scene: Two horizontal lanes separated by a thin rule, upper labelled "in the app", lower
+    labelled "in your terminal". Seven markers in this exact placement, left to right —
+    marker 1 "start quest" in the UPPER lane, marker 2 "do the work" in the LOWER lane,
+    marker 3 "write proof" in the LOWER lane, marker 4 "run checks" in the UPPER lane,
+    marker 5 "record result" in the UPPER lane, marker 6 "submit" in the UPPER lane, marker 7
+    "commit and push" in the LOWER lane. Upper-lane markers are solid filled; lower-lane
+    markers are outlined. A single continuous thin path connects markers 1 through 6 only,
+    crossing between lanes where the lane changes. After marker 6 there is a clear empty gap
+    that no path crosses, and marker 7 stands alone beyond it in amber-gold.
+  Style: Flat vector field-guide illustration, thin precise strokes, subtle paper texture,
+    muted palette, generous whitespace, no shadows, no gradients.
+  Aspect ratio: 3:2
+  Background: warm parchment #f7f4ec
+  Text in image: two lane labels "in the app" and "in your terminal", and seven marker labels
+    — start quest, do the work, write proof, run checks, record result, submit, commit and
+    push. No other text, no numbers.
+  Avoid: swimlane business diagrams, UML, numbered step badges, screenshots, browser chrome,
+    cursors, arrows with heavy heads, a path that continues into the final marker, any
+    sentence-length text, human figures
+
+---
+
+### Image 7: 02-state-authority-v2
+
+- **File**: docs/media/images/02-state-authority-v2.png
+- **Page**: User guide, Section 4 — The eight states
+- **Fixes**: v1 put "locally validated" in the reviewer column. It is a participant state, and
+  its presence there contradicted the one thing the image exists to say. Column membership is
+  now stated exhaustively, and the reviewer column is explicitly limited to two chips.
+- **Alt text**: "Eight quest states in three columns by who sets them: the application sets
+  locked and available; you set in progress, evidence ready, locally validated and submitted;
+  only a reviewer sets needs changes and verified."
+- **Description**: Three labelled columns of rounded state chips. The first column is headed
+  "application" and contains exactly two chips: locked, available. The second is headed "you"
+  and contains exactly four chips: in progress, evidence ready, locally validated, submitted.
+  The third is headed "reviewer" and contains exactly two chips and no others: needs changes,
+  verified. Column headings are plain text above each column, not chips. One single thin
+  vertical rule sits between the second and third columns and nowhere else, with wider
+  spacing at that rule than between the first two columns. Every chip is outlined in its
+  muted status colour except verified, which is solid amber-gold with light text.
+- **Prompt**:
+  Goal: Show at a glance that verified completion is the reviewer's alone, and that the
+    participant cannot reach it however much work they do.
+  Scene: Three columns of rounded pill chips under plain text headings. Column 1 heading
+    "application" with exactly these two chips: locked, available. Column 2 heading "you"
+    with exactly these four chips: in progress, evidence ready, locally validated, submitted.
+    Column 3 heading "reviewer" with exactly these two chips and nothing else: needs changes,
+    verified. Exactly one thin vertical rule, placed between column 2 and column 3, with a
+    wider gap there than between columns 1 and 2. All chips outlined except verified, which
+    is solid amber-gold.
+  Style: Flat vector, rounded pills, muted status colours, thin rules, generous whitespace,
+    no shadows, no gradients.
+  Aspect ratio: 3:2
+  Background: warm parchment #f7f4ec
+  Text in image: three plain headings "application", "you", "reviewer", and the eight chip
+    labels exactly as assigned above. No caption, no numbers, no other text.
+  Avoid: headings drawn as pills or boxes, more than one vertical rule, any chip in a column
+    other than the one assigned, padlock cliches, traffic lights, arrows or connectors
+    between chips, gradients, any sentence-length text
+
+---
+
+### Image 8: 05-passport-outcome-v2
+
+- **File**: docs/media/images/05-passport-outcome-v2.png
+- **Page**: User guide, Section 11 — Knowing when you are finished
+- **Fixes**: v1 invented the figures 10601 and 10602, showing verified higher than claimed.
+  Verified is always a subset of claimed, so the image asserted something the application
+  cannot produce. The two figures are now fixed values that agree with the marks drawn, and
+  v1's large empty centre is filled by enlarging the mark row.
+- **Alt text**: "The passport shows claimed and verified progress as two separate totals that
+  are never added together: eight region marks, five outlined for claimed and three filled
+  amber for verified, with claimed at eight and verified at three kept deliberately apart."
+- **Description**: A single flat passport page, centred, with a thin ruled header carrying the
+  word passport. Its body is one row of eight square region marks, sized large enough to fill
+  the page width comfortably: the first five outlined in ink-navy, the last three solid
+  amber-gold. Beneath the row sit two separate boxed totals, set far apart with open parchment
+  between them and nothing joining them — the left reads claimed 8, the right reads verified
+  3. The figures agree with the marks above: eight marks in total, three of them gold. Nothing
+  else appears on the page.
+- **Prompt**:
+  Goal: Show that claimed progress and verified progress are two separate figures the
+    application never combines, that verified is always the smaller, and that only verified
+    marks are gold.
+  Scene: One flat passport page with a thin ruled header reading "passport". Below it, a
+    single row of eight large square marks — the first five outlined ink-navy, the last three
+    solid amber-gold. Below that, two separated boxed totals with wide open parchment between
+    them and no line, bar or arrow joining them: the left box reads "claimed 8" and the right
+    box reads "verified 3".
+  Style: Flat vector, restrained and formal, thin rules, generous whitespace, subtle paper
+    texture, amber-gold used only for verified marks, no shadows, no gradients.
+  Aspect ratio: 3:2
+  Background: warm parchment #f7f4ec
+  Text in image: exactly four pieces of text — "passport", "claimed 8", "verified 3". No
+    region names, no other numerals, no other text.
+  Avoid: any number other than 8 and 3, a verified figure larger than the claimed figure,
+    trophies, medals, stars, ribbons, a single progress bar merging the two values,
+    percentage rings, confetti, document stacks, large empty areas, any sentence-length text
+
+---
+
 ## What was considered and left out
 
 | Candidate | Why not |
@@ -226,9 +361,10 @@ relatively. A repository-root `media/` directory would leave every image on the 
 
 | | |
 |---|---|
-| Images | 5 |
+| Images | 5 generated, 3 corrections pending |
 | Provider | Gemini `gemini-3-pro-image-preview` |
-| Estimated cost | **~$0.60** (5 × ~$0.12) |
+| Round 1 actual | **$0.70** (5 images, 9,939 tokens, 89s) |
+| Round 2 estimate | **~$0.36** (3 × ~$0.12) |
 
 ## If a take is wrong
 
@@ -236,6 +372,7 @@ Refinement is a new entry, not an edit: `01-first-hour-flow-v2.png` alongside th
 its own plan entry, its own approval. Both versions stay on disk so they can be compared, and
 the sidecar JSON records what changed between them.
 
-## Not yet approved
+## Approval state
 
-Nothing here has been generated. These entries are a proposal.
+Round 1 (images 1-5) was approved and generated on 2026-09-17.
+Round 2 (images 6-8) is a proposal and has not been generated.

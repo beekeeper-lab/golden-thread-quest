@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-17T13:24:25",
+  "provider": "gemini",
+  "model": "gemini-3-pro-image-preview",
+  "prompt": "Goal: Make clear which steps the application performs and which the participant performs\nthemselves, especially that committing and pushing is theirs alone and the application\nnever does it.\nScene: Two horizontal lanes labelled \"in the app\" and \"in your terminal\", with one\ncontinuous thin path weaving between them and crossing the divider whenever authority\nchanges; filled markers in the upper lane, outlined markers in the lower; a visible gap\nbefore a final solitary amber-gold outlined marker in the lower lane.\nStyle: Flat vector field-guide illustration, thin precise strokes, subtle paper texture,\nmuted palette, generous whitespace, no shadows, no gradients.\nAspect ratio: 3:2\nBackground: warm parchment #f7f4ec\nText in image: two lane labels \"in the app\" and \"in your terminal\", and seven short\nlowercase marker labels \u2014 start quest, do the work, write proof, run checks, record\nresult, submit, commit and push. No other text.\nAvoid: swimlane business diagrams, UML, numbered step badges, screenshots, browser chrome,\ncursors, arrows with heavy heads, any sentence-length text, human figures",
+  "output_file": "01-first-hour-flow.png",
+  "generation_time_ms": 18203,
+  "usage": {
+    "prompt_tokens": 241,
+    "candidates_tokens": 1540,
+    "total_tokens": 2062
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-17T13:25:02",
+  "provider": "gemini",
+  "model": "gemini-3-pro-image-preview",
+  "prompt": "Goal: Make it immediately obvious which files belong to the participant, and that the\nmachine-owned zone is disposable and safe to delete.\nScene: Three adjacent map regions in one row, not nested and not overlapping \u2014 left solid\nink-navy with a solid border, centre warm parchment with an amber-gold border and visibly\nlarger than both neighbours, right pale grey with a dashed border \u2014 each holding two or\nthree small folder glyphs, plus a compact key in the lower right using a filled dot and a\nhollow dot.\nStyle: Flat vector field-guide map, thin precise borders, dashed border on the disposable\nzone only, muted palette, generous whitespace, no shadows.\nAspect ratio: 3:2\nBackground: warm parchment #f7f4ec\nText in image: three zone names \"programme\", \"yours\", \"machine\"; six short folder labels \u2014\ncontent, quest app, participant, evidence, generated, local data; key words \"in git\" and\n\"not in git\". No other text.\nAvoid: cloud icons, server racks, padlocks, database cylinders, 3D isometric views, nested\nor overlapping regions, any sentence-length text",
+  "output_file": "03-ownership-zones.png",
+  "generation_time_ms": 18456,
+  "usage": {
+    "prompt_tokens": 250,
+    "candidates_tokens": 1560,
+    "total_tokens": 2103
+  }
+}

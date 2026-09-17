@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-17T13:24:43",
+  "provider": "gemini",
+  "model": "gemini-3-pro-image-preview",
+  "prompt": "Goal: Show at a glance that verified completion is the reviewer's alone, and that the\nparticipant cannot reach it however much work they do.\nScene: Eight rounded state chips in three labelled authority columns; a thin vertical rule\nbefore the reviewer column with noticeably wider spacing at that rule; every chip outlined\nexcept the verified chip, which is solid amber-gold.\nStyle: Flat vector, rounded pills, muted status colours, thin rules, generous whitespace,\nno shadows, no gradients.\nAspect ratio: 3:2\nBackground: warm parchment #f7f4ec\nText in image: three column headings \"application\", \"you\", \"reviewer\", and eight chip\nlabels \u2014 locked, available, in progress, evidence ready, locally validated, submitted,\nneeds changes, verified. No caption, no other text.\nAvoid: padlock cliches, red and green as the only distinction, traffic lights, arrows\nbetween chips, flowchart connectors, gradients, any sentence-length text",
+  "output_file": "02-state-authority.png",
+  "generation_time_ms": 18314,
+  "usage": {
+    "prompt_tokens": 206,
+    "candidates_tokens": 1465,
+    "total_tokens": 1959
+  }
+}
