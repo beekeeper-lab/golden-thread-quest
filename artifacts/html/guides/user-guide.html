@@ -32,6 +32,14 @@
   --code-bg: #111827;
   --code-ink: #e5e7eb;
   --code-comment: #9ca3af;
+  --th-bg: #f1f5f9;
+  --row-hover: #fafbfc;
+  --chip-bg: #f1f5f9;
+  --chip-ink: #0f172a;
+  --chip-border: #e5e7eb;
+  --control-bg: #ffffff;
+  --control-tick: #ffffff;
+  --mount-bg: #ffffff;
   --radius: 8px;
   --radius-sm: 4px;
   --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06);
@@ -239,7 +247,7 @@ hr {
 .badge--success { background: var(--success-soft); color: var(--success); }
 .badge--warning { background: var(--warning-soft); color: var(--warning); }
 .badge--danger  { background: var(--danger-soft);  color: var(--danger);  }
-.badge--muted   { background: #f1f5f9;             color: var(--muted); border-color: var(--border); }
+.badge--muted   { background: var(--chip-bg);             color: var(--muted); border-color: var(--border); }
 
 /* ---------- Callouts ---------- */
 
@@ -274,11 +282,11 @@ th, td {
   vertical-align: top;
 }
 th {
-  background: #f1f5f9;
+  background: var(--th-bg);
   font-weight: 600;
   border-bottom: 2px solid var(--border-strong);
 }
-tr:hover td { background: #fafbfc; }
+tr:hover td { background: var(--row-hover); }
 
 .table-wrap { overflow-x: auto; }
 
@@ -290,12 +298,12 @@ code, kbd, samp, pre {
 }
 
 p code, li code, td code {
-  background: #f1f5f9;
+  background: var(--chip-bg);
   padding: 0.05rem 0.35rem;
   border-radius: var(--radius-sm);
   font-size: 0.85em;
-  color: #0f172a;
-  border: 1px solid #e5e7eb;
+  color: var(--chip-ink);
+  border: 1px solid var(--chip-border);
 }
 
 .code-block {
@@ -367,7 +375,7 @@ p code, li code, td code {
   cursor: pointer;
   text-decoration: none;
 }
-.btn:hover { border-color: var(--border-strong); background: #fafbfc; }
+.btn:hover { border-color: var(--border-strong); background: var(--row-hover); }
 .btn:active { transform: translateY(1px); }
 .btn:focus-visible {
   outline: 2px solid var(--accent);
@@ -431,7 +439,7 @@ ul.checklist li::before {
   height: 1rem;
   border: 1px solid var(--border-strong);
   border-radius: 3px;
-  background: #fff;
+  background: var(--control-bg);
 }
 ul.checklist li.done::before {
   background: var(--success);
@@ -444,8 +452,8 @@ ul.checklist li.done::after {
   top: 0.55em;
   width: 0.5rem;
   height: 0.25rem;
-  border-left: 2px solid #fff;
-  border-bottom: 2px solid #fff;
+  border-left: 2px solid var(--control-tick);
+  border-bottom: 2px solid var(--control-tick);
   transform: rotate(-45deg);
 }
 
@@ -481,7 +489,7 @@ footer.page-footer {
 /* ---------- SVG diagrams ---------- */
 
 .diagram {
-  background: #fff;
+  background: var(--mount-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1rem;
@@ -527,38 +535,46 @@ footer.page-footer {
   --accent-soft: #e7ecf1;
   --accent-ink: #0d1721;
   --gold: #8a6414;
-  --gold-soft: #f6ecd6;
+  --th-bg: #ece7da;
+  --row-hover: #f7f4ec;
+  --chip-bg: #ece7da;
+  --chip-ink: #172433;
+  --chip-border: #ddd6c6;
+  --mount-bg: #f7f4ec;
   --radius: 10px;
 }
+
+/* The canonical sheet is light-only. These are the surfaces that carry a
+   literal light value there; without them, light text lands on light fills. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #141b23;
     --panel: #1b242e;
     --ink: #e8ecf1;
-    --muted: #9aa7b4;
+    --muted: #9fadba;
     --border: #2e3a46;
     --border-strong: #46566a;
     --accent: #cdd8e3;
     --accent-soft: #24303c;
     --accent-ink: #f0f4f8;
     --gold: #d9a63f;
-    --gold-soft: #2c2415;
-    --success: #7ee0a6; --success-soft: #16301f;
-    --warning: #e8bf72; --warning-soft: #322611;
-    --danger:  #f0a3a3; --danger-soft:  #341a1a;
+    --th-bg: #24303c;
+    --row-hover: #202b36;
+    --chip-bg: #24303c;
+    --chip-ink: #e8ecf1;
+    --chip-border: #35424f;
+    --control-bg: #1b242e;
+    --control-tick: #141b23;
+    --mount-bg: #f7f4ec;
+    --code-bg: #0d141b;
+    --success: #8fe3b0; --success-soft: #16301f;
+    --warning: #edc77f; --warning-soft: #322611;
+    --danger:  #f3aaaa; --danger-soft:  #3a1c1c;
   }
+  :root:not([data-theme="light"]) .btn--primary { color: var(--bg); }
 }
-:root[data-theme="dark"] {
-  --bg: #141b23; --panel: #1b242e; --ink: #e8ecf1; --muted: #9aa7b4;
-  --border: #2e3a46; --border-strong: #46566a;
-  --accent: #cdd8e3; --accent-soft: #24303c; --accent-ink: #f0f4f8;
-  --gold: #d9a63f; --gold-soft: #2c2415;
-  --success: #7ee0a6; --success-soft: #16301f;
-  --warning: #e8bf72; --warning-soft: #322611;
-  --danger:  #f0a3a3; --danger-soft:  #341a1a;
-}
-html { background: var(--bg); }
-body { background: var(--bg); color: var(--ink); }
+
+html, body { background: var(--bg); color: var(--ink); }
 
 /* ---- guide-specific ---- */
 .eyebrow { text-transform: uppercase; letter-spacing: .14em; font-size: .75rem;
@@ -567,22 +583,26 @@ body { background: var(--bg); color: var(--ink); }
 .hero h1 { letter-spacing: -0.02em; }
 .grid--2 { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
 .grid--2 > * { margin: 0; }
-figure.diagram { margin: 1.75rem 0; }
-figure.diagram img { width: 100%; height: auto; display: block;
-  border: 1px solid var(--border); border-radius: var(--radius); background: #f7f4ec; }
+/* The parchment mount belongs to the image alone. If the figure carried it,
+   the caption's muted ink would sit on parchment and fail contrast in dark mode. */
+figure.diagram { margin: 1.75rem 0; padding: 0; border: 0; background: none; }
+figure.diagram img { width: 100%; height: auto; display: block; box-sizing: border-box;
+  padding: .75rem; background: var(--mount-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); }
 .diagram-caption { font-size: .875rem; color: var(--muted); line-height: 1.5;
-  margin-top: .6rem; max-width: 70ch; }
+  margin-top: .7rem; max-width: 70ch; }
 .diagram-caption .badge { margin-right: .4rem; vertical-align: baseline; }
 ol.steps { padding-left: 1.3rem; }
 ol.steps > li { margin-bottom: .85rem; line-height: 1.6; }
 ol.steps ul { margin: .45rem 0 0; }
-table th[scope="row"] { font-weight: 600; white-space: normal; }
+th[scope="row"] { font-weight: 600; white-space: normal; background: var(--th-bg); }
 .page-footer { margin: 2.5rem 0 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
 .toc ol { columns: 2; column-gap: 2rem; }
 @media (max-width: 640px) {
   .page { padding-left: 16px; padding-right: 16px; }
   .toc ol { columns: 1; }
   .lede { font-size: 1.02rem; }
+  figure.diagram img { padding: .4rem; }
 }
 
 @media print {

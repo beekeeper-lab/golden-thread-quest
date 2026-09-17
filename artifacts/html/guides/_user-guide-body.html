@@ -1,0 +1,449 @@
+<div class="page">
+
+<header class="hero">
+  <p class="eyebrow">AI Context Engineer Journey</p>
+  <h1>The Golden Thread Quest</h1>
+  <p class="lede">You are doing this on your own, remotely, probably without anyone to ask.
+  This guide assumes that. It tells you what to install, what to do, what each thing means,
+  what to do when something goes wrong, and what &ldquo;finished&rdquo; actually looks like.</p>
+  <dl class="kv">
+    <dt>Audience</dt><dd>Participant, working solo</dd>
+    <dt>Status</dt><dd><span class="badge badge--warning">Pre-release</span></dd>
+    <dt>Source</dt><dd><code>docs/USER-GUIDE.md</code></dd>
+    <dt>Updated</dt><dd>17 September 2026</dd>
+  </dl>
+  <p class="small muted mb-0">Read the first three sections before you start. The rest is reference.</p>
+</header>
+
+<nav class="toc" aria-labelledby="toc-heading">
+  <h2 id="toc-heading">Contents</h2>
+  <ol>
+    <li><a href="#s1">What this actually is</a></li>
+    <li><a href="#s2">Install it</a></li>
+    <li><a href="#s3">Your first hour</a></li>
+    <li><a href="#s4">The eight states, and who sets each one</a></li>
+    <li><a href="#s5">Working alone: how to not get stuck</a></li>
+    <li><a href="#s6">What the application writes, and what it never does</a></li>
+    <li><a href="#s7">Evidence that holds up</a></li>
+    <li><a href="#s8">Getting reviewed</a></li>
+    <li><a href="#s9">When something goes wrong</a></li>
+    <li><a href="#s10">Taking curriculum updates</a></li>
+    <li><a href="#s11">Knowing when you are finished</a></li>
+    <li><a href="#s12">Known limitations</a></li>
+    <li><a href="#s13">Where to go next</a></li>
+  </ol>
+</nav>
+
+<div class="callout callout--warning" role="note">
+  <p class="mt-0"><strong>Three diagrams are pending correction.</strong> The first-hour flow,
+  the state-authority columns and the passport each contain a content error found on review:
+  two steps in the wrong lane, one state in the wrong column, and two invented figures that
+  show verified above claimed. They are marked below. The prose beside each one is correct and
+  is what to trust until the corrected versions land.</p>
+</div>
+
+<section id="s1" class="card">
+  <h2>1. What this actually is</h2>
+  <p>A training programme you work through in your own Git repository, on your own machine.</p>
+  <p>Most training either gives you videos or grades a quiz. This does neither. You do real
+  work &mdash; synchronise a Jira board, write a test, normalise a transcript into context an
+  agent can use &mdash; and you leave behind <strong>evidence</strong>: files, commands someone
+  else can run, results from automated checks. A human reviewer reads that evidence and decides
+  whether it demonstrates what the quest asked for.</p>
+  <p>Two things follow from that, and they shape everything else.</p>
+
+  <div class="grid grid--2">
+    <div class="callout callout--info">
+      <h3 class="mt-0">Your work is files, not database rows</h3>
+      <p class="mb-0">Everything you produce lives under <code>participant/</code> in your own
+      repository. You can read it, edit it, commit it, and take it with you. If you stopped
+      using this application tomorrow, your portfolio would still be there and still make
+      sense.</p>
+    </div>
+    <div class="callout callout--info">
+      <h3 class="mt-0">Nothing you do makes work &ldquo;verified&rdquo;</h3>
+      <p class="mb-0">You can mark your own evidence ready. Automated checks can pass. Neither
+      produces verified completion &mdash; only a reviewer&rsquo;s approval does. That is
+      deliberate, and the application enforces it rather than trusting it.</p>
+    </div>
+  </div>
+</section>
+
+<section id="s2" class="card">
+  <h2>2. Install it</h2>
+
+  <h3>What you need</h3>
+  <div class="table-wrap">
+  <table>
+    <caption class="sr-only">Prerequisites</caption>
+    <thead><tr><th scope="col">Requirement</th><th scope="col">Version</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Python</th><td>3.12 or newer</td></tr>
+      <tr><th scope="row">uv</th><td>any recent version &mdash; <span class="muted">docs.astral.sh/uv</span></td></tr>
+      <tr><th scope="row">Git</th><td>2.30 or newer</td></tr>
+      <tr><th scope="row">A browser</th><td>anything current</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Nothing else. No database, no Docker, no account, no network connection after install.</p>
+
+  <h3>Do this</h3>
+  <div class="code-block">
+    <div class="code-block-header"><span>shell</span></div>
+    <pre><code>git clone &lt;your fork of the quest repository&gt; golden-thread-quest
+cd golden-thread-quest
+make setup
+source .venv/bin/activate</code></pre>
+  </div>
+
+  <p>Then prove it works:</p>
+  <div class="code-block">
+    <div class="code-block-header"><span>shell</span></div>
+    <pre><code>make check</code></pre>
+  </div>
+  <p>That runs formatting, linting, type checking, a YAML-safety rule, a secret scan and 475
+  tests. It takes about a minute and works entirely offline. If it passes, your installation is
+  sound. If it does not, go to <a href="#s9">Section 9</a>.</p>
+
+  <h3>Start it</h3>
+  <div class="code-block">
+    <div class="code-block-header"><span>shell</span></div>
+    <pre><code>make serve</code></pre>
+  </div>
+  <p>It builds the site, starts a service bound to <code>127.0.0.1</code> only, and prints an
+  address. Open that address in your browser.</p>
+  <div class="callout callout--info">
+    <p class="mt-0 mb-0"><strong>Leave it running while you work.</strong> Reading works
+    without it; changing anything does not.</p>
+  </div>
+</section>
+
+<section id="s3" class="card">
+  <h2>3. Your first hour</h2>
+
+  <figure class="diagram">
+    <img src="{{IMG_01}}" alt="Your first hour splits in two: the application handles starting the quest, recording validation and submitting, while you do the actual work in your own repository and commit and push it yourself." />
+    <figcaption class="diagram-caption">
+      <span class="badge badge--warning">Pending correction</span>
+      The work splits between the application and your own terminal. <strong>This version
+      places &ldquo;run checks&rdquo; and &ldquo;submit&rdquo; in the terminal lane; both
+      happen in the application</strong>, as steps 6 and 7 below state.
+    </figcaption>
+  </figure>
+
+  <ol class="steps">
+    <li><strong>Open the home page.</strong> It shows one recommended quest and says why, in
+    three sentences. The recommendation is calculated, not guessed &mdash; it will be the same
+    tomorrow given the same inputs.</li>
+    <li><strong>Read the whole quest page before starting.</strong> Especially <em>How this is
+    judged</em> &mdash; those criteria are numbered, and a reviewer&rsquo;s findings will refer
+    to them by number.</li>
+    <li><strong>Press Start quest.</strong> Three things happen:
+      <ul>
+        <li><code>participant/progress.yaml</code> is created if it did not exist</li>
+        <li>an evidence package appears at <code>participant/evidence/&lt;quest-id&gt;/&lt;attempt-id&gt;/</code></li>
+        <li>a line is added to <code>participant/ACTIVITY.md</code> saying what was done</li>
+      </ul>
+    </li>
+    <li><strong>Do the work in your repository.</strong> Not in the browser. The application is
+    where you read the brief and record what happened; your editor and terminal are where the
+    work happens.</li>
+    <li><strong>Fill in <code>PROOF.md</code>.</strong> It is a template with the questions a
+    reviewer will ask. Answer them.</li>
+    <li><strong>Run the checks.</strong> Each one tells you what it looked at and what it
+    found.</li>
+    <li><strong>Mark evidence ready</strong>, then <strong>Record local validation</strong>,
+    then <strong>Submit for review</strong>.</li>
+    <li><strong>Commit and push.</strong> The application prints the commands and runs none of
+    them.</li>
+  </ol>
+</section>
+
+<section id="s4" class="card">
+  <h2>4. The eight states, and who sets each one</h2>
+  <p>This is the part worth understanding properly, because the whole product turns on it.</p>
+
+  <div class="table-wrap">
+  <table>
+    <caption class="sr-only">Quest states and who sets them</caption>
+    <thead><tr><th scope="col">State</th><th scope="col">Set by</th><th scope="col">Means</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Locked</th><td>The application</td><td>A prerequisite is not verified yet</td></tr>
+      <tr><th scope="row">Available</th><td>The application</td><td>You can start</td></tr>
+      <tr><th scope="row">In progress</th><td><strong>You</strong></td><td>You started</td></tr>
+      <tr><th scope="row">Evidence ready</th><td><strong>You</strong></td><td>You assert the proof is assembled</td></tr>
+      <tr><th scope="row">Locally validated</th><td><strong>You</strong>, backed by checks</td><td>You ran the required checks and they qualify</td></tr>
+      <tr><th scope="row">Submitted for review</th><td><strong>You</strong></td><td>You asked a reviewer to decide</td></tr>
+      <tr><th scope="row">Needs changes</th><td><strong>A reviewer</strong></td><td>Corrections required; your evidence is untouched</td></tr>
+      <tr><th scope="row">Verified</th><td><strong>A reviewer</strong></td><td>Approved</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <figure class="diagram">
+    <img src="{{IMG_02}}" alt="Eight quest states in three columns by who sets them: the application sets locked and available; you set in progress, evidence ready, locally validated and submitted; only a reviewer sets needs changes and verified." />
+    <figcaption class="diagram-caption">
+      <span class="badge badge--warning">Pending correction</span>
+      Authority over each state. <strong>This version shows &ldquo;locally validated&rdquo; in
+      the reviewer column; it belongs to you</strong>, as the table above states. The reviewer
+      column holds exactly two states: needs changes, and verified.
+    </figcaption>
+  </figure>
+
+  <p>Two totals appear everywhere and are <strong>never added together</strong>:</p>
+  <ul>
+    <li><strong>Claimed XP</strong> &mdash; your own record of what you finished.</li>
+    <li><strong>Verified XP</strong> &mdash; awarded only by a reviewer approving your evidence.</li>
+  </ul>
+  <p>A passing check is not approval. <code>inconclusive</code> is not a pass &mdash; it means
+  the check could not tell, which is not evidence either way. A <em>failing</em> check is not a
+  failed quest; it tells you what to fix and changes nothing.</p>
+
+  <div class="callout callout--success">
+    <p class="mt-0 mb-0"><strong>Why this matters to you.</strong> When you show this to an
+    employer or a lead, &ldquo;verified&rdquo; means a named person read your evidence and said
+    it held up. That is worth something precisely because you could not award it to
+    yourself.</p>
+  </div>
+</section>
+
+<section id="s5" class="card">
+  <h2>5. Working alone: how to not get stuck</h2>
+  <p>You have no one to ask. These are the things that unstick people.</p>
+
+  <h3>Read the acceptance criteria first, and again before you submit</h3>
+  <p>They are numbered and they are the standard you will be judged against. If you cannot
+  point at the evidence that satisfies criterion 4, you are not ready to submit.</p>
+
+  <h3>Write <code>PROOF.md</code> as you go, not at the end</h3>
+  <p>It asks what you built, where the artifacts are, how to reproduce the behaviour, what you
+  validated, and what limitations remain. Writing it last means reconstructing it; writing it
+  as you go means it is true.</p>
+
+  <h3>A reviewer should not have to hunt</h3>
+  <p>Repository-relative paths, exact commands, and say what you could <em>not</em> get
+  working. Naming a limitation is a strength &mdash; it is the difference between someone who
+  finished and someone who understands what they finished.</p>
+
+  <h3>When a check fails, read the finding, not just the outcome</h3>
+  <p>Each one says what it evaluated, what it observed, and what to do. They are ordered with
+  the most serious first.</p>
+
+  <h3>If you are stuck for more than an hour</h3>
+  <p>Do the smallest honest thing: write down in <code>PROOF.md</code> exactly where you got to
+  and what you tried, mark the evidence ready, and submit. A reviewer asking for changes with a
+  concrete finding is worth more than another hour alone.</p>
+
+  <h3>Commit often</h3>
+  <p>Your work is in Git. <code>git status</code>, <code>git stash list</code> and
+  <code>git reflog</code> have recovered more work than any backup.</p>
+</section>
+
+<section id="s6" class="card">
+  <h2>6. What the application writes, and what it never does</h2>
+
+  <figure class="diagram">
+    <img src="{{IMG_03}}" alt="Three ownership zones side by side: programme-owned content and application code, your own work and evidence, and machine-owned generated output that is disposable. Only the middle zone is yours." />
+    <figcaption class="diagram-caption">Three ownership zones. Only the middle one is yours,
+    and nothing the application does replaces it.</figcaption>
+  </figure>
+
+  <h3>Inside <code>participant/</code>, only these, only through documented actions</h3>
+  <ul>
+    <li><code>progress.yaml</code> &mdash; your state. Written atomically and validated before
+    it lands, so an interrupted save cannot leave it broken.</li>
+    <li><code>evidence/**</code> &mdash; your evidence packages, validation results, submission
+    and review records.</li>
+    <li><code>ACTIVITY.md</code> &mdash; one line per change the application made, for you to
+    read.</li>
+  </ul>
+
+  <p><strong>It also rewrites <code>generated/</code></strong> on every action. That is
+  machine-owned, gitignored and disposable; <code>make build</code> recreates it.</p>
+
+  <div class="callout callout--danger">
+    <p class="mt-0"><strong>It never</strong> commits, pushes, merges, rebases, cleans, or
+    opens a pull request. It never writes outside <code>participant/</code>.
+    <code>make clean</code> removes generated output and refuses to touch anything of yours
+    &mdash; there is a test that proves it.</p>
+    <p class="mb-0"><strong>It never sends anything anywhere.</strong> No telemetry, no
+    accounts, no remote requests. The generated pages load no remote script, font or image.</p>
+  </div>
+</section>
+
+<section id="s7" class="card">
+  <h2>7. Evidence that holds up</h2>
+
+  <figure class="diagram">
+    <img src="{{IMG_04}}" alt="Forms of evidence, strongest first: a repository artifact, then reproducible instructions, then automated execution evidence, then a demonstration. Above them all sits reviewer approval, which evidence earns but never becomes." />
+    <figcaption class="diagram-caption">Reviewer approval sits above the whole scale. You build
+    the four below it; you cannot build the one above.</figcaption>
+  </figure>
+
+  <p>Preferred, strongest first:</p>
+  <ol>
+    <li><strong>A repository artifact</strong> &mdash; code, a test, a config, a normalised
+    context file.</li>
+    <li><strong>Reproducible instructions</strong> &mdash; exact commands, ideally from a clean
+    clone.</li>
+    <li><strong>Automated execution evidence</strong> &mdash; a validation result, a test run,
+    a log.</li>
+    <li><strong>A demonstration</strong> &mdash; you walking someone through it.</li>
+    <li><strong>A reviewer&rsquo;s approval.</strong></li>
+  </ol>
+
+  <p>Screenshots support the others; they are not the proof. A screenshot shows something
+  happened once on your machine. A command someone else can run shows it happens.</p>
+
+  <div class="callout callout--danger">
+    <p class="mt-0 mb-0"><strong>Never put a secret in evidence.</strong> The application scans
+    before you can mark evidence ready or submit, and refuses if it finds one &mdash; it
+    reports the file and line and never the value. That scan is a safety net, not a guarantee.
+    Credentials belong in your environment or an authenticated CLI, never in a file you
+    commit.</p>
+  </div>
+</section>
+
+<section id="s8" class="card">
+  <h2>8. Getting reviewed</h2>
+  <p>Submitting captures a fingerprint of your evidence at that moment. If you change it
+  afterwards, the reviewer is told &mdash; and they cannot approve changed evidence without
+  explicitly acknowledging they have re-read it.</p>
+
+  <p><strong>To approve, a reviewer must write a verification statement</strong> in their own
+  words saying what they checked and how. <strong>To ask for changes, they must record at least
+  one finding.</strong> A decision you cannot act on is not allowed.</p>
+
+  <div class="callout callout--info">
+    <p class="mt-0 mb-0"><strong>If you get &ldquo;needs changes&rdquo;:</strong> your evidence
+    is preserved exactly as it was. Read the findings, resume the quest, address them, and
+    resubmit. This is the normal path, not a failure.</p>
+  </div>
+
+  <div class="callout callout--warning">
+    <p class="mt-0 mb-0"><strong>One limitation, stated plainly.</strong> This release
+    identifies a reviewer by the name in the record and by Git history. Review records are not
+    cryptographically signed. If your programme needs stronger proof of who approved what,
+    review through pull requests so the Git history carries the identity.
+    <code>docs/guides/REVIEWER.md</code> says the same thing to reviewers.</p>
+  </div>
+</section>
+
+<section id="s9" class="card">
+  <h2>9. When something goes wrong</h2>
+  <div class="table-wrap">
+  <table>
+    <caption class="sr-only">Troubleshooting</caption>
+    <thead><tr><th scope="col">Symptom</th><th scope="col">What it means</th><th scope="col">What to do</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">An action is refused</th><td>The page says so at the top, in red, with the reason. Nothing changed</td><td>Fix what the reason names, try again</td></tr>
+      <tr><th scope="row"><code>make setup</code> cannot find uv</th><td>uv is not installed</td><td>Install it, or <code>python3 -m venv .venv &amp;&amp; .venv/bin/pip install -e ".[dev]"</code></td></tr>
+      <tr><th scope="row">The build fails and you cannot tell why</th><td>Content does not validate, so nothing was published</td><td><code>make validate-content</code> prints file, field and a suggested fix. A failed <code>make build</code> also writes <code>local-data/build-errors/index.html</code></td></tr>
+      <tr><th scope="row"><code>make serve</code> refuses to start</th><td>You passed a bind address that is not loopback</td><td>It binds to <code>127.0.0.1</code> only, by design. Drop the <code>--host</code></td></tr>
+      <tr><th scope="row">&ldquo;only possible from&hellip;&rdquo;</th><td>The transition is not legal from your current state</td><td>The message names the states it <em>is</em> legal from</td></tr>
+      <tr><th scope="row">A check says <code>inconclusive</code></th><td>It could not tell &mdash; not a failure</td><td>The finding says what was missing</td></tr>
+      <tr><th scope="row">The site looks unstyled from disk</th><td>You opened <code>generated/index.html</code> instead of using <code>make serve</code></td><td>Use <code>make serve</code>. Reading from disk works; controls do not</td></tr>
+      <tr><th scope="row">Buttons do nothing</th><td>The service is not running, or you are on a stale page</td><td>Check <code>make serve</code> is up, then reload</td></tr>
+      <tr><th scope="row">Your work seems lost</th><td>It is in Git</td><td><code>git status</code>, <code>git stash list</code>, <code>git reflog</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Two commands worth remembering:</p>
+  <div class="code-block">
+    <div class="code-block-header"><span>shell</span></div>
+    <pre><code>make validate-content   # is my content and state consistent?
+make check              # is my whole installation sound?</code></pre>
+  </div>
+</section>
+
+<section id="s10" class="card">
+  <h2>10. Taking curriculum updates</h2>
+  <div class="code-block">
+    <div class="code-block-header"><span>shell</span></div>
+    <pre><code>make update-check</code></pre>
+  </div>
+  <p>It tells you whether it is safe and prints the commands. <strong>It runs no merge</strong>
+  &mdash; merging on your repository with your uncommitted work in it is not a decision an
+  application should make.</p>
+  <p>A dirty working tree is a hard stop, not a warning. The printed sequence creates a backup
+  branch first, so there is always one command that puts everything back.</p>
+  <p><strong>Your in-progress attempts stay on the quest version you started.</strong> If a
+  quest moves from version 2 to 3 while you are working, you keep working against version 2 and
+  the page tells you a newer one exists. <strong>Verified work stays verified</strong> &mdash;
+  a new version does not revoke an approval.</p>
+  <p class="small muted mb-0">Full detail: <code>docs/guides/UPDATING.md</code></p>
+</section>
+
+<section id="s11" class="card">
+  <h2>11. Knowing when you are finished</h2>
+  <p>There is no completion certificate, and that is the point. What you have at the end is:</p>
+  <ul>
+    <li>a <strong>passport</strong> showing verified capability by region, with claimed and
+    verified kept apart;</li>
+    <li>a <strong>repository</strong> of real artifacts, reproducible instructions and
+    validation results;</li>
+    <li>a <strong>review history</strong> of named people saying your evidence held up.</li>
+  </ul>
+  <p>That is the thing you show someone. It is worth more than a score because none of it is
+  self-assessed.</p>
+
+  <figure class="diagram">
+    <img src="{{IMG_05}}" alt="The passport shows claimed and verified progress as two separate totals that are never added together." />
+    <figcaption class="diagram-caption">
+      <span class="badge badge--warning">Pending correction</span>
+      Claimed and verified are two separate totals the application never combines.
+      <strong>The two figures in this version are invented and show verified above claimed,
+      which cannot happen</strong> &mdash; verified is always a subset of claimed.
+    </figcaption>
+  </figure>
+</section>
+
+<section id="s12" class="card">
+  <h2>12. Known limitations</h2>
+  <p>Read these before you rely on the application for anything that matters. The full list,
+  with reasons, is in <code>docs/RELEASE-NOTES.md</code>.</p>
+  <ol>
+    <li><strong>Reviewer identity is conventional, not cryptographic.</strong> See <a href="#s8">Section 8</a>.</li>
+    <li><strong>Recording a decision needs the local service running.</strong> Reading evidence does not.</li>
+    <li><strong>Reviewer-awarded badges cannot be awarded yet.</strong> Meeting the criteria
+    shows &ldquo;pending&rdquo;; there is no badge-award record type in this release. Granting
+    one by arithmetic would be exactly the blurring of authority the product exists to
+    prevent.</li>
+    <li><strong>Environment Health reports what was true at build time</strong>, not live.</li>
+    <li><strong>Validator isolation is policy plus process boundaries</strong>, not a container.
+    A validator is program-owned and reviewed like code; it is not sandboxed against a hostile
+    author.</li>
+    <li><strong>Catalogue filtering needs JavaScript.</strong> Region and tag pages work without it.</li>
+    <li><strong>The secret scanner is a safety net</strong>, not a guarantee. It will not catch
+    every shape.</li>
+    <li><strong>Clean-clone installation is not automatically tested.</strong> It is the one
+    acceptance criterion without a test, and it is named as such in
+    <code>docs/TRACEABILITY.md</code>.</li>
+  </ol>
+</section>
+
+<section id="s13" class="card">
+  <h2>13. Where to go next</h2>
+  <div class="table-wrap">
+  <table>
+    <caption class="sr-only">Further reading</caption>
+    <thead><tr><th scope="col">You want</th><th scope="col">Read</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">To review someone else&rsquo;s evidence</th><td><code>docs/guides/REVIEWER.md</code></td></tr>
+      <tr><th scope="row">To write an automated check</th><td><code>docs/guides/VALIDATOR-AUTHORING.md</code></td></tr>
+      <tr><th scope="row">To write a quest</th><td><code>docs/CONTENT-AUTHORING-GUIDE.md</code></td></tr>
+      <tr><th scope="row">To take upstream changes</th><td><code>docs/guides/UPDATING.md</code></td></tr>
+      <tr><th scope="row">To know what was built and why</th><td><code>docs/IMPLEMENTATION-DETAILS.md</code></td></tr>
+      <tr><th scope="row">To see what was found and fixed</th><td><code>docs/audits/</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<footer class="page-footer">
+  <p class="small muted">Generated from <code>docs/USER-GUIDE.md</code>, which remains the
+  source of truth. This page is the review surface.</p>
+</footer>
+
+</div>
