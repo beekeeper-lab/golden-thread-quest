@@ -1,0 +1,78 @@
+[project]
+name = "golden-thread-quest"
+version = "0.1.0"
+description = "The Golden Thread Quest — a local-first training application for the AI Context Engineer Journey."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Proprietary" }
+
+# Runtime dependencies. Each one is justified in docs/DECISIONS.md.
+dependencies = [
+    "Jinja2>=3.1.4,<4",       # ADR-006 deterministic server-side rendering
+    "PyYAML>=6.0.1,<7",       # ADR-025 safe_load only
+    "jsonschema>=4.21,<5",    # ADR-020 validates against the published schemas
+    "markdown-it-py>=3.0,<4", # ADR-021 CommonMark
+    "nh3>=0.2.17,<0.4",       # ADR-021 allowlist sanitization
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0,<9",
+    "pytest-cov>=5.0",
+    "ruff>=0.6,<1",
+    "mypy>=1.11,<2",
+    "types-PyYAML>=6.0",
+]
+ui = [
+    "pytest-playwright>=0.5",
+    "playwright>=1.46",
+]
+
+[project.scripts]
+quest-build = "quest_app.cli:build_main"
+quest-serve = "quest_app.cli:serve_main"
+quest-validate = "quest_app.cli:validate_main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["quest_app", "validators"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["quest_app", "validators", "tests", "tools"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM", "PTH", "RUF", "S"]
+ignore = [
+    "S101",  # assert is how pytest expresses expectations
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106", "S108"]  # test fixtures deliberately contain fake secrets and temp paths
+
+[tool.ruff.lint.flake8-bandit]
+# yaml.safe_load is required (ADR-025); yaml.load is caught by tools/check_yaml_safe.py too.
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["quest_app", "validators", "tools"]
+warn_unreachable = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = ["nh3.*", "markdown_it.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers --strict-config"
+markers = [
+    "ui: browser-driven tests requiring Playwright (deselect with -m 'not ui')",
+    "slow: tests that build the whole site",
+]
+filterwarnings = ["error::DeprecationWarning:quest_app.*"]

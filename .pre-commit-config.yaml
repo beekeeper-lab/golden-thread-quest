@@ -1,0 +1,25 @@
+# Optional but recommended: `pre-commit install` runs the fast half of `make check` on commit.
+# Nothing here is hidden — every hook is a command you can also run yourself from the Makefile.
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-format
+        name: ruff format
+        entry: .venv/bin/ruff format
+        language: system
+        types: [python]
+      - id: ruff-check
+        name: ruff check
+        entry: .venv/bin/ruff check --fix
+        language: system
+        types: [python]
+      - id: yaml-safe
+        name: yaml safe_load only (ADR-025)
+        entry: .venv/bin/python tools/check_yaml_safe.py
+        language: system
+        pass_filenames: false
+      - id: secret-scan
+        name: secret scan
+        entry: .venv/bin/python tools/secret_scan.py
+        language: system
+        pass_filenames: true

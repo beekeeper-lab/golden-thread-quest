@@ -1,0 +1,74 @@
+# Local Setup
+
+## Requirements
+
+| Requirement | Version | Why |
+|---|---|---|
+| Python | 3.12 or newer | ADR-019 |
+| uv | any recent | Creates the environment and installs dependencies |
+| Git | 2.30 or newer | The application reports repository status and the participant's work lives in Git |
+| A modern browser | — | The generated site is ordinary HTML opened from disk or from the local service |
+
+Nothing else is required to read the curriculum or browse generated pages. Browser-driven tests
+additionally download Chromium through Playwright.
+
+## Install
+
+```bash
+make setup
+source .venv/bin/activate
+```
+
+## Verify the install
+
+```bash
+make check
+```
+
+This runs format verification, lint, strict type checking, the YAML-safety rule, the secret scan,
+and the test suite. All of it works offline.
+
+## Run the application
+
+```bash
+make build     # generates the site into generated/
+make serve     # builds, then starts the loopback service
+```
+
+`make serve` binds to `127.0.0.1` only. It refuses any other bind address at startup, prints a
+per-run token that state-changing requests must carry, and exposes no route that accepts a
+filesystem path or a command (`docs/SECURITY-AND-PRIVACY.md`).
+
+Generated pages are readable without the service running and without JavaScript. With the service
+down, browsing still works and state-changing controls are disabled with an explanation rather than
+pretending to succeed.
+
+## Where your work lives
+
+| Path | Owner | Committed |
+|---|---|---|
+| `participant/` | You | Yes — this is your portfolio |
+| `content/`, `schemas/`, `templates/`, `assets/`, `quest_app/`, `validators/` | The program | Yes |
+| `generated/` | The machine | No — rebuild it |
+| `local-data/` | The machine | No — caches and raw private responses |
+
+`make clean` removes only the machine-owned paths. It refuses to remove anything under
+`participant/`, and a test proves it.
+
+## Environment configuration
+
+Copy `.env.example` to `.env` and fill in what you need. `.env` is gitignored. The application reads
+credentials from the environment or from an authenticated CLI and never stores them, never writes
+them to evidence or logs, and never sends them anywhere you did not ask it to.
+
+## Troubleshooting
+
+**`make setup` cannot find uv.** Install it from <https://docs.astral.sh/uv/> or create the
+environment yourself with `python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"`.
+
+**`make test-ui` fails with a missing browser.** Run `make setup-ui`, which installs Playwright and
+downloads Chromium.
+
+**The secret scan fails on a file you know is safe.** It reports a pattern and a truncated excerpt,
+never the value. If the value really is documentation, use one of the placeholder forms the scanner
+recognises (`<your-token>`, `${VAR}`, `changeme`) rather than loosening the scanner.

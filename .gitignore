@@ -1,0 +1,38 @@
+# Generated, reproducible output — never a source of truth (ADR-015)
+/generated/
+# Local runtime data, caches and raw external responses — private, never committed
+/local-data/
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+# Node (Playwright only)
+node_modules/
+# Credentials and secrets — see docs/SECURITY-AND-PRIVACY.md
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+credentials.json
+service-account*.json
+.netrc
+.npmrc
+*.token
+**/secrets/
+# Editor and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp

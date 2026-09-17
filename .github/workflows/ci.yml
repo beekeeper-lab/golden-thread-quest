@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor from ADR-019 and the newest stable release, so neither drifts unnoticed.
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # tools/secret_scan.py scans tracked files, so it needs the index, not history.
+          fetch-depth: 1
+
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: |
+          uv venv .venv --python ${{ matrix.python-version }}
+          uv pip install --python .venv/bin/python -e ".[dev]"
+
+      # These are the same targets documented in the Makefile and README, run separately so a
+      # failure names the check that failed rather than "make check".
+      - name: Format check
+        run: .venv/bin/ruff format --check quest_app validators tests tools
+      - name: Lint
+        run: .venv/bin/ruff check quest_app validators tests tools
+      - name: Type check
+        run: .venv/bin/mypy
+      - name: YAML safety (ADR-025)
+        run: .venv/bin/python tools/check_yaml_safe.py
+      - name: Secret scan
+        run: .venv/bin/python tools/secret_scan.py
+      - name: Tests
+        run: .venv/bin/pytest -m "not ui"
