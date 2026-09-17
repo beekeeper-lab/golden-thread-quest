@@ -344,3 +344,75 @@ class TestForgery:
         report = ProblemReport()
         assert load_world(config, report) is None
         assert "progress.unverified_verified_state" in {p.code for p in report.errors}
+
+
+class TestEvidenceChangedAfterApproval:
+    """An approval describes the evidence that existed when it was made.
+
+    Both of these kept `verified` and its XP with no signal at all: the only hash comparison
+    happened inside `record_decision`, which says nothing about what happens afterwards.
+    """
+
+    def approve(self, setup, config: AppConfig):  # type: ignore[no-untyped-def]
+        submit(setup, config)
+        world, attempt = reload_attempt(config)
+        _, schemas, store, quest, _ = setup
+        record_decision(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            decision="approved",
+            reviewer_name="A Reviewer",
+            verification_statement=STATEMENT,
+            findings=[],
+            schemas=schemas,
+        )
+        return reload_attempt(config)[1]
+
+    def test_rewriting_the_evidence_after_approval_is_surfaced(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        attempt = self.approve(setup, config)
+        proof = config.resolve_participant_path(attempt.evidence_path) / "PROOF.md"
+        proof.write_text("# Rewritten after the reviewer approved it\n")
+
+        report = ProblemReport()
+        world = load_world(config, report)
+
+        assert world is not None, report.to_text()
+        assert "progress.evidence_changed_since_approval" in {p.code for p in report.warnings}
+
+    def test_editing_the_reviews_own_hash_is_surfaced(self, setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        attempt = self.approve(setup, config)
+        path = config.resolve_participant_path(attempt.evidence_path) / "review.yaml"
+        data = yaml.safe_load(path.read_text())
+        data["evidence_hash"] = "sha256:" + "0" * 64
+        path.write_text(yaml.safe_dump(data, sort_keys=False))
+
+        report = ProblemReport()
+        world = load_world(config, report)
+
+        assert world is not None, report.to_text()
+        assert "progress.evidence_changed_since_approval" in {p.code for p in report.warnings}
+
+    def test_untouched_evidence_produces_no_warning(self, setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        self.approve(setup, config)
+        report = ProblemReport()
+        assert load_world(config, report) is not None
+        assert "progress.evidence_changed_since_approval" not in {p.code for p in report.problems}
+
+    def test_the_approval_still_stands(self, setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        """A warning, not a revocation: CONTENT-MODEL.md keeps verified attempts verified."""
+        attempt = self.approve(setup, config)
+        proof = config.resolve_participant_path(attempt.evidence_path) / "PROOF.md"
+        proof.write_text("# Rewritten\n")
+
+        report = ProblemReport()
+        world = load_world(config, report)
+
+        assert world is not None
+        assert report.ok, "a changed evidence package must not break the build"
+        _, after = reload_attempt(config)
+        assert after.recorded_state is AttemptState.VERIFIED

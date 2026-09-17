@@ -409,3 +409,32 @@ def test_a_page_built_by_the_service_offers_live_actions(config: AppConfig) -> N
     assert "<form" in html, "the generated site contained no form at all"
     assert 'name="token"' in html
     assert "__GTQ_REQUEST_TOKEN__" in html, "the placeholder is substituted at serve time"
+
+
+@pytest.mark.slow
+def test_a_quest_page_communicates_every_required_element(built: AppConfig) -> None:
+    """SCREEN-SPECS U05 lists what a quest page must carry.
+
+    The traceability row for this pointed at a test asserting one heading. These are the
+    nine elements the specification actually names.
+    """
+    html = (
+        built.generated_root / "quests" / "jira-read-assigned-stories" / "index.html"
+    ).read_text()
+
+    required = {
+        "mission": "Mission",
+        "outcomes": "What you will be able to do",
+        "acceptance criteria": "How this is judged",
+        "required evidence": "Required evidence",
+        "safety constraints": "Safety",
+        "state": "Evidence ready",
+        "version": "Version",
+        "experience": "XP",
+        "estimate": "minutes",
+    }
+    missing = [name for name, marker in required.items() if marker not in html]
+    assert missing == [], missing
+
+    # Prerequisites and tools appear when the quest declares them.
+    assert "Builder" in html or "Explorer" in html, "the difficulty level is shown"

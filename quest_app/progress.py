@@ -267,7 +267,7 @@ def load_participant_state(
                 continue
             validations.setdefault(attempt.attempt_id, []).append(result)
 
-    _check_integrity(progress, reviews, relative, report)
+    _check_integrity(progress, reviews, relative, report, config)
 
     return ParticipantState(
         progress=progress,
@@ -413,11 +413,55 @@ def _load_validation(
     )
 
 
+def _check_stale_approval(
+    attempt: Attempt,
+    review: ReviewDecision,
+    config: AppConfig,
+    relative: str,
+    report: ProblemReport,
+) -> None:
+    """Warn when the evidence differs from what the reviewer approved.
+
+    `record_decision` compares hashes at the moment of the decision, which says nothing
+    about what happens afterwards. Without this, rewriting `PROOF.md` on an approved
+    attempt kept `verified` and its XP with no signal at all — and so did editing the
+    review's own `evidence_hash`.
+
+    A warning, not an error: `CONTENT-MODEL.md` keeps verified attempts verified unless a
+    documented policy revokes them. The job here is to make it visible.
+    """
+    from quest_app.evidence import evidence_hash
+
+    current = evidence_hash(config, attempt.evidence_path)
+    if current is None or current == review.evidence_hash:
+        return
+    report.add(
+        ContentProblem.build(
+            code="progress.evidence_changed_since_approval",
+            severity=Severity.WARNING,
+            public_message=(
+                f"The evidence for attempt {attempt.attempt_id!r} has changed since it was "
+                "approved, so the approval may no longer describe it."
+            ),
+            source=relative,
+            entity_id=attempt.attempt_id,
+            field_path="attempts[].evidence_path",
+            expected=review.evidence_hash,
+            received=current,
+            suggestion=(
+                "The approval stands until a reviewer revokes it. Ask for re-review if the "
+                "change was material."
+            ),
+        )
+    )
+
+
 def _check_integrity(
     progress: ParticipantProgress,
     reviews: dict[str, ReviewDecision],
     relative: str,
     report: ProblemReport,
+    config: AppConfig | None = None,
 ) -> None:
     """The rules that stop a participant record claiming authority it does not have."""
     seen_attempt_ids: set[str] = set()
@@ -477,6 +521,10 @@ def _check_integrity(
                 f"{attempt.quest_id!r}"
             )
         else:
+            # The approval is consistent. Whether it still describes the evidence is a
+            # separate question, and one nothing asked before this.
+            if config is not None:
+                _check_stale_approval(attempt, review, config, relative, report)
             continue
 
         report.add(

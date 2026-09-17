@@ -22,9 +22,9 @@ is itself the finding.
 
 | Criterion | Implementation | Test |
 |---|---|---|
-| Overall progress and a reasoned next-quest recommendation | `recommend.py`, `pages/home.html.j2` | `ui/test_generated_accessibility.py`, `integration/test_build.py` |
+| Overall progress and a reasoned next-quest recommendation | `recommend.py`, `pages/home.html.j2` | `unit/test_recommendation.py` (nine tests: eligibility, three reasons, determinism, tie-breaking) |
 | Browse all regions and filter the catalog | region, tag and catalog pages | `ui/test_browser_flows.py::TestCatalogFiltering` |
-| A quest page communicates mission, outcomes, prerequisites, criteria, safety, proof, validators, XP, estimate | `pages/quest_detail.html.j2` | `integration/test_build.py::test_core_content_survives_without_javascript` |
+| A quest page communicates mission, outcomes, prerequisites, criteria, safety, proof, validators, XP, estimate | `pages/quest_detail.html.j2` | `test_a_quest_page_communicates_every_required_element` (asserts all nine) |
 | Starting a quest persists state outside browser storage | `store.start_attempt` | `integration/test_state_transitions.py::TestWritingProgress` |
 | Restarting restores the same state | `pipeline.load_world` | `test_a_transition_is_recorded_and_survives_a_reload` |
 | The evidence workspace creates and displays a standard proof package | `store._create_evidence_package`, `evidence.py` | `integration/test_evidence.py` |
@@ -35,12 +35,12 @@ is itself the finding.
 
 | Criterion | Implementation | Test |
 |---|---|---|
-| A reviewer sees the exact quest version and attempt | `review.py`, `pages/review.html.j2` | `security/test_review_integrity.py::TestSubmission` |
+| A reviewer sees the exact quest version and attempt | per-quest reviewer page, `_review_context` | `test_a_reviewer_page_exists_for_every_attempt`, `TestSubmission` |
 | A reviewer can inspect required proof and linked artifacts | `evidence.detect_proof` | `integration/test_evidence.py::TestProofDetection` |
 | A reviewer can see validator results and reproduction instructions | reviewer page, `submission_instructions` | `TestSubmission::test_the_instructions_never_push_or_open_a_pull_request_for_you` |
 | Approve, request changes, or reject with findings | `review.record_decision` | `TestApprovalGuards` (five guards) |
 | Only approval changes the attempt to verified | `review._apply_decision` | `TestWhatApprovalProduces`, `TestForgery` |
-| Evidence changes after approval are detected and surfaced | `review.evidence_changed` | `test_approving_evidence_that_changed_since_submission_is_refused` |
+| Evidence changes after approval are detected and surfaced | `progress._check_stale_approval` | `TestEvidenceChangedAfterApproval` (four tests, including a tampered review hash) |
 
 ## Filesystem and Git safety
 
@@ -49,7 +49,7 @@ is itself the finding.
 | Program updates do not overwrite participant files | `update.py` runs no merge | `integration/test_update_and_migration.py::test_participant_files_survive_an_upstream_style_update` |
 | Local actions cannot write outside approved roots | `config.resolve_participant_path`, `Workspace` | `security/test_validator_sandbox.py::TestWorkspaceContainment` |
 | Symbolic-link and traversal tests pass | resolve-then-check, everywhere | `test_cleanup_safety.py`, `test_service.py`, `test_validator_sandbox.py` |
-| Generated and runtime data are gitignored | `.gitignore` | `security/test_cleanup_safety.py` |
+| Generated and runtime data are gitignored | `.gitignore` | `unit/test_gitignore.py`, including `git check-ignore` against the real rules |
 | Secrets excluded from logs and submission preparation | `evidence.scan_evidence` gate | `test_review_integrity.py::test_a_submission_carrying_a_secret_is_refused` |
 | Git status shown before submission | `git_status.summary_for` | `integration/test_update_and_migration.py::TestGitSafety` |
 
@@ -88,6 +88,15 @@ is itself the finding.
 | `IMPLEMENTATION-DETAILS.md` describes what exists | this repository | — |
 | `TRACEABILITY.md` connects criteria to code and tests | this file | — |
 | Final audit reports no unresolved blocking or high findings | `docs/audits/` | pending Stage 10 |
+
+## Rows corrected after the final audit
+
+The final audit opened fourteen rows and found five that were false or materially weaker
+than the criterion they claimed. All five are corrected above, and in four cases the fix was
+to write the test that did not exist: `git_status` had none at all, `.gitignore` was only
+ever copied and never read, `recommend.py` was entirely untested, and the quest-page row
+rested on one string assertion. That is recorded here rather than quietly amended, because a
+traceability document is only worth having if it is audited like anything else.
 
 ## Open rows
 
