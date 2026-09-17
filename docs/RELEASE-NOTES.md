@@ -65,7 +65,7 @@ here.
 1. **Reviewer provenance is conventional, not cryptographic** (ADR-030). A reviewer is
    identified by the display name in the record and by Git history. A participant with write
    access to their own repository could author a record naming someone else. Every
-   *internally inconsistent* claim is refused; the remaining gap is social. If your programme
+   *internally inconsistent* claim is refused; the remaining gap is social. If your program
    needs more, review through pull requests so the Git history carries the identity.
 2. **Environment Health reports build-time facts, not live ones.** A generated page cannot
    inspect the machine at the moment it is read. Live checks arrive with the service.

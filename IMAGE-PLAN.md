@@ -6,7 +6,7 @@ Style: Professional expedition field guide. Deep ink navy (#172433) and warm par
   and progress, muted region accents. Clean geometric shapes, generous whitespace, precise
   thin strokes. Flat vector illustration with subtle paper texture. No gradients on text,
   no drop shadows, no 3D, no photorealism, no cartoon characters, no gamified trophies or
-  confetti. It should look at home in an enterprise training programme, not a mobile game.
+  confetti. It should look at home in an enterprise training program, not a mobile game.
 Generator: gemini-3-pro-image-preview
 Quality: high
 Size: 1536x1024
@@ -111,12 +111,12 @@ relatively. A repository-root `media/` directory would leave every image on the 
 
 - **File**: docs/media/images/03-ownership-zones.png
 - **Page**: User guide, Section 6 — What the application writes
-- **Alt text**: "Three ownership zones side by side: programme-owned content and application
+- **Alt text**: "Three ownership zones side by side: program-owned content and application
   code, your own work and evidence, and machine-owned generated output that is disposable.
   Only the middle zone is yours, and nothing the application does replaces it."
 - **Description**: Three adjacent rectangular regions in a single row, drawn as areas on a
   field map rather than boxes in a diagram, separated by narrow parchment gutters and never
-  overlapping or nested. Left: programme-owned, flat ink-navy fill with a solid border.
+  overlapping or nested. Left: program-owned, flat ink-navy fill with a solid border.
   Centre: participant-owned, warm parchment fill with an amber-gold border, drawn noticeably
   taller and wider than its neighbours so it anchors the composition. Right: machine-owned,
   pale grey fill with a dashed border to suggest impermanence. Small folder glyphs sit inside
@@ -134,7 +134,7 @@ relatively. A repository-root `media/` directory would leave every image on the 
     zone only, muted palette, generous whitespace, no shadows.
   Aspect ratio: 3:2
   Background: warm parchment #f7f4ec
-  Text in image: three zone names "programme", "yours", "machine"; six short folder labels —
+  Text in image: three zone names "program", "yours", "machine"; six short folder labels —
     content, quest app, participant, evidence, generated, local data; key words "in git" and
     "not in git". No other text.
   Avoid: cloud icons, server racks, padlocks, database cylinders, 3D isometric views, nested
@@ -213,8 +213,7 @@ relatively. A repository-root `media/` directory would leave every image on the 
 
 ## Round 2 — corrections
 
-Round 1 generated all five. `03-ownership-zones` and `04-evidence-package` are correct and
-final. The other three each rendered clean text but got the content wrong, so each gets a v2
+Round 1 generated all five. `04-evidence-package` is correct and final. The other three each rendered clean text but got the content wrong, so each gets a v2
 entry rather than an edit. The v1 files stay on disk for comparison.
 
 What went wrong, and the lesson for later entries: a prompt that describes a *pattern*
@@ -346,6 +345,47 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
 
 ---
 
+### Image 9: 03-ownership-zones-v2
+
+- **File**: docs/media/images/03-ownership-zones-v2.png
+- **Fixes**: v1 labelled the left zone "programme". In British English that word most often
+  means a television or radio broadcast, and it is not the project's term either — the
+  codebase and `CLAUDE.md` say "program-owned" throughout, 42 uses against zero. The label is
+  now "program".
+- **Page**: User guide, Section 6 — What the application writes
+- **Alt text**: "Three ownership zones side by side: program-owned content and application
+  code, your own work and evidence, and machine-owned generated output that is disposable.
+  Only the middle zone is yours, and nothing the application does replaces it."
+- **Description**: Identical in every respect to v1, which was otherwise correct, with the
+  single change that the left zone is labelled "program" rather than "programme". Three
+  adjacent rectangular regions in a single row, drawn as areas on a field map rather than
+  boxes in a diagram, separated by narrow parchment gutters and never overlapping or nested.
+  Left: program-owned, flat ink-navy fill with a solid border, holding folder glyphs for
+  content and quest app. Centre: participant-owned, warm parchment fill with an amber-gold
+  border, drawn noticeably taller and wider than its neighbours so it anchors the composition,
+  holding folder glyphs for participant and evidence. Right: machine-owned, pale grey fill
+  with a dashed border to suggest impermanence, holding folder glyphs for generated and local
+  data. A compact two-line key in the lower right corner marks which zones are in Git, using a
+  filled dot and a hollow dot.
+- **Prompt**:
+  Goal: Make it immediately obvious which files belong to the participant, and that the
+    machine-owned zone is disposable and safe to delete.
+  Scene: Three adjacent map regions in one row, not nested and not overlapping — left solid
+    ink-navy with a solid border, centre warm parchment with an amber-gold border and visibly
+    larger than both neighbours, right pale grey with a dashed border — each holding two small
+    folder glyphs, plus a compact key in the lower right using a filled dot and a hollow dot.
+  Style: Flat vector field-guide map, thin precise borders, dashed border on the disposable
+    zone only, muted palette, generous whitespace, no shadows.
+  Aspect ratio: 3:2
+  Background: warm parchment #f7f4ec
+  Text in image: three zone names "program", "yours", "machine"; six short folder labels —
+    content, quest app, participant, evidence, generated, local data; key words "in git" and
+    "not in git". No other text.
+  Avoid: the word "programme" in any form, cloud icons, server racks, padlocks, database
+    cylinders, 3D isometric views, nested or overlapping regions, any sentence-length text
+
+---
+
 ## What was considered and left out
 
 | Candidate | Why not |
@@ -361,10 +401,10 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
 
 | | |
 |---|---|
-| Images | 5 generated, 3 corrections pending |
+| Images | 5 generated, 4 corrections pending |
 | Provider | Gemini `gemini-3-pro-image-preview` |
 | Round 1 actual | **$0.70** (5 images, 9,939 tokens, 89s) |
-| Round 2 estimate | **~$0.36** (3 × ~$0.12) |
+| Round 2 estimate | **~$0.48** (4 × ~$0.12) |
 
 ## If a take is wrong
 
@@ -375,4 +415,4 @@ the sidecar JSON records what changed between them.
 ## Approval state
 
 Round 1 (images 1-5) was approved and generated on 2026-09-17.
-Round 2 (images 6-8) is a proposal and has not been generated.
+Round 2 (images 6-9) is a proposal and has not been generated.

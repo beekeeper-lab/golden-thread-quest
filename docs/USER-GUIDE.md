@@ -10,7 +10,7 @@ Read the first three sections before you start. The rest is reference.
 
 ## 1. What this actually is
 
-A training programme you work through in your own Git repository, on your own machine.
+A training program you work through in your own Git repository, on your own machine.
 
 Most training either gives you videos or grades a quiz. This does neither. You do real work
 — synchronise a Jira board, write a test, normalise a transcript into context an agent can
@@ -168,7 +168,7 @@ recovered more work than any backup.
 
 ## 6. What the application writes, and what it never does
 
-![Three ownership zones side by side: programme-owned content and application code, your own work and evidence, and machine-owned generated output that is disposable. Only the middle zone is yours.](media/images/03-ownership-zones.png)
+![Three ownership zones side by side: program-owned content and application code, your own work and evidence, and machine-owned generated output that is disposable. Only the middle zone is yours.](media/images/03-ownership-zones.png)
 
 **Inside `participant/`, only these, only through documented actions:**
 
@@ -226,7 +226,7 @@ findings, resume the quest, address them, and resubmit. This is the normal path,
 failure.
 
 **One limitation, stated plainly:** this release identifies a reviewer by the name in the
-record and by Git history. Review records are not cryptographically signed. If your programme
+record and by Git history. Review records are not cryptographically signed. If your program
 needs stronger proof of who approved what, review through pull requests so the Git history
 carries the identity. `docs/guides/REVIEWER.md` says the same thing to reviewers.
 

@@ -35,16 +35,17 @@
 </nav>
 
 <div class="callout callout--warning" role="note">
-  <p class="mt-0"><strong>Three diagrams are pending correction.</strong> The first-hour flow,
-  the state-authority columns and the passport each contain a content error found on review:
-  two steps in the wrong lane, one state in the wrong column, and two invented figures that
-  show verified above claimed. They are marked below. The prose beside each one is correct and
+  <p class="mt-0"><strong>Four diagrams are pending correction.</strong> The first-hour flow,
+  the state-authority columns, the ownership zones and the passport each contain an error
+  found on review: two steps in the wrong lane, one state in the wrong column, a zone labelled
+  &ldquo;programme&rdquo;, and two invented figures that show verified above claimed. They are
+  marked below. The prose beside each one is correct and
   is what to trust until the corrected versions land.</p>
 </div>
 
 <section id="s1" class="card">
   <h2>1. What this actually is</h2>
-  <p>A training programme you work through in your own Git repository, on your own machine.</p>
+  <p>A training program you work through in your own Git repository, on your own machine.</p>
   <p>Most training either gives you videos or grades a quiz. This does neither. You do real
   work &mdash; synchronise a Jira board, write a test, normalise a transcript into context an
   agent can use &mdash; and you leave behind <strong>evidence</strong>: files, commands someone
@@ -243,9 +244,14 @@ source .venv/bin/activate</code></pre>
   <h2>6. What the application writes, and what it never does</h2>
 
   <figure class="diagram">
-    <img src="{{IMG_03}}" alt="Three ownership zones side by side: programme-owned content and application code, your own work and evidence, and machine-owned generated output that is disposable. Only the middle zone is yours." />
-    <figcaption class="diagram-caption">Three ownership zones. Only the middle one is yours,
-    and nothing the application does replaces it.</figcaption>
+    <img src="{{IMG_03}}" alt="Three ownership zones side by side: program-owned content and application code, your own work and evidence, and machine-owned generated output that is disposable. Only the middle zone is yours." />
+    <figcaption class="diagram-caption">
+      <span class="badge badge--warning">Pending correction</span>
+      Three ownership zones. Only the middle one is yours, and nothing the application does
+      replaces it. <strong>This version labels the left zone &ldquo;programme&rdquo;</strong>,
+      which reads as a broadcast and is not the project&rsquo;s term; it should say
+      &ldquo;program&rdquo;.
+    </figcaption>
   </figure>
 
   <h3>Inside <code>participant/</code>, only these, only through documented actions</h3>
@@ -323,7 +329,7 @@ source .venv/bin/activate</code></pre>
   <div class="callout callout--warning">
     <p class="mt-0 mb-0"><strong>One limitation, stated plainly.</strong> This release
     identifies a reviewer by the name in the record and by Git history. Review records are not
-    cryptographically signed. If your programme needs stronger proof of who approved what,
+    cryptographically signed. If your program needs stronger proof of who approved what,
     review through pull requests so the Git history carries the identity.
     <code>docs/guides/REVIEWER.md</code> says the same thing to reviewers.</p>
   </div>

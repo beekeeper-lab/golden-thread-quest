@@ -55,7 +55,7 @@ own repository could author a record naming you.
 What the application does enforce is internal consistency: a review that does not match the
 attempt, an approval with no verification statement, an approval of changed evidence, or a
 `verified` state with no approval behind it are all refused. The remaining gap is social, and
-it is documented rather than papered over. If your programme needs stronger provenance,
+it is documented rather than papered over. If your program needs stronger provenance,
 review through pull requests so the Git history carries the identity.
 
 ## What you should never have to handle
