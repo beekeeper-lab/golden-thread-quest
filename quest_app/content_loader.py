@@ -20,12 +20,17 @@ from pathlib import Path
 from typing import Any, Protocol
 
 import yaml
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator, FormatChecker
 
 from quest_app.config import SUPPORTED_SCHEMA_VERSION, AppConfig
 from quest_app.errors import ContentProblem, ProblemReport, Severity
 from quest_app.hashing import hash_mapping, hash_quest, hash_text
 from quest_app.markdown_render import render_markdown
+from quest_app.markdown_structure import (
+    all_top_level_items,
+    first_list_items,
+    split_sections,
+)
 from quest_app.models import (
     AcceptanceCriterion,
     Badge,
@@ -41,6 +46,7 @@ from quest_app.models import (
     Track,
     TrackBalance,
 )
+from quest_app.yaml_loader import DeepNestingError, strict_safe_load
 
 FRONT_MATTER = re.compile(r"\A---\r?\n(?P<yaml>.*?)\r?\n---\r?\n(?P<body>.*)\Z", re.S)
 HEADING = re.compile(r"^(#{1,6})\s+(?P<title>.+?)\s*$", re.M)
@@ -78,42 +84,91 @@ class ParsedDocument:
 
 
 def read_yaml(path: Path, config: AppConfig, report: ProblemReport) -> dict[str, Any] | None:
-    """Parse one YAML document with `safe_load` (ADR-025), reporting position on failure."""
+    """Parse one YAML document safely (ADR-025), reporting position on failure."""
     relative = config.relative(path)
+    text = read_text(path, relative, report)
+    if text is None:
+        return None
+    return parse_yaml_text(text, relative, report)
+
+
+def read_text(path: Path, relative: str, report: ProblemReport) -> str | None:
+    """File contents as text, or a problem that names no absolute path.
+
+    `str(OSError)` embeds the filename, which for a developer's checkout is an absolute path
+    under their home directory. `VIEW-MODEL-CONTRACT.md` forbids that in anything a browser
+    renders, so only the error's own description is reported (Stage 2 audit H5).
+
+    Read as `utf-8-sig` so a byte-order mark is consumed rather than becoming the first
+    character of the front-matter delimiter (Stage 2 audit L1).
+    """
     try:
-        text = path.read_text(encoding="utf-8")
-    except (OSError, UnicodeDecodeError) as exc:
+        return path.read_text(encoding="utf-8-sig")
+    except UnicodeDecodeError as exc:
+        report.add(
+            ContentProblem.build(
+                code="content.not_utf8",
+                severity=Severity.ERROR,
+                public_message="The file is not valid UTF-8 text.",
+                source=relative,
+                received=exc.reason,
+                suggestion="Save the file as UTF-8.",
+            )
+        )
+        return None
+    except OSError as exc:
         report.add(
             ContentProblem.build(
                 code="content.unreadable",
                 severity=Severity.ERROR,
-                public_message="The file could not be read as UTF-8 text.",
+                public_message="The file could not be read.",
                 source=relative,
-                received=str(exc),
-                suggestion="Save the file as UTF-8 without a byte-order mark.",
+                received=exc.strerror or "unknown error",
+                suggestion="Check the file's permissions.",
             )
         )
         return None
-    return parse_yaml_text(text, relative, report)
 
 
 def parse_yaml_text(
     text: str, relative: str, report: ProblemReport, *, line_offset: int = 0
 ) -> dict[str, Any] | None:
     try:
-        data = yaml.safe_load(text)
+        data = strict_safe_load(text)
+    except DeepNestingError:
+        report.add(
+            ContentProblem(
+                code="content.too_deeply_nested",
+                severity=Severity.ERROR,
+                public_message="The YAML in this file nests too deeply to parse.",
+                source=relative,
+                expected="a document nesting no more than a few levels",
+                suggestion="Content this deeply nested is almost always a mistake or an attack.",
+            )
+        )
+        return None
     except yaml.YAMLError as exc:
         mark = getattr(exc, "problem_mark", None)
+        duplicate = "duplicate key" in (getattr(exc, "problem", "") or "")
         report.add(
             ContentProblem.build(
-                code="content.invalid_yaml",
+                code="content.duplicate_key" if duplicate else "content.invalid_yaml",
                 severity=Severity.ERROR,
-                public_message="The YAML in this file could not be parsed.",
+                public_message=(
+                    "The same field is set twice in this file."
+                    if duplicate
+                    else "The YAML in this file could not be parsed."
+                ),
                 source=relative,
                 line=(mark.line + 1 + line_offset) if mark else None,
                 column=(mark.column + 1) if mark else None,
-                received=getattr(exc, "problem", None) or str(exc),
-                suggestion="Check indentation and that every value with a colon is quoted.",
+                received=getattr(exc, "problem", None) or "parse error",
+                suggestion=(
+                    "A later value silently wins over an earlier one, so a reviewer reading "
+                    "the diff would see a different value from the one that applies."
+                    if duplicate
+                    else "Check indentation and that every value containing a colon is quoted."
+                ),
                 documentation=DOC_ROUTE,
             )
         )
@@ -149,32 +204,34 @@ def split_front_matter(
 ) -> ParsedDocument | None:
     """Separate YAML front matter from the Markdown body of a quest file."""
     relative = config.relative(path)
-    try:
-        text = path.read_text(encoding="utf-8")
-    except (OSError, UnicodeDecodeError) as exc:
-        report.add(
-            ContentProblem.build(
-                code="content.unreadable",
-                severity=Severity.ERROR,
-                public_message="The file could not be read as UTF-8 text.",
-                source=relative,
-                received=str(exc),
-            )
-        )
+    text = read_text(path, relative, report)
+    if text is None:
         return None
     match = FRONT_MATTER.match(text)
     if match is None:
+        has_delimiters = text.lstrip().startswith("---") and text.count("\n---") >= 1
         report.add(
             ContentProblem(
-                code="content.missing_front_matter",
+                code="content.malformed_front_matter"
+                if has_delimiters
+                else "content.missing_front_matter",
                 severity=Severity.ERROR,
-                public_message="The quest has no YAML front matter.",
+                public_message=(
+                    "The front-matter block is not closed correctly."
+                    if has_delimiters
+                    else "The quest has no YAML front matter."
+                ),
                 source=relative,
                 line=1,
                 expected=(
-                    "the file to begin with a '---' line, YAML fields, then a closing '---' line"
+                    "the file to begin with a '---' line, YAML fields, then a closing "
+                    "'---' line followed by a newline"
                 ),
-                suggestion="Add the front-matter block described in the content-authoring guide.",
+                suggestion=(
+                    "Check that the closing '---' is on its own line and is followed by a newline."
+                    if has_delimiters
+                    else "Add the front-matter block described in the content-authoring guide."
+                ),
                 documentation=DOC_ROUTE,
             )
         )
@@ -203,7 +260,12 @@ class SchemaSet:
         for path in sorted(schemas_root.glob("*.schema.json")):
             schema = json.loads(path.read_text(encoding="utf-8"))
             Draft202012Validator.check_schema(schema)
-            self._validators[path.name.removesuffix(".schema.json")] = Draft202012Validator(schema)
+            # Without a format checker, `format: date-time` is documentation rather than a
+            # rule: `started_at: "banana"` produced no error, and every downstream
+            # comparison then fell back to string ordering of garbage (Stage 2 audit H6).
+            self._validators[path.name.removesuffix(".schema.json")] = Draft202012Validator(
+                schema, format_checker=FormatChecker()
+            )
 
     def names(self) -> list[str]:
         return sorted(self._validators)
@@ -291,57 +353,6 @@ def suggest(unknown: str, known: list[str]) -> str | None:
 # --------------------------------------------------------------------------------------
 
 
-def parse_sections(body: str) -> dict[str, tuple[str, str]]:
-    """Split a quest body on its `##` headings.
-
-    Returns `{key: (title, markdown)}`. The leading `# Title` and anything before the first
-    `##` are dropped: the title is front matter, and stray preamble has no place to render.
-    """
-    sections: dict[str, tuple[str, str]] = {}
-    headings = [m for m in HEADING.finditer(body) if len(m.group(1)) == 2]
-    for index, match in enumerate(headings):
-        title = match.group("title").strip()
-        key = SECTION_KEYS.get(title.casefold())
-        if key is None:
-            # An unrecognised heading is still the author's content; keep it under a slug so
-            # nothing silently disappears from the page.
-            key = re.sub(r"[^a-z0-9]+", "-", title.casefold()).strip("-") or f"section-{index}"
-        end = headings[index + 1].start() if index + 1 < len(headings) else len(body)
-        sections[key] = (title, body[match.end() : end].strip())
-    return sections
-
-
-def parse_acceptance_criteria(markdown: str) -> list[AcceptanceCriterion]:
-    """The ordered list under `## Acceptance criteria`, as stable positional IDs (ADR-016).
-
-    An ordered list is required. A bullet list is accepted with the same positional IDs
-    because authors write them, but the caller warns: numbering is what makes "criterion 3"
-    mean the same thing to a participant and a reviewer.
-    """
-    criteria: list[AcceptanceCriterion] = []
-    for line in markdown.splitlines():
-        match = ORDERED_ITEM.match(line) or BULLET_ITEM.match(line)
-        if match is None:
-            continue
-        text = match.group("text").strip()
-        if not text:
-            continue
-        number = len(criteria) + 1
-        criteria.append(
-            AcceptanceCriterion(
-                id=f"ac-{number}",
-                number=number,
-                text=text,
-                text_hash=hash_text(text),
-            )
-        )
-    return criteria
-
-
-def uses_ordered_list(markdown: str) -> bool:
-    return any(ORDERED_ITEM.match(line) for line in markdown.splitlines())
-
-
 # --------------------------------------------------------------------------------------
 # Normalization: validated dictionaries become models
 # --------------------------------------------------------------------------------------
@@ -380,8 +391,43 @@ def build_quest(document: ParsedDocument, report: ProblemReport) -> Quest | None
         )
         return None
 
+    duplicates = duplicate_section_titles(document.body)
+    if duplicates:
+        report.add(
+            ContentProblem.build(
+                code="content.quest.duplicate_heading",
+                severity=Severity.ERROR,
+                public_message="A heading appears more than once, so one copy would be discarded.",
+                source=document.relative,
+                entity_id=quest_id,
+                field_path="body",
+                expected="each '##' heading to appear once",
+                received=", ".join(duplicates),
+                suggestion="Merge the duplicate sections or rename one of them.",
+            )
+        )
+        return None
+
     _, criteria_markdown = sections_raw["acceptance_criteria"]
-    criteria = parse_acceptance_criteria(criteria_markdown)
+    criteria, ordered, has_empty = parse_acceptance_criteria(criteria_markdown)
+    if has_empty:
+        report.add(
+            ContentProblem(
+                code="content.quest.empty_criterion",
+                severity=Severity.ERROR,
+                public_message="An acceptance criterion is empty.",
+                source=document.relative,
+                entity_id=quest_id,
+                field_path="body.acceptance_criteria",
+                expected="every list item to state a criterion",
+                suggestion=(
+                    "An empty item would shift the identifier of every criterion after it, "
+                    "so a reviewer finding pinned to 'ac-3' would silently move."
+                ),
+                documentation=DOC_ROUTE,
+            )
+        )
+        return None
     if not criteria:
         report.add(
             ContentProblem(
@@ -399,7 +445,32 @@ def build_quest(document: ParsedDocument, report: ProblemReport) -> Quest | None
             )
         )
         return None
-    if not uses_ordered_list(criteria_markdown):
+
+    orphaned = orphaned_list_items(criteria_markdown)
+    if orphaned:
+        report.add(
+            ContentProblem.build(
+                code="content.quest.split_criteria_list",
+                severity=Severity.ERROR,
+                public_message=(
+                    f"{orphaned} acceptance criterion item(s) are in a second list and would "
+                    "not be used."
+                ),
+                source=document.relative,
+                entity_id=quest_id,
+                field_path="body.acceptance_criteria",
+                expected="one unbroken list",
+                received=f"{orphaned} item(s) outside the first list",
+                suggestion=(
+                    "A paragraph between items starts a new list. Move the explanation inside "
+                    "the item it belongs to, or above the list."
+                ),
+                documentation=DOC_ROUTE,
+            )
+        )
+        return None
+
+    if not ordered:
         report.add(
             ContentProblem(
                 code="content.quest.unnumbered_criteria",
@@ -410,8 +481,8 @@ def build_quest(document: ParsedDocument, report: ProblemReport) -> Quest | None
                 field_path="body.acceptance_criteria",
                 expected="a numbered list",
                 suggestion=(
-                    "Number the criteria. Participants and reviewers refer to them by number, "
-                    "and the identifiers are positional either way."
+                    "Number the criteria. Identifiers are positional either way (ADR-026), "
+                    "but participants and reviewers refer to them by number."
                 ),
             )
         )
@@ -768,3 +839,69 @@ def _register(
         )
         return
     destination[entity_id] = model
+
+
+# --------------------------------------------------------------------------------------
+# Quest body structure, read from the Markdown token stream (see markdown_structure.py)
+# --------------------------------------------------------------------------------------
+
+
+def parse_sections(body: str) -> dict[str, tuple[str, str]]:
+    """`{key: (title, markdown)}` for each `##` section of a quest body.
+
+    A canonical heading maps to its documented key. Anything else gets a slugged key with a
+    `custom-` prefix, so an author's `## Mission!` can never masquerade as `## Mission` and
+    satisfy the required-heading check (Stage 2 audit M3).
+    """
+    sections: dict[str, tuple[str, str]] = {}
+    for index, section in enumerate(split_sections(body)):
+        key = SECTION_KEYS.get(section.title.casefold())
+        if key is None:
+            slug = re.sub(r"[^a-z0-9]+", "-", section.title.casefold()).strip("-")
+            key = f"custom-{slug or index}"
+        sections[key] = (section.title, section.markdown)
+    return sections
+
+
+def duplicate_section_titles(body: str) -> list[str]:
+    """Headings that appear more than once, which would silently overwrite each other."""
+    seen: dict[str, int] = {}
+    for section in split_sections(body):
+        seen[section.title] = seen.get(section.title, 0) + 1
+    return sorted(title for title, count in seen.items() if count > 1)
+
+
+def parse_acceptance_criteria(markdown: str) -> tuple[list[AcceptanceCriterion], bool, bool]:
+    """Criteria from the first list, whether it was numbered, and whether any item is empty.
+
+    Only the direct items of the first list count. `markdown_structure` does the parsing;
+    this adds the positional IDs and hashes ADR-016 defines.
+    """
+    items, ordered = first_list_items(markdown)
+    criteria: list[AcceptanceCriterion] = []
+    has_empty = False
+    for item in items:
+        if item.is_empty:
+            has_empty = True
+            continue
+        number = len(criteria) + 1
+        criteria.append(
+            AcceptanceCriterion(
+                id=f"ac-{number}",
+                number=number,
+                text=item.text,
+                text_hash=hash_text(item.text),
+            )
+        )
+    return criteria, ordered, has_empty
+
+
+def orphaned_list_items(markdown: str) -> int:
+    """How many top-level list items in the section are not part of the first list.
+
+    A numbered list interrupted by a paragraph parses as two lists. The author sees five
+    criteria; only the first list is used. Counting the remainder lets the loader say so
+    rather than quietly dropping them.
+    """
+    first, _ = first_list_items(markdown)
+    return max(len(all_top_level_items(markdown)) - len(first), 0)

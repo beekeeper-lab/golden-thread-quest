@@ -13,7 +13,7 @@ and a build that shrugs at a broken reference ships a dead link to a participant
 from __future__ import annotations
 
 from quest_app.errors import ContentProblem, ProblemReport, Severity
-from quest_app.models import ContentBundle, Quest
+from quest_app.models import AttemptState, ContentBundle, Quest
 from quest_app.progress import ParticipantProgress
 
 DOC_ROUTE = "/docs/content-authoring/"
@@ -510,6 +510,45 @@ def validate_progress_against_content(
                     field_path="attempts[].quest_version",
                     suggestion=(
                         "In-progress work is never migrated automatically. The quest page says so."
+                    ),
+                )
+            )
+
+        if attempt.content_hash != quest.content_hash:
+            # The hash is what distinguishes "the quest text changed" from "the version
+            # number changed". Stored and never compared, it was decoration: 64 zeros
+            # validated (Stage 2 audit H4).
+            #
+            # A mismatch is always a warning, never a build error, including for a verified
+            # attempt. `CONTENT-MODEL.md` is explicit that "previously verified attempts
+            # remain verified unless a documented program policy explicitly revokes them",
+            # and the hash covers editorial fields too, so failing the build here would let
+            # a typo fix in a Hints section invalidate someone's approved work. The
+            # participant's and reviewer's job is to be told; the build's job is not to
+            # stop. Surfacing a stale approval in the interface is Stage 7's changed-evidence
+            # detection, which this warning feeds.
+            verified = attempt.recorded_state is AttemptState.VERIFIED
+            report.add(
+                ContentProblem.build(
+                    code="progress.content_hash_mismatch",
+                    severity=Severity.WARNING,
+                    public_message=(
+                        f"Attempt {attempt.attempt_id!r} was approved against a different "
+                        f"version of the text of {quest.id!r}, so the approval may be stale."
+                        if verified
+                        else f"The text of {quest.id!r} has changed since attempt "
+                        f"{attempt.attempt_id!r} was recorded."
+                    ),
+                    source=progress.source,
+                    entity_id=attempt.attempt_id,
+                    field_path="attempts[].content_hash",
+                    expected=quest.content_hash,
+                    received=attempt.content_hash,
+                    suggestion=(
+                        "The approval stands. A reviewer may re-review if the acceptance "
+                        "criteria changed materially."
+                        if verified
+                        else "Your work is untouched. The quest page shows what changed."
                     ),
                 )
             )

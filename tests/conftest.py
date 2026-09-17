@@ -48,7 +48,7 @@ def content_repo(tmp_path: Path) -> Path:
     """
     import shutil
 
-    for name in ("content", "schemas"):
+    for name in ("content", "schemas", "templates", "assets"):
         shutil.copytree(REPO_ROOT / name, tmp_path / name)
     shutil.copytree(REPO_ROOT / "fixtures" / "participant", tmp_path / "participant")
     return tmp_path

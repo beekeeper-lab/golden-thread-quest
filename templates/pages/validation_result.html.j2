@@ -1,0 +1,59 @@
+{# U07 — "What passed, what failed, why, and how do I reproduce it?" #}
+{% extends "layouts/base.html.j2" %}
+
+{% block main %}
+<header class="page-heading">
+  <p class="eyebrow">Validation result · {{ quest.title }}</p>
+  <h1>{{ outcome_label }}</h1>
+  <p>{{ outcome_explanation }}</p>
+</header>
+
+<section class="panel" aria-labelledby="run-heading">
+  <h2 id="run-heading">This run</h2>
+  <dl class="definition-list">
+    <dt>Validator</dt><dd>{{ result.validator_id }} version {{ result.validator_version }}</dd>
+    <dt>Run</dt><dd><code>{{ result.run_id }}</code></dd>
+    <dt>Started</dt><dd><time datetime="{{ result.started_at }}" data-format>{{ result.started_at }}</time></dd>
+    <dt>Duration</dt><dd>{{ result.duration_ms }} ms</dd>
+    {% for key, value in result.environment.items() %}
+    <dt>{{ key | replace('_', ' ') | capitalize }}</dt><dd>{{ value }}</dd>
+    {% endfor %}
+  </dl>
+</section>
+
+{# C13 — summary, then findings by severity, then raw detail. #}
+<section class="stack" aria-labelledby="checks-heading">
+  <h2 id="checks-heading">Checks</h2>
+  <ul class="checklist">
+    {% for check in result.checks %}
+    <li>
+      <div class="card-header">
+        <strong>{{ check.summary }}</strong>
+        <span class="state state-{{ 'locally_validated' if check.outcome == 'pass' else ('needs_changes' if check.outcome in ('fail', 'warning') else 'available') }}">{{ check.outcome | capitalize }}</span>
+      </div>
+      {% if check.severity %}<p class="authority">Severity: {{ check.severity }}</p>{% endif %}
+      {% if check.evidence %}<p>{{ check.evidence }}</p>{% endif %}
+      {% if check.suggested_action %}<p><strong>Next:</strong> {{ check.suggested_action }}</p>{% endif %}
+      {% if check.artifact %}<p class="authority"><code>{{ check.artifact }}</code></p>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+{% if result.output_excerpt %}
+<details>
+  <summary>Captured output{% if result.output_truncated %} (truncated){% endif %}</summary>
+  {# Rendered as text, never as HTML: validator output is untrusted
+     (docs/SECURITY-AND-PRIVACY.md). #}
+  <pre><code>{{ result.output_excerpt }}</code></pre>
+  <p class="authority">
+    {% if result.redaction_applied %}Secret-like values were replaced before this was stored.{% endif %}
+    {% if result.result_path %}Full result: <code>{{ result.result_path }}</code>{% endif %}
+  </p>
+</details>
+{% endif %}
+
+<p class="button-row">
+  <a class="button" href="{{ url(evidence_route) }}">Back to evidence</a>
+</p>
+{% endblock %}

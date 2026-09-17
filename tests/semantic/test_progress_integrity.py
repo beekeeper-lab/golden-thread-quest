@@ -188,15 +188,46 @@ class TestRecordIntegrity:
         load_world(config, report)
         assert "progress.future_quest_version" in codes(report)
 
-    def test_attempt_on_an_older_quest_version_only_warns(
+    def test_editing_a_verified_quest_warns_and_does_not_break_the_build(
         self, config: AppConfig, report: ProblemReport
     ) -> None:
-        """In-progress work is never migrated automatically, so this is information, not a fault."""
+        """Editing a quest someone has already had approved must not fail the build.
+
+        `CONTENT-MODEL.md`: previously verified attempts remain verified unless a documented
+        policy revokes them. The build reports a possibly-stale approval and continues
+        (ADR-028). Making this an error was the first thing tried, and this test is why it
+        is not.
+        """
         quest = config.repo_root / "content" / "quests" / "base-camp" / "repository-safety.md"
         quest.write_text(quest.read_text().replace("version: 1", "version: 2", 1))
+
         world = load_world(config, report)
+
         assert world is not None, report.to_text()
-        assert "progress.outdated_quest_version" in {p.code for p in report.warnings}
+        warnings = {p.code for p in report.warnings}
+        assert "progress.outdated_quest_version" in warnings
+        assert "progress.content_hash_mismatch" in warnings
+
+    def test_a_changed_content_hash_is_reported(
+        self, config: AppConfig, report: ProblemReport
+    ) -> None:
+        """Stored and never compared, the hash was decoration: 64 zeros validated."""
+
+        def mutate(data: dict[str, object]) -> None:
+            data["attempts"][0]["content_hash"] = "sha256:" + "0" * 64  # type: ignore[index]
+
+        edit_progress(config, mutate)
+        world = load_world(config, report)
+
+        assert world is not None, report.to_text()
+        assert "progress.content_hash_mismatch" in {p.code for p in report.warnings}
+
+    def test_the_fixture_carries_real_content_hashes(
+        self, config: AppConfig, report: ProblemReport
+    ) -> None:
+        """A fixture with placeholder hashes cannot prove the comparison works."""
+        load_world(config, report)
+        assert "progress.content_hash_mismatch" not in {p.code for p in report.problems}
 
 
 @pytest.mark.parametrize("state", ["submitted", "needs_changes", "locally_validated"])

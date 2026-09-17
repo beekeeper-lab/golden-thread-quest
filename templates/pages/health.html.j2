@@ -1,0 +1,54 @@
+{# U09 — "Is my local environment ready, safe and connected enough?"
+
+   Checks distinguish required, optional, warning and informational, and every failure
+   carries the command that fixes it. No secret value is ever displayed — only whether a
+   credential is present. #}
+{% extends "layouts/base.html.j2" %}
+
+{% block main %}
+<header class="page-heading">
+  <h1>{{ page.heading }}</h1>
+  <p>{{ page.description }}</p>
+</header>
+
+{% set failing = checks | selectattr('status', 'equalto', 'fail') | list %}
+{% if failing %}
+<div class="alert alert-error" role="alert">
+  <h2>{{ failing | length }} check(s) need attention</h2>
+  <p>Each one below lists the command that fixes it.</p>
+</div>
+{% else %}
+<div class="alert alert-success" role="status">
+  <h2>Your environment is ready</h2>
+  <p>Every required check passed.</p>
+</div>
+{% endif %}
+
+{# C14 — one row per dependency or safety condition. #}
+<div class="table-scroll">
+  <table>
+    <caption class="visually-hidden">Environment checks</caption>
+    <thead>
+      <tr>
+        <th scope="col">Check</th><th scope="col">Importance</th>
+        <th scope="col">Status</th><th scope="col">Detail</th><th scope="col">Fix</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for check in checks %}
+    <tr>
+      <th scope="row">{{ check.name }}</th>
+      <td>{{ check.importance }}</td>
+      <td>
+        <span class="state state-{{ 'locally_validated' if check.status == 'pass' else ('needs_changes' if check.status == 'warning' else ('locked' if check.status == 'fail' else 'available')) }}">
+          {{ check.status | capitalize }}
+        </span>
+      </td>
+      <td>{{ check.detail }}</td>
+      <td>{% if check.remediation %}<code>{{ check.remediation }}</code>{% else %}—{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -84,6 +84,32 @@ def validate_command(args: argparse.Namespace) -> int:
     return EXIT_OK if world is not None else EXIT_CONTENT_ERROR
 
 
+def build_command(args: argparse.Namespace) -> int:
+    """Generate the site, or refuse and leave the last good one in place."""
+    from quest_app.build import build_site
+
+    config = _config_from_args(args)
+    report = ProblemReport()
+    world = load_world(config, report)
+    _report_problems(report, args.json)
+    if world is None:
+        if not args.json:
+            _summarize(report, world)
+            print(
+                "nothing was generated; the previous output, if any, is untouched",
+                file=sys.stderr,
+            )
+        return EXIT_CONTENT_ERROR
+    result = build_site(world)
+    if not args.json:
+        print(
+            f"built {result.page_count} page(s) into {config.relative(config.generated_root)}",
+            file=sys.stderr,
+        )
+        _summarize(report, world)
+    return EXIT_OK
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="quest", description=__doc__.splitlines()[0])
     parser.add_argument("--version", action="version", version=APPLICATION_VERSION)
@@ -92,6 +118,10 @@ def build_parser() -> argparse.ArgumentParser:
     validate = subparsers.add_parser("validate", help="Validate content and participant state")
     _common_arguments(validate)
     validate.set_defaults(func=validate_command)
+
+    build = subparsers.add_parser("build", help="Generate the site into generated/")
+    _common_arguments(build)
+    build.set_defaults(func=build_command)
 
     return parser
 
@@ -104,6 +134,10 @@ def main(argv: list[str] | None = None) -> int:
 
 def validate_main() -> int:
     return main(["validate", *sys.argv[1:]])
+
+
+def build_main() -> int:
+    return main(["build", *sys.argv[1:]])
 
 
 if __name__ == "__main__":

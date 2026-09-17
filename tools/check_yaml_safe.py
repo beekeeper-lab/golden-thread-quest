@@ -15,6 +15,10 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 FORBIDDEN = re.compile(
     r"\byaml\.(?:unsafe_load|full_load|load)\s*\(|\byaml\.Loader\b|\byaml\.UnsafeLoader\b"
 )
+# The single audited exception: quest_app/yaml_loader.py calls yaml.load with
+# StrictSafeLoader, which is SafeLoader plus a duplicate-key check. Naming the file rather
+# than pattern-matching the loader keeps the rule impossible to widen by accident.
+ALLOWED_FILES = frozenset({"quest_app/yaml_loader.py"})
 SEARCH_DIRS = ("quest_app", "validators", "tools", "tests")
 
 
@@ -22,7 +26,8 @@ def main() -> int:
     findings: list[str] = []
     for directory in SEARCH_DIRS:
         for path in sorted((REPO_ROOT / directory).rglob("*.py")):
-            if path.name == "check_yaml_safe.py":
+            relative = path.relative_to(REPO_ROOT).as_posix()
+            if path.name == "check_yaml_safe.py" or relative in ALLOWED_FILES:
                 continue
             for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
                 if FORBIDDEN.search(line):

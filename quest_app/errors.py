@@ -10,6 +10,7 @@ that it will be rendered in a browser.
 from __future__ import annotations
 
 import enum
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Self
@@ -112,6 +113,11 @@ class ContentProblem:
             if value is not None:
                 data[key] = value
         return data
+
+
+def _looks_absolute(text: str) -> bool:
+    """Whether `text` contains something shaped like an absolute filesystem path."""
+    return bool(re.search(r"(?:^|[\s'\"(])(?:/[^\s'\"]*/|[A-Za-z]:\\)", text))
 
 
 def summarize_received(value: object) -> str | None:

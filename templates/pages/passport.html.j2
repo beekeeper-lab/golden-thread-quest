@@ -1,0 +1,93 @@
+{# U08 — "What have I credibly demonstrated?" A portfolio summary, not a score screen. #}
+{% extends "layouts/base.html.j2" %}
+{% from "components/region_card.html.j2" import region_card %}
+{% from "components/meter.html.j2" import meter %}
+
+{% block main %}
+<header class="page-heading">
+  <p class="eyebrow">{{ participant.track_title if participant else 'Passport' }}</p>
+  <h1>{{ participant.display_name if participant else page.heading }}</h1>
+  <p>{{ page.description }}</p>
+</header>
+
+<section class="panel stack" aria-labelledby="totals-heading">
+  <h2 id="totals-heading">Progress</h2>
+  <div class="totals">
+    <dl class="total"><dt>Claimed XP</dt><dd>{{ totals.claimed_xp }}</dd></dl>
+    <dl class="total is-verified"><dt>Verified XP</dt><dd>{{ totals.verified_xp }}</dd></dl>
+    <dl class="total"><dt>Verified quests</dt><dd>{{ totals.verified_quests }}</dd></dl>
+  </div>
+  {{ meter(totals.verified_quests, totals.total_quests, 'Verified quests', 'reviewer', totals.claimed_quests, 'Claimed') }}
+  <p class="authority">Verified XP is awarded only by a reviewer approval. Claimed XP is your own record.</p>
+</section>
+
+<section class="stack" aria-labelledby="capability-heading">
+  <h2 id="capability-heading">Capability by region</h2>
+  <div class="card-grid">
+    {% for card in regions %}{{ region_card(card, url) }}{% endfor %}
+  </div>
+</section>
+
+{# C15 — every badge states which authority awarded it. #}
+<section class="stack" aria-labelledby="badges-heading">
+  <h2 id="badges-heading">Badges</h2>
+  <div class="card-grid">
+    {% for entry in badges %}
+    <article class="card">
+      <div class="card-header">
+        <h3>{{ entry.badge.title }}</h3>
+        <span class="state state-{{ 'verified' if entry.earned else ('submitted' if entry.pending_review else 'locked') }}">
+          {{ 'Earned' if entry.earned else ('Pending review' if entry.pending_review else 'Not yet') }}
+        </span>
+      </div>
+      <p>{{ entry.badge.summary }}</p>
+      <p class="authority">{{ entry.badge.award_label }}</p>
+      <p class="authority">{{ entry.reason }}</p>
+      {% if entry.pending_review %}
+      <p>You meet the criteria. A reviewer has to award it, so it is not yours until they do.</p>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+{% if timeline %}
+{# C16 — full timestamps preserved for auditability. #}
+<section class="stack" aria-labelledby="timeline-heading">
+  <h2 id="timeline-heading">Verified work</h2>
+  <div class="table-scroll">
+    <table>
+      <caption class="visually-hidden">Timeline of verified quests</caption>
+      <thead><tr><th scope="col">When</th><th scope="col">What</th><th scope="col">Authority</th></tr></thead>
+      <tbody>
+      {% for event in timeline %}
+      <tr>
+        <td><time datetime="{{ event.occurred_at }}" data-format>{{ event.occurred_at }}</time></td>
+        <td>{% if event.route %}<a href="{{ url(event.route) }}">{{ event.summary }}</a>{% else %}{{ event.summary }}{% endif %}</td>
+        <td>{{ event.authority | replace('_', ' ') }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if capability_gaps %}
+<section class="panel" aria-labelledby="breadth-heading">
+  <h2 id="breadth-heading">Where to go for breadth</h2>
+  <ul>{% for gap in capability_gaps %}<li>{{ gap }}</li>{% endfor %}</ul>
+</section>
+{% endif %}
+
+<section class="panel stack" aria-labelledby="public-heading">
+  <h2 id="public-heading">Sanitized public summary</h2>
+  <p>This is everything that would leave your machine if you chose to share progress. Nothing leaves it by default.</p>
+  <dl class="definition-list">
+    {% for key, value in public_preview.items() %}
+    <dt>{{ key | replace('_', ' ') | capitalize }}</dt><dd>{{ value }}</dd>
+    {% endfor %}
+  </dl>
+  <p class="authority">No evidence paths, repository URLs, ticket contents, credentials or email addresses appear here.</p>
+</section>
+{% endblock %}

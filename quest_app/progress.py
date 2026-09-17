@@ -236,8 +236,32 @@ def load_participant_state(
 
         for result_path in sorted((evidence_dir / "validation").glob("*.json")):
             result = _load_validation(result_path, config, schemas, report)
-            if result is not None:
-                validations.setdefault(result.attempt_id, []).append(result)
+            if result is None:
+                continue
+            # Filed by the directory it was found in, never by the attempt_id inside it. A
+            # record that disagrees with its own location is reported rather than quietly
+            # re-filed: that is the path a forged local validation would take, and under
+            # ADR-017 these records are what `locally_validated` is derived from
+            # (Stage 2 audit M5).
+            if result.attempt_id != attempt.attempt_id or result.quest_id != attempt.quest_id:
+                report.add(
+                    ContentProblem.build(
+                        code="validation.record_in_wrong_place",
+                        severity=Severity.ERROR,
+                        public_message=(
+                            "A validation result claims to belong to a different attempt "
+                            "from the one whose evidence directory holds it."
+                        ),
+                        source=result.source,
+                        entity_id=result.run_id,
+                        field_path="attempt_id",
+                        expected=f"attempt {attempt.attempt_id!r} of quest {attempt.quest_id!r}",
+                        received=f"attempt {result.attempt_id!r} of quest {result.quest_id!r}",
+                        suggestion="Move the file to the attempt it belongs to, or delete it.",
+                    )
+                )
+                continue
+            validations.setdefault(attempt.attempt_id, []).append(result)
 
     _check_integrity(progress, reviews, relative, report)
 
@@ -324,14 +348,29 @@ def _load_validation(
     relative = config.relative(path)
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+    except json.JSONDecodeError as exc:
+        report.add(
+            ContentProblem.build(
+                code="validation.invalid_json",
+                severity=Severity.ERROR,
+                public_message="A validation result file is not valid JSON.",
+                source=relative,
+                line=exc.lineno,
+                column=exc.colno,
+                received=exc.msg,
+            )
+        )
+        return None
+    except (OSError, UnicodeDecodeError) as exc:
+        # Never str(exc): it embeds an absolute path (Stage 2 audit H5).
+        detail = exc.strerror if isinstance(exc, OSError) else exc.reason
         report.add(
             ContentProblem.build(
                 code="validation.unreadable",
                 severity=Severity.ERROR,
-                public_message="A validation result file could not be read as JSON.",
+                public_message="A validation result file could not be read.",
                 source=relative,
-                received=str(exc),
+                received=detail or "unknown error",
             )
         )
         return None

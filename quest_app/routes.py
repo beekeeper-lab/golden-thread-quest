@@ -75,27 +75,30 @@ def asset(path: str, *, fingerprint: str | None = None) -> str:
     return f"{url}?v={fingerprint}" if fingerprint else url
 
 
-def relative_to(route: str, current: str) -> str:
-    """`route` expressed relative to `current`, so the site works opened from a file path.
+def relative_to(target: str, current: str) -> str:
+    """`target` expressed relative to the page at `current`.
 
-    A generated page has to work in two contexts: served from the local service, where a
-    leading slash is the site root, and double-clicked from `generated/`, where it is the
-    filesystem root. Relative links are the only form that works in both.
+    A generated page has to work in two contexts: served by the local service, where a
+    leading slash is the site root, and opened straight from `generated/`, where a leading
+    slash is the filesystem root. Relative links are the only form that works in both.
+
+    A route ending in `/` is a page directory and keeps its slash; anything else — a
+    stylesheet, a script — is a file and must not gain one. Appending a slash to every
+    target turned every asset link into a directory that does not exist.
     """
-    if not route.startswith("/"):
-        return route
-    target_parts = [p for p in route.split("/") if p]
-    current_parts = [p for p in current.split("/") if p]
-    # A page lives at <route>index.html, so its directory is the route itself.
-    depth = len(current_parts)
-    anchor = ""
-    if "#" in route:
-        target_parts[-1], _, anchor_text = target_parts[-1].partition("#")
-        anchor = f"#{anchor_text}"
-        if not target_parts[-1]:
-            target_parts.pop()
+    if not target.startswith("/"):
+        return target
+
+    path, _, fragment = target.partition("#")
+    is_directory = path.endswith("/")
+    target_parts = [part for part in path.split("/") if part]
+    # `current` is a page route, so the page lives at <current>index.html and its directory
+    # depth is the number of segments in the route.
+    depth = len([part for part in current.split("/") if part])
+
     prefix = "../" * depth if depth else "./"
     tail = "/".join(target_parts)
-    if tail:
+    if tail and is_directory:
         tail += "/"
-    return f"{prefix}{tail}{anchor}" or "./"
+    result = f"{prefix}{tail}" or "./"
+    return f"{result}#{fragment}" if fragment else result

@@ -106,8 +106,9 @@ Evidence and reasoning: `docs/audits/stage-00-planning-audit.md`.
 `text_hash` of its normalized text. Reviewer findings and evidence status reference the positional ID.
 A build error is raised when the heading is missing or contains no ordered list.
 
-**Reason:** `COMPONENT-CATALOG.md` C10, `VIEW-MODEL-CONTRACT.md`, and the shipped
-`quest-detail.html.j2` all require stable criterion IDs, while `CONTENT-MODEL.md` forbids duplicating
+**Reason:** `COMPONENT-CATALOG.md` C10, `VIEW-MODEL-CONTRACT.md`, and the quest-detail page
+(`templates/pages/quest_detail.html.j2`, which renders each criterion at its own
+`criterion-ac-<n>` anchor) all require stable criterion IDs, while `CONTENT-MODEL.md` forbids duplicating
 the criteria into front matter. Deriving them keeps one copy. The `text_hash` makes a silent change of
 meaning under a stable ID detectable, which is what the quest `version` rule already asks an author to
 declare.
@@ -198,3 +199,91 @@ and a lint rule enforces it.
 
 **Reason:** `IMPLEMENTATION-PLAN.md` Stage 2 requires safe YAML parsing. Authored content, participant
 state, and review records are all inputs that can arrive from a pull request.
+
+---
+
+## Stage 2 audit decisions (2026-09-16)
+
+Recorded after the independent Stage 2 audit returned `fail`.
+Findings and evidence: `docs/audits/stage-02-content-audit.md`.
+
+## ADR-026 — An unnumbered acceptance-criteria list is a warning, not an error
+
+**Decision:** ADR-016 is amended. A bullet list under `## Acceptance criteria` produces
+positional IDs exactly as a numbered list does, and a warning asking the author to number
+them. It is not a build error. An **empty** item *is* an error, and so is a list split in
+two by an intervening paragraph.
+
+**Reason:** ADR-016 as first written said "a build error is raised when the heading is
+missing or contains no ordered list". The audit found that all three shipped quests use
+bullet lists, so the package the decision log describes does not build — the code and the
+decision disagreed, and neither had been chosen deliberately.
+
+Numbering is the right thing to ask for, because participants and reviewers refer to
+criteria by number. But it is a presentation nicety: the identifier is `ac-<n>` derived from
+position either way, so an unnumbered list is not *less* stable, only less readable. The
+failures that actually break ADR-016's promise are the ones now escalated to errors:
+
+* an **empty item** shifts the identifier of every criterion after it, so a reviewer finding
+  pinned to `ac-3` silently moves to a different criterion;
+* a **split list** means the author wrote five criteria and the build used two, with no
+  message.
+
+Refusing to build over a bullet would block authors on a formatting preference while those
+two real defects passed. This inverts that.
+
+## ADR-027 — Markdown structure is read from the token stream, never from lines
+
+**Decision:** Section splitting and acceptance-criteria extraction parse the Markdown token
+stream (`quest_app/markdown_structure.py`). Line-oriented regexes are not used for either.
+
+**Reason:** The first implementation matched headings and list items with regexes, and the
+audit broke it four ways: a nested sub-detail became a top-level criterion, a fenced code
+block containing numbers became criteria, an empty item renumbered everything after it, and
+a criterion continued onto a second line lost that line from the model, the page *and* its
+own hash — so editing it did not change the hash that staleness detection depends on.
+
+All four are one mistake: treating Markdown as lines rather than as a document. The parser
+already knows that `##` inside a fence is text and that an indented list is nested. Asking
+it is also the only way the loader and the renderer can agree, and ADR-016's promise is
+precisely that `ac-3` means the same criterion on the page and in a reviewer's finding.
+
+## ADR-028 — A content-hash mismatch is surfaced, never fatal
+
+**Decision:** `attempts[].content_hash` is compared to the quest's current content hash on
+every load. A mismatch is a **warning**, with different wording for a verified attempt
+("the approval may be stale") and for work in progress ("the text has changed since you
+started"). It is never a build error.
+
+**Reason, part one — why compare at all.** The hash was required, stored, and compared to
+nothing: 64 zeros validated. It is the only thing that distinguishes "the quest text
+changed" from "the version number changed", and without it a reviewer's approval of one set
+of acceptance criteria silently applies to a different set.
+
+**Reason, part two — why a warning.** The first version of this decision made a mismatch an
+error for a verified attempt, and implementing it immediately broke a test for the right
+reason: editing a verified quest's text made the build fail. That contradicts
+`CONTENT-MODEL.md`, which says "previously verified attempts remain verified unless a
+documented program policy explicitly revokes them" — and the hash deliberately covers the
+whole front matter and body, so a typo fix in a Hints section would have invalidated
+someone's approved work.
+
+The participant and the reviewer need to be told. The build does not need to stop. Stage 7's
+changed-evidence detection is where a possibly-stale approval becomes visible in the
+interface, and this warning is what feeds it.
+
+The integrity **error** stays where it belongs: a `verified` state with no valid approval
+behind it at all (ADR-011).
+
+## ADR-029 — Duplicate YAML keys and unbounded nesting are refused
+
+**Decision:** All YAML is read through `StrictSafeLoader` (`quest_app/yaml_loader.py`), which
+is `SafeLoader` plus a duplicate-key error, and `RecursionError` from deep nesting becomes an
+ordinary reported problem. `tools/check_yaml_safe.py` names this one file as the audited
+exception to the `yaml.load` ban.
+
+**Reason:** `xp: 10` followed by `xp: 90` parsed as 90 while a reviewer reading the diff saw
+10. Content that means one thing in review and another at build time defeats the entire
+point of validating authored content in a pull request. Separately, around nine hundred
+levels of nesting raised `RecursionError`, which is not a `YAMLError`, so it escaped the
+loader's handling and ended the run with a traceback containing absolute paths.

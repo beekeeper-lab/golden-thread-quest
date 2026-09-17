@@ -77,11 +77,21 @@ class AppConfig:
         )
 
     def relative(self, path: Path) -> str:
-        """A repository-relative string for display. Never leaks the developer's home directory."""
+        """A short, non-absolute label for display. Never leaks a home directory.
+
+        With a participant root outside the repository, falling straight back to the file
+        name made every review problem report `source: "review.yaml"` with no way to tell
+        which attempt it came from (Stage 2 audit M13). The participant root is therefore
+        tried second, and labelled with the `participant/` prefix the schemas already use.
+        """
+        resolved = path.resolve()
         try:
-            return str(path.resolve().relative_to(self.repo_root))
+            return str(resolved.relative_to(self.repo_root))
         except ValueError:
-            # Outside the repository: name the file only, never the absolute path.
+            pass
+        try:
+            return f"participant/{resolved.relative_to(self.participant_root).as_posix()}"
+        except ValueError:
             return path.name
 
     def resolve_participant_path(self, declared: str) -> Path:

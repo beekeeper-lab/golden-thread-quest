@@ -1,0 +1,40 @@
+{# U11 — "Why did the build reject my content, and how do I fix it?"
+
+   Every problem, not only the first, with file, field, expected rule, what was found and a
+   suggested correction. The same information is printed to the terminal. #}
+{% extends "layouts/base.html.j2" %}
+
+{% block main %}
+<header class="page-heading">
+  <h1>{{ page.heading }}</h1>
+  <p>{{ error_count }} error(s) and {{ warning_count }} warning(s). The previously generated site has been left untouched.</p>
+</header>
+
+<div class="alert alert-error" role="alert">
+  <h2>Nothing was published</h2>
+  <p>Content that does not validate is never rendered, so a broken quest cannot reach a participant.</p>
+</div>
+
+<div class="stack">
+  {% for problem in problems %}
+  <article class="panel">
+    <div class="card-header">
+      <h2>{{ problem.message }}</h2>
+      <span class="state state-{{ 'needs_changes' if problem.severity in ('error', 'blocking') else 'available' }}">{{ problem.severity }}</span>
+    </div>
+    <dl class="definition-list">
+      {% if problem.source %}<dt>File</dt><dd><code>{{ problem.source }}{% if problem.line %}:{{ problem.line }}{% if problem.column %}:{{ problem.column }}{% endif %}{% endif %}</code></dd>{% endif %}
+      {% if problem.entity_id %}<dt>Entity</dt><dd><code>{{ problem.entity_id }}</code></dd>{% endif %}
+      {% if problem.field_path %}<dt>Field</dt><dd><code>{{ problem.field_path }}</code></dd>{% endif %}
+      {% if problem.expected %}<dt>Expected</dt><dd>{{ problem.expected }}</dd>{% endif %}
+      {% if problem.received %}<dt>Found</dt><dd><code>{{ problem.received }}</code></dd>{% endif %}
+      {% if problem.suggestion %}<dt>Try</dt><dd>{{ problem.suggestion }}</dd>{% endif %}
+      <dt>Code</dt><dd><code>{{ problem.code }}</code></dd>
+    </dl>
+    {% if problem.documentation %}
+    <p><a href="{{ url(problem.documentation) }}">Read the authoring guide</a></p>
+    {% endif %}
+  </article>
+  {% endfor %}
+</div>
+{% endblock %}

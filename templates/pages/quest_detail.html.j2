@@ -1,0 +1,144 @@
+{# U05 — "What exactly do I need to build, why does it matter, and how will it be judged?"
+
+   The narrative keeps a comfortable measure. Acceptance criteria are prose a participant is
+   judged against, so they are never reduced to sidebar text. The rail holds status and the
+   one allowed action. #}
+{% extends "layouts/base.html.j2" %}
+{% from "components/state_badge.html.j2" import state_badge %}
+{% from "components/proof_list.html.j2" import proof_list %}
+{% from "components/action.html.j2" import action_button %}
+{% from "components/quest_card.html.j2" import quest_card %}
+
+{% block main %}
+<header class="page-heading">
+  <p class="eyebrow"><a href="{{ url(quest.region.route) }}">{{ quest.region.title }}</a></p>
+  <h1>{{ quest.title }}</h1>
+  <p>{{ quest.summary }}</p>
+</header>
+
+{% if lock_notice %}
+<div class="alert alert-warning" role="alert">
+  <h2>This quest is locked</h2>
+  <p>{{ lock_notice }}</p>
+</div>
+{% endif %}
+
+{% if version_notice %}
+<div class="alert alert-information" role="status">
+  <h2>A newer version of this quest is available</h2>
+  <p>{{ version_notice }}</p>
+</div>
+{% endif %}
+
+{% if risk_notice %}
+<div class="alert alert-warning">
+  <h2>This quest writes outside your repository</h2>
+  <p>{{ risk_notice }}</p>
+</div>
+{% endif %}
+
+<div class="workbench">
+  <div class="prose stack">
+    {% for section in sections %}
+    <section aria-labelledby="{{ section.heading_id }}">
+      <h2 id="{{ section.heading_id }}">{{ section.title }}</h2>
+      {{ section.safe_rendered_html | safe }}
+    </section>
+    {% endfor %}
+
+    <section aria-labelledby="quest-outcomes">
+      <h2 id="quest-outcomes">What you will be able to do</h2>
+      <ul>{% for outcome in outcomes %}<li>{{ outcome }}</li>{% endfor %}</ul>
+    </section>
+
+    {# C10 — each criterion has a stable identifier a reviewer's finding can point at
+       (ADR-016). The identifier is in the DOM so a finding can link straight to it. #}
+    <section aria-labelledby="quest-criteria">
+      <h2 id="quest-criteria">How this is judged</h2>
+      <ol>
+        {% for criterion in acceptance_criteria %}
+        <li id="{{ criterion.dom_id }}">{{ criterion.text }}</li>
+        {% endfor %}
+      </ol>
+    </section>
+
+    {{ proof_list(required_proof, 'Required evidence') }}
+    {{ proof_list(optional_proof, 'Optional evidence', 'No optional evidence for this quest.') }}
+
+    {% if prerequisites %}
+    {# C09 — unmet prerequisites are links with a resolution path, never a dead end. #}
+    <section aria-labelledby="quest-prerequisites">
+      <h2 id="quest-prerequisites">Before you start</h2>
+      <ul class="checklist">
+        {% for prerequisite in prerequisites %}
+        <li>
+          <div class="card-header">
+            <a href="{{ url(prerequisite.route) }}">{{ prerequisite.title }}</a>
+            {{ state_badge(prerequisite.state) }}
+          </div>
+          {% if not prerequisite.satisfied %}
+          <p class="authority">Verify this quest first. Its evidence must be approved, not just finished.</p>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    {% if related %}
+    <section aria-labelledby="quest-related">
+      <h2 id="quest-related">Related quests</h2>
+      <div class="card-grid">
+        {% for item in related %}{{ quest_card(item, url, heading_level=3) }}{% endfor %}
+      </div>
+    </section>
+    {% endif %}
+  </div>
+
+  <aside class="panel stack" aria-label="Quest status and actions">
+    <div>{{ state_badge(quest.state, show_authority=true) }}</div>
+    <p>{{ quest.state.explanation }}</p>
+
+    <dl class="definition-list">
+      <dt>Version</dt><dd>{{ version }}{% if attempt_version and attempt_version != version %} (you are on {{ attempt_version }}){% endif %}</dd>
+      <dt>Difficulty</dt><dd>{{ quest.level_label }}</dd>
+      <dt>Experience</dt><dd>{{ quest.xp }} XP</dd>
+      <dt>Estimate</dt><dd>{{ quest.estimated_minutes }} minutes</dd>
+      {% if quest.bookend %}<dt>Bookend</dt><dd>{{ quest.bookend | replace('-', ' ') | capitalize }}</dd>{% endif %}
+      {% if tools %}<dt>Tools</dt><dd>{{ tools | join(', ') }}</dd>{% endif %}
+      {% if quest.prerequisites_total %}
+      <dt>Prerequisites</dt><dd>{{ quest.prerequisites_satisfied }} of {{ quest.prerequisites_total }} verified</dd>
+      {% endif %}
+    </dl>
+
+    {% if quest.tags %}
+    <ul class="tag-list" aria-label="Tags">
+      {% for tag in quest.tags %}<li><a class="tag" href="{{ url('/catalog/') }}?tag={{ tag }}">{{ tag }}</a></li>{% endfor %}
+    </ul>
+    {% endif %}
+
+    {{ action_button(primary_action, url) }}
+
+    {% if evidence_route %}
+    <p><a href="{{ url(evidence_route) }}">Open the evidence workspace</a></p>
+    {% endif %}
+
+    {% if validators %}
+    <section aria-labelledby="quest-validators">
+      <h3 id="quest-validators">Automated checks</h3>
+      <ul>
+        {% for validator in validators %}
+        <li>
+          {{ validator.display_name }}
+          {% if validator.latest_outcome %}
+          — <span class="state state-{{ 'locally_validated' if validator.latest_outcome in ('pass', 'warning') else 'needs_changes' }}">{{ validator.latest_outcome | replace('_', ' ') }}</span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      <p class="authority">Passing every check is not approval. A reviewer decides verified completion.</p>
+    </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

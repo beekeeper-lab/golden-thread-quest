@@ -1,0 +1,41 @@
+{# The Evidence destination in primary navigation: every attempt, and where each one is. #}
+{% extends "layouts/base.html.j2" %}
+{% from "components/state_badge.html.j2" import state_badge %}
+{% from "components/empty_state.html.j2" import empty_state %}
+
+{% block main %}
+<header class="page-heading">
+  <h1>{{ page.heading }}</h1>
+  <p>{{ page.description }}</p>
+</header>
+
+{% if attempts %}
+<div class="table-scroll">
+  <table>
+    <caption class="visually-hidden">Your evidence packages</caption>
+    <thead>
+      <tr>
+        <th scope="col">Quest</th><th scope="col">State</th>
+        <th scope="col">Attempt</th><th scope="col">Location</th><th scope="col">Updated</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for row in attempts %}
+    <tr>
+      <th scope="row"><a href="{{ url(row.evidence_route) }}">{{ row.quest.title }}</a></th>
+      <td>{{ state_badge(row.quest.state) }}</td>
+      <td><code>{{ row.attempt_id }}</code></td>
+      <td><code>{{ row.evidence_path }}</code></td>
+      <td><time datetime="{{ row.updated_at }}" data-format>{{ row.updated_at }}</time></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="authority">Everything above lives in your repository as ordinary files. The application reads it; it does not own it.</p>
+{% else %}
+{{ empty_state('No evidence yet',
+    'An evidence package appears here once you start a quest. Nothing is written to your repository until you do.',
+    'Find a quest', '/catalog/', url) }}
+{% endif %}
+{% endblock %}

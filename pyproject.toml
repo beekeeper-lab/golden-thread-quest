@@ -32,6 +32,7 @@ ui = [
 # Registered per stage, so an installed command always exists. `quest-build` and
 # `quest-serve` are added with the generator and the local service.
 quest-validate = "quest_app.cli:validate_main"
+quest-build = "quest_app.cli:build_main"
 
 [build-system]
 requires = ["setuptools>=68"]

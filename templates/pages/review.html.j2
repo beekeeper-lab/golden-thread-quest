@@ -1,0 +1,163 @@
+{# U10 — "Does this evidence demonstrate the quest outcomes strongly enough to verify?"
+
+   Intentionally evidence-dense. Decision controls are visually separated from navigation,
+   approval requires an explicit verification statement, and needs-changes requires a
+   finding. Automated validation supports the decision and never makes it. #}
+{% extends "layouts/base.html.j2" %}
+{% from "components/proof_list.html.j2" import proof_list %}
+{% from "components/empty_state.html.j2" import empty_state %}
+
+{% block main %}
+<header class="page-heading">
+  <p class="eyebrow">Reviewer</p>
+  <h1>{{ page.heading }}</h1>
+  <p>{{ page.description }}</p>
+</header>
+
+{% if not attempt_id %}
+{% if queue %}
+<section class="stack" aria-labelledby="queue-heading">
+  <h2 id="queue-heading">Waiting for review</h2>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th scope="col">Quest</th><th scope="col">Attempt</th><th scope="col">Submitted</th></tr></thead>
+      <tbody>
+      {% for entry in queue %}
+      <tr>
+        <th scope="row"><a href="{{ url(entry.route) }}">{{ entry.quest.title }}</a></th>
+        <td><code>{{ entry.attempt_id }}</code></td>
+        <td><time datetime="{{ entry.submitted_at }}" data-format>{{ entry.submitted_at }}</time></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% else %}
+{{ empty_state('Nothing is waiting for review',
+    'A quest appears here once a participant submits its evidence.',
+    'Open the quest map', '/map/', url) }}
+{% endif %}
+
+{% else %}
+
+<section class="panel" aria-labelledby="identity-heading">
+  <h2 id="identity-heading">What is being reviewed</h2>
+  <dl class="definition-list">
+    <dt>Participant</dt><dd>{{ participant.display_name if participant else 'unknown' }}</dd>
+    <dt>Quest</dt><dd><a href="{{ url(quest.route) }}">{{ quest.title }}</a></dd>
+    <dt>Quest version</dt><dd>{{ quest_version }}</dd>
+    <dt>Attempt</dt><dd><code>{{ attempt_id }}</code></dd>
+    {% if evidence_hash %}<dt>Evidence hash</dt><dd><code>{{ evidence_hash }}</code></dd>{% endif %}
+  </dl>
+</section>
+
+{% if evidence_changed %}
+<div class="alert alert-warning" role="alert">
+  <h2>The evidence changed since it was last reviewed</h2>
+  <p>Acknowledge this before approving. A decision must apply to the evidence in front of you.</p>
+</div>
+{% endif %}
+
+<section class="stack" aria-labelledby="criteria-heading">
+  <h2 id="criteria-heading">What the quest required</h2>
+  <ul>{% for outcome in outcomes %}<li>{{ outcome }}</li>{% endfor %}</ul>
+  <ol>
+    {% for criterion in acceptance_criteria %}
+    <li id="{{ criterion.dom_id }}">{{ criterion.text }}</li>
+    {% endfor %}
+  </ol>
+</section>
+
+{{ proof_list(required_proof, 'Required evidence') }}
+
+{% if reproduction %}
+<section class="panel" aria-labelledby="repro-heading">
+  <h2 id="repro-heading">How to reproduce it</h2>
+  <div class="prose">{{ reproduction | safe }}</div>
+</section>
+{% endif %}
+
+{% if results %}
+<section class="stack" aria-labelledby="results-heading">
+  <h2 id="results-heading">Automated validation</h2>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th scope="col">Validator</th><th scope="col">Outcome</th><th scope="col">When</th></tr></thead>
+      <tbody>
+      {% for result in results %}
+      <tr>
+        <th scope="row">{{ result.validator_id }}</th>
+        <td>{{ result.outcome | replace('_', ' ') }}</td>
+        <td><time datetime="{{ result.completed_at }}" data-format>{{ result.completed_at }}</time></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="authority">These establish facts. They cannot approve anything.</p>
+</section>
+{% endif %}
+
+{% if history %}
+<section class="stack" aria-labelledby="history-heading">
+  <h2 id="history-heading">Previous decisions</h2>
+  <ul class="checklist">
+    {% for decision in history %}
+    <li>
+      <div class="card-header">
+        <strong>{{ decision.decision | replace('_', ' ') | capitalize }}</strong>
+        <time datetime="{{ decision.reviewed_at }}" data-format>{{ decision.reviewed_at }}</time>
+      </div>
+      <p class="authority">{{ decision.reviewer_display_name }}</p>
+      {% if decision.verification_statement %}<p>{{ decision.verification_statement }}</p>{% endif %}
+      {% for finding in decision.findings %}
+      <p><strong>{{ finding.severity }}:</strong> {{ finding.summary }}</p>
+      {% endfor %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{# C18 — separated from navigation on purpose. #}
+<section class="panel stack" aria-labelledby="decision-heading">
+  <h2 id="decision-heading">Your decision</h2>
+  {% if not can_decide %}
+  <div class="alert alert-information">
+    <p>{{ blocked_reason or 'Reviewer mode is not configured, so no decision can be recorded here.' }}</p>
+  </div>
+  {% else %}
+  <form method="post" action="{{ url('/review/' ~ quest.id ~ '/') }}"
+        data-confirm="Record this decision? Approval produces verified completion and verified XP.">
+    <div class="field">
+      <label for="decision">Decision</label>
+      <select id="decision" name="decision" required>
+        <option value="">Choose</option>
+        <option value="approved">Approve</option>
+        <option value="needs_changes">Needs changes</option>
+        <option value="rejected">Reject</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="verification_statement">Verification statement</label>
+      <textarea id="verification_statement" name="verification_statement"
+                aria-describedby="verification-hint"></textarea>
+      <p class="hint" id="verification-hint">
+        Required to approve. Say in your own words what you checked and how. This is the record
+        that the approval was a judgement and not a formality.
+      </p>
+    </div>
+    <div class="field">
+      <label for="finding_summary">Finding</label>
+      <input type="text" id="finding_summary" name="finding_summary" aria-describedby="finding-hint">
+      <p class="hint" id="finding-hint">At least one finding is required for needs-changes or reject.</p>
+    </div>
+    <div class="button-row">
+      <button type="submit" class="button button-consequential">Record decision</button>
+    </div>
+  </form>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}
