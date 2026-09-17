@@ -1,0 +1,6 @@
+{# C06 — one canonical state, with its authority. Colour is never the only signal:
+   the CSS supplies a glyph and the label is text. #}
+{% macro state_badge(state, show_authority=false) -%}
+<span class="state state-{{ state.id }}" title="{{ state.explanation }}">{{ state.label }}</span>
+{%- if show_authority %} <span class="authority">by {{ state.authority | replace('_', ' ') }}{% if state.occurred_at %}, <time datetime="{{ state.occurred_at }}" data-format>{{ state.occurred_at }}</time>{% endif %}</span>{% endif %}
+{%- endmacro %}

@@ -1,0 +1,55 @@
+{# U03 — "What can I learn and demonstrate in this area?" #}
+{% extends "layouts/base.html.j2" %}
+{% from "components/quest_card.html.j2" import quest_card %}
+{% from "components/meter.html.j2" import meter %}
+{% from "components/empty_state.html.j2" import empty_state %}
+
+{% block main %}
+<header class="page-heading">
+  <p class="eyebrow">Region</p>
+  <h1>{{ region.title }}</h1>
+  <p>{{ region.summary }}</p>
+</header>
+
+<section class="panel stack" aria-labelledby="outcomes-heading">
+  <h2 id="outcomes-heading">What you will be able to do</h2>
+  <ul>{% for outcome in region.outcomes %}<li>{{ outcome }}</li>{% endfor %}</ul>
+  {% if region_progress.total %}
+  {{ meter(region_progress.verified, region_progress.total, 'Verified quests', 'reviewer', region_progress.claimed, 'Claimed') }}
+  {% endif %}
+</section>
+
+{% if sequence %}
+<section class="stack" aria-labelledby="sequence-heading">
+  <h2 id="sequence-heading">Suggested sequence</h2>
+  <p>Ordered by the curriculum and by what each quest unlocks. You may work in any order your prerequisites allow.</p>
+  <div class="card-grid">
+    {% for quest in sequence %}{{ quest_card(quest, url) }}{% endfor %}
+  </div>
+</section>
+{% else %}
+{{ empty_state('No quests here yet',
+    'This region is part of the journey but has no published quests. It will fill in as the curriculum grows.',
+    'Back to the map', '/map/', url) }}
+{% endif %}
+
+{% if badges %}
+<section class="stack" aria-labelledby="badges-heading">
+  <h2 id="badges-heading">Badges in this region</h2>
+  <div class="card-grid">
+    {% for badge in badges %}
+    <article class="card">
+      <div class="card-header">
+        <h3>{{ badge.badge.title }}</h3>
+        <span class="state state-{{ 'verified' if badge.earned else ('submitted' if badge.pending_review else 'locked') }}">
+          {{ 'Earned' if badge.earned else ('Pending review' if badge.pending_review else 'Not yet') }}
+        </span>
+      </div>
+      <p>{{ badge.badge.summary }}</p>
+      <p class="authority">{{ badge.badge.award_label }} · {{ badge.reason }}</p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

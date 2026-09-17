@@ -1,0 +1,103 @@
+{# U01 — "Where am I, and what is the best useful thing to do next?" #}
+{% extends "layouts/base.html.j2" %}
+{% from "components/quest_card.html.j2" import quest_card %}
+{% from "components/region_card.html.j2" import region_card %}
+{% from "components/meter.html.j2" import meter %}
+{% from "components/empty_state.html.j2" import empty_state %}
+
+{% block main %}
+<header class="page-heading">
+  {% if participant %}<p class="eyebrow">{{ participant.track_title or 'No track selected' }}</p>{% endif %}
+  <h1>{{ page.heading }}</h1>
+  <p>{{ page.description }}</p>
+</header>
+
+{% if environment_warning %}
+<div class="alert alert-warning" role="alert">
+  <h2>Your environment needs attention</h2>
+  <p>{{ environment_warning }}</p>
+  <p><a href="{{ url('/health/') }}">Open environment health</a></p>
+</div>
+{% endif %}
+
+{% if participant %}
+<section class="panel stack" aria-labelledby="progress-heading">
+  <h2 id="progress-heading">Your progress</h2>
+  {{ meter(totals.verified_quests, totals.total_quests, 'Verified quests', 'reviewer', totals.claimed_quests, 'Claimed') }}
+  <div class="totals">
+    <dl class="total"><dt>Claimed XP</dt><dd>{{ totals.claimed_xp }}</dd></dl>
+    <dl class="total is-verified"><dt>Verified XP</dt><dd>{{ totals.verified_xp }}</dd></dl>
+    <dl class="total"><dt>Available XP</dt><dd>{{ totals.available_xp }}</dd></dl>
+  </div>
+  <p class="authority">Verified XP comes only from a reviewer approval. Claimed XP is your own record of what you have finished.</p>
+</section>
+{% endif %}
+
+{% if is_new_participant %}
+{{ empty_state(
+     'Start at Base Camp',
+     'Nothing is recorded yet. Base Camp sets up the repository, safety and context habits every other region relies on.',
+     'Open the quest map', '/map/', url) }}
+{% endif %}
+
+{% if primary %}
+{# C08 — the recommendation, with its reasons in the open. It is deterministic, and the
+   page says so rather than presenting it as an opaque judgement. #}
+<section class="stack" aria-labelledby="recommended-heading">
+  <h2 id="recommended-heading">Recommended next</h2>
+  <div class="card-grid">
+    {{ quest_card(primary.quest, url, recommended=true) }}
+  </div>
+  <div class="panel">
+    <h3>Why this one</h3>
+    <ul>{% for reason in primary.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+    <p class="button-row">
+      <a class="button button-primary" href="{{ url(primary.action.route) }}">{{ primary.action.label }}</a>
+      <a class="button" href="{{ url('/catalog/') }}">See alternatives</a>
+    </p>
+    <p class="authority">This recommendation is calculated from your progress and your track. It is the same for the same inputs.</p>
+  </div>
+</section>
+{% elif participant %}
+{{ empty_state('Nothing to recommend right now',
+    'Every available quest is finished or submitted. Browse the catalog to pick something outside your track.',
+    'Open the catalog', '/catalog/', url) }}
+{% endif %}
+
+{% if alternatives %}
+<section class="stack" aria-labelledby="alternatives-heading">
+  <h2 id="alternatives-heading">Other good options</h2>
+  <div class="card-grid">
+    {% for alternative in alternatives %}{{ quest_card(alternative.quest, url) }}{% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="stack" aria-labelledby="regions-heading">
+  <h2 id="regions-heading">Regions</h2>
+  <div class="card-grid">
+    {% for card in regions %}{{ region_card(card, url) }}{% endfor %}
+  </div>
+</section>
+
+{% if activity %}
+<section class="stack" aria-labelledby="activity-heading">
+  <h2 id="activity-heading">Recent activity</h2>
+  <div class="table-scroll">
+    <table>
+      <caption class="visually-hidden">Recent validation and review activity</caption>
+      <thead><tr><th scope="col">When</th><th scope="col">What</th><th scope="col">Authority</th></tr></thead>
+      <tbody>
+      {% for event in activity %}
+      <tr>
+        <td><time datetime="{{ event.occurred_at }}" data-format>{{ event.occurred_at }}</time></td>
+        <td>{% if event.route %}<a href="{{ url(event.route) }}">{{ event.summary }}</a>{% else %}{{ event.summary }}{% endif %}</td>
+        <td>{{ event.authority | replace('_', ' ') }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

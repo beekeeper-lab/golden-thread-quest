@@ -1,0 +1,62 @@
+{# U04 — find a quest by capability, tool, risk, difficulty or time.
+
+   The form is a real form with a real submit button: filtering works with JavaScript
+   disabled by reloading with a query string. The script hides the submit button and
+   filters live only once it has taken over. #}
+{% extends "layouts/base.html.j2" %}
+{% from "components/quest_card.html.j2" import quest_card %}
+{% from "components/empty_state.html.j2" import empty_state %}
+
+{% macro filter_select(name, label, options, selected) -%}
+<div class="field">
+  <label for="filter-{{ name }}">{{ label }}</label>
+  <select id="filter-{{ name }}" name="{{ name }}">
+    <option value="">All</option>
+    {% for option in options %}
+    <option value="{{ option.value }}"{% if selected == option.value %} selected{% endif %}>{{ option.label }} ({{ option.count }})</option>
+    {% endfor %}
+  </select>
+</div>
+{%- endmacro %}
+
+{% block main %}
+<header class="page-heading">
+  <h1>{{ page.heading }}</h1>
+  <p>{{ page.description }}</p>
+</header>
+
+<form class="filter-form panel" method="get" action="{{ url('/catalog/') }}" data-catalog-filter role="search" aria-label="Filter quests">
+  <div class="field">
+    <label for="filter-q">Search</label>
+    <input type="search" id="filter-q" name="q" value="{{ selected.q | default('') }}"
+           placeholder="Title, summary, tag, region or tool">
+    <p class="hint">Searches published quest text only, never your evidence.</p>
+  </div>
+
+  <div class="filter-row">
+    {{ filter_select('region', 'Region', regions, selected.region | default('')) }}
+    {{ filter_select('state', 'State', states, selected.state | default('')) }}
+    {{ filter_select('level', 'Difficulty', levels, selected.level | default('')) }}
+    {{ filter_select('tag', 'Tag', tags, selected.tag | default('')) }}
+    {{ filter_select('bookend', 'Bookend', bookends, selected.bookend | default('')) }}
+    {{ filter_select('risk', 'Risk', risks, selected.risk | default('')) }}
+  </div>
+
+  <div class="button-row">
+    <button type="submit" class="button button-primary" data-filter-submit>Apply filters</button>
+    <button type="reset" class="button" data-filter-reset>Reset all</button>
+  </div>
+</form>
+
+<p role="status"><strong data-result-count>{{ quests | length }}</strong> quest(s) match.</p>
+
+<div class="card-grid" data-catalog-results>
+  {% for quest in quests %}{{ quest_card(quest, url) }}{% endfor %}
+</div>
+
+<div data-empty-results{% if quests %} hidden{% endif %}>
+  {{ empty_state('No quests match these filters',
+      'Nothing in the catalog matches every filter you have set. Reset them to see everything again.',
+      'Show all quests', '/catalog/', url) }}
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{# C20 — why there is nothing here, and what makes something appear. #}
+{% macro empty_state(heading, body, action_label=none, action_route=none, url=none) -%}
+<div class="empty-state">
+  <h2>{{ heading }}</h2>
+  <p>{{ body }}</p>
+  {% if action_label and action_route and url %}
+  <p><a class="button" href="{{ url(action_route) }}">{{ action_label }}</a></p>
+  {% endif %}
+</div>
+{%- endmacro %}

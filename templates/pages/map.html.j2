@@ -1,0 +1,35 @@
+{# U02 — "What does the full journey contain, and how far have I travelled?" #}
+{% extends "layouts/base.html.j2" %}
+{% from "components/region_card.html.j2" import region_card %}
+{% from "components/meter.html.j2" import meter %}
+
+{% block main %}
+<header class="page-heading">
+  <h1>{{ page.heading }}</h1>
+  <p>{{ page.description }}</p>
+</header>
+
+<section class="panel" aria-labelledby="overall-heading">
+  <h2 id="overall-heading">Overall progress</h2>
+  {{ meter(totals.verified_quests, totals.total_quests, 'Verified quests', 'reviewer', totals.claimed_quests, 'Claimed') }}
+</section>
+
+{# A semantic card grid, not a drawing. Decorative connections may be added later, but
+   progression must never require reading a picture (docs/ui/SCREEN-SPECS.md U02). #}
+<section class="stack" aria-labelledby="regions-heading">
+  <h2 id="regions-heading">Regions in order</h2>
+  <div class="card-grid">
+    {% for card in regions %}{{ region_card(card, url, heading_level=3) }}{% endfor %}
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="legend-heading">
+  <h2 id="legend-heading">What the states mean</h2>
+  <dl class="definition-list">
+    {% for state in legend %}
+    <dt><span class="state state-{{ state.id }}">{{ state.label }}</span></dt>
+    <dd>{{ state.explanation }} <span class="authority">Set by {{ state.authority | replace('_', ' ') }}.</span></dd>
+    {% endfor %}
+  </dl>
+</section>
+{% endblock %}

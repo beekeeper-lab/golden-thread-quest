@@ -1,0 +1,25 @@
+{# C04 — a curriculum region, with its state distribution. #}
+{% from "components/meter.html.j2" import meter %}
+
+{% macro region_card(card, url, heading_level=3) -%}
+<article class="card accent-{{ card.region.accent }}">
+  <h{{ heading_level }}><a href="{{ url(card.route) }}">{{ card.region.title }}</a></h{{ heading_level }}>
+  <p>{{ card.region.summary }}</p>
+
+  {% if card.progress.total %}
+  {{ meter(card.progress.verified, card.progress.total, 'Verified quests', 'reviewer', card.progress.claimed, 'Claimed') }}
+  <ul class="tag-list" aria-label="Quest states in this region">
+    {% for state, count in card.state_counts %}
+    <li class="tag">{{ count }} {{ state.label | lower }}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="authority">No quests here yet.</p>
+  {% endif %}
+
+  <details>
+    <summary>What this region develops</summary>
+    <ul>{% for outcome in card.region.outcomes %}<li>{{ outcome }}</li>{% endfor %}</ul>
+  </details>
+</article>
+{%- endmacro %}

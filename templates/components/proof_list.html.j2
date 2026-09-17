@@ -1,0 +1,24 @@
+{# C11 — proof requirements, each independently addressable. #}
+{% macro proof_list(items, title, empty_message='None.') -%}
+<section aria-labelledby="proof-{{ title | lower | replace(' ', '-') }}">
+  <h3 id="proof-{{ title | lower | replace(' ', '-') }}">{{ title }}</h3>
+  {% if items %}
+  <ul class="checklist">
+    {% for item in items %}
+    <li id="proof-{{ item.id }}">
+      <div class="card-header">
+        <strong>{{ item.description }}</strong>
+        <span class="state state-{{ 'verified' if item.status in ('validated', 'reviewer_confirmed') else ('needs_changes' if item.status == 'warning' else ('available' if item.status == 'detected' else 'locked')) }}">{{ item.status_label }}</span>
+      </div>
+      <p class="authority">
+        {{ item.type | replace('-', ' ') | capitalize }}{% if item.path %} · <code>{{ item.path }}</code>{% endif %}{% if item.validator %} · validated by {{ item.validator }}{% endif %}
+      </p>
+      {% if item.detail %}<p>{{ item.detail }}</p>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="authority">{{ empty_message }}</p>
+  {% endif %}
+</section>
+{%- endmacro %}

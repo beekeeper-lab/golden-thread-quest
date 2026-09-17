@@ -1,0 +1,45 @@
+{# C05 — the reusable quest card. One view model, used on home, map, region and catalog.
+   The card is visually grouped but the only control is the title link, so nesting stays
+   valid and keyboard order stays predictable. #}
+{% from "components/state_badge.html.j2" import state_badge %}
+
+{% macro quest_card(quest, url, recommended=false, heading_level=3) -%}
+<article class="card accent-{{ quest.region.accent }}{% if recommended %} is-recommended{% endif %}"
+         data-search="{{ quest.search_text }}"
+         data-region="{{ quest.region.id }}"
+         data-state="{{ quest.state.id }}"
+         data-level="{{ quest.level_id }}"
+         data-tag="{{ quest.tags | join(' ') }}"
+         data-bookend="{{ quest.bookend or '' }}"
+         data-risk="{{ quest.risk_id }}">
+  <div class="card-header">
+    <a class="tag" href="{{ url(quest.region.route) }}">{{ quest.region.title }}</a>
+    {{ state_badge(quest.state) }}
+  </div>
+
+  <h{{ heading_level }}><a href="{{ url(quest.route) }}">{{ quest.title }}</a></h{{ heading_level }}>
+  <p>{{ quest.summary }}</p>
+
+  {% if quest.deprecated %}
+  <p class="authority">This quest is deprecated and is not recommended to new participants.</p>
+  {% endif %}
+
+  {% if quest.recommendation_reasons %}
+  <ul class="tag-list" aria-label="Why this quest is recommended">
+    {% for reason in quest.recommendation_reasons %}<li class="tag">{{ reason }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if quest.tags %}
+  <ul class="tag-list" aria-label="Tags">
+    {# Informational tags are not focusable (C07). #}
+    {% for tag in quest.tags %}<li class="tag">{{ tag }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  <div class="card-footer">
+    <span>{{ quest.level_label }} · {{ quest.xp }} XP{% if quest.external_write %} · writes externally{% endif %}</span>
+    <span>{{ quest.estimated_minutes }} min{% if quest.prerequisites_total %} · {{ quest.prerequisites_satisfied }}/{{ quest.prerequisites_total }} prerequisites{% endif %}</span>
+  </div>
+</article>
+{%- endmacro %}

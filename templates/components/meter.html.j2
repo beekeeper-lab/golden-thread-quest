@@ -1,0 +1,19 @@
+{# C03 — progress toward a defined total. The readable value is text, not only a bar. #}
+{% macro meter(value, maximum, label, authority='system', secondary=none, secondary_label=none) -%}
+<div class="meter">
+  <div class="meter-label">
+    <span>{{ label }}</span>
+    <span>{{ value }} of {{ maximum }}</span>
+  </div>
+  <div class="meter-track" role="img"
+       aria-label="{{ label }}: {{ value }} of {{ maximum }}, recorded by {{ authority | replace('_', ' ') }}">
+    {% if secondary is not none and maximum %}
+    <div class="meter-fill is-claimed" style="width: {{ (secondary / maximum * 100) | round(1) }}%"></div>
+    {% endif %}
+    <div class="meter-fill" style="width: {{ (value / maximum * 100) | round(1) if maximum else 0 }}%"></div>
+  </div>
+  {% if secondary is not none %}
+  <p class="authority">{{ secondary_label or 'Claimed' }}: {{ secondary }} · {{ label }}: {{ value }}</p>
+  {% endif %}
+</div>
+{%- endmacro %}

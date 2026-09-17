@@ -1,0 +1,16 @@
+{# An action the page offers. A disabled action always says why, and a consequential one
+   never looks like navigation (docs/ACCESSIBILITY-AND-DESIGN.md). #}
+{% macro action_button(action, url) -%}
+{% if not action.enabled %}
+  <span class="button-row">
+    <button type="button" class="button" disabled aria-describedby="why-{{ action.id }}">{{ action.label }}</button>
+  </span>
+  <p class="authority" id="why-{{ action.id }}">{{ action.reason or 'This action is not available yet.' }}</p>
+{% elif action.method == 'get' %}
+  <a class="button button-primary" href="{{ url(action.route) }}">{{ action.label }}</a>
+{% else %}
+  <form method="post" action="{{ url(action.route) }}"{% if action.confirm %} data-confirm="{{ action.confirm }}"{% endif %}>
+    <button type="submit" class="button {{ 'button-consequential' if action.consequential else 'button-primary' }}">{{ action.label }}</button>
+  </form>
+{% endif %}
+{%- endmacro %}

@@ -1,18 +1,94 @@
+{# The application shell (C01).
+
+   Receives a view model that extends BaseView. Landmarks, skip link, navigation and
+   footer live here so every page has them and no page has to remember. #}
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="{{ page.description }}">
-    <title>{{ page.title }} — {{ site.title }}</title>
-    <link rel="stylesheet" href="{{ assets.application_css }}">
-  </head>
-  <body>
-    <a class="skip-link" href="#main-content">Skip to main content</a>
-    {% include "components/app-navigation.html.j2" %}
-    <main id="main-content">
-      {% block main %}{% endblock %}
-    </main>
-    {% if assets.application_js %}<script src="{{ assets.application_js }}"></script>{% endif %}
-  </body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ page.title }}{% endblock %} · {{ site.title }}</title>
+<meta name="description" content="{{ page.description }}">
+{# No remote scripts, styles, fonts, images or analytics. The policy is enforced by the
+   service too, but a static page opened from disk gets it from here. #}
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'">
+<meta name="referrer" content="no-referrer">
+<link rel="stylesheet" href="{{ url('/assets/css/tokens.css') }}">
+<link rel="stylesheet" href="{{ url('/assets/css/app.css') }}">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+  <div class="app-topbar">
+    <a class="app-brand" href="{{ url('/') }}">
+      <strong>{{ site.title }}</strong>
+      <span>{{ site.curriculum }}</span>
+    </a>
+    {# Hidden until the script reveals it: without JavaScript the navigation below is
+       simply visible, so nothing depends on a drawer that never opens. #}
+    <button type="button" class="button" data-nav-toggle aria-expanded="false" aria-controls="primary-navigation" hidden>
+      Menu
+    </button>
+  </div>
+
+  <aside class="app-sidebar" data-nav-drawer id="primary-navigation">
+    <a class="app-brand" href="{{ url('/') }}">
+      <strong>{{ site.title }}</strong>
+      <span>{{ site.curriculum }}</span>
+    </a>
+
+    <nav class="app-nav" aria-label="Primary">
+      <ul>
+        {% for item in site.navigation %}
+        <li>
+          <a href="{{ url(item.route) }}"{% if item.current %} aria-current="page"{% endif %}>
+            {{ item.label }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </nav>
+
+    {% if participant %}
+    {# C02: claimed and verified are never combined into one unlabelled total. #}
+    <div class="totals" aria-label="Your progress">
+      <dl class="total">
+        <dt>Claimed XP</dt>
+        <dd>{{ participant.claimed_xp }}</dd>
+      </dl>
+      <dl class="total is-verified">
+        <dt>Verified XP</dt>
+        <dd>{{ participant.verified_xp }}</dd>
+      </dl>
+    </div>
+    {% endif %}
+  </aside>
+
+  <main class="app-main" id="main" tabindex="-1">
+    {% if not service.available %}
+    <div class="alert alert-information" role="status">
+      <h2>Working offline</h2>
+      <p>{{ service.reason }}{% if service.cli_alternative %} Run <code>{{ service.cli_alternative }}</code> to start it.{% endif %}</p>
+    </div>
+    {% endif %}
+
+    {% for message in flash %}
+    <div class="alert alert-information" role="status"><p>{{ message }}</p></div>
+    {% endfor %}
+
+    {% block main %}{% endblock %}
+  </main>
+
+  <footer class="app-footer">
+    <p>{{ site.tagline }}</p>
+    <p>
+      Application {{ build.application_version }} · content {{ build.content_version }} ·
+      built <time datetime="{{ build.built_at }}" data-format>{{ build.built_at }}</time>
+    </p>
+  </footer>
+</div>
+
+<script src="{{ url('/assets/js/app.js') }}" defer></script>
+</body>
 </html>
