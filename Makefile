@@ -4,7 +4,7 @@ PYTHON ?= python3
 VENV := .venv
 BIN := $(VENV)/bin
 
-.PHONY: help setup format format-check lint typecheck secret-scan yaml-safe test test-ui build serve validate-content clean check
+.PHONY: help setup setup-ui format format-check lint typecheck secret-scan yaml-safe test test-ui build serve validate-content update-check clean check
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-16s %s\n", $$1, $$2}'
@@ -51,6 +51,9 @@ build: ## Generate the site into generated/
 serve: ## Build, then serve on 127.0.0.1 with the local action service
 	$(BIN)/python -m quest_app.cli serve
 
+
+update-check: ## Check whether it is safe to take upstream curriculum changes
+	$(BIN)/python -m quest_app.cli update
 
 clean: ## Remove generated output and caches (never participant files)
 	$(BIN)/python tools/clean.py --apply

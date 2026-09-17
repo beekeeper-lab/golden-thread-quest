@@ -116,6 +116,55 @@ def serve_command(args: argparse.Namespace) -> int:
     return run_service(_config_from_args(args), host=args.host, port=args.port)
 
 
+def update_command(args: argparse.Namespace) -> int:
+    """Report whether an update is safe, and print the commands. It runs no merge."""
+    from quest_app.update import migration_report, preflight
+
+    config = _config_from_args(args)
+    result = preflight(config)
+    steps, warnings = migration_report(config)
+
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "safe_to_proceed": result.safe_to_proceed,
+                    "findings": [
+                        {
+                            "id": finding.id,
+                            "status": finding.status,
+                            "summary": finding.summary,
+                            "remediation": finding.remediation,
+                        }
+                        for finding in result.findings
+                    ],
+                    "migration_steps": steps,
+                    "warnings": [*warnings, *result.notes],
+                    "instructions": result.instructions,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return EXIT_OK if result.safe_to_proceed else EXIT_CONTENT_ERROR
+
+    for finding in result.findings:
+        print(f"[{finding.status}] {finding.summary}")
+        if finding.remediation:
+            print(f"    fix: {finding.remediation}")
+    for step in steps:
+        print(f"[migration] {step}")
+    for note in (*warnings, *result.notes):
+        print(f"[note] {note}")
+
+    if result.safe_to_proceed:
+        print("\nRun these yourself. This command never merges anything:\n")
+        print(result.instructions)
+        return EXIT_OK
+    print("\nNot safe to update yet. Fix the items above first.", file=sys.stderr)
+    return EXIT_CONTENT_ERROR
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="quest", description=__doc__.splitlines()[0])
     parser.add_argument("--version", action="version", version=APPLICATION_VERSION)
@@ -134,6 +183,12 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--host", default=None, help="Bind address (loopback only)")
     serve.add_argument("--port", type=int, default=None)
     serve.set_defaults(func=serve_command)
+
+    update = subparsers.add_parser(
+        "update", help="Check whether it is safe to take upstream curriculum changes"
+    )
+    _common_arguments(update)
+    update.set_defaults(func=update_command)
 
     return parser
 

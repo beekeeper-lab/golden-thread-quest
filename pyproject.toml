@@ -57,7 +57,9 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S105", "S106", "S108"]  # test fixtures deliberately contain fake secrets and temp paths
+# Test fixtures deliberately contain fake secrets and temp paths, and several tests drive
+# real git with fixed argument lists to prove the safety claims about it.
+"tests/**" = ["S105", "S106", "S108", "S603", "S607"]
 
 [tool.ruff.lint.flake8-bandit]
 # yaml.safe_load is required (ADR-025); yaml.load is caught by tools/check_yaml_safe.py too.
