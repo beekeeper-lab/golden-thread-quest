@@ -29,8 +29,6 @@ sense.
 checks can pass. Neither produces verified completion — only a reviewer's approval does. That
 is deliberate, and the application enforces it rather than trusting it.
 
-![What the thread means](media/images/01-golden-thread.png)
-
 ---
 
 ## 2. Install it
@@ -80,7 +78,7 @@ that address in your browser.
 
 ## 3. Your first hour
 
-![The first hour, end to end](media/images/02-first-hour-flow.png)
+![Your first hour splits in two: the application handles starting the quest, recording validation and submitting, while you do the actual work in your own repository and commit and push it yourself.](media/images/01-first-hour-flow.png)
 
 1. **Open the home page.** It shows one recommended quest and says why, in three sentences.
    The recommendation is calculated, not guessed — it will be the same tomorrow given the same
@@ -123,7 +121,7 @@ This is the part worth understanding properly, because the whole product turns o
 | **Needs changes** | **A reviewer** | Corrections required; your evidence is untouched |
 | **Verified** | **A reviewer** | Approved |
 
-![Who can set which state](media/images/03-state-authority.png)
+![Eight quest states in three columns by who sets them: the application sets locked and available; you set in progress, evidence ready, locally validated and submitted; only a reviewer sets needs changes and verified.](media/images/02-state-authority.png)
 
 Two totals appear everywhere and are **never added together**:
 
@@ -170,7 +168,7 @@ recovered more work than any backup.
 
 ## 6. What the application writes, and what it never does
 
-![Who owns which directory](media/images/04-ownership-zones.png)
+![Three ownership zones side by side: programme-owned content and application code, your own work and evidence, and machine-owned generated output that is disposable. Only the middle zone is yours.](media/images/03-ownership-zones.png)
 
 **Inside `participant/`, only these, only through documented actions:**
 
@@ -193,7 +191,9 @@ generated pages load no remote script, font or image.
 
 ## 7. Evidence that holds up
 
-Preferred, in order:
+![Forms of evidence, strongest first: a repository artifact, then reproducible instructions, then automated execution evidence, then a demonstration. Above them all sits reviewer approval, which evidence earns but never becomes.](media/images/04-evidence-package.png)
+
+Preferred, strongest first:
 
 1. **A repository artifact** — code, a test, a config, a normalised context file.
 2. **Reproducible instructions** — exact commands, ideally from a clean clone.
@@ -287,7 +287,7 @@ There is no completion certificate, and that is the point. What you have at the 
 That is the thing you show someone. It is worth more than a score because none of it is
 self-assessed.
 
-![What you end up with](media/images/05-passport-outcome.png)
+![The passport shows claimed and verified progress as two separate totals that are never added together.](media/images/05-passport-outcome.png)
 
 ---
 
