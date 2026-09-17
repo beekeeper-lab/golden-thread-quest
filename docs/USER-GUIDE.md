@@ -59,7 +59,7 @@ Then prove it works:
 make check
 ```
 
-That runs formatting, linting, type checking, a YAML-safety rule, a secret scan and 486
+That runs formatting, linting, type checking, a YAML-safety rule, a secret scan and 492
 tests. It takes about a minute and works entirely offline. If it passes, your installation is
 sound. If it does not, go to [Section 9](#9-when-something-goes-wrong).
 

@@ -3,7 +3,7 @@ name = "golden-thread-quest"
 version = "0.1.0"
 description = "The Golden Thread Quest — a local-first training application for the AI Context Engineer Journey."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 license = { file = "LICENSE" }
 
 # Runtime dependencies. Each one is justified in docs/DECISIONS.md.
@@ -47,7 +47,7 @@ packages = ["quest_app", "validators"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py311"
 src = ["quest_app", "validators", "tests", "tools"]
 
 [tool.ruff.lint]
@@ -65,7 +65,7 @@ ignore = [
 # yaml.safe_load is required (ADR-025); yaml.load is caught by tools/check_yaml_safe.py too.
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.11"
 strict = true
 files = ["quest_app", "validators", "tools"]
 warn_unreachable = true

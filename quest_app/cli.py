@@ -15,9 +15,13 @@ import json
 import sys
 from pathlib import Path
 
+from quest_app.actions import MUTATING_ACTIONS, ActionRunner
 from quest_app.config import APPLICATION_VERSION, AppConfig
+from quest_app.content_loader import SchemaSet
 from quest_app.errors import ProblemReport
 from quest_app.pipeline import LoadedWorld, load_world
+from quest_app.store import StoreError
+from quest_app.view_models import offline_service_view
 
 EXIT_OK = 0
 EXIT_CONTENT_ERROR = 1
@@ -169,6 +173,80 @@ def update_command(args: argparse.Namespace) -> int:
     return EXIT_CONTENT_ERROR
 
 
+def action_command(args: argparse.Namespace) -> int:
+    """Perform one quest action without a browser.
+
+    The browser is not available everywhere a participant works. An agent sandbox, a
+    remote shell and CI all have a filesystem and no way to reach a loopback server, and
+    on those surfaces this is the only path to changing state. It runs the same
+    `ActionRunner` the HTTP service runs, so every guard applies identically: the secret
+    scan still blocks marking evidence ready, a validation run is still not a transition,
+    and nothing here can produce verified completion.
+    """
+    if args.list:
+        for name in sorted(MUTATING_ACTIONS):
+            print(name)
+        return EXIT_OK
+
+    if not args.name:
+        print("Name an action, or pass --list to see them.", file=sys.stderr)
+        return EXIT_CONTENT_ERROR
+    if args.name not in MUTATING_ACTIONS:
+        print(f"{args.name!r} is not an action this application performs.", file=sys.stderr)
+        print("Run with --list to see them.", file=sys.stderr)
+        return EXIT_CONTENT_ERROR
+    if args.name != "rebuild" and not args.quest:
+        print(f"{args.name} needs --quest.", file=sys.stderr)
+        return EXIT_CONTENT_ERROR
+
+    config = _config_from_args(args)
+
+    def load() -> LoadedWorld:
+        report = ProblemReport()
+        world = load_world(config, report)
+        if world is None:
+            _report_problems(report, as_json=False)
+            raise ValueError("Content did not validate, so nothing was changed.")
+        return world
+
+    payload: dict[str, object] = {"action": args.name, "quest_id": args.quest}
+    if args.validator:
+        payload["validator_id"] = args.validator
+    if args.decision:
+        payload["decision"] = args.decision
+        payload["reviewer_name"] = args.reviewer
+        payload["verification_statement"] = args.statement or ""
+        payload["findings"] = [
+            {
+                "id": f"finding-{index + 1}",
+                "severity": severity,
+                "summary": summary,
+                "evidence": evidence,
+            }
+            for index, (severity, summary, evidence) in enumerate(
+                part.split(":", 2) for part in args.finding if part.count(":") >= 2
+            )
+        ]
+
+    runner = ActionRunner(
+        config, SchemaSet(config.schemas_root), load, service=offline_service_view
+    )
+    try:
+        result = runner.perform(args.name, payload)
+    except (StoreError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return EXIT_CONTENT_ERROR
+
+    if args.json:
+        print(json.dumps(result, indent=2, sort_keys=True))
+    else:
+        state = result.get("state")
+        print(f"{args.name}: ok" + (f" — now {state}" if state else ""))
+        if result.get("next"):
+            print(f"next: {result['next']}")
+    return EXIT_OK
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="quest", description=__doc__.splitlines()[0])
     parser.add_argument("--version", action="version", version=APPLICATION_VERSION)
@@ -187,6 +265,27 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--host", default=None, help="Bind address (loopback only)")
     serve.add_argument("--port", type=int, default=None)
     serve.set_defaults(func=serve_command)
+
+    action = subparsers.add_parser(
+        "action", help="Perform a quest action without a browser (Cowork, SSH, CI)"
+    )
+    _common_arguments(action)
+    action.add_argument("name", nargs="?", help="Action to perform; --list shows them all")
+    action.add_argument("--list", action="store_true", help="List the actions and exit")
+    action.add_argument("--quest", help="Quest ID the action applies to")
+    action.add_argument("--validator", help="Validator ID, for run-validator")
+    action.add_argument(
+        "--decision", choices=["approve", "request-changes"], help="For record-review"
+    )
+    action.add_argument("--reviewer", default="Reviewer", help="Reviewer name, for record-review")
+    action.add_argument("--statement", help="Verification statement, required to approve")
+    action.add_argument(
+        "--finding",
+        action="append",
+        default=[],
+        help="severity:summary:evidence — repeatable; at least one to request changes",
+    )
+    action.set_defaults(func=action_command)
 
     update = subparsers.add_parser(
         "update", help="Check whether it is safe to take upstream curriculum changes"
