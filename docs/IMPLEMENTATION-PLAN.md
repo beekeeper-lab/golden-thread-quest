@@ -473,9 +473,10 @@ Update this section whenever work pauses.
 | ID | Description | Reason deferred | Target | Owner | Approval |
 |---|---|---|---|---|---|
 | D1 | Glossary content type (`content/glossary/`) | No schema, no sample, no screen renders one | Post-release | Curriculum maintainer | Stage 0 audit F5 |
-| D2 | Coverage reporting | `pytest-cov` was installed with nothing configured; half-configured is worse than absent | Stage 9 | Implementation | Stage 1 audit L1 |
+| D2 | Coverage reporting | `pytest-cov` was installed with nothing configured; half-configured is worse than absent | **Post-release** (re-approved 2026-09-17: Stage 9 shipped without it) | Implementation | Stage 1 audit L1 |
 | D3 | `attempts[].validation_result_ids` and `submission_id` consumers | Submission records are Stage 7 | Stage 7 | Implementation | Stage 2 audit M6 |
 | D4 | `review.evidence_hash`, `review.quest_version` comparison, `hashing.hash_directory()` caller | Changed-evidence detection is Stage 7 | Stage 7 | Implementation | Stage 2 audit M6 |
 | D5 | Validator-registry and submission schemas | Authored with the stages that use them | Stages 5 and 7 | Implementation | Stage 0 audit F7 |
-| D7 | Live Environment Health checks (dependency versions, Git status, participant write test, external CLI presence, service binding) | A generated page cannot inspect the machine at the moment it is read; the five static checks say what was true at build time and label themselves as such | Stage 9, through the local service | Implementation | Stage 3 audit S3-M4 |
+| D7 | Live Environment Health checks (dependency versions, Git status, participant write test, external CLI presence, service binding) | A generated page cannot inspect the machine at the moment it is read; the five static checks say what was true at build time and label themselves as such | **Post-release**, through the local service (re-approved 2026-09-17) | Implementation | Stage 3 audit S3-M4 |
+| D8 | A fixture exercising all eight quest states at once | The shipped fixture covers five; `submitted` and `needs_changes` are reached only by mutating it in a test | Post-release | Curriculum maintainer | Stage 6 self-audit |
 | D6 | Presentation-only reserved fields (`quest.tools`, `author`, `last_reviewed`, `risk.notes`, `region.icon`, `badge.icon`, `track.focus_tags`, `site.professional_role`) | Consumed by pages that arrive in Stage 3 and Stage 6 | Stages 3 and 6 | Implementation | Stage 2 audit M6 |

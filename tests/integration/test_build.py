@@ -31,11 +31,18 @@ def build(config: AppConfig) -> tuple[LoadedWorld, int]:
 
 
 def tree_digest(root: Path) -> str:
+    """A digest over a directory's *source*, ignoring compiled bytecode.
+
+    `__pycache__` appears in the working tree and not in a fresh copy, so including it would
+    make every comparison fail for a reason that has nothing to do with what changed.
+    """
     digest = hashlib.sha256()
     for path in sorted(root.rglob("*"), key=lambda p: p.relative_to(root).as_posix()):
-        if path.is_file():
-            digest.update(path.relative_to(root).as_posix().encode())
-            digest.update(path.read_bytes())
+        relative = path.relative_to(root)
+        if not path.is_file() or "__pycache__" in relative.parts or path.suffix == ".pyc":
+            continue
+        digest.update(relative.as_posix().encode())
+        digest.update(path.read_bytes())
     return digest.hexdigest()
 
 
@@ -261,12 +268,19 @@ The normalized context file.
         assert "context-normalize-notes" in json.loads((indexes / "states.json").read_text())
 
     def test_no_ui_file_was_touched(self, with_new_quest: AppConfig, repo_root: Path) -> None:
-        """The check that gives the rest of this class its meaning."""
+        """The check that gives the rest of this class its meaning.
+
+        It used to `continue` past any directory the fixture had not copied, and the fixture
+        did not copy `quest_app` — so the "no Python was changed" half of the product's
+        central claim was never asserted at all. The directories are named and their presence
+        is required rather than assumed.
+        """
         for directory in ("quest_app", "templates", "assets"):
-            source = repo_root / directory
-            if not (with_new_quest.repo_root / directory).exists():
-                continue
-            assert tree_digest(source) == tree_digest(with_new_quest.repo_root / directory)
+            copied = with_new_quest.repo_root / directory
+            assert copied.exists(), f"the fixture did not copy {directory}, so nothing is checked"
+            assert tree_digest(repo_root / directory) == tree_digest(copied), (
+                f"adding a quest changed something in {directory}"
+            )
 
 
 @pytest.mark.slow
