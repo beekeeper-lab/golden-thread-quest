@@ -322,3 +322,81 @@ def test_a_passing_validator_cannot_produce_verified(registry) -> None:  # type:
 
     assert all(t.target is not AttemptState.VERIFIED for t in BY_ACTION.values())
     assert "verified" not in {t.target.value for t in BY_ACTION.values()}
+
+
+class TestEnvironmentIsolation:
+    """What the child can actually see, asked of the child.
+
+    The first version of this only inspected registry strings for credential-shaped names,
+    which cannot tell you whether the parent applied them. It did not: the environment was
+    set around `process.start()`, and `forkserver` captures its helper's environment once —
+    so the second validator of a session inherited the first one's allowlist, in both
+    directions.
+    """
+
+    @staticmethod
+    def _seen(result: object) -> dict[str, str]:
+        return {
+            check.evidence.split("=", 1)[0]: check.evidence.split("=", 1)[1]
+            for check in result.checks  # type: ignore[attr-defined]
+            if check.evidence and "=" in check.evidence
+        }
+
+    @pytest.mark.slow
+    def test_an_empty_allowlist_hides_an_exported_variable(
+        self, registry, config: AppConfig, monkeypatch: pytest.MonkeyPatch
+    ) -> None:  # type: ignore[no-untyped-def]
+        monkeypatch.setenv("JIRA_BASE_URL", "https://jira.example.invalid")
+        result = run_validator(
+            registry.get("probe-environment-empty"),
+            config,
+            quest_id="base-camp-repository-safety",
+            attempt_id="a-001",
+            run_id="env-empty",
+        )
+        assert self._seen(result)["JIRA_BASE_URL"] == "<ABSENT>"
+
+    @pytest.mark.slow
+    def test_an_allowed_variable_reaches_the_child(
+        self, registry, config: AppConfig, monkeypatch: pytest.MonkeyPatch
+    ) -> None:  # type: ignore[no-untyped-def]
+        monkeypatch.setenv("JIRA_BASE_URL", "https://jira.example.invalid")
+        result = run_validator(
+            registry.get("probe-environment-allowed"),
+            config,
+            quest_id="jira-read-assigned-stories",
+            attempt_id="a-001",
+            run_id="env-allowed",
+        )
+        assert self._seen(result)["JIRA_BASE_URL"] == "https://jira.example.invalid"
+
+    @pytest.mark.slow
+    def test_one_run_does_not_leak_into_the_next_in_either_direction(
+        self, registry, config: AppConfig, monkeypatch: pytest.MonkeyPatch
+    ) -> None:  # type: ignore[no-untyped-def]
+        """The defect: order decided what a validator could see, and in a running service
+        the order is whatever the participant clicks first."""
+        monkeypatch.setenv("JIRA_BASE_URL", "https://jira.example.invalid")
+        monkeypatch.setenv("GTQ_TEST_SECRET", "must-never-be-seen")
+
+        allowed = run_validator(
+            registry.get("probe-environment-allowed"),
+            config,
+            quest_id="jira-read-assigned-stories",
+            attempt_id="a-001",
+            run_id="env-order-1",
+        )
+        empty = run_validator(
+            registry.get("probe-environment-empty"),
+            config,
+            quest_id="base-camp-repository-safety",
+            attempt_id="a-001",
+            run_id="env-order-2",
+        )
+
+        assert self._seen(allowed)["JIRA_BASE_URL"] == "https://jira.example.invalid"
+        assert self._seen(empty)["JIRA_BASE_URL"] == "<ABSENT>"
+        for result in (allowed, empty):
+            assert self._seen(result)["GTQ_TEST_SECRET"] == "<ABSENT>", (
+                "a variable on no allowlist reached a validator"
+            )

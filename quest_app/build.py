@@ -784,8 +784,13 @@ def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None
     if not path.is_file():
         return None
     from quest_app.markdown_render import render_markdown
+    from quest_app.secret_patterns import redact_text
 
-    return render_markdown(path.read_text(encoding="utf-8", errors="replace"))
+    # Redacted before rendering. It is the participant's own file and they can already read
+    # it, but the guarantee "generated output contains no secrets" has to hold for the
+    # generated directory as a whole — it can be served, and it is what a screenshot catches.
+    text, _ = redact_text(path.read_text(encoding="utf-8", errors="replace"))
+    return render_markdown(text)
 
 
 def git_summary_for(world: LoadedWorld, evidence_path: str | None) -> dict[str, Any]:
@@ -892,8 +897,8 @@ def _review_queue_context(
         "decision_route": None,
         "can_decide": False,
         "blocked_reason": (
-            "Recording a decision needs the local service. Until Stage 7 lands the reviewer "
-            "workflow, this page reports what is waiting."
+            "Recording a decision needs the local service. Open a quest from the queue to "
+            "review it."
         ),
     }
 

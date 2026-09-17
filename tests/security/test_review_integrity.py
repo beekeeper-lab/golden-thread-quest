@@ -416,3 +416,52 @@ class TestEvidenceChangedAfterApproval:
         assert report.ok, "a changed evidence package must not break the build"
         _, after = reload_attempt(config)
         assert after.recorded_state is AttemptState.VERIFIED
+
+
+def test_an_approval_for_a_different_quest_version_does_not_verify(
+    setup, config: AppConfig
+) -> None:  # type: ignore[no-untyped-def]
+    """An approval of a version that was never attempted must not confer verified XP.
+
+    The integrity check compared review to attempt, review to quest, the decision and the
+    statement — and never the version. Setting `quest_version: 99` left the attempt verified
+    with no warning at all.
+    """
+    submit(setup, config)
+    world, attempt = reload_attempt(config)
+    _, schemas, store, quest, _ = setup
+    record_decision(
+        config,
+        store,
+        quest=quest,
+        attempt=attempt,
+        participant=world.participant,
+        decision="approved",
+        reviewer_name="A Reviewer",
+        verification_statement=STATEMENT,
+        findings=[],
+        schemas=schemas,
+    )
+
+    path = config.resolve_participant_path(attempt.evidence_path) / "review.yaml"
+    data = yaml.safe_load(path.read_text())
+    data["quest_version"] = 99
+    path.write_text(yaml.safe_dump(data, sort_keys=False))
+
+    report = ProblemReport()
+    assert load_world(config, report) is None
+    assert "progress.unverified_verified_state" in {p.code for p in report.errors}
+
+
+def test_the_transition_guard_cannot_be_omitted() -> None:
+    """`locally_validated` needs qualifying results, and the guard is how that is enforced.
+
+    It used to default to `None`, so the invariant its own docstring claimed did not exist:
+    a caller could reach `locally_validated` with no validation results on disk.
+    """
+    import inspect
+
+    from quest_app.store import transition_attempt
+
+    guard = inspect.signature(transition_attempt).parameters["guard"]
+    assert guard.default is inspect.Parameter.empty, "the guard must be required"

@@ -83,6 +83,11 @@
     <div class="alert alert-information" role="status"><p>{{ message }}</p></div>
     {% endfor %}
 
+    {# The running service substitutes a refusal message here as it serves the page, so a
+       refused action says so without JavaScript and without a second request. A page built
+       by `quest build` keeps the empty placeholder, which renders as nothing. #}
+    __GTQ_FLASH__
+
     {% block main %}{% endblock %}
   </main>
 

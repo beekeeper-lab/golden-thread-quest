@@ -70,3 +70,38 @@ validators:
     network: denied
     quest_ids:
       - playwright-first-independent-test
+
+  # Used only by the test suite, to ask a child process what environment it was actually
+  # given. It reads nothing and writes nothing.
+  - id: probe-environment-empty
+    version: 1
+    display_name: Environment probe with no allowlist
+    description: >-
+      Reports which watched environment variables a validator with an empty allowlist can
+      see. Exists so the allowlist is verified from inside the child rather than assumed.
+    entrypoint: validators.environment_probe:run
+    working_directory: participant
+    timeout_seconds: 20
+    max_output_bytes: 20000
+    environment_allowlist: []
+    read_roots:
+      - participant
+    write_roots: []
+    network: denied
+
+  - id: probe-environment-allowed
+    version: 1
+    display_name: Environment probe with one allowed variable
+    description: >-
+      Reports which watched environment variables a validator allowed exactly one variable
+      can see. Paired with the empty-allowlist probe to catch leakage in either direction.
+    entrypoint: validators.environment_probe:run
+    working_directory: participant
+    timeout_seconds: 20
+    max_output_bytes: 20000
+    environment_allowlist:
+      - JIRA_BASE_URL
+    read_roots:
+      - participant
+    write_roots: []
+    network: denied

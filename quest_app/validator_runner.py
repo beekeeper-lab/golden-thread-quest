@@ -22,10 +22,13 @@ because "we did not finish" is not evidence either way.
 
 from __future__ import annotations
 
+import contextlib
 import importlib
-import multiprocessing
+import json
 import os
 import signal
+import subprocess
+import sys
 import time
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
@@ -233,22 +236,6 @@ def _import_entrypoint(entrypoint: str) -> Any:
     return function
 
 
-def _child(
-    entrypoint: str, workspace: Workspace, pipe: Any
-) -> None:  # pragma: no cover - subprocess
-    """Run the validator in its own process group, reporting back over a pipe."""
-    os.setsid()
-    output = ValidatorOutput()
-    try:
-        _import_entrypoint(entrypoint)(workspace, output)
-    except WorkspaceError as exc:
-        output.fail_environment(f"the validator tried to leave its permitted paths: {exc}")
-    except Exception as exc:
-        output.fail_environment(f"the validator raised {type(exc).__name__}")
-    pipe.send((output.checks, output.notes, output.environment_failure))
-    pipe.close()
-
-
 def run_validator(
     definition: ValidatorDefinition,
     config: AppConfig,
@@ -285,40 +272,60 @@ def run_validator(
     # inherit locks held by other threads. `spawn` re-imports the parent's `__main__`,
     # which fails whenever the parent was not started from an importable file. `forkserver`
     # forks from a clean, single-threaded helper and inherits nothing of either problem.
-    context: Any = multiprocessing.get_context(_start_method())
-    receiver, sender = context.Pipe(duplex=False)
-    process = context.Process(target=_child, args=(definition.entrypoint, workspace, sender))
-
-    previous_environment = dict(os.environ)
-    os.environ.clear()
-    os.environ.update(environment)
-    try:
-        process.start()
-    finally:
-        os.environ.clear()
-        os.environ.update(previous_environment)
-    sender.close()
+    specification = json.dumps(
+        {
+            "entrypoint": definition.entrypoint,
+            "read_roots": [str(path) for path in workspace.read_roots],
+            "write_roots": [str(path) for path in workspace.write_roots],
+            "repo_root": str(workspace.repo_root),
+            "participant_root": str(workspace.participant_root),
+            "parameters": bound,
+        }
+    )
 
     checks: list[Check] = []
     notes: list[str] = []
     environment_failure: str | None = None
     interrupted = False
 
-    if receiver.poll(definition.timeout_seconds):
-        try:
-            checks, notes, environment_failure = receiver.recv()
-        except EOFError:
-            # The child died before reporting. That is a defect in the validator or in the
-            # environment, never a statement about the participant's work.
-            environment_failure = "the validator exited without producing a result"
-        process.join(timeout=5)
-    else:
+    # `start_new_session` puts the child in its own process group, so a timeout kills
+    # anything it spawned rather than only the child itself.
+    process = subprocess.Popen(
+        [sys.executable, "-m", "quest_app.validator_child"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=str(config.repo_root),
+        env=environment,
+        text=True,
+        start_new_session=True,
+    )
+    try:
+        stdout, stderr = process.communicate(specification, timeout=definition.timeout_seconds)
+    except subprocess.TimeoutExpired:
         interrupted = True
         _terminate_tree(process)
-
-    receiver.close()
-    if process.is_alive():  # pragma: no cover - only on a stubborn child
-        _terminate_tree(process)
+        stdout, stderr = "", ""
+    else:
+        if process.returncode != 0 or not stdout.strip():
+            environment_failure = (
+                f"it exited with status {process.returncode} and produced no result"
+            )
+        else:
+            try:
+                payload = json.loads(stdout)
+            except json.JSONDecodeError:
+                environment_failure = "the validator produced output that could not be read"
+            else:
+                checks = [Check(**entry) for entry in payload["checks"]]
+                notes = list(payload["notes"])
+                environment_failure = payload["environment_failure"]
+        if stderr.strip():
+            notes.append(_redact_stderr(stderr))
+            if environment_failure:
+                # On a failure the first line of stderr is usually the cause, and it is far
+                # more useful than the line count. Redacted like any other captured output.
+                notes.append(f"Its last message was: {stderr.strip().splitlines()[-1][:300]}")
 
     completed = datetime.now(UTC)
     duration_ms = int((time.monotonic() - start_monotonic) * 1000)
@@ -326,6 +333,10 @@ def run_validator(
     output = ValidatorOutput(
         checks=list(checks), notes=list(notes), environment_failure=environment_failure
     )
+    if environment_failure:
+        # Without this the outcome said "could not run" and the excerpt was empty, so the
+        # participant was told a verdict with no cause.
+        output.note(f"The validator could not run: {environment_failure}")
     if interrupted:
         outcome = "interrupted"
         output.note(
@@ -355,10 +366,10 @@ def run_validator(
     )
 
 
-def _start_method() -> str:
-    """`forkserver` where it exists, `spawn` where it does not."""
-    available = multiprocessing.get_all_start_methods()
-    return "forkserver" if "forkserver" in available else "spawn"
+def _redact_stderr(text: str) -> str:
+    """A child's stderr, summarised. Never reproduced: it may carry absolute paths."""
+    lines = [line for line in text.strip().splitlines() if line.strip()]
+    return f"The validator wrote {len(lines)} line(s) to standard error."
 
 
 def _bounded(text: str, limit: int) -> tuple[str, bool]:
@@ -369,19 +380,22 @@ def _bounded(text: str, limit: int) -> tuple[str, bool]:
     return encoded[:limit].decode("utf-8", errors="ignore") + "\n… output truncated …", True
 
 
-def _terminate_tree(process: Any) -> None:
+def _terminate_tree(process: subprocess.Popen[str]) -> None:
     """Kill the whole process group, not just the child.
 
     A validator that spawned something of its own would otherwise survive its own timeout,
     which is how a "stopped" run keeps writing files.
     """
-    if process.pid is None:
-        return
     for sig in (signal.SIGTERM, signal.SIGKILL):
         try:
             os.killpg(os.getpgid(process.pid), sig)
         except (ProcessLookupError, PermissionError, OSError):
             break
-        process.join(timeout=3)
-        if not process.is_alive():
+        try:
+            process.wait(timeout=3)
             return
+        except subprocess.TimeoutExpired:
+            continue
+    with contextlib.suppress(OSError, subprocess.TimeoutExpired):
+        process.kill()
+        process.wait(timeout=3)

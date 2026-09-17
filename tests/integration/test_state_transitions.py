@@ -21,6 +21,7 @@ from quest_app.store import (
     ProgressStore,
     StoreError,
     atomic_write_text,
+    no_guard,
     start_attempt,
     transition_attempt,
 )
@@ -124,7 +125,9 @@ class TestWritingProgress:
         self, store: ProgressStore, schemas: SchemaSet, config: AppConfig
     ) -> None:
         """State lives in a file, not in a browser, so restarting restores it."""
-        transition_attempt(store, quest_id=IN_PROGRESS, action="submit-for-review", schemas=schemas)
+        transition_attempt(
+            store, quest_id=IN_PROGRESS, action="submit-for-review", schemas=schemas, guard=no_guard
+        )
 
         report = ProblemReport()
         world = load_world(config, report)
@@ -139,7 +142,11 @@ class TestWritingProgress:
         before = store.path.read_text()
         with pytest.raises(StoreError):
             transition_attempt(
-                store, quest_id=IN_PROGRESS, action="withdraw-submission", schemas=schemas
+                store,
+                quest_id=IN_PROGRESS,
+                action="withdraw-submission",
+                schemas=schemas,
+                guard=no_guard,
             )
         assert store.path.read_text() == before
 
@@ -148,13 +155,19 @@ class TestWritingProgress:
     ) -> None:
         with pytest.raises(StoreError, match="no attempt"):
             transition_attempt(
-                store, quest_id=UNSTARTED, action="mark-evidence-ready", schemas=schemas
+                store,
+                quest_id=UNSTARTED,
+                action="mark-evidence-ready",
+                schemas=schemas,
+                guard=no_guard,
             )
 
     def test_every_change_is_recorded_where_the_participant_can_read_it(
         self, store: ProgressStore, schemas: SchemaSet, config: AppConfig
     ) -> None:
-        transition_attempt(store, quest_id=IN_PROGRESS, action="submit-for-review", schemas=schemas)
+        transition_attempt(
+            store, quest_id=IN_PROGRESS, action="submit-for-review", schemas=schemas, guard=no_guard
+        )
         activity = (config.participant_root / "ACTIVITY.md").read_text()
         assert IN_PROGRESS in activity
         assert "submitted" in activity
@@ -201,4 +214,6 @@ def test_a_participant_cannot_write_verified_through_the_store(
 ) -> None:
     """The last line of defence: even a direct call cannot reach the reviewer's state."""
     with pytest.raises(StoreError):
-        transition_attempt(store, quest_id=VERIFIED, action="start-quest", schemas=schemas)
+        transition_attempt(
+            store, quest_id=VERIFIED, action="start-quest", schemas=schemas, guard=no_guard
+        )

@@ -135,7 +135,7 @@ def create_submission(
     note: str | None = None,
 ) -> SubmissionRecord:
     """Record a submission and move the attempt to `submitted`."""
-    from quest_app.store import transition_attempt
+    from quest_app.store import no_guard, transition_attempt
 
     problems = readiness_problems(quest, attempt, participant, config)
     if blocking(problems):
@@ -162,7 +162,9 @@ def create_submission(
     directory = config.resolve_participant_path(attempt.evidence_path)
     _write_yaml(directory / SUBMISSION_FILENAME, record.to_document(), schemas, "submission")
 
-    transition_attempt(store, quest_id=quest.id, action="submit-for-review", schemas=schemas)
+    transition_attempt(
+        store, quest_id=quest.id, action="submit-for-review", schemas=schemas, guard=no_guard
+    )
     _record_submission_id(store, quest.id, record.submission_id, schemas)
     append_audit(config, f"Submitted {quest.id} for review as {record.submission_id}.")
     return record

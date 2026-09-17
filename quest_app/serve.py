@@ -21,6 +21,7 @@ The shape of the defence, in the order a request meets it:
 
 from __future__ import annotations
 
+import contextlib
 import json
 import mimetypes
 import secrets
@@ -49,6 +50,9 @@ FORM_CONTENT_TYPE = "application/x-www-form-urlencoded"
 # Replaced in served HTML so a form can carry the token without it ever being written to a
 # file. A page built by `quest build` keeps the placeholder, and the service refuses it.
 TOKEN_PLACEHOLDER = "__GTQ_REQUEST_TOKEN__"  # noqa: S105 - a marker to replace, not a secret
+# Where a refusal message is rendered into a served page. Substituted at request time from
+# the `problem` query parameter, so it works with no JavaScript and survives a redirect.
+FLASH_PLACEHOLDER = "__GTQ_FLASH__"
 LOOPBACK_ADDRESSES = frozenset({"127.0.0.1", "::1", "localhost"})
 JSON_CONTENT_TYPE = "application/json"
 
@@ -248,6 +252,8 @@ class ActionHandler(BaseHTTPRequestHandler):
                 self._refuse(HTTPStatus.CONFLICT, str(exc))
             except ValueError as exc:
                 self._refuse(HTTPStatus.BAD_REQUEST, str(exc))
+            except OSError as exc:
+                self._refuse(HTTPStatus.INTERNAL_SERVER_ERROR, _filesystem_message(exc))
 
     def _handle_form_action(self, path: str) -> None:
         """An ordinary HTML form submission, so the UI works with no JavaScript.
@@ -288,11 +294,14 @@ class ActionHandler(BaseHTTPRequestHandler):
         with self.state.lock:
             try:
                 self._perform(action, payload)
-            except StoreError as exc:
+            except (StoreError, ValueError) as exc:
                 self._redirect_back(str(exc))
                 return
-            except ValueError as exc:
-                self._redirect_back(str(exc))
+            except OSError as exc:
+                # A read-only participant directory or a full disk. Without this the
+                # connection closed with no status and no body, and a traceback containing
+                # absolute paths went to stderr.
+                self._redirect_back(_filesystem_message(exc))
                 return
         self._redirect_back(None)
 
@@ -342,11 +351,38 @@ class ActionHandler(BaseHTTPRequestHandler):
             self.rfile.read(length).decode("utf-8", errors="replace"), keep_blank_values=True
         )
 
+    def _flash_html(self, path: str) -> str:
+        """The refusal message for this request, as escaped HTML, or nothing.
+
+        Read from the `problem` query parameter the redirect set. Escaped here rather than
+        trusted, because it is substituted into the page after Jinja has finished with it and
+        a refusal message can quote a value the participant supplied.
+        """
+        from html import escape
+        from urllib.parse import parse_qs, urlparse
+
+        del path
+        query = parse_qs(urlparse(self.path).query)
+        message = (query.get("problem") or [""])[0].strip()
+        if not message:
+            return ""
+        return (
+            '<div class="alert alert-error" role="status">'
+            f"<p><strong>That did not happen.</strong> {escape(message[:400])}</p>"
+            "</div>"
+        )
+
     def _redirect_back(self, message: str | None) -> None:
         """Return the browser to the page it came from, which the rebuild has refreshed."""
         target = self.headers.get("Referer") or "/"
         parsed = urlparse(target)
         location = parsed.path or "/"
+        if message:
+            # Rebuild before redirecting, so the page the participant lands on describes the
+            # state as it actually is. Without this a refused evidence-ready still showed the
+            # previous build's "no secrets found" panel beside the refusal.
+            with contextlib.suppress(StoreError, OSError):
+                build_site(self._load(), service=online_service_view())
         if message:
             from urllib.parse import quote
 
@@ -652,6 +688,7 @@ class ActionHandler(BaseHTTPRequestHandler):
             # Substituted as the page is served, so the token reaches a form without ever
             # being written to a file.
             body = body.replace(TOKEN_PLACEHOLDER.encode(), self.state.token.encode())
+            body = body.replace(FLASH_PLACEHOLDER.encode(), self._flash_html(path).encode())
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
@@ -713,6 +750,19 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
     finally:
         server.server_close()
     return 0
+
+
+def _filesystem_message(error: OSError) -> str:
+    """What went wrong, named by operation rather than by path.
+
+    `strerror` alone ("Permission denied") does not say what to fix; the filename would put
+    an absolute path in front of a browser. This says both what failed and what to check.
+    """
+    reason = error.strerror or type(error).__name__
+    return (
+        f"The change could not be written to your participant directory: {reason}. "
+        "Check that it exists and that you can write to it."
+    )
 
 
 def _default_display_name() -> str:

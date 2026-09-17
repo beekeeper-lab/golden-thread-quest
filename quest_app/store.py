@@ -167,20 +167,31 @@ def start_attempt(
     return attempt_id
 
 
+def no_guard(action: str) -> None:
+    """The explicit "this transition needs no extra condition" guard.
+
+    A named function rather than a default of `None`, so a caller that has no extra condition
+    says so and a caller that forgot cannot silently skip one.
+    """
+    del action
+
+
 def transition_attempt(
     store: ProgressStore,
     *,
     quest_id: str,
     action: str,
     schemas: Any,
-    guard: Callable[[str], None] | None = None,
+    guard: Callable[[str], None],
 ) -> AttemptState:
     """Apply one allowed transition to the latest attempt for `quest_id`.
 
     `guard` is called with the action before anything is written, for the conditions the
     transition table cannot express — notably that `locally_validated` needs qualifying
-    validator results. It lives here rather than in the service so that no other caller can
-    reach the transition without it.
+    validator results. It is **required**, not optional: the first version defaulted it to
+    `None`, so the invariant this docstring claimed did not actually exist and a caller could
+    reach `locally_validated` with no validation results at all. `no_guard` exists for the
+    callers that genuinely have nothing to add, and naming it makes that a visible choice.
     """
     data = store.read()
     attempts = [a for a in data["attempts"] if a["quest_id"] == quest_id]
@@ -192,8 +203,7 @@ def transition_attempt(
         transition = check(action, current)
     except TransitionError as exc:
         raise StoreError(str(exc)) from exc
-    if guard is not None:
-        guard(action)
+    guard(action)
 
     attempt["state"] = transition.target.value
     attempt["updated_at"] = _now()

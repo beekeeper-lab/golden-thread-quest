@@ -452,3 +452,27 @@ def test_a_quest_page_communicates_every_required_element(built: AppConfig) -> N
 
     # Prerequisites and tools appear when the quest declares them.
     assert "Builder" in html or "Explorer" in html, "the difficulty level is shown"
+
+
+@pytest.mark.slow
+def test_a_secret_in_evidence_is_redacted_from_the_generated_preview(config: AppConfig) -> None:
+    """`generated/` must contain no secret, even one the participant put in their own file.
+
+    The evidence page previews PROOF.md. They can already read their own file, but the
+    generated directory can be served and is what a screenshot captures, so the guarantee
+    has to hold for it as a whole.
+    """
+    leaked = "ghp_abcdefghijklmnopqrstuvwxyz0123456789"  # secret-scan: allow
+    evidence = (
+        config.participant_root / "evidence" / "jira-read-assigned-stories" / "jira-attempt-001"
+    )
+    (evidence / "PROOF.md").write_text(f"# Proof\n\nI used token={leaked} to authenticate.\n")
+
+    build(config)
+
+    for page in config.generated_root.rglob("*.html"):
+        assert leaked not in page.read_text(), f"{page.name} reproduces a secret"
+    preview = (
+        config.generated_root / "evidence" / "jira-read-assigned-stories" / "index.html"
+    ).read_text()
+    assert "[REDACTED]" in preview, "the preview should show that something was removed"

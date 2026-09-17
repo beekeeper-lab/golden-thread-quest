@@ -204,3 +204,90 @@ def test_a_form_without_the_token_is_refused(
         urllib.request.urlopen(request, timeout=20)  # noqa: S310
     assert error.value.code == 403
     assert not (config.participant_root / "progress.yaml").exists()
+
+
+@pytest.mark.slow
+def test_a_refused_action_says_so_on_the_page(
+    first_run_service: tuple[str, str, AppConfig],
+) -> None:
+    """A refusal that nothing renders is worse than no refusal at all.
+
+    The service redirected with `?problem=…` and nothing read it. With a token in PROOF.md,
+    `mark-evidence-ready` was refused and the page the participant landed on still showed
+    the previous build's panel saying the scan had found nothing.
+    """
+    from urllib.parse import urlencode
+
+    base, token, config = first_run_service
+    urllib.request.urlopen(  # noqa: S310
+        urllib.request.Request(  # noqa: S310 - a fixed loopback URL built in this test
+            f"{base}/api/action",
+            data=json.dumps({"action": "start-quest", "quest_id": QUEST, "token": token}).encode(),
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        ),
+        timeout=20,
+    )
+
+    data = yaml.safe_load((config.participant_root / "progress.yaml").read_text())
+    evidence = data["attempts"][0]["evidence_path"]
+    leaked = "ghp_abcdefghijklmnopqrstuvwxyz0123456789"  # secret-scan: allow
+    (config.resolve_participant_path(evidence) / "PROOF.md").write_text(f"token={leaked}\n")
+
+    opener = urllib.request.build_opener()
+    response = opener.open(
+        urllib.request.Request(  # noqa: S310
+            f"{base}/api/action/mark-evidence-ready/{QUEST}/",
+            data=urlencode({"token": token, "confirm": "yes"}).encode(),
+            method="POST",
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Referer": f"{base}/evidence/{QUEST}/",
+            },
+        ),
+        timeout=30,
+    )
+    landed = response.read().decode()
+
+    assert "That did not happen" in landed, "the refusal was not shown to the participant"
+    assert "secret-like" in landed
+    assert "found nothing secret-like" not in landed, (
+        "the page still reassured the participant while a token sat in their evidence"
+    )
+    assert leaked not in landed, (
+        "neither the refusal nor the PROOF.md preview may reproduce the value"
+    )
+
+
+@pytest.mark.slow
+def test_an_unwritable_participant_directory_returns_a_real_response(
+    first_run_service: tuple[str, str, AppConfig],
+) -> None:
+    """An OSError used to close the connection with no status and no body at all."""
+    import urllib.error
+
+    base, token, config = first_run_service
+    mode = config.participant_root.stat().st_mode
+    # Read and execute, no write: the shape of a synced or NAS-backed directory that has
+    # gone read-only, which is the realistic version of this failure.
+    config.participant_root.chmod(0o555)
+    try:
+        request = urllib.request.Request(  # noqa: S310
+            f"{base}/api/action",
+            data=json.dumps({"action": "start-quest", "quest_id": QUEST, "token": token}).encode(),
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=20) as response:  # noqa: S310
+                body = json.loads(response.read())
+                status = response.status
+        except urllib.error.HTTPError as error:
+            body = json.loads(error.read())
+            status = error.code
+    finally:
+        config.participant_root.chmod(mode)
+
+    assert status in (409, 500), status
+    assert body["ok"] is False
+    assert str(config.participant_root) not in json.dumps(body), "no absolute path in the reason"

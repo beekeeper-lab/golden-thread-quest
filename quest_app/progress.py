@@ -515,6 +515,11 @@ def _check_integrity(
             problem = f"review {review.review_id!r} records {review.decision!r}, not an approval"
         elif not review.verification_statement:
             problem = f"review {review.review_id!r} approves without a verification statement"
+        elif review.quest_version != attempt.quest_version:
+            problem = (
+                f"review {review.review_id!r} approves version {review.quest_version} of the "
+                f"quest, but this attempt is on version {attempt.quest_version}"
+            )
         elif review.quest_id != attempt.quest_id:
             problem = (
                 f"review {review.review_id!r} is for quest {review.quest_id!r}, not "
