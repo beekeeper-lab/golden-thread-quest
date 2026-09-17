@@ -110,6 +110,12 @@ def build_command(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def serve_command(args: argparse.Namespace) -> int:
+    from quest_app.serve import run_service
+
+    return run_service(_config_from_args(args), host=args.host, port=args.port)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="quest", description=__doc__.splitlines()[0])
     parser.add_argument("--version", action="version", version=APPLICATION_VERSION)
@@ -122,6 +128,12 @@ def build_parser() -> argparse.ArgumentParser:
     build = subparsers.add_parser("build", help="Generate the site into generated/")
     _common_arguments(build)
     build.set_defaults(func=build_command)
+
+    serve = subparsers.add_parser("serve", help="Build, then run the loopback action service")
+    _common_arguments(serve)
+    serve.add_argument("--host", default=None, help="Bind address (loopback only)")
+    serve.add_argument("--port", type=int, default=None)
+    serve.set_defaults(func=serve_command)
 
     return parser
 
@@ -138,6 +150,10 @@ def validate_main() -> int:
 
 def build_main() -> int:
     return main(["build", *sys.argv[1:]])
+
+
+def serve_main() -> int:
+    return main(["serve", *sys.argv[1:]])
 
 
 if __name__ == "__main__":

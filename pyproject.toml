@@ -10,7 +10,10 @@ license = { file = "LICENSE" }
 dependencies = [
     "Jinja2>=3.1.4,<4",       # ADR-006 deterministic server-side rendering
     "PyYAML>=6.0.1,<7",       # ADR-025 safe_load only
-    "jsonschema>=4.21,<5",    # ADR-020 validates against the published schemas
+    # ADR-020 validates against the published schemas. The [format] extra is not optional:
+    # without it FormatChecker silently has no date-time checker, so `format: date-time`
+    # validates nothing and a timestamp of "banana" passes (Stage 2 audit H6).
+    "jsonschema[format]>=4.21,<5",
     "markdown-it-py>=3.0,<4", # ADR-021 CommonMark
     "nh3>=0.2.17,<0.4",       # ADR-021 allowlist sanitization
 ]
@@ -33,6 +36,7 @@ ui = [
 # `quest-serve` are added with the generator and the local service.
 quest-validate = "quest_app.cli:validate_main"
 quest-build = "quest_app.cli:build_main"
+quest-serve = "quest_app.cli:serve_main"
 
 [build-system]
 requires = ["setuptools>=68"]
