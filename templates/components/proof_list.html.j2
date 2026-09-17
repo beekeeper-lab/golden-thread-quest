@@ -1,7 +1,7 @@
 {# C11 — proof requirements, each independently addressable. #}
-{% macro proof_list(items, title, empty_message='None.') -%}
+{% macro proof_list(items, title, empty_message='None.', heading_level=3) -%}
 <section aria-labelledby="proof-{{ title | lower | replace(' ', '-') }}">
-  <h3 id="proof-{{ title | lower | replace(' ', '-') }}">{{ title }}</h3>
+  <h{{ heading_level }} id="proof-{{ title | lower | replace(' ', '-') }}">{{ title }}</h{{ heading_level }}>
   {% if items %}
   <ul class="checklist">
     {% for item in items %}

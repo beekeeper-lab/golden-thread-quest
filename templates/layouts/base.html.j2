@@ -68,8 +68,9 @@
   <main class="app-main" id="main" tabindex="-1">
     {% if not service.available %}
     <div class="alert alert-information" role="status">
-      <h2>Working offline</h2>
-      <p>{{ service.reason }}{% if service.cli_alternative %} Run <code>{{ service.cli_alternative }}</code> to start it.{% endif %}</p>
+      {# A status message, not a document section: a heading here would sit above the
+         page's own h1 and break the outline on every page it appears on. #}
+      <p><strong>Working offline.</strong> {{ service.reason }}{% if service.cli_alternative %} Run <code>{{ service.cli_alternative }}</code> to start it.{% endif %}</p>
     </div>
     {% endif %}
 

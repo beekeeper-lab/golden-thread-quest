@@ -48,6 +48,10 @@
   </div>
 </form>
 
+{# The results are a section of this page, so they need a heading between the page's h1
+   and the cards' h3. It is visually hidden because the count below already says it in
+   words, but without it the outline jumps a level. #}
+<h2 class="visually-hidden">Matching quests</h2>
 <p role="status"><strong data-result-count>{{ quests | length }}</strong> quest(s) match.</p>
 
 <div class="card-grid" data-catalog-results>
