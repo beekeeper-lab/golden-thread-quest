@@ -1,5 +1,18 @@
 # Reviewer Guide
 
+## Before anything else: start the service
+
+```bash
+make serve
+```
+
+Reading evidence works from the generated pages alone. **Recording a decision does not** — it
+writes files, so like every other state change it happens through the running service. A
+page built by `make build` shows the evidence and says "Start the local service to record a
+decision" where the form would be.
+
+Open `/review/` for the queue, then the quest you are reviewing.
+
 ## What you are deciding
 
 Whether the evidence in front of you demonstrates the quest's outcomes strongly enough to

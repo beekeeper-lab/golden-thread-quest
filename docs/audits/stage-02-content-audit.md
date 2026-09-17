@@ -5,8 +5,9 @@
 **Audited commit:** `93e91cd`
 **Auditor:** independent review agent, fresh context, read-only, 53 tool calls
 **Result:** `fail` — 1 blocking, 6 high, 14 medium, 9 low
-**Status:** findings recorded; **not yet fixed**. Stage 3 must not continue until B1 and H1–H6
-are corrected and this audit is rerun (`CLAUDE.md` rules 8 and 9).
+**Status (2026-09-17):** every finding fixed and verified by an independent re-audit, which
+recorded `pass with one open item`; that item (H5) and the residual S2-R1 are also now closed.
+The re-audit is appended to the end of this file.
 
 ## Method
 

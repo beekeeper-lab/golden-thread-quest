@@ -68,12 +68,16 @@ def test_it_is_deterministic(world) -> None:  # type: ignore[no-untyped-def]
 
 
 def test_work_already_started_outranks_work_not_started(world) -> None:  # type: ignore[no-untyped-def]
+    """The first version wrapped this in `if started and unstarted`, so it could pass with
+    nothing to compare. The fixture is asserted to contain both."""
     results = rank(world)
     states = compute_states(world.content, world.participant)
     started = [r for r in results if states[r.quest.id].is_started]
     unstarted = [r for r in results if not states[r.quest.id].is_started]
-    if started and unstarted:
-        assert started[0].score > unstarted[0].score
+
+    assert started, "the fixture has no started quest, so this test proves nothing"
+    assert unstarted, "the fixture has no unstarted quest, so this test proves nothing"
+    assert started[0].score > unstarted[0].score
 
 
 def test_a_deprecated_quest_is_never_recommended(world) -> None:  # type: ignore[no-untyped-def]
@@ -90,11 +94,38 @@ def test_a_deprecated_quest_is_never_recommended(world) -> None:  # type: ignore
     assert quest.id not in {result.quest.id for result in results}
 
 
-def test_ties_break_stably(world) -> None:  # type: ignore[no-untyped-def]
-    """Equal scores must order by region then ID, so the list never shuffles."""
-    results = rank(world)
-    scores = [result.score for result in results]
-    assert scores == sorted(scores, reverse=True)
+def test_ties_break_by_region_then_id(world) -> None:  # type: ignore[no-untyped-def]
+    """A real tie, constructed rather than hoped for.
+
+    The first version only checked the scores were descending, which is true whether or not
+    any two are equal — so the tie-breaking it was named after was never exercised.
+    """
+    import dataclasses
+
+    from quest_app.recommend import recommend
+
+    # Three quests made identical in every way the score reads, so their scores must tie.
+    quests = {}
+    for index, quest in enumerate(world.content.quests.values()):
+        quests[quest.id] = dataclasses.replace(
+            quest, prerequisites=(), bookend="intent", order=None, xp=20, estimated_minutes=30
+        )
+        del index
+    bundle = dataclasses.replace(world.content, quests=quests)
+    states = compute_states(bundle, None)
+    regions = region_progress(bundle, states)
+
+    results = recommend(bundle, states, regions, None)
+    scores = {result.score for result in results}
+    assert len(scores) == 1, f"the quests did not tie: {scores}"
+
+    region_order = {region.id: region.order for region in bundle.regions.values()}
+    ordered = [(region_order[r.quest.region], r.quest.id) for r in results]
+    assert ordered == sorted(ordered), "a tie must break by region order then ID"
+
+    assert [r.quest.id for r in recommend(bundle, states, regions, None)] == [
+        r.quest.id for r in results
+    ]
 
 
 def test_it_survives_a_participant_with_no_progress(world) -> None:  # type: ignore[no-untyped-def]

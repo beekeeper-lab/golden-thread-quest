@@ -37,7 +37,7 @@ is itself the finding.
 |---|---|---|
 | A reviewer sees the exact quest version and attempt | per-quest reviewer page, `_review_context` | `test_a_reviewer_page_exists_for_every_attempt`, `TestSubmission` |
 | A reviewer can inspect required proof and linked artifacts | `evidence.detect_proof` | `integration/test_evidence.py::TestProofDetection` |
-| A reviewer can see validator results and reproduction instructions | reviewer page, `submission_instructions` | `TestSubmission::test_the_instructions_never_push_or_open_a_pull_request_for_you` |
+| A reviewer can see validator results and reproduction instructions | `_review_context` results table and PROOF.md render | `test_a_reviewer_page_exists_for_every_attempt`; `submission_instructions` covered by `TestSubmission` |
 | Approve, request changes, or reject with findings | `review.record_decision` | `TestApprovalGuards` (five guards) |
 | Only approval changes the attempt to verified | `review._apply_decision` | `TestWhatApprovalProduces`, `TestForgery` |
 | Evidence changes after approval are detected and surfaced | `progress._check_stale_approval` | `TestEvidenceChangedAfterApproval` (four tests, including a tampered review hash) |

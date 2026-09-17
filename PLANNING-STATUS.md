@@ -2,7 +2,15 @@
 
 ## Current readiness
 
-**Status:** Ready for Claude Code planning audit, followed by staged implementation.
+**Status (2026-09-17):** Implemented. Stages 0 to 9 are complete and audited; the Stage 10
+release decision is pending a final re-audit. See `docs/RELEASE-NOTES.md` for what works and
+the known limitations, and `docs/audits/` for every audit including the ones that failed.
+
+The original planning status follows, preserved because it is the specification the
+implementation was held to.
+
+**Status at planning time:** Ready for Claude Code planning audit, followed by staged
+implementation.
 
 The product direction, architecture boundary, content model, primary screens, component vocabulary, participant lifecycle, security model, and implementation stages are defined. A data-driven interactive prototype is included as the visual acceptance target.
 

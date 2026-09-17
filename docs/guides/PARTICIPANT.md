@@ -52,21 +52,40 @@ and nothing a validator returns can produce it.
    and your work is untouched.
 6. **Mark the evidence ready**, then **submit**. Submission scans for secrets and refuses if
    it finds one.
-7. **Commit and push yourself.** The application prints the exact commands and runs none of
-   them. Pushing your evidence is a claim that the work is finished, and that claim is yours.
+7. **Record local validation** once the checks pass. This is a button, not something the
+   validators do to you — the state means "I have run them and they qualify", and the
+   application refuses it if the results do not support it.
+8. **Submit**, then **commit and push yourself**:
+
+   ```bash
+   git switch -c evidence/<quest-id>
+   git add participant/
+   git commit -m "Evidence for <quest-id>"
+   git push -u origin evidence/<quest-id>
+   gh pr create --fill
+   ```
+
+   The application runs none of these. Pushing your evidence is a claim that the work is
+   finished and ready for someone else's attention, and that claim is yours to make.
 
 ## What the application writes
 
-Only these, and only through documented actions:
+Under `participant/`, only these, and only through documented actions:
 
 - `participant/progress.yaml` — your state, written atomically and validated first
 - `participant/evidence/**` — evidence packages, validation results, submission and review records
 - `participant/ACTIVITY.md` — one line per change it made, for you to read
 
+It also rewrites `generated/` on every action. That directory is machine-owned, gitignored
+and disposable: `make build` recreates it from your content and your progress.
+
 It never commits, pushes, merges or cleans. `make clean` removes generated output and
 refuses to touch anything of yours.
 
 ## If something goes wrong
+
+**An action is refused.** The page says so at the top, in red, with the reason. Nothing
+changed, and the reason names what to fix.
 
 **A check fails.** Read the findings; they are ordered with the most serious first and each
 says what it observed and what to do. Your state does not change.

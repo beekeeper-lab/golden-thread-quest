@@ -4,7 +4,7 @@
 pinned to the requested commit with `git archive` and ran every probe there)
 **Auditor:** independent review agent, fresh context, read-only, 74 tool calls
 **Result:** `fail` — 1 blocking, 4 high, 8 medium, 5 low
-**Status:** recorded, **not yet fixed**. Stage 3 is not complete and its checkboxes stay unticked.
+**Status (2026-09-17):** every finding fixed, each with a regression test, and verified by an independent re-audit that recorded `pass with residuals`. See the resolution log at the end of this file.
 
 Two findings are already closed at `dce4edf`, verified at HEAD and marked below. Everything
 else is open.

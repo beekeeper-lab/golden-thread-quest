@@ -450,8 +450,15 @@ def test_a_quest_page_communicates_every_required_element(built: AppConfig) -> N
     missing = [name for name, marker in required.items() if marker not in html]
     assert missing == [], missing
 
-    # Prerequisites and tools appear when the quest declares them.
     assert "Builder" in html or "Explorer" in html, "the difficulty level is shown"
+
+    # Prerequisites and validators are the two the first version of this omitted. They are
+    # checked on a quest that actually declares them rather than on one that does not.
+    declared = (
+        built.generated_root / "quests" / "playwright-first-independent-test" / "index.html"
+    ).read_text()
+    assert "Automated checks" in declared, "declared validators are not shown"
+    assert "validate-playwright-quality".replace("-", " ") in declared.lower()
 
 
 @pytest.mark.slow

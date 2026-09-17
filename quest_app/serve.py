@@ -734,15 +734,21 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
     build_site(world, service=online_service_view())
 
     try:
-        server, state = create_server(config)
+        server, _ = create_server(config)
     except UnsafeBindError as exc:
         print(f"refusing to start: {exc}", file=sys.stderr)
         return 2
 
     address = f"http://{config.service_host}:{server.server_address[1]}/"
     print(f"Golden Thread Quest is at {address}", file=sys.stderr)
-    print(f"Request token for this run: {state.token}", file=sys.stderr)
-    print("The token is not written to disk. Stop with Ctrl-C.", file=sys.stderr)
+    # Deliberately not printed. The pages this run serves already carry it, substituted as
+    # they are served, so nobody needs to read it — and printing it put it into any log a
+    # participant redirected the service into, which is the one place it could reach disk.
+    print(
+        "Pages served by this run carry a request token; it is not printed or stored.",
+        file=sys.stderr,
+    )
+    print("Stop with Ctrl-C.", file=sys.stderr)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

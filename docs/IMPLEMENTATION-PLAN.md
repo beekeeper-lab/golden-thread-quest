@@ -105,39 +105,39 @@ Do not check the stage heading until its audit passes.
 
 ### Tasks
 
-- [ ] Finalize versioned schemas without weakening supplied constraints.
-- [ ] Implement safe YAML parsing.
-- [ ] Implement Markdown front-matter parsing.
-- [ ] Disable or sanitize raw HTML according to security policy.
-- [ ] Implement typed normalized content models.
-- [ ] Implement content discovery with stable deterministic ordering.
-- [ ] Validate schema errors with filename and field path.
-- [ ] Implement duplicate-ID and broken-reference checks.
-- [ ] Implement prerequisite-cycle detection.
-- [ ] Implement validator, badge, region, track, and related-quest reference checks.
-- [ ] Implement progress and review integrity validation.
-- [ ] Implement content hashes and supported-version checks.
-- [ ] Add a `validate-content` command producing human and machine-readable output.
+- [x] Finalize versioned schemas without weakening supplied constraints.
+- [x] Implement safe YAML parsing.
+- [x] Implement Markdown front-matter parsing.
+- [x] Disable or sanitize raw HTML according to security policy.
+- [x] Implement typed normalized content models.
+- [x] Implement content discovery with stable deterministic ordering.
+- [x] Validate schema errors with filename and field path.
+- [x] Implement duplicate-ID and broken-reference checks.
+- [x] Implement prerequisite-cycle detection.
+- [x] Implement validator, badge, region, track, and related-quest reference checks.
+- [x] Implement progress and review integrity validation.
+- [x] Implement content hashes and supported-version checks.
+- [x] Add a `validate-content` command producing human and machine-readable output.
 
 ### Required tests
 
-- [ ] Every supplied valid example passes.
-- [ ] Every seeded invalid fixture fails for the intended reason.
-- [ ] Duplicate IDs and circular prerequisites fail.
-- [ ] Unknown references fail with suggestions when a close stable ID exists.
-- [ ] Unsafe path and raw-HTML fixtures are rejected or sanitized as specified.
-- [ ] Verified progress without valid approval fails integrity checks.
+- [x] Every supplied valid example passes.
+- [x] Every seeded invalid fixture fails for the intended reason.
+- [x] Duplicate IDs and circular prerequisites fail.
+- [x] Unknown references fail with suggestions when a close stable ID exists.
+- [x] Unsafe path and raw-HTML fixtures are rejected or sanitized as specified.
+- [x] Verified progress without valid approval fails integrity checks.
 
 ### Stage audit
 
-- [ ] Trace every content field to a consumer or mark it intentionally reserved.
-- [ ] Review parser behavior with malformed and adversarial input.
-- [ ] Confirm templates will receive normalized models rather than raw dictionaries.
-- [ ] Create and resolve `docs/audits/stage-02-content-audit.md`.
+- [x] Trace every content field to a consumer or mark it intentionally reserved.
+- [x] Review parser behavior with malformed and adversarial input.
+- [x] Confirm templates will receive normalized models rather than raw dictionaries.
+- [x] Create and resolve `docs/audits/stage-02-content-audit.md`.
 
 ### Stage completion
 
-- [ ] **Stage 2 complete and audited**
+- [x] **Stage 2 complete and audited**
 
 ---
 
@@ -479,5 +479,9 @@ Update this section whenever work pauses.
 | D4 | `review.evidence_hash`, `review.quest_version` comparison, `hashing.hash_directory()` caller | Changed-evidence detection is Stage 7 | Stage 7 | Implementation | Stage 2 audit M6 |
 | D5 | Validator-registry and submission schemas | Authored with the stages that use them | Stages 5 and 7 | Implementation | Stage 0 audit F7 |
 | D7 | Live Environment Health checks (dependency versions, Git status, participant write test, external CLI presence, service binding) | A generated page cannot inspect the machine at the moment it is read; the five static checks say what was true at build time and label themselves as such | **Post-release**, through the local service (re-approved 2026-09-17) | Implementation | Stage 3 audit S3-M4 |
-| D8 | A fixture exercising all eight quest states at once | The shipped fixture covers five; `submitted` and `needs_changes` are reached only by mutating it in a test | Post-release | Curriculum maintainer | Stage 6 self-audit |
+| D8 | A fixture exercising all eight quest states at once | The shipped fixture covers two; the rest are reached by mutating it in `tests/ui/test_states.py` | Post-release | Curriculum maintainer | Stage 6 audit F4 |
+| D9 | Container or seccomp isolation for validators | Release one is policy plus process boundaries: a validator using `open()` directly bypasses `Workspace`. Disclosed in the release notes | Post-release | Implementation | Final re-audit, Job 2 |
+| D10 | Secret-scanner coverage: keyword-distant assignments, bare 40-hex keys, base64 blobs, webhook URLs, any PII | The detectors are a safety net and are documented as one; widening them without a corpus risks false positives that make people route around the gate | Post-release | Implementation | Final re-audit R16 |
+| D11 | Role separation between participant and reviewer | `/review/` sits in the primary navigation with no separation, so a participant can open the reviewer page for their own work. ADR-030 already states that release-one provenance is conventional | Post-release | Programme owner | Final re-audit, Job 2 |
+| D12 | A degraded view for an attempt whose evidence directory is missing | Today one deleted folder makes the whole site unbuildable until `progress.yaml` is hand-edited | Post-release | Implementation | Final re-audit R8 |
 | D6 | Presentation-only reserved fields (`quest.tools`, `author`, `last_reviewed`, `risk.notes`, `region.icon`, `badge.icon`, `track.focus_tags`, `site.professional_role`) | Consumed by pages that arrive in Stage 3 and Stage 6 | Stages 3 and 6 | Implementation | Stage 2 audit M6 |
