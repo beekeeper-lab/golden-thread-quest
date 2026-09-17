@@ -61,16 +61,45 @@ def content_identifiers(repo_root: Path) -> set[str]:
     }
 
 
+# Names this check cannot use, because they are also ordinary English or product names that
+# appear in module names, docstrings and security-pattern descriptions. Listed explicitly and
+# kept short, so the exemption is visible and arguable.
+#
+# The earlier rule excluded *every* single word, which would have let a one-word quest title
+# through unnoticed — the same blind spot in a different shape. Naming them means adding one
+# is a decision someone has to make and a reviewer can see.
+AMBIGUOUS_NAMES = frozenset(
+    {
+        # Technologies a region may use as its short title
+        "GitHub",
+        "GitLab",
+        "Git",
+        "Jira",
+        "Trello",
+        "Playwright",
+        "Markdown",
+        "Python",
+        "YAML",
+        # Ordinary words this product also uses as short titles. "Context" is in the
+        # curriculum's own name, so it appears in prose throughout the codebase.
+        "Context",
+        "Evidence",
+        "Review",
+        "Catalog",
+        "Passport",
+    }
+)
+
+
 def _is_distinctive(value: str) -> bool:
     """Whether a name identifies curriculum rather than a technology.
 
-    A single bare word such as `GitHub` is a product name that appears legitimately in
-    security-pattern descriptions and module docstrings; treating it as a curriculum
-    identifier would produce false positives that make maintainers disable the check, and a
-    check people disable protects nothing. A stable ID (hyphenated) or a multi-word title is
-    curriculum-specific and stays in scope.
+    `GitHub` is a product name; `GitHub Caverns` is a region. The first appears legitimately
+    in `secret_patterns.py` and half the docstrings, and flagging it would produce the kind
+    of false positive that makes maintainers disable a check — and a check people disable
+    protects nothing. Everything else stays in scope, including a single-word quest title.
     """
-    return " " in value or "-" in value
+    return value not in AMBIGUOUS_NAMES
 
 
 @pytest.mark.parametrize("directory", SEARCH_ROOTS)
@@ -120,3 +149,15 @@ def test_the_guard_would_catch_a_planted_violation(repo_root: Path, tmp_path: Pa
     planted.write_text("<h1>Base Camp</h1>")
     offenders = [name for name in identifiers if name in planted.read_text()]
     assert offenders, "a planted region title must be detectable"
+
+
+def test_a_single_word_title_is_not_waved_through() -> None:
+    """The exclusion is a named list, not "anything without a space".
+
+    Excluding every bare word would have let a one-word quest title — entirely plausible —
+    pass unnoticed, which is the same blind spot in a different shape.
+    """
+    assert _is_distinctive("Reconcile"), "a one-word curriculum title must stay in scope"
+    assert _is_distinctive("Onboarding")
+    assert not _is_distinctive("GitHub"), "a bare product name is excluded by name"
+    assert not _is_distinctive("Context"), "an ordinary word used as a short title, likewise"
