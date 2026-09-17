@@ -47,6 +47,9 @@
         {% endfor %}
       </ul>
       <p class="authority">A failing check is never a failed quest. It tells you what to fix, and your work is preserved.</p>
+      {# C12 — the run control. Disabled without the service, with the reason stated, rather
+         than a button that looks live and does nothing. #}
+      {% for run in run_actions %}{{ action_button(run, url) }}{% endfor %}
     </section>
     {% endif %}
 

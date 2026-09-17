@@ -1,0 +1,21 @@
+{# C16 — quest, validation, submission and review events in one consistent order, with full
+   timestamps preserved for auditability. Extracted from two near-identical copies. #}
+{% macro activity_timeline(events, url, caption, heading_id) -%}
+<div class="table-scroll">
+  <table>
+    <caption class="visually-hidden">{{ caption }}</caption>
+    <thead>
+      <tr><th scope="col">When</th><th scope="col">What</th><th scope="col">Authority</th></tr>
+    </thead>
+    <tbody>
+    {% for event in events %}
+    <tr>
+      <td><time datetime="{{ event.occurred_at }}" data-format>{{ event.occurred_at }}</time></td>
+      <td>{% if event.route %}<a href="{{ url(event.route) }}">{{ event.summary }}</a>{% else %}{{ event.summary }}{% endif %}</td>
+      <td>{{ event.authority | replace('_', ' ') }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{%- endmacro %}

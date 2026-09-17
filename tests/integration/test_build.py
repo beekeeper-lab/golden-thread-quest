@@ -103,7 +103,7 @@ def test_links_work_when_the_site_is_opened_from_disk(built: AppConfig) -> None:
 
 
 @pytest.mark.slow
-def test_a_failed_build_leaves_the_previous_site_intact(config: AppConfig) -> None:
+def test_broken_content_never_reaches_a_build(config: AppConfig) -> None:
     build(config)
     before = tree_digest(config.generated_root)
 
@@ -114,6 +114,34 @@ def test_a_failed_build_leaves_the_previous_site_intact(config: AppConfig) -> No
 
     assert world is None, "the broken content should not load"
     assert tree_digest(config.generated_root) == before
+
+
+@pytest.mark.slow
+def test_a_build_that_fails_midway_leaves_the_previous_site_intact(
+    config: AppConfig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The atomic swap, exercised by an actual failure rather than only by the happy path.
+
+    The earlier version of this test asserted that broken content does not load and never
+    called `build_site` at all, so the rename it was named after was never executed
+    (Stage 3 audit S3-M8).
+    """
+    world, _ = build(config)
+    before = tree_digest(config.generated_root)
+
+    import quest_app.build as build_module
+
+    def explode(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("disk full halfway through rendering")
+
+    monkeypatch.setattr(build_module, "_write_indexes", explode)
+
+    with pytest.raises(RuntimeError, match="disk full"):
+        build_site(world, built_at=FIXED_TIME)
+
+    assert tree_digest(config.generated_root) == before, "the published site was damaged"
+    staging = config.generated_root.with_suffix(".building")
+    assert not staging.exists() or any(staging.iterdir()), "staging left in an odd state"
 
 
 @pytest.mark.slow
@@ -247,3 +275,74 @@ def test_the_search_index_never_contains_participant_evidence(built: AppConfig) 
     search = (built.generated_root / "indexes" / "search.json").read_text()
     assert "PROOF.md" not in search
     assert "participant/evidence" not in search
+
+
+@pytest.mark.slow
+def test_the_content_error_screen_has_a_producer(content_repo: Path) -> None:
+    """U11 existed as a template nothing rendered, so it had never been exercised.
+
+    It crashed on the first problem that had no column number the moment it was first
+    rendered — which is exactly what a screen with no producer gets to hide.
+    """
+    from quest_app.build import render_error_page
+
+    config = AppConfig.for_repo(content_repo, participant_root=content_repo / "participant")
+    quest = config.repo_root / "content" / "quests" / "base-camp" / "repository-safety.md"
+    quest.write_text("# Broken, no front matter\n")
+
+    report = ProblemReport()
+    assert load_world(config, report) is None
+
+    page = render_error_page(config, report)
+    html = page.read_text()
+
+    assert page.is_file()
+    assert "content.missing_front_matter" in html
+    assert "repository-safety.md" in html
+    # Written outside `generated/`, because a failed build must leave the last good site
+    # standing rather than replacing it with a page of errors.
+    assert "local-data" in str(page)
+    assert not (config.generated_root / "errors").exists()
+
+
+@pytest.mark.slow
+def test_every_consequential_action_confirms_without_javascript(built: AppConfig) -> None:
+    """C21 was a `window.confirm` call, so with scripting off the form posted unguarded."""
+    import re as _re
+
+    for page in sorted(built.generated_root.rglob("*.html")):
+        html = page.read_text()
+        for form in _re.findall(r"<form[^>]*data-confirm[^>]*>.*?</form>", html, _re.S):
+            assert 'type="checkbox"' in form and "required" in form, (
+                f"{page.relative_to(built.generated_root)} confirms only in script"
+            )
+
+
+@pytest.mark.slow
+def test_validation_findings_are_ordered_by_severity(built: AppConfig) -> None:
+    from quest_app.build import _checks_by_severity
+    from quest_app.progress import CheckResult, ValidationResult
+
+    result = ValidationResult(
+        run_id="r",
+        validator_id="v",
+        validator_version=1,
+        quest_id="q",
+        attempt_id="a",
+        started_at="2026-09-17T00:00:00Z",
+        completed_at="2026-09-17T00:00:01Z",
+        duration_ms=1,
+        outcome="fail",
+        redaction_applied=False,
+        source="s",
+        checks=(
+            CheckResult(id="c-low", outcome="warning", summary="s", severity="low"),
+            CheckResult(id="c-blocking", outcome="fail", summary="s", severity="blocking"),
+            CheckResult(id="c-medium", outcome="fail", summary="s", severity="medium"),
+        ),
+    )
+    assert [check.id for check in _checks_by_severity(result)] == [
+        "c-blocking",
+        "c-medium",
+        "c-low",
+    ]

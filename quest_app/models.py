@@ -129,6 +129,9 @@ class AcceptanceCriterion:
     number: int
     text: str
     text_hash: str
+    # The criterion with its inline Markdown rendered and sanitized. `text` stays the plain
+    # source, because that is what the hash covers and what a plain-text export needs.
+    safe_rendered_html: str = ""
 
     @property
     def dom_id(self) -> str:

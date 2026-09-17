@@ -48,8 +48,27 @@
     <dt>Quest</dt><dd><a href="{{ url(quest.route) }}">{{ quest.title }}</a></dd>
     <dt>Quest version</dt><dd>{{ quest_version }}</dd>
     <dt>Attempt</dt><dd><code>{{ attempt_id }}</code></dd>
+    {% if submission_id %}<dt>Submission</dt><dd><code>{{ submission_id }}</code></dd>{% endif %}
+    {% if submitted_at %}
+    <dt>Submitted</dt>
+    <dd><time datetime="{{ submitted_at }}" data-format>{{ submitted_at }}</time></dd>
+    {% endif %}
     {% if evidence_hash %}<dt>Evidence hash</dt><dd><code>{{ evidence_hash }}</code></dd>{% endif %}
   </dl>
+</section>
+
+{# Required by SCREEN-SPECS U10: a reviewer must not have to guess whether the evidence was
+   scanned before it reached them. #}
+<section class="panel" aria-labelledby="redaction-heading">
+  <h2 id="redaction-heading">Secret and redaction status</h2>
+  {% if secret_scan_clean is none %}
+  <p class="authority">The evidence has not been scanned.</p>
+  {% elif secret_scan_clean %}
+  <p>The secret scan found nothing before this was submitted. It is a safety net, not a guarantee — read the evidence as though it might still contain something.</p>
+  {% else %}
+  <div class="alert alert-error"><p>The scan found something secret-like. Do not approve until it is removed and the value rotated.</p></div>
+  {% endif %}
+  <p class="authority">Validator output is stored redacted and is never rendered as HTML.</p>
 </section>
 
 {% if evidence_changed %}
@@ -64,7 +83,7 @@
   <ul>{% for outcome in outcomes %}<li>{{ outcome }}</li>{% endfor %}</ul>
   <ol>
     {% for criterion in acceptance_criteria %}
-    <li id="{{ criterion.dom_id }}">{{ criterion.text }}</li>
+    <li id="{{ criterion.dom_id }}">{{ criterion.safe_rendered_html | safe }}</li>
     {% endfor %}
   </ol>
 </section>
@@ -141,17 +160,49 @@
     </div>
     <div class="field">
       <label for="verification_statement">Verification statement</label>
-      <textarea id="verification_statement" name="verification_statement"
+      <textarea id="verification_statement" name="verification_statement" minlength="20"
                 aria-describedby="verification-hint"></textarea>
       <p class="hint" id="verification-hint">
-        Required to approve. Say in your own words what you checked and how. This is the record
-        that the approval was a judgement and not a formality.
+        Required to approve, and at least twenty characters. Say in your own words what you
+        checked and how. This is the record that the approval was a judgement and not a
+        formality. The service refuses an approval without it.
       </p>
     </div>
+
+    <fieldset class="field">
+      <legend>Findings</legend>
+      <p class="hint">At least one is required for needs-changes or reject.</p>
+      {% for index in range(3) %}
+      <div class="filter-row">
+        <div class="field">
+          <label for="finding-severity-{{ index }}">Severity</label>
+          <select id="finding-severity-{{ index }}" name="finding_severity">
+            <option value="">—</option>
+            <option value="blocking">Blocking</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+            <option value="advisory">Advisory</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="finding-summary-{{ index }}">What is wrong</label>
+          <input type="text" id="finding-summary-{{ index }}" name="finding_summary">
+        </div>
+        <div class="field">
+          <label for="finding-evidence-{{ index }}">What you observed</label>
+          <input type="text" id="finding-evidence-{{ index }}" name="finding_evidence">
+        </div>
+      </div>
+      {% endfor %}
+    </fieldset>
+
     <div class="field">
-      <label for="finding_summary">Finding</label>
-      <input type="text" id="finding_summary" name="finding_summary" aria-describedby="finding-hint">
-      <p class="hint" id="finding-hint">At least one finding is required for needs-changes or reject.</p>
+      <label for="acknowledge">
+        <input type="checkbox" id="acknowledge" name="acknowledge_changed_evidence" value="yes">
+        The evidence changed since submission and I have re-read it
+      </label>
+      <p class="hint">Only needed when the banner above says the evidence changed.</p>
     </div>
     <div class="button-row">
       <button type="submit" class="button button-consequential">Record decision</button>

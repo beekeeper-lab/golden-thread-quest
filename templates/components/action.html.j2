@@ -10,6 +10,24 @@
   <a class="button button-primary" href="{{ url(action.route) }}">{{ action.label }}</a>
 {% else %}
   <form method="post" action="{{ url(action.route) }}"{% if action.confirm %} data-confirm="{{ action.confirm }}"{% endif %}>
+    {% if action.confirm %}
+    {# C21 rendered in HTML, not only in script. `window.confirm` alone meant that with
+       JavaScript off the form posted with no confirmation at all — for the one component
+       whose entire purpose is a safety gate (Stage 3 audit S3-M2). The checkbox is
+       required, so the browser refuses the submission without it; the script's dialog is
+       an additional prompt on top, not the only one. #}
+    <div class="field">
+      <label for="confirm-{{ action.id }}">
+        <input type="checkbox" id="confirm-{{ action.id }}" name="confirm" value="yes" required>
+        {{ action.confirm }}
+      </label>
+      {% if action.reversible is defined and action.reversible %}
+      <p class="hint">You can undo this.</p>
+      {% else %}
+      <p class="hint">This is recorded in your repository and other people may see it.</p>
+      {% endif %}
+    </div>
+    {% endif %}
     <button type="submit" class="button {{ 'button-consequential' if action.consequential else 'button-primary' }}">{{ action.label }}</button>
   </form>
 {% endif %}

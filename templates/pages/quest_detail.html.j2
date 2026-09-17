@@ -57,7 +57,7 @@
       <h2 id="quest-criteria">How this is judged</h2>
       <ol>
         {% for criterion in acceptance_criteria %}
-        <li id="{{ criterion.dom_id }}">{{ criterion.text }}</li>
+        <li id="{{ criterion.dom_id }}">{{ criterion.safe_rendered_html | safe }}</li>
         {% endfor %}
       </ol>
     </section>

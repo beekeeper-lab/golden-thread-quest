@@ -2,6 +2,8 @@
 {% extends "layouts/base.html.j2" %}
 {% from "components/region_card.html.j2" import region_card %}
 {% from "components/meter.html.j2" import meter %}
+{% from "components/badge_tile.html.j2" import badge_tile %}
+{% from "components/activity_timeline.html.j2" import activity_timeline %}
 
 {% block main %}
 <header class="page-heading">
@@ -32,22 +34,7 @@
 <section class="stack" aria-labelledby="badges-heading">
   <h2 id="badges-heading">Badges</h2>
   <div class="card-grid">
-    {% for entry in badges %}
-    <article class="card">
-      <div class="card-header">
-        <h3>{{ entry.badge.title }}</h3>
-        <span class="state state-{{ 'verified' if entry.earned else ('submitted' if entry.pending_review else 'locked') }}">
-          {{ 'Earned' if entry.earned else ('Pending review' if entry.pending_review else 'Not yet') }}
-        </span>
-      </div>
-      <p>{{ entry.badge.summary }}</p>
-      <p class="authority">{{ entry.badge.award_label }}</p>
-      <p class="authority">{{ entry.reason }}</p>
-      {% if entry.pending_review %}
-      <p>You meet the criteria. A reviewer has to award it, so it is not yours until they do.</p>
-      {% endif %}
-    </article>
-    {% endfor %}
+    {% for entry in badges %}{{ badge_tile(entry) }}{% endfor %}
   </div>
 </section>
 
@@ -55,21 +42,7 @@
 {# C16 — full timestamps preserved for auditability. #}
 <section class="stack" aria-labelledby="timeline-heading">
   <h2 id="timeline-heading">Verified work</h2>
-  <div class="table-scroll">
-    <table>
-      <caption class="visually-hidden">Timeline of verified quests</caption>
-      <thead><tr><th scope="col">When</th><th scope="col">What</th><th scope="col">Authority</th></tr></thead>
-      <tbody>
-      {% for event in timeline %}
-      <tr>
-        <td><time datetime="{{ event.occurred_at }}" data-format>{{ event.occurred_at }}</time></td>
-        <td>{% if event.route %}<a href="{{ url(event.route) }}">{{ event.summary }}</a>{% else %}{{ event.summary }}{% endif %}</td>
-        <td>{{ event.authority | replace('_', ' ') }}</td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  {{ activity_timeline(timeline, url, 'Timeline of verified quests', 'timeline-heading') }}
 </section>
 {% endif %}
 

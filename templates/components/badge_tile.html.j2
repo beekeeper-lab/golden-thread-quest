@@ -1,0 +1,21 @@
+{# C15 — an achievement and, always, the authority that awarded it.
+
+   Extracted because it was copy-pasted into the region and passport pages and the two
+   copies had already drifted apart: one showed the pending-review explanation and the other
+   did not. The catalog's first line is that a component describes a reusable concept. #}
+{% macro badge_tile(entry, heading_level=3) -%}
+<article class="card">
+  <div class="card-header">
+    <h{{ heading_level }}>{{ entry.badge.title }}</h{{ heading_level }}>
+    <span class="state state-{{ 'verified' if entry.earned else ('submitted' if entry.pending_review else 'locked') }}">
+      {{ 'Earned' if entry.earned else ('Pending review' if entry.pending_review else 'Not yet') }}
+    </span>
+  </div>
+  <p>{{ entry.badge.summary }}</p>
+  <p class="authority">{{ entry.badge.award_label }}</p>
+  <p class="authority">{{ entry.reason }}</p>
+  {% if entry.pending_review %}
+  <p>You meet the criteria. A reviewer has to award it, so it is not yours until they do.</p>
+  {% endif %}
+</article>
+{%- endmacro %}

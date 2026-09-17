@@ -1,5 +1,6 @@
 {# U07 — "What passed, what failed, why, and how do I reproduce it?" #}
 {% extends "layouts/base.html.j2" %}
+{% from "components/action.html.j2" import action_button %}
 
 {% block main %}
 <header class="page-heading">
@@ -24,8 +25,9 @@
 {# C13 — summary, then findings by severity, then raw detail. #}
 <section class="stack" aria-labelledby="checks-heading">
   <h2 id="checks-heading">Checks</h2>
+  <p class="authority">Ordered by severity, so the thing to fix first is first.</p>
   <ul class="checklist">
-    {% for check in result.checks %}
+    {% for check in ordered_checks %}
     <li>
       <div class="card-header">
         <strong>{{ check.summary }}</strong>
@@ -53,7 +55,8 @@
 </details>
 {% endif %}
 
-<p class="button-row">
+<div class="button-row">
   <a class="button" href="{{ url(evidence_route) }}">Back to evidence</a>
-</p>
+  {% if rerun_action %}{{ action_button(rerun_action, url) }}{% endif %}
+</div>
 {% endblock %}

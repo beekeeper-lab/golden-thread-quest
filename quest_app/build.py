@@ -24,6 +24,8 @@ from typing import Any
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, select_autoescape
 
 from quest_app import routes
+from quest_app.config import AppConfig
+from quest_app.errors import ProblemReport
 from quest_app.markdown_render import strip_markdown
 from quest_app.models import QuestState
 from quest_app.pipeline import LoadedWorld
@@ -64,6 +66,60 @@ class BuildResult:
     output_root: Path
     page_count: int
     manifest: dict[str, Any]
+
+
+def render_error_page(config: AppConfig, report: ProblemReport) -> Path:
+    """Render the authoring-error screen (U11) somewhere safe to look at it.
+
+    Deliberately not into `generated/`: a failed build must leave the last good site
+    standing, so writing a page of errors over it would trade one requirement for another.
+    It goes to the gitignored local-data directory and the CLI prints the path.
+    """
+    from quest_app.config import APPLICATION_VERSION
+    from quest_app.view_models import (
+        BuildView,
+        NavItemView,
+        PageView,
+        ServiceView,
+        SiteView,
+    )
+
+    target: Path = config.local_data_root / "build-errors" / "index.html"
+    environment = make_environment(config.templates_root)
+    route = "/errors/"
+    problems = tuple(problem.to_dict() for problem in report.sorted_problems())
+    html = environment.get_template("pages/content_error.html.j2").render(
+        url=url_for(route),
+        site=SiteView(
+            title="Golden Thread Quest",
+            curriculum="The AI Context Engineer Journey",
+            tagline="Content that does not validate is never published.",
+            professional_role=None,
+            navigation=(NavItemView(id="home", label="Home", route="/", current=False),),
+        ),
+        page=PageView(
+            title="Content errors",
+            description="Why the build refused to publish.",
+            route=route,
+            nav_id="home",
+            heading="This content was not published",
+        ),
+        participant=None,
+        service=ServiceView(available=False, reason="A failed build is not served."),
+        build=BuildView(
+            application_version=APPLICATION_VERSION,
+            content_version="unpublished",
+            built_at=datetime.now(UTC).isoformat(timespec="seconds"),
+            deterministic=False,
+        ),
+        flash=(),
+        problems=problems,
+        error_count=len(report.errors),
+        warning_count=len(report.warnings),
+    )
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(html, encoding="utf-8")
+    return target
 
 
 def make_environment(templates_root: Path) -> Environment:
@@ -325,6 +381,13 @@ def build_site(world: LoadedWorld, *, built_at: str | None = None) -> BuildResul
                     | {
                         "quest": summaries[quest.id],
                         "result": result,
+                        "ordered_checks": _checks_by_severity(result),
+                        "rerun_action": ActionView(
+                            id=f"rerun-{result.validator_id}",
+                            label=f"Run {result.validator_id.replace('-', ' ')} again",
+                            enabled=False,
+                            reason="Start the local service to run checks from this page.",
+                        ),
                         "evidence_route": routes.evidence(quest.id),
                         "outcome_label": OUTCOME_LABELS.get(result.outcome, result.outcome),
                         "outcome_explanation": OUTCOME_EXPLANATIONS.get(result.outcome, ""),
@@ -441,6 +504,26 @@ def build_site(world: LoadedWorld, *, built_at: str | None = None) -> BuildResul
 # --------------------------------------------------------------------------------------
 # Page contexts
 # --------------------------------------------------------------------------------------
+
+
+# Blocking first, information last. A reviewer and a participant both read this list
+# top-down, so the order is the advice (SCREEN-SPECS U07).
+_SEVERITY_ORDER = {"blocking": 0, "high": 1, "medium": 2, "low": 3, "information": 4}
+_OUTCOME_ORDER = {"fail": 0, "warning": 1, "inconclusive": 2, "skipped": 3, "pass": 4}
+
+
+def _checks_by_severity(result: Any) -> tuple[Any, ...]:
+    """Findings ordered by severity, then by outcome, then by ID so the sort is total."""
+    return tuple(
+        sorted(
+            result.checks,
+            key=lambda check: (
+                _SEVERITY_ORDER.get(check.severity or "information", 4),
+                _OUTCOME_ORDER.get(check.outcome, 5),
+                check.id,
+            ),
+        )
+    )
 
 
 def _results_for(entry: QuestProgress, world: LoadedWorld) -> tuple[Any, ...]:
@@ -572,6 +655,15 @@ def _evidence_context(entry: QuestProgress, summary: Any, world: LoadedWorld) ->
         )
         for vid in quest.validators
     )
+    run_actions = tuple(
+        ActionView(
+            id=f"run-{validator.id}",
+            label=f"Run {validator.display_name.lower()}",
+            enabled=False,
+            reason="Start the local service to run this check.",
+        )
+        for validator in validators
+    )
     actions = (
         ActionView(
             id="mark-evidence-ready",
@@ -594,8 +686,9 @@ def _evidence_context(entry: QuestProgress, summary: Any, world: LoadedWorld) ->
         "required_proof": required,
         "optional_proof": optional,
         "validators": validators,
+        "run_actions": run_actions,
         "results": results,
-        "proof_document": None,
+        "proof_document": _proof_document(world, evidence_path),
         # The scan runs at build time so the page can say something true about the evidence
         # as it stands. It is also enforced at the moment of submission, which is the check
         # that actually matters.
@@ -605,6 +698,25 @@ def _evidence_context(entry: QuestProgress, summary: Any, world: LoadedWorld) ->
         "actions": actions if entry.attempt else (),
         "git_summary": git_summary_for(world, evidence_path),
     }
+
+
+def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None:
+    """The participant's own PROOF.md, rendered and sanitized.
+
+    It was hard-coded to `None`, so the preview the evidence workspace promises never
+    appeared on any page (Stage 3 audit S3-M6).
+    """
+    if not evidence_path:
+        return None
+    try:
+        path = world.config.resolve_participant_path(evidence_path) / "PROOF.md"
+    except ValueError:
+        return None
+    if not path.is_file():
+        return None
+    from quest_app.markdown_render import render_markdown
+
+    return render_markdown(path.read_text(encoding="utf-8", errors="replace"))
 
 
 def git_summary_for(world: LoadedWorld, evidence_path: str | None) -> dict[str, Any]:
@@ -633,6 +745,9 @@ def _review_queue_context(
     return {
         "quest": None,
         "attempt_id": None,
+        "submission_id": None,
+        "submitted_at": None,
+        "secret_scan_clean": None,
         "quest_version": 1,
         "evidence_hash": None,
         "evidence_changed": False,

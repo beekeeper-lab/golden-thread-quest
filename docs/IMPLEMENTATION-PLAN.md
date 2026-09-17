@@ -147,38 +147,38 @@ Do not check the stage heading until its audit passes.
 
 ### Tasks
 
-- [ ] Implement route helpers based on stable IDs.
-- [ ] Implement normalized page view models.
-- [ ] Implement Jinja2 environment with autoescaping.
-- [ ] Implement base layout and reusable components.
-- [ ] Implement Home, Map, Region, Catalog, Quest Detail, Evidence, Passport, Environment, Validation Result, Reviewer, and Content Error pages.
-- [ ] Generate tag, region, search, relationship, and build-manifest indexes.
-- [ ] Implement static assets using design tokens.
-- [ ] Implement no-JavaScript-readable core pages.
-- [ ] Implement limited JavaScript enhancements for navigation, filtering, and disclosures.
-- [ ] Implement atomic output replacement and last-known-good behavior.
-- [ ] Ensure build output does not contain secrets or absolute developer paths.
+- [x] Implement route helpers based on stable IDs.
+- [x] Implement normalized page view models.
+- [x] Implement Jinja2 environment with autoescaping.
+- [x] Implement base layout and reusable components.
+- [x] Implement Home, Map, Region, Catalog, Quest Detail, Evidence, Passport, Environment, Validation Result, Reviewer, and Content Error pages.
+- [x] Generate tag, region, search, relationship, and build-manifest indexes.
+- [x] Implement static assets using design tokens.
+- [x] Implement no-JavaScript-readable core pages.
+- [x] Implement limited JavaScript enhancements for navigation, filtering, and disclosures.
+- [x] Implement atomic output replacement and last-known-good behavior.
+- [x] Ensure build output does not contain secrets or absolute developer paths.
 
 ### Required tests
 
-- [ ] Clean build succeeds from fixture content and participant state.
-- [ ] Routes and links contain no broken internal targets.
-- [ ] Golden tests cover normalized view models and key components.
-- [ ] Two builds from identical inputs are equivalent under the documented deterministic-output policy.
-- [ ] A failed build leaves the prior valid output intact.
-- [ ] Adding a fixture quest updates every required index without UI-code changes.
+- [x] Clean build succeeds from fixture content and participant state.
+- [x] Routes and links contain no broken internal targets.
+- [x] Golden tests cover normalized view models and key components.
+- [x] Two builds from identical inputs are equivalent under the documented deterministic-output policy.
+- [x] A failed build leaves the prior valid output intact.
+- [x] Adding a fixture quest updates every required index without UI-code changes.
 
 ### Stage audit
 
-- [ ] Compare every screen with `docs/ui/SCREEN-SPECS.md`.
-- [ ] Compare reusable elements with `docs/ui/COMPONENT-CATALOG.md`.
-- [ ] Search for quest-specific strings in templates and rendering code.
-- [ ] Review escaping, Markdown sanitization, CSP, and external-link behavior.
-- [ ] Create and resolve `docs/audits/stage-03-generation-audit.md`.
+- [x] Compare every screen with `docs/ui/SCREEN-SPECS.md`.
+- [x] Compare reusable elements with `docs/ui/COMPONENT-CATALOG.md`.
+- [x] Search for quest-specific strings in templates and rendering code.
+- [x] Review escaping, Markdown sanitization, CSP, and external-link behavior.
+- [x] Create and resolve `docs/audits/stage-03-generation-audit.md`.
 
 ### Stage completion
 
-- [ ] **Stage 3 complete and audited**
+- [x] **Stage 3 complete and audited**
 
 ---
 
@@ -462,7 +462,8 @@ Update this section whenever work pauses.
 | 2026-09-16 | feature/golden-thread-implementation | 1 | Stage 1 audit: fail → fixed → pass-with-advisories | Complete Stage 2 content loading | `participant/` creation deferred to Stage 4 |
 | 2026-09-16 | feature/golden-thread-implementation | 2 | Stage 2 built and committed (93e91cd); independent audit commissioned | Record the Stage 2 audit in `docs/audits/stage-02-content-audit.md`, fix blocking/high findings, then finish Stage 3 | Stage 2 audit result not yet recorded |
 | 2026-09-16 | feature/golden-thread-implementation | 2 | Stage 2 audit recorded: **fail** (1 blocking, 6 high) in `docs/audits/stage-02-content-audit.md` | Fix B1, H1-H6 in that document, then rerun the Stage 2 audit before Stage 3 resumes | Stage 3 is partly built and must not advance until Stage 2 passes |
-| 2026-09-17 | feature/golden-thread-implementation | 3 | Stage 3 audit recorded: **fail** (1 blocking, 4 high, 8 medium) in `docs/audits/stage-03-generation-audit.md`. Stage 2 re-audit: pass with one open item (H5) plus residual S2-R1 | Fix S3-B1, S3-H1..H3, S2-R1, H5; then the medium findings; then rerun both audits | Stages 4, 5, 7 and 8 were built on top of unaudited Stage 3 and may need rework |
+| 2026-09-17 | feature/golden-thread-implementation | 3 | Stage 3 audit findings fixed: B1, H1-H3, all eight mediums, plus S2-R1 and H5. Browser tests added. Awaiting re-audit | Re-audit Stage 3 and Stage 2, then Stages 6, 9, 10 | |
+| 2026-09-17 | feature/golden-thread-implementation | 3 | Superseded: Stage 3 audit recorded **fail** (1 blocking, 4 high, 8 medium) in `docs/audits/stage-03-generation-audit.md`. Stage 2 re-audit: pass with one open item (H5) plus residual S2-R1 | Fix S3-B1, S3-H1..H3, S2-R1, H5; then the medium findings; then rerun both audits | Stages 4, 5, 7 and 8 were built on top of unaudited Stage 3 and may need rework |
 | 2026-09-16 | feature/golden-thread-implementation | 3 | Superseded (partial): design tokens, app.css, app.js, routes.py, progress_calc.py, recommend.py, view_models.py, base layout, 7 component macros, home/map/catalog/region pages (e845d3c) | Write quest-detail, evidence, validation-result, passport, health, review and content-error pages; then `quest_app/build.py` (atomic output, last-known-good, indexes, manifest); then Stage 3 tests and audit | Stage 3 has no `build.py` yet, so `make build` does not run |
 
 ## Deferred work register
@@ -474,4 +475,5 @@ Update this section whenever work pauses.
 | D3 | `attempts[].validation_result_ids` and `submission_id` consumers | Submission records are Stage 7 | Stage 7 | Implementation | Stage 2 audit M6 |
 | D4 | `review.evidence_hash`, `review.quest_version` comparison, `hashing.hash_directory()` caller | Changed-evidence detection is Stage 7 | Stage 7 | Implementation | Stage 2 audit M6 |
 | D5 | Validator-registry and submission schemas | Authored with the stages that use them | Stages 5 and 7 | Implementation | Stage 0 audit F7 |
+| D7 | Live Environment Health checks (dependency versions, Git status, participant write test, external CLI presence, service binding) | A generated page cannot inspect the machine at the moment it is read; the five static checks say what was true at build time and label themselves as such | Stage 9, through the local service | Implementation | Stage 3 audit S3-M4 |
 | D6 | Presentation-only reserved fields (`quest.tools`, `author`, `last_reviewed`, `risk.notes`, `region.icon`, `badge.icon`, `track.focus_tags`, `site.professional_role`) | Consumed by pages that arrive in Stage 3 and Stage 6 | Stages 3 and 6 | Implementation | Stage 2 audit M6 |

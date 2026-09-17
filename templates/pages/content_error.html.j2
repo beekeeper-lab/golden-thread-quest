@@ -11,28 +11,30 @@
 </header>
 
 <div class="alert alert-error" role="alert">
-  <h2>Nothing was published</h2>
+  <p><strong>Nothing was published.</strong></p>
   <p>Content that does not validate is never rendered, so a broken quest cannot reach a participant.</p>
 </div>
+
+<h2 class="visually-hidden">Problems found</h2>
 
 <div class="stack">
   {% for problem in problems %}
   <article class="panel">
     <div class="card-header">
-      <h2>{{ problem.message }}</h2>
-      <span class="state state-{{ 'needs_changes' if problem.severity in ('error', 'blocking') else 'available' }}">{{ problem.severity }}</span>
+      <h3>{{ problem.get('message') }}</h3>
+      <span class="state state-{{ 'needs_changes' if problem.get('severity') in ('error', 'blocking') else 'available' }}">{{ problem.get('severity') }}</span>
     </div>
     <dl class="definition-list">
-      {% if problem.source %}<dt>File</dt><dd><code>{{ problem.source }}{% if problem.line %}:{{ problem.line }}{% if problem.column %}:{{ problem.column }}{% endif %}{% endif %}</code></dd>{% endif %}
-      {% if problem.entity_id %}<dt>Entity</dt><dd><code>{{ problem.entity_id }}</code></dd>{% endif %}
-      {% if problem.field_path %}<dt>Field</dt><dd><code>{{ problem.field_path }}</code></dd>{% endif %}
-      {% if problem.expected %}<dt>Expected</dt><dd>{{ problem.expected }}</dd>{% endif %}
-      {% if problem.received %}<dt>Found</dt><dd><code>{{ problem.received }}</code></dd>{% endif %}
-      {% if problem.suggestion %}<dt>Try</dt><dd>{{ problem.suggestion }}</dd>{% endif %}
-      <dt>Code</dt><dd><code>{{ problem.code }}</code></dd>
+      {% if problem.get('source') %}<dt>File</dt><dd><code>{{ problem.get('source') }}{% if problem.get('line') %}:{{ problem.get('line') }}{% if problem.get('column') %}:{{ problem.get('column') }}{% endif %}{% endif %}</code></dd>{% endif %}
+      {% if problem.get('entity_id') %}<dt>Entity</dt><dd><code>{{ problem.get('entity_id') }}</code></dd>{% endif %}
+      {% if problem.get('field_path') %}<dt>Field</dt><dd><code>{{ problem.get('field_path') }}</code></dd>{% endif %}
+      {% if problem.get('expected') %}<dt>Expected</dt><dd>{{ problem.get('expected') }}</dd>{% endif %}
+      {% if problem.get('received') %}<dt>Found</dt><dd><code>{{ problem.get('received') }}</code></dd>{% endif %}
+      {% if problem.get('suggestion') %}<dt>Try</dt><dd>{{ problem.get('suggestion') }}</dd>{% endif %}
+      <dt>Code</dt><dd><code>{{ problem.get('code') }}</code></dd>
     </dl>
-    {% if problem.documentation %}
-    <p><a href="{{ url(problem.documentation) }}">Read the authoring guide</a></p>
+    {% if problem.get('documentation') %}
+    <p><a href="{{ url(problem.get('documentation')) }}">Read the authoring guide</a></p>
     {% endif %}
   </article>
   {% endfor %}

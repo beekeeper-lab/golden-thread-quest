@@ -116,7 +116,24 @@ def render_inline(text: str) -> str:
     rendered = _PARSER.renderInline(text)
     return nh3.clean(
         rendered,
-        tags=set(ALLOWED_TAGS) - {"p", "pre", "blockquote", "ul", "ol", "li", "table"},
+        # Block-level tags are dropped whole, table parts included: keeping `td` without
+        # `table` would emit orphaned cells into a list item.
+        tags=set(ALLOWED_TAGS)
+        - {
+            "p",
+            "pre",
+            "blockquote",
+            "ul",
+            "ol",
+            "li",
+            "table",
+            "thead",
+            "tbody",
+            "tr",
+            "th",
+            "td",
+            "hr",
+        },
         attributes={tag: set(attrs) for tag, attrs in ALLOWED_ATTRIBUTES.items()},
         url_schemes=set(ALLOWED_URL_SCHEMES),
         link_rel="noopener noreferrer",

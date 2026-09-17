@@ -4,6 +4,7 @@
 {% from "components/region_card.html.j2" import region_card %}
 {% from "components/meter.html.j2" import meter %}
 {% from "components/empty_state.html.j2" import empty_state %}
+{% from "components/activity_timeline.html.j2" import activity_timeline %}
 
 {% block main %}
 <header class="page-heading">
@@ -91,21 +92,7 @@
 {% if activity %}
 <section class="stack" aria-labelledby="activity-heading">
   <h2 id="activity-heading">Recent activity</h2>
-  <div class="table-scroll">
-    <table>
-      <caption class="visually-hidden">Recent validation and review activity</caption>
-      <thead><tr><th scope="col">When</th><th scope="col">What</th><th scope="col">Authority</th></tr></thead>
-      <tbody>
-      {% for event in activity %}
-      <tr>
-        <td><time datetime="{{ event.occurred_at }}" data-format>{{ event.occurred_at }}</time></td>
-        <td>{% if event.route %}<a href="{{ url(event.route) }}">{{ event.summary }}</a>{% else %}{{ event.summary }}{% endif %}</td>
-        <td>{{ event.authority | replace('_', ' ') }}</td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  {{ activity_timeline(activity, url, 'Recent validation and review activity', 'activity-heading') }}
 </section>
 {% endif %}
 {% endblock %}

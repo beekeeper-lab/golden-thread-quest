@@ -25,7 +25,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from quest_app.config import SUPPORTED_SCHEMA_VERSION, AppConfig
 from quest_app.errors import ContentProblem, ProblemReport, Severity
 from quest_app.hashing import hash_mapping, hash_quest, hash_text
-from quest_app.markdown_render import render_markdown
+from quest_app.markdown_render import render_inline, render_markdown
 from quest_app.markdown_structure import (
     all_top_level_items,
     first_list_items,
@@ -891,6 +891,7 @@ def parse_acceptance_criteria(markdown: str) -> tuple[list[AcceptanceCriterion],
                 number=number,
                 text=item.text,
                 text_hash=hash_text(item.text),
+                safe_rendered_html=render_inline(item.text),
             )
         )
     return criteria, ordered, has_empty

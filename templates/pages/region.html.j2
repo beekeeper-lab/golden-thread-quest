@@ -2,6 +2,7 @@
 {% extends "layouts/base.html.j2" %}
 {% from "components/quest_card.html.j2" import quest_card %}
 {% from "components/meter.html.j2" import meter %}
+{% from "components/badge_tile.html.j2" import badge_tile %}
 {% from "components/empty_state.html.j2" import empty_state %}
 {% from "components/filters.html.j2" import filter_form %}
 
@@ -52,18 +53,7 @@
 <section class="stack" aria-labelledby="badges-heading">
   <h2 id="badges-heading">Badges in this region</h2>
   <div class="card-grid">
-    {% for badge in badges %}
-    <article class="card">
-      <div class="card-header">
-        <h3>{{ badge.badge.title }}</h3>
-        <span class="state state-{{ 'verified' if badge.earned else ('submitted' if badge.pending_review else 'locked') }}">
-          {{ 'Earned' if badge.earned else ('Pending review' if badge.pending_review else 'Not yet') }}
-        </span>
-      </div>
-      <p>{{ badge.badge.summary }}</p>
-      <p class="authority">{{ badge.badge.award_label }} · {{ badge.reason }}</p>
-    </article>
-    {% endfor %}
+    {% for entry in badges %}{{ badge_tile(entry) }}{% endfor %}
   </div>
 </section>
 {% endif %}

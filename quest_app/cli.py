@@ -93,12 +93,16 @@ def build_command(args: argparse.Namespace) -> int:
     world = load_world(config, report)
     _report_problems(report, args.json)
     if world is None:
+        from quest_app.build import render_error_page
+
+        page = render_error_page(config, report)
         if not args.json:
             _summarize(report, world)
             print(
                 "nothing was generated; the previous output, if any, is untouched",
                 file=sys.stderr,
             )
+            print(f"the same errors as a page: {config.relative(page)}", file=sys.stderr)
         return EXIT_CONTENT_ERROR
     result = build_site(world)
     if not args.json:
