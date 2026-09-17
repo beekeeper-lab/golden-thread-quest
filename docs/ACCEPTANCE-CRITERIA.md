@@ -75,4 +75,4 @@ traceability document.
 - [x] **DH4** — Update and migration behavior is documented.
 - [x] **DH5** — `docs/IMPLEMENTATION-DETAILS.md` describes actual implementation, not planned behavior.
 - [x] **DH6** — `docs/TRACEABILITY.md` connects these criteria to code and tests.
-- [x] **DH7** — Final audit reports no unresolved blocking or high findings.
+- [ ] **DH7** — Final audit reports no unresolved blocking or high findings. *(Open: three release audits have run and each found something. The latest is recorded in `docs/audits/`; its findings are fixed and a fourth round has not yet run.)*

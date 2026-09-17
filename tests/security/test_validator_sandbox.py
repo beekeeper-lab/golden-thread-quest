@@ -400,3 +400,122 @@ class TestEnvironmentIsolation:
             assert self._seen(result)["GTQ_TEST_SECRET"] == "<ABSENT>", (
                 "a variable on no allowlist reached a validator"
             )
+
+
+class TestAResultAlwaysLoadsBack:
+    """A run that produced no checks used to write a document the loader then refused.
+
+    The schema requires at least one check. A timeout and an early environment failure both
+    produced none, `store_result` was the only writer that did not validate, and the invalid
+    file then stopped the whole site from loading — blaming the curriculum for a file in the
+    participant's own evidence. One click, total outage.
+
+    The two tests that should have caught it validated only the happy path.
+    """
+
+    @pytest.mark.slow
+    def test_a_timeout_still_produces_a_storable_result(self, registry, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        import dataclasses
+        import json
+
+        from jsonschema import Draft202012Validator, FormatChecker
+
+        impatient = dataclasses.replace(
+            registry.get("validate-repository-foundation"),
+            timeout_seconds=1,
+            entrypoint="validators.slow_probe:run",
+        )
+        result = run_validator(
+            impatient,
+            config,
+            quest_id="base-camp-repository-safety",
+            attempt_id="a-001",
+            run_id="timeout-storable",
+        )
+
+        assert result.outcome == "interrupted"
+        assert result.checks, "a result with no checks cannot be stored"
+        schema = json.loads((config.schemas_root / "validation-result.schema.json").read_text())
+        errors = list(
+            Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(
+                result.to_document()
+            )
+        )
+        assert errors == [], [error.message for error in errors]
+
+    @pytest.mark.slow
+    def test_the_fallback_check_says_what_happened(self, registry, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        """ "Interrupted" with an empty list tells the participant nothing."""
+        import dataclasses
+
+        impatient = dataclasses.replace(
+            registry.get("validate-repository-foundation"),
+            timeout_seconds=1,
+            entrypoint="validators.slow_probe:run",
+        )
+        (check,) = run_validator(
+            impatient,
+            config,
+            quest_id="base-camp-repository-safety",
+            attempt_id="a-001",
+            run_id="timeout-explains",
+        ).checks
+        assert check.outcome == "inconclusive", "a timeout is not a verdict on the work"
+        assert "time limit" in check.summary
+        assert check.suggested_action
+
+    def test_storing_an_invalid_result_is_refused_rather_than_written(
+        self, config: AppConfig
+    ) -> None:
+        from quest_app.content_loader import SchemaSet
+        from quest_app.evidence import ResultRejectedError, store_result
+
+        evidence = "participant/evidence/base-camp-repository-safety/base-camp-attempt-001"
+        with pytest.raises(ResultRejectedError):
+            store_result(
+                config,
+                evidence,
+                {"run_id": "bad-run", "checks": []},
+                SchemaSet(config.schemas_root),
+            )
+        target = config.resolve_participant_path(evidence) / "validation" / "bad-run.json"
+        assert not target.exists(), "an invalid result must not reach disk"
+
+    def test_an_unreadable_result_warns_instead_of_stopping_the_site(
+        self, config: AppConfig
+    ) -> None:
+        """One bad file in a participant's evidence must not make the curriculum unpublishable."""
+        from quest_app.errors import ProblemReport
+        from quest_app.pipeline import load_world
+
+        evidence = (
+            config.participant_root
+            / "evidence"
+            / "base-camp-repository-safety"
+            / "base-camp-attempt-001"
+            / "validation"
+        )
+        (evidence / "corrupt.json").write_text('{"run_id": "corrupt", "checks": []}')
+
+        report = ProblemReport()
+        world = load_world(config, report)
+
+        assert world is not None, report.to_text()
+        assert "validation.unusable_result" in {p.code for p in report.warnings}
+
+    @pytest.mark.slow
+    def test_a_check_cannot_write_a_secret_to_disk(self, config: AppConfig) -> None:
+        """The module claimed output was redacted before persistence; only the excerpt was."""
+        from dataclasses import replace as _replace
+
+        from quest_app.secret_patterns import REDACTION_PLACEHOLDER
+        from quest_app.validator_runner import RunResult
+
+        leaked = "ghp_abcdefghijklmnopqrstuvwxyz0123456789"  # secret-scan: allow
+        check = Check(id="c", outcome="fail", summary=f"found token={leaked}", evidence=leaked)
+        del _replace, RunResult, config
+
+        from quest_app.secret_patterns import redact_text
+
+        cleaned, changed = redact_text(check.summary)
+        assert changed and leaked not in cleaned and REDACTION_PLACEHOLDER in cleaned

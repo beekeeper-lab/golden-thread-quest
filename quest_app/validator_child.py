@@ -28,6 +28,23 @@ from pathlib import Path
 from typing import Any
 
 
+def _safe_reason(error: BaseException) -> str:
+    """An exception described without the paths it mentions.
+
+    `OSError.strerror` is the description; `filename` is the path. Using `str(error)` joins
+    them, which puts an absolute path into an evidence package a reviewer will read.
+    """
+    if isinstance(error, OSError):
+        return f"{type(error).__name__}: {error.strerror or 'operation failed'}"
+    message = str(error)[:200]
+    # Anything path-shaped is replaced rather than trimmed, so a message that embeds one in
+    # the middle is still usable.
+    import re as _re
+
+    message = _re.sub(r"(?:/[^/\s'\"]+){2,}/?", "<path>", message)
+    return f"{type(error).__name__}: {message}" if message else type(error).__name__
+
+
 def main() -> int:
     specification = json.loads(sys.stdin.read())
 

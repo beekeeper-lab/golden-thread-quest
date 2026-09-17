@@ -585,7 +585,17 @@ class ActionHandler(BaseHTTPRequestHandler):
         except ValidatorError as exc:
             raise ValueError(str(exc)) from exc
 
-        stored = store_result(self.state.config, attempt.evidence_path, result.to_document())
+        from quest_app.evidence import ResultRejectedError
+
+        try:
+            stored = store_result(
+                self.state.config,
+                attempt.evidence_path,
+                result.to_document(),
+                self.state.schemas,
+            )
+        except ResultRejectedError as exc:
+            raise StoreError(str(exc)) from exc
         build_site(self._load(), service=online_service_view())
         return {
             "ok": True,

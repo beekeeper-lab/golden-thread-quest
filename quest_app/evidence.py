@@ -155,12 +155,38 @@ def new_run_id(validator_id: str) -> str:
     return f"{validator_id}-{stamp}-{secrets.token_hex(3)}"
 
 
-def store_result(config: AppConfig, evidence_path: str, document: dict[str, object]) -> str:
+class ResultRejectedError(ValueError):
+    """A validation result that would not load back. It is refused rather than written."""
+
+
+def store_result(
+    config: AppConfig,
+    evidence_path: str,
+    document: dict[str, object],
+    schemas: object | None = None,
+) -> str:
     """Write a validation result into the attempt's own evidence directory.
 
     The location is derived from the attempt, never from the document, so a record cannot
     place itself in someone else's package (Stage 2 audit M5).
+
+    Validated before it is written, like every other write in this application. This was the
+    one place that was not, and it cost an outage: a timed-out validator produced an empty
+    check list, the schema forbids that, and the invalid document then made the whole site
+    refuse to load — blaming the curriculum for a file in the participant's own evidence.
     """
+    if schemas is not None:
+        from quest_app.errors import ProblemReport
+
+        report = ProblemReport()
+        if not schemas.validate(  # type: ignore[attr-defined]
+            "validation-result", document, "validation-result", report
+        ):
+            raise ResultRejectedError(
+                "the validator produced a result that could not be stored: "
+                + "; ".join(problem.public_message for problem in report.errors[:3])
+            )
+
     directory = config.resolve_participant_path(evidence_path) / "validation"
     directory.mkdir(parents=True, exist_ok=True)
     run_id = str(document["run_id"])

@@ -15,8 +15,9 @@ source .venv/bin/activate
 make serve
 ```
 
-`make serve` builds the site, starts a service on `127.0.0.1` only, and prints a token for
-that run. Open the address it prints.
+`make serve` builds the site and starts a service bound to `127.0.0.1` only. It prints the
+address to open. It does not print a token — the pages it serves carry one, substituted as
+they are served, so it never reaches a file.
 
 Without the service you can still read everything — the generated pages are ordinary HTML.
 What you cannot do is change state, because nothing that changes a file happens in the
@@ -30,7 +31,7 @@ browser alone.
 | Available | The application |
 | In progress | You |
 | Evidence ready | You, asserting the proof is assembled |
-| Locally validated | Registered validators, when every required one passes |
+| Locally validated | You, once the required checks have passed |
 | Submitted for review | You |
 | Needs changes | A reviewer |
 | Verified | A reviewer |
@@ -44,18 +45,19 @@ and nothing a validator returns can produce it.
 1. **Read the whole quest page first.** Acceptance criteria are numbered, and a reviewer's
    findings will refer to them by number.
 2. **Start it.** An evidence package appears under
-   `participant/evidence/<quest>/<attempt>/` with a `PROOF.md` template.
+   `participant/evidence/<quest>/<attempt>/` with a `PROOF.md` template, and your progress
+   file is created if you did not have one.
 3. **Do the work in your repository**, not in the application.
 4. **Fill in `PROOF.md`.** It asks what you built, where the artifacts are, how to reproduce
    the behaviour, what you validated and what remains. A reviewer should not have to hunt.
 5. **Run the checks.** A failing check is never a failed quest — it tells you what to fix,
    and your work is untouched.
-6. **Mark the evidence ready**, then **submit**. Submission scans for secrets and refuses if
-   it finds one.
-7. **Record local validation** once the checks pass. This is a button, not something the
-   validators do to you — the state means "I have run them and they qualify", and the
-   application refuses it if the results do not support it.
-8. **Submit**, then **commit and push yourself**:
+6. **Mark the evidence ready.**
+7. **Record local validation.** This is a button. The state means "I have run the required
+   checks and they qualify", and the application refuses it if the results do not support
+   that. It comes *before* submitting, not after.
+8. **Submit for review.**
+9. **Commit and push yourself:**
 
    ```bash
    git switch -c evidence/<quest-id>

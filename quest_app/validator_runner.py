@@ -30,7 +30,7 @@ import signal
 import subprocess
 import sys
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -337,6 +337,7 @@ def run_validator(
         # Without this the outcome said "could not run" and the excerpt was empty, so the
         # participant was told a verdict with no cause.
         output.note(f"The validator could not run: {environment_failure}")
+
     if interrupted:
         outcome = "interrupted"
         output.note(
@@ -345,8 +346,28 @@ def run_validator(
     else:
         outcome = classify(output)
 
+    # A result always carries at least one check. The schema requires it, and more
+    # importantly a run that says nothing is useless to the participant: "interrupted" with
+    # an empty list gives them no idea what happened or what to do.
+    if not output.checks:
+        output.checks.append(_explaining_check(outcome, definition, environment_failure))
+
     excerpt, truncated = _bounded("\n".join(output.notes), definition.max_output_bytes)
     redacted, redaction_applied = redact_text(excerpt)
+
+    # Every free-text field a check carries, not only the captured output. The docstring at
+    # the top of this module promised this and only the excerpt had it, so a check quoting a
+    # token wrote it to disk verbatim.
+    checks_out: list[Check] = []
+    for check in output.checks:
+        fields = {}
+        for name in ("summary", "evidence", "suggested_action", "artifact"):
+            value = getattr(check, name)
+            if isinstance(value, str):
+                cleaned, changed = redact_text(value)
+                fields[name] = cleaned
+                redaction_applied = redaction_applied or changed
+        checks_out.append(replace(check, **fields))
 
     return RunResult(
         run_id=run_id,
@@ -358,11 +379,41 @@ def run_validator(
         completed_at=completed.isoformat(timespec="seconds").replace("+00:00", "Z"),
         duration_ms=duration_ms,
         outcome=outcome,
-        checks=tuple(output.checks),
+        checks=tuple(checks_out),
         output_excerpt=redacted,
         output_truncated=truncated,
         redaction_applied=redaction_applied,
         environment={"validator_version": definition.version, "network": definition.network},
+    )
+
+
+def _explaining_check(outcome: str, definition: ValidatorDefinition, reason: str | None) -> Check:
+    """The one check a run that produced none still has to carry.
+
+    It is the difference between a participant seeing "Interrupted" with nothing underneath
+    and seeing what stopped, why, and what to do about it.
+    """
+    if outcome == "interrupted":
+        return Check(
+            id="validator-did-not-finish",
+            outcome="inconclusive",
+            severity="information",
+            summary=f"{definition.display_name} did not finish within its time limit.",
+            evidence=f"It was stopped after {definition.timeout_seconds} seconds.",
+            suggested_action=(
+                "This says nothing about your work either way. Run it again; if it keeps "
+                "timing out, say so in your evidence and a reviewer can take it into account."
+            ),
+        )
+    return Check(
+        id="validator-could-not-run",
+        outcome="inconclusive",
+        severity="information",
+        summary=f"{definition.display_name} could not evaluate your work.",
+        evidence=reason or "No reason was reported.",
+        suggested_action=(
+            "This is a problem with the check or the environment, not with what you built."
+        ),
     )
 
 

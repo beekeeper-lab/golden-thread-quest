@@ -378,9 +378,25 @@ def _load_validation(
             )
         )
         return None
-    if not isinstance(data, dict) or not schemas.validate(
-        "validation-result", data, relative, report
-    ):
+    if not isinstance(data, dict):
+        return None
+    # A warning, not an error. This is one file inside a participant's own evidence. A
+    # malformed one should say so and be ignored, not stop the whole site from loading and
+    # then blame the curriculum for a file the participant's own tooling wrote.
+    scratch = ProblemReport()
+    if not schemas.validate("validation-result", data, relative, scratch):
+        report.add(
+            ContentProblem.build(
+                code="validation.unusable_result",
+                severity=Severity.WARNING,
+                public_message=(
+                    "A validation result could not be read and has been ignored. Delete it "
+                    "and run the check again."
+                ),
+                source=relative,
+                received="; ".join(problem.public_message for problem in scratch.errors[:2]),
+            )
+        )
         return None
     return ValidationResult(
         run_id=str(data["run_id"]),

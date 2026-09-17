@@ -46,9 +46,12 @@ make build     # generates the site into generated/
 make serve     # builds, then starts the loopback service
 ```
 
-`make serve` binds to `127.0.0.1` only. It refuses any other bind address at startup, prints a
-per-run token that state-changing requests must carry, and exposes no route that accepts a
-filesystem path or a command (`docs/SECURITY-AND-PRIVACY.md`).
+`make serve` binds to `127.0.0.1` only. It refuses any other bind address at startup and
+exposes no route that accepts a filesystem path or a command
+(`docs/SECURITY-AND-PRIVACY.md`). It prints the address to open; it does **not** print a
+token. The pages it serves carry one, substituted as they are served, so the token never
+reaches a file.
+
 
 Generated pages are readable without the service running and without JavaScript. With the service
 down, browsing still works and state-changing controls are disabled with an explanation rather than
