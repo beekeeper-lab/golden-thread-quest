@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-17T15:43:07",
+  "provider": "gemini",
+  "model": "gemini-3-pro-image-preview",
+  "prompt": "Goal: A flat vector brand mark for a professional engineering training program, for use at\nlarge sizes where a small badge is still legible.\nScene: A single gold compass rose, centred, on a deep ink-navy rounded square tile. The rose\nhas exactly four points \u2014 north, south, east, west \u2014 drawn as solid tapered triangles\nmeeting at the centre, with the vertical axis slightly longer than the horizontal. One\nthin concentric gold ring sits behind the rose, clear of the point tips. In the lower\nright, overlapping the ring edge, a small filled navy circle with a thin gold outline\nholds a solid gold checkmark.\nStyle: Flat vector. Solid fills only. Uniform stroke weight. Hard edges. Absolutely no\ngradients, no bevels, no bloom or glow, no drop shadows, no sparkles, no lens flare, no 3D\nshading, no reflections, no texture. Geometric, precise, slightly austere. The compass\nrose, ring, badge outline and checkmark are all amber-gold #c8962f and the field is ink\nnavy #172433: two colors in the entire image and no others.\nAspect ratio: 1:1 square\nBackground: deep ink navy #172433, filling a rounded square tile with a generous corner\nradius, opaque, edge to edge, no border\nText in image: none\nAvoid: a cyan, teal, green or white checkmark, eight-pointed or sixteen-pointed roses,\norbital or elliptical rings, degree markings, cardinal letters, needles, stars, sparkles,\nglow, gradients, photorealism, glossy app-store styling, any third color, any text",
+  "output_file": "icon-badged.png",
+  "generation_time_ms": 15448,
+  "usage": {
+    "prompt_tokens": 356,
+    "candidates_tokens": 1450,
+    "total_tokens": 1995
+  }
+}

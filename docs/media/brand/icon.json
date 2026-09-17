@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-17T15:42:51",
+  "provider": "gemini",
+  "model": "gemini-3-pro-image-preview",
+  "prompt": "Goal: A flat vector app icon for a professional engineering training program. It must read\ninstantly at 16 pixels in a browser tab, and it must look like it belongs to the same\nproduct as the flat field-guide diagrams inside the application.\nScene: A single gold compass rose, centred, on a deep ink-navy rounded square tile. The rose\nhas exactly four points \u2014 north, south, east, west \u2014 drawn as solid tapered triangles\nmeeting at the centre, with the vertical axis slightly longer than the horizontal. One\nthin concentric gold ring sits behind the rose, not touching the point tips. Nothing else.\nThe rose occupies roughly 70 percent of the tile width, with even margin on all four\nsides.\nStyle: Flat vector. Solid fills only. Uniform stroke weight. Hard edges. Absolutely no\ngradients, no bevels, no bloom or glow, no drop shadows, no sparkles, no lens flare, no 3D\nshading, no reflections, no texture. The silhouette alone should carry the mark, as if cut\nfrom two colors of paper. Geometric, precise, slightly austere \u2014 an instrument engraved on\na case, not an illustration of one. The compass rose and ring are amber-gold #c8962f and\nthe field is ink navy #172433: two colors in the entire image and no others.\nAspect ratio: 1:1 square\nBackground: deep ink navy #172433, filling a rounded square tile with a generous corner\nradius, opaque, edge to edge, no border\nText in image: none\nAvoid: eight-pointed or sixteen-pointed roses, orbital or elliptical rings, degree markings,\ntick marks, cardinal letters N E S W, needles, map contours, stars, sparkles, glow,\ngradients, cyan or teal of any kind, photorealism, glossy app-store styling, any third\ncolor, any text",
+  "output_file": "icon.png",
+  "generation_time_ms": 15118,
+  "usage": {
+    "prompt_tokens": 409,
+    "candidates_tokens": 1498,
+    "total_tokens": 2128
+  }
+}

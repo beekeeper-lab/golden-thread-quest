@@ -434,6 +434,148 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
 
 ---
 
+## Brand marks
+
+Not diagrams. These are the application's own identity, so they follow the house palette but
+not the parchment background: an icon has to hold its shape against whatever tab, sidebar or
+dock it lands in, and a dark tile does that where parchment does not.
+
+The rule that governs both: **gold means verified, and nothing else does.** The product
+rations amber to that single meaning across the state chips, the passport marks and the XP
+totals. A brand mark introducing a second accent for approval would contradict the product
+before a participant opened it. Two colors, no third.
+
+### Image 11: icon
+
+- **File**: docs/media/brand/icon.png
+- **Page**: Favicon, browser tab, sidebar, repository avatar
+- **Alt text**: "The Golden Thread Quest: a gold four-point compass rose on a deep navy tile."
+- **Description**: A single gold compass rose centred on a deep ink-navy rounded square,
+  reduced to what survives at sixteen pixels. Four points only, solid tapered triangles
+  meeting at the centre, the vertical axis slightly longer than the horizontal. One thin
+  concentric gold ring behind the rose, clear of the point tips. Nothing else: no orbit, no
+  badge, no degree marks, no glow. Flat fills, hard edges, two colors.
+- **Prompt**:
+  Goal: A flat vector app icon for a professional engineering training program. It must read
+    instantly at 16 pixels in a browser tab, and it must look like it belongs to the same
+    product as the flat field-guide diagrams inside the application.
+  Scene: A single gold compass rose, centred, on a deep ink-navy rounded square tile. The rose
+    has exactly four points — north, south, east, west — drawn as solid tapered triangles
+    meeting at the centre, with the vertical axis slightly longer than the horizontal. One
+    thin concentric gold ring sits behind the rose, not touching the point tips. Nothing else.
+    The rose occupies roughly 70 percent of the tile width, with even margin on all four
+    sides.
+  Style: Flat vector. Solid fills only. Uniform stroke weight. Hard edges. Absolutely no
+    gradients, no bevels, no bloom or glow, no drop shadows, no sparkles, no lens flare, no 3D
+    shading, no reflections, no texture. The silhouette alone should carry the mark, as if cut
+    from two colors of paper. Geometric, precise, slightly austere — an instrument engraved on
+    a case, not an illustration of one. The compass rose and ring are amber-gold #c8962f and
+    the field is ink navy #172433: two colors in the entire image and no others.
+  Aspect ratio: 1:1 square
+  Background: deep ink navy #172433, filling a rounded square tile with a generous corner
+    radius, opaque, edge to edge, no border
+  Text in image: none
+  Avoid: eight-pointed or sixteen-pointed roses, orbital or elliptical rings, degree markings,
+    tick marks, cardinal letters N E S W, needles, map contours, stars, sparkles, glow,
+    gradients, cyan or teal of any kind, photorealism, glossy app-store styling, any third
+    color, any text
+
+---
+
+### Image 12: icon-badged
+
+- **File**: docs/media/brand/icon-badged.png
+- **Page**: README header, decks, anywhere the mark is rendered large
+- **Alt text**: "The Golden Thread Quest: a gold four-point compass rose on a deep navy tile,
+  with a gold verification check at its lower right."
+- **Description**: Image 11 with one addition, for sizes where a badge is legible. A small
+  solid gold checkmark sits in the lower right inside a filled navy circle with a gold
+  outline, overlapping the ring edge. The check is gold because gold is what verification
+  means in this product. Kept as a separate file: the plain mark is the favicon, this one is
+  for large renders only.
+- **Prompt**:
+  Goal: A flat vector brand mark for a professional engineering training program, for use at
+    large sizes where a small badge is still legible.
+  Scene: A single gold compass rose, centred, on a deep ink-navy rounded square tile. The rose
+    has exactly four points — north, south, east, west — drawn as solid tapered triangles
+    meeting at the centre, with the vertical axis slightly longer than the horizontal. One
+    thin concentric gold ring sits behind the rose, clear of the point tips. In the lower
+    right, overlapping the ring edge, a small filled navy circle with a thin gold outline
+    holds a solid gold checkmark.
+  Style: Flat vector. Solid fills only. Uniform stroke weight. Hard edges. Absolutely no
+    gradients, no bevels, no bloom or glow, no drop shadows, no sparkles, no lens flare, no 3D
+    shading, no reflections, no texture. Geometric, precise, slightly austere. The compass
+    rose, ring, badge outline and checkmark are all amber-gold #c8962f and the field is ink
+    navy #172433: two colors in the entire image and no others.
+  Aspect ratio: 1:1 square
+  Background: deep ink navy #172433, filling a rounded square tile with a generous corner
+    radius, opaque, edge to edge, no border
+  Text in image: none
+  Avoid: a cyan, teal, green or white checkmark, eight-pointed or sixteen-pointed roses,
+    orbital or elliptical rings, degree markings, cardinal letters, needles, stars, sparkles,
+    glow, gradients, photorealism, glossy app-store styling, any third color, any text
+
+---
+
+### Image 13: icon-v2
+
+- **File**: docs/media/brand/icon-v2.png
+- **Fixes**: v1 drew an eight-point rose despite the entry asking for four, and kept the ring.
+  Rendered at 16 pixels the short points and the ring merged into an indistinct gold blob.
+  The ring is now gone and the four arms are described as a shape rather than as a count,
+  because a count is what the model ignored.
+- **Page**: Favicon, browser tab, sidebar, repository avatar
+- **Alt text**: "The Golden Thread Quest: a gold four-pointed star on a deep navy tile."
+- **Description**: A single gold four-pointed star centred on a deep ink-navy rounded square,
+  filling most of the tile. Four long slender arms only — up, down, left, right — each a
+  narrow isosceles triangle tapering from a wide base at the centre to a sharp tip, so the
+  whole mark reads as a compass star. No ring, no circle, no intermediate points between the
+  arms, no badge. Two colors, hard edges, flat fills.
+- **Prompt**:
+  Goal: A flat vector app icon that stays legible at 16 pixels in a browser tab. Legibility at
+    that size outranks every other consideration.
+  Scene: One gold four-pointed star centred on a deep ink-navy rounded square tile. The star
+    has four arms and four arms only, pointing up, down, left and right, each a narrow
+    isosceles triangle with a wide base meeting at the exact centre and a sharp tip. The
+    vertical pair is slightly longer than the horizontal pair. The arm tips reach about 80
+    percent of the way to the tile edge. The spaces diagonally between the arms are empty
+    navy. There is no circle, no ring, no outline, no badge and no small points between the
+    arms.
+  Style: Flat vector. Two solid colors and nothing else. Hard edges, no outlines, no
+    gradients, no bevels, no glow, no shadows, no texture, no 3D. The mark is amber-gold
+    #c8962f and the field is ink navy #172433. Bold and simple enough to survive being shrunk
+    to a thumbnail, like a maritime flag or a stencil.
+  Aspect ratio: 1:1 square
+  Background: deep ink navy #172433, a rounded square tile with a generous corner radius,
+    opaque and filling the entire frame corner to corner with no white margin and no border
+  Text in image: none
+  Avoid: eight-pointed or sixteen-pointed compass roses, any ring or circle around the star,
+    small secondary points between the four arms, degree marks, cardinal letters, needles,
+    white or light margins outside the tile, cyan or teal, gradients, glow, 3D, any third
+    color, any text
+
+---
+
+## Which icon to ship
+
+Tested by rendering each at 16 pixels rather than by opinion.
+
+| Mark | At 16px | At 32px+ | Distinctive? |
+|---|---|---|---|
+| `icon` (eight-point rose, ring) | a gold ring with a muddy centre | crisp and clearly a compass | yes, reads as nothing else |
+| `icon-badged` | badge is an illegible smudge | good | yes, for large renders only |
+| `icon-v2` (four-point star, no ring) | clean and unmistakable | crisp | **no** — it is the common AI sparkle glyph |
+
+The trade is legibility against distinctiveness, and it does not resolve cleanly. `icon-v2`
+wins the 16px test outright, but at every size it looks like the four-point sparkle now used
+generically for anything AI, which is a poor mark for a product whose whole argument is that
+its output is verified rather than generated. `icon` loses detail at 16px but a favicon is
+recognised by colour and silhouette more than by detail, and gold-ring-on-navy is a
+serviceable signature that belongs to this product alone.
+
+Recommendation: ship `icon`, keep `icon-badged` for large renders, and hold `icon-v2` unless
+the sparkle collision is judged acceptable.
+
 ## What was considered and left out
 
 | Candidate | Why not |

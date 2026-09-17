@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-17T15:44:26",
+  "provider": "gemini",
+  "model": "gemini-3-pro-image-preview",
+  "prompt": "Goal: A flat vector app icon that stays legible at 16 pixels in a browser tab. Legibility at\nthat size outranks every other consideration.\nScene: One gold four-pointed star centred on a deep ink-navy rounded square tile. The star\nhas four arms and four arms only, pointing up, down, left and right, each a narrow\nisosceles triangle with a wide base meeting at the exact centre and a sharp tip. The\nvertical pair is slightly longer than the horizontal pair. The arm tips reach about 80\npercent of the way to the tile edge. The spaces diagonally between the arms are empty\nnavy. There is no circle, no ring, no outline, no badge and no small points between the\narms.\nStyle: Flat vector. Two solid colors and nothing else. Hard edges, no outlines, no\ngradients, no bevels, no glow, no shadows, no texture, no 3D. The mark is amber-gold\n#c8962f and the field is ink navy #172433. Bold and simple enough to survive being shrunk\nto a thumbnail, like a maritime flag or a stencil.\nAspect ratio: 1:1 square\nBackground: deep ink navy #172433, a rounded square tile with a generous corner radius,\nopaque and filling the entire frame corner to corner with no white margin and no border\nText in image: none\nAvoid: eight-pointed or sixteen-pointed compass roses, any ring or circle around the star,\nsmall secondary points between the four arms, degree marks, cardinal letters, needles,\nwhite or light margins outside the tile, cyan or teal, gradients, glow, 3D, any third\ncolor, any text",
+  "output_file": "icon-v2.png",
+  "generation_time_ms": 15932,
+  "usage": {
+    "prompt_tokens": 369,
+    "candidates_tokens": 1320,
+    "total_tokens": 1920
+  }
+}
