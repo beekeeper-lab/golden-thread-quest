@@ -11,6 +11,7 @@ import shutil
 import threading
 from collections.abc import Iterator
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 
@@ -230,3 +231,134 @@ class TestKeyboardAndFocus:
         page.wait_for_load_state("load")
         assert "/regions/base-camp/" in page.url
         page.close()
+
+
+AXE = Path(__file__).resolve().parents[2] / "vendor" / "axe.min.js"
+
+# The rule set the product is held to. `docs/ACCESSIBILITY-AND-DESIGN.md` targets WCAG 2.2
+# AA, and axe's tags are the closest expression of that.
+AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"]
+
+AUDITED_PAGES = [
+    "/",
+    "/map/",
+    "/catalog/",
+    "/regions/base-camp/",
+    "/quests/jira-read-assigned-stories/",
+    "/evidence/",
+    "/evidence/jira-read-assigned-stories/",
+    "/passport/",
+    "/health/",
+    "/review/",
+    "/tags/jira/",
+]
+
+
+def axe_violations(page: object, tags: list[str] | None = None) -> list[dict[str, object]]:
+    """Serious and critical axe violations on the current page."""
+    page.add_script_tag(path=str(AXE))  # type: ignore[attr-defined]
+    result = page.evaluate(  # type: ignore[attr-defined]
+        "async (tags) => await axe.run(document, {runOnly: {type: 'tag', values: tags}})",
+        tags or AXE_TAGS,
+    )
+    return [
+        violation
+        for violation in result["violations"]
+        if violation["impact"] in ("serious", "critical")
+    ]
+
+
+@pytest.mark.parametrize("route", AUDITED_PAGES)
+def test_no_serious_accessibility_violation(browser: object, served: str, route: str) -> None:
+    """The plan's requirement, as a check rather than an intention.
+
+    Only serious and critical impacts fail the build. Minor and moderate findings are worth
+    reading but are judgement calls, and a suite that fails on all of them is a suite people
+    learn to ignore.
+
+    The context bypasses the Content Security Policy because axe is injected as an inline
+    script and the policy — correctly — refuses one. That the injection had to be worked
+    around is itself evidence the policy is doing its job; `TestStylesActuallyApply` checks
+    the policy with it enforced.
+    """
+    context = browser.new_context(bypass_csp=True)  # type: ignore[attr-defined]
+    page = context.new_page()
+    page.goto(f"{served}{route}", wait_until="load")
+    violations = axe_violations(page)
+    page.close()
+    context.close()
+    assert violations == [], [
+        f"{v['id']}: {v['help']} ({len(v['nodes'])} node(s))" for v in violations
+    ]
+
+
+class TestResponsive:
+    """The viewports `docs/ACCESSIBILITY-AND-DESIGN.md` names for visual acceptance."""
+
+    VIEWPORTS: ClassVar[dict[str, tuple[int, int]]] = {
+        "desktop": (1440, 900),
+        "laptop": (1280, 720),
+        "tablet": (768, 1024),
+        "phone": (390, 844),
+    }
+
+    @pytest.mark.parametrize("name", list(VIEWPORTS))
+    def test_no_horizontal_scrolling(self, browser: object, served: str, name: str) -> None:
+        width, height = self.VIEWPORTS[name]
+        context = browser.new_context(viewport={"width": width, "height": height})  # type: ignore[attr-defined]
+        page = context.new_page()
+        try:
+            for route in ("/", "/catalog/", "/quests/jira-read-assigned-stories/", "/passport/"):
+                page.goto(f"{served}{route}", wait_until="load")
+                overflow = page.evaluate(
+                    "document.documentElement.scrollWidth - document.documentElement.clientWidth"
+                )
+                assert overflow <= 1, f"{route} scrolls horizontally by {overflow}px at {name}"
+        finally:
+            page.close()
+            context.close()
+
+    def test_usable_at_two_hundred_percent_zoom(self, browser: object, served: str) -> None:
+        """Doubling the scale factor halves the effective viewport, which is what 200% means."""
+        context = browser.new_context(viewport={"width": 720, "height": 450})  # type: ignore[attr-defined]
+        page = context.new_page()
+        try:
+            page.goto(f"{served}/catalog/", wait_until="load")
+            page.evaluate("document.body.style.zoom = '2'")
+            overflow = page.evaluate(
+                "document.documentElement.scrollWidth - document.documentElement.clientWidth"
+            )
+            assert overflow <= 1, f"scrolls horizontally by {overflow}px at 200% zoom"
+            assert page.locator("#filter-q").is_visible()
+        finally:
+            page.close()
+            context.close()
+
+    def test_the_primary_action_is_reachable_on_a_phone(self, browser: object, served: str) -> None:
+        context = browser.new_context(viewport={"width": 390, "height": 844})  # type: ignore[attr-defined]
+        page = context.new_page()
+        try:
+            page.goto(f"{served}/quests/jira-read-assigned-stories/", wait_until="load")
+            action = page.locator(".button").first
+            assert action.is_visible()
+            box = action.bounding_box()
+            assert box is not None and box["width"] <= 390
+        finally:
+            page.close()
+            context.close()
+
+
+def test_no_essential_action_requires_hover(browser: object, served: str) -> None:
+    """Hover-only information is unreachable on a touch screen and to a keyboard."""
+    page = page_for(browser, f"{served}/catalog/")
+    hidden = page.evaluate(
+        """() => Array.from(document.querySelectorAll('a, button'))
+              .filter(el => {
+                const s = getComputedStyle(el);
+                return s.display === 'none' || s.visibility === 'hidden' || s.opacity === '0';
+              })
+              .filter(el => !el.hasAttribute('hidden'))
+              .map(el => el.textContent.trim().slice(0, 40))"""
+    )
+    page.close()
+    assert hidden == [], hidden

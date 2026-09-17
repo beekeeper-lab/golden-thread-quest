@@ -23,10 +23,16 @@
   --surface-muted: #f0ede5;
   --surface-raised: #ffffff;
   --line: #ded8cc;
+  /* Decorative separators: a card edge carries no meaning, so WCAG's non-text threshold
+     does not apply to it and the prototype's warm neutral is kept. */
   --line-strong: #c8bead;
+  /* The boundary of a control does carry meaning — it is how you know where to click — so
+     it needs 3:1 against the surface behind it. `--line-strong` is 1.81:1 and cannot reach
+     it without abandoning the palette, so control borders get their own token. */
+  --border-control: var(--ink-500);
 
   /* Gold — progress and verified achievement, used sparingly */
-  --gold-700: #8d6517;
+  --gold-700: #8b6317;
   --gold-600: #aa7a1b;
   --gold-500: #c8962f;
   --gold-300: #e7c875;
@@ -48,9 +54,18 @@
   --text: var(--ink-900);
   --text-muted: var(--ink-600);
   --text-inverse: var(--paper);
+  /* The same components appear on the dark sidebar as on light surfaces — the participant
+     summary is rendered in both. Light-surface muted and accent colours fail badly there
+     (2.58:1 and 2.91:1), so the inverse pair exists and is used wherever ink is the
+     background. Found by axe, not by pairing tokens on paper. */
+  --text-muted-inverse: #b4c0cc;
+  --accent-inverse: var(--gold-300);
   --background: var(--paper);
   --primary: var(--ink-800);
   --accent: var(--gold-600);
+  /* The meter fill against its own track. `--gold-500` is 2.28:1 there, and a progress bar
+     is meaningful graphics rather than decoration. */
+  --meter-fill: var(--gold-600);
   --success: var(--green-700);
   --success-surface: var(--green-100);
   --information: var(--blue-700);

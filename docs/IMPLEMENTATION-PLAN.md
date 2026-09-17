@@ -188,32 +188,32 @@ Do not check the stage heading until its audit passes.
 
 ### Tasks
 
-- [ ] Implement loopback-only service configuration.
-- [ ] Implement per-run token and state-changing request protection.
-- [ ] Implement typed APIs for health, start quest, update allowed participant fields, create evidence package, and rebuild.
-- [ ] Implement state-transition rules.
-- [ ] Implement atomic progress writes and recovery.
-- [ ] Implement content-version awareness for attempts.
-- [ ] Implement participant-visible mutation audit records.
-- [ ] Implement service-unavailable UI behavior and CLI alternatives.
-- [ ] Implement request size, path, and allowed-origin protections.
-- [ ] Implement narrow Git status inspection without mutation.
+- [x] Implement loopback-only service configuration.
+- [x] Implement per-run token and state-changing request protection.
+- [x] Implement typed APIs for health, start quest, update allowed participant fields, create evidence package, and rebuild.
+- [x] Implement state-transition rules.
+- [x] Implement atomic progress writes and recovery.
+- [x] Implement content-version awareness for attempts.
+- [x] Implement participant-visible mutation audit records.
+- [x] Implement service-unavailable UI behavior and CLI alternatives.
+- [x] Implement request size, path, and allowed-origin protections.
+- [x] Implement narrow Git status inspection without mutation.
 
 ### Required tests
 
-- [ ] Service refuses non-loopback binding by default.
-- [ ] Missing/invalid token and unexpected origin are rejected.
-- [ ] Invalid transitions are rejected without state corruption.
-- [ ] Traversal and symbolic-link escape attempts fail.
-- [ ] Interrupted writes recover to a valid prior or new state.
-- [ ] Application restart restores participant state.
-- [ ] Service-unavailable pages remain useful and honest.
+- [x] Service refuses non-loopback binding by default.
+- [x] Missing/invalid token and unexpected origin are rejected.
+- [x] Invalid transitions are rejected without state corruption.
+- [x] Traversal and symbolic-link escape attempts fail.
+- [x] Interrupted writes recover to a valid prior or new state.
+- [x] Application restart restores participant state.
+- [x] Service-unavailable pages remain useful and honest.
 
 ### Stage audit
 
-- [ ] Review every route's read/write authority.
-- [ ] Review canonical-path and symbolic-link handling.
-- [ ] Review error responses for secret or path leakage.
+- [x] Review every route's read/write authority.
+- [x] Review canonical-path and symbolic-link handling.
+- [x] Review error responses for secret or path leakage.
 - [ ] Create and resolve `docs/audits/stage-04-service-audit.md`.
 
 ### Stage completion
@@ -228,34 +228,34 @@ Do not check the stage heading until its audit passes.
 
 ### Tasks
 
-- [ ] Implement evidence-directory templates and manifest creation.
-- [ ] Implement proof requirement detection.
-- [ ] Implement validator registry with typed parameters.
-- [ ] Implement process execution without shell command strings.
-- [ ] Implement working-directory, environment, timeout, output, and path policies.
-- [ ] Implement interruption and child-process cleanup.
-- [ ] Implement structured validation results using the published schema.
-- [ ] Implement result classification: pass, fail, warning, environment failure, and inconclusive.
-- [ ] Implement output redaction and truncation.
-- [ ] Implement secret scan before evidence-ready and submission transitions.
-- [ ] Implement evidence staleness detection from artifact hashes.
-- [ ] Implement at least three sample validators: file proof, Markdown proof quality, and a safe command-backed validator.
+- [x] Implement evidence-directory templates and manifest creation.
+- [x] Implement proof requirement detection.
+- [x] Implement validator registry with typed parameters.
+- [x] Implement process execution without shell command strings.
+- [x] Implement working-directory, environment, timeout, output, and path policies.
+- [x] Implement interruption and child-process cleanup.
+- [x] Implement structured validation results using the published schema.
+- [x] Implement result classification: pass, fail, warning, environment failure, and inconclusive.
+- [x] Implement output redaction and truncation.
+- [x] Implement secret scan before evidence-ready and submission transitions.
+- [x] Implement evidence staleness detection from artifact hashes.
+- [x] Implement at least three sample validators: file proof, Markdown proof quality, and a safe command-backed validator.
 
 ### Required tests
 
-- [ ] Unknown validator IDs cannot execute.
-- [ ] Metacharacters and attacker-controlled arguments remain ordinary arguments.
-- [ ] Validators cannot write outside approved fixture roots.
-- [ ] Timeouts terminate the full validator process tree.
-- [ ] Large output is bounded and marked truncated.
-- [ ] Secret-like output is redacted.
-- [ ] A validator pass cannot create reviewer verification.
+- [x] Unknown validator IDs cannot execute.
+- [x] Metacharacters and attacker-controlled arguments remain ordinary arguments.
+- [x] Validators cannot write outside approved fixture roots.
+- [x] Timeouts terminate the full validator process tree.
+- [x] Large output is bounded and marked truncated.
+- [x] Secret-like output is redacted.
+- [x] A validator pass cannot create reviewer verification.
 
 ### Stage audit
 
-- [ ] Threat-model the validator framework.
-- [ ] Attempt path, command, environment, output, and timeout attacks.
-- [ ] Review every sample validator for false-positive and false-negative behavior.
+- [x] Threat-model the validator framework.
+- [x] Attempt path, command, environment, output, and timeout attacks.
+- [x] Review every sample validator for false-positive and false-negative behavior.
 - [ ] Create and resolve `docs/audits/stage-05-validator-audit.md`.
 
 ### Stage completion
@@ -270,38 +270,38 @@ Do not check the stage heading until its audit passes.
 
 ### Tasks
 
-- [ ] Match the approved information hierarchy and design tokens.
-- [ ] Complete responsive navigation.
-- [ ] Implement deterministic recommended-next scoring and rationale.
-- [ ] Implement map, region, and catalog filters with URL-preserved state where practical.
-- [ ] Implement quest start/continue and version notices.
-- [ ] Implement evidence actions and validation result detail.
-- [ ] Implement Passport, badge states, capability breadth, and sanitized public-progress preview.
-- [ ] Implement Environment Health checks and remediation guidance.
-- [ ] Implement empty, error, locked, needs-changes, service-unavailable, and loading states.
-- [ ] Implement polite/urgent live-region behavior.
-- [ ] Respect reduced-motion preferences.
-- [ ] Verify no essential workflow requires hover.
+- [x] Match the approved information hierarchy and design tokens.
+- [x] Complete responsive navigation.
+- [x] Implement deterministic recommended-next scoring and rationale.
+- [x] Implement map, region, and catalog filters with URL-preserved state where practical.
+- [x] Implement quest start/continue and version notices.
+- [x] Implement evidence actions and validation result detail.
+- [x] Implement Passport, badge states, capability breadth, and sanitized public-progress preview.
+- [x] Implement Environment Health checks and remediation guidance.
+- [x] Implement empty, error, locked, needs-changes, service-unavailable, and loading states.
+- [x] Implement polite/urgent live-region behavior.
+- [x] Respect reduced-motion preferences.
+- [x] Verify no essential workflow requires hover.
 
 ### Required tests
 
-- [ ] Playwright covers the primary participant journey.
-- [ ] Playwright covers locked, failed-validation, needs-changes, and service-unavailable states.
-- [ ] Automated accessibility checks report no serious or critical findings.
-- [ ] Keyboard-only navigation and actions work.
-- [ ] Pages work at required desktop, tablet, narrow, and 200%-zoom conditions.
-- [ ] No-JavaScript browsing preserves core content.
+- [x] Playwright covers the primary participant journey.
+- [x] Playwright covers locked, failed-validation, needs-changes, and service-unavailable states.
+- [x] Automated accessibility checks report no serious or critical findings.
+- [x] Keyboard-only navigation and actions work.
+- [x] Pages work at required desktop, tablet, narrow, and 200%-zoom conditions.
+- [x] No-JavaScript browsing preserves core content.
 
 ### Stage audit
 
-- [ ] Complete `docs/ui/PROTOTYPE-REVIEW.md` against production UI.
-- [ ] Compare text, states, authority labels, and actions to specification.
-- [ ] Review responsive screenshots and keyboard flow.
-- [ ] Create and resolve `docs/audits/stage-06-ui-audit.md`.
+- [x] Complete `docs/ui/PROTOTYPE-REVIEW.md` against production UI.
+- [x] Compare text, states, authority labels, and actions to specification.
+- [x] Review responsive screenshots and keyboard flow.
+- [x] Create and resolve `docs/audits/stage-06-ui-audit.md`.
 
 ### Stage completion
 
-- [ ] **Stage 6 complete and audited**
+- [x] **Stage 6 complete and audited**
 
 ---
 
@@ -311,31 +311,31 @@ Do not check the stage heading until its audit passes.
 
 ### Tasks
 
-- [ ] Implement submission readiness checks.
-- [ ] Implement submission record creation.
-- [ ] Implement Reviewer View.
-- [ ] Implement structured findings and decisions.
-- [ ] Require explicit verification statement for approval.
-- [ ] Require at least one finding for needs-changes or rejection.
-- [ ] Implement changed-evidence detection.
-- [ ] Implement review history.
-- [ ] Implement verified XP and badge calculations from valid approval only.
-- [ ] Document first-release reviewer provenance limitations.
-- [ ] Implement Git/PR-oriented handoff instructions without automatic push or merge.
+- [x] Implement submission readiness checks.
+- [x] Implement submission record creation.
+- [x] Implement Reviewer View.
+- [x] Implement structured findings and decisions.
+- [x] Require explicit verification statement for approval.
+- [x] Require at least one finding for needs-changes or rejection.
+- [x] Implement changed-evidence detection.
+- [x] Implement review history.
+- [x] Implement verified XP and badge calculations from valid approval only.
+- [x] Document first-release reviewer provenance limitations.
+- [x] Implement Git/PR-oriented handoff instructions without automatic push or merge.
 
 ### Required tests
 
-- [ ] Participant-created `verified` state is rejected.
-- [ ] Approval for another attempt does not verify the current attempt.
-- [ ] Changed evidence marks prior approval stale according to policy.
-- [ ] Needs-changes returns the quest to an actionable participant state without deleting evidence.
-- [ ] Verified XP and badges are calculated correctly.
+- [x] Participant-created `verified` state is rejected.
+- [x] Approval for another attempt does not verify the current attempt.
+- [x] Changed evidence marks prior approval stale according to policy.
+- [x] Needs-changes returns the quest to an actionable participant state without deleting evidence.
+- [x] Verified XP and badges are calculated correctly.
 
 ### Stage audit
 
-- [ ] Attempt to forge, reuse, and mismatch review records.
-- [ ] Review language for false claims about cryptographic identity.
-- [ ] Verify reviewer actions are distinct from participant actions.
+- [x] Attempt to forge, reuse, and mismatch review records.
+- [x] Review language for false claims about cryptographic identity.
+- [x] Verify reviewer actions are distinct from participant actions.
 - [ ] Create and resolve `docs/audits/stage-07-review-audit.md`.
 
 ### Stage completion
@@ -350,29 +350,29 @@ Do not check the stage heading until its audit passes.
 
 ### Tasks
 
-- [ ] Document canonical upstream and participant-origin setup.
-- [ ] Implement update preflight checks.
-- [ ] Require or create a recoverable backup branch before automated update assistance.
-- [ ] Display release and migration notes.
-- [ ] Implement versioned participant-state migrations.
-- [ ] Validate state before and after migration.
-- [ ] Preserve in-progress attempts on older quest versions unless the participant opts into migration.
-- [ ] Add tests proving `participant/` is never replaced wholesale.
-- [ ] Document manual recovery when merge conflicts occur.
+- [x] Document canonical upstream and participant-origin setup.
+- [x] Implement update preflight checks.
+- [x] Require or create a recoverable backup branch before automated update assistance.
+- [x] Display release and migration notes.
+- [x] Implement versioned participant-state migrations.
+- [x] Validate state before and after migration.
+- [x] Preserve in-progress attempts on older quest versions unless the participant opts into migration.
+- [x] Add tests proving `participant/` is never replaced wholesale.
+- [x] Document manual recovery when merge conflicts occur.
 
 ### Required tests
 
-- [ ] Dirty working tree produces a safe stop with guidance.
-- [ ] Backup branch exists before migration changes.
-- [ ] Participant fixture files survive representative upstream updates.
-- [ ] Failed migration restores or preserves pre-migration state.
-- [ ] Historical verified attempts remain readable.
+- [x] Dirty working tree produces a safe stop with guidance.
+- [x] Backup branch exists before migration changes.
+- [x] Participant fixture files survive representative upstream updates.
+- [x] Failed migration restores or preserves pre-migration state.
+- [x] Historical verified attempts remain readable.
 
 ### Stage audit
 
-- [ ] Review Git operations for destructive behavior.
-- [ ] Simulate update conflicts in program and participant zones.
-- [ ] Review every migration for reversibility and version guards.
+- [x] Review Git operations for destructive behavior.
+- [x] Simulate update conflicts in program and participant zones.
+- [x] Review every migration for reversibility and version guards.
 - [ ] Create and resolve `docs/audits/stage-08-update-audit.md`.
 
 ### Stage completion

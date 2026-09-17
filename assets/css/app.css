@@ -233,8 +233,8 @@ code {
 
 .meter { display: grid; gap: var(--space-2); }
 .meter-label { display: flex; justify-content: space-between; gap: var(--space-3); font-size: var(--text-sm); }
-.meter-track { height: 0.6rem; background: var(--surface-muted); border-radius: var(--radius-pill); overflow: hidden; border: 1px solid var(--line); }
-.meter-fill { height: 100%; width: 0; background: var(--gold-500); }
+.meter-track { height: 0.6rem; background: var(--surface-muted); border-radius: var(--radius-pill); overflow: hidden; border: 1px solid var(--border-control); }
+.meter-fill { height: 100%; width: 0; background: var(--meter-fill); }
 .meter-fill.is-claimed { background: var(--ink-500); }
 
 /* Width as a class rather than an inline style attribute. The Content Security Policy has
@@ -268,6 +268,11 @@ code {
 .total dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
 .total dd { margin: 0; font-family: var(--font-serif); font-size: var(--text-2xl); }
 .total.is-verified dd { color: var(--gold-700); }
+
+/* On ink, the light-surface muted and accent colours are unreadable. */
+.app-sidebar .total dt { color: var(--text-muted-inverse); }
+.app-sidebar .total dd { color: var(--paper); }
+.app-sidebar .total.is-verified dd { color: var(--accent-inverse); }
 
 /* ---------------------------------------------------------------- Cards (C04, C05) */
 
@@ -350,7 +355,7 @@ a.tag:hover, button.tag:hover { background: var(--line); }
   min-height: 2.75rem;
   padding: 0 var(--space-5);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--border-control);
   background: var(--surface);
   color: var(--ink-900);
   font: inherit;
@@ -428,7 +433,7 @@ input[type="text"], input[type="search"], input[type="number"], select, textarea
   font: inherit;
   padding: var(--space-2) var(--space-3);
   min-height: 2.75rem;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text);
