@@ -1,0 +1,33 @@
+schema_version: 1
+participant:
+  id: alex-rivera
+  display_name: Alex Rivera
+selected_track: golden-thread-foundations
+focus_tags:
+  - jira
+  - testing
+session_capacity_minutes: 90
+attempts:
+  - attempt_id: base-camp-attempt-001
+    quest_id: base-camp-repository-safety
+    quest_version: 1
+    content_hash: sha256:1111111111111111111111111111111111111111111111111111111111111111
+    state: verified
+    started_at: "2026-09-10T13:00:00Z"
+    updated_at: "2026-09-11T18:15:00Z"
+    evidence_path: participant/evidence/base-camp-repository-safety/base-camp-attempt-001
+    validation_result_ids:
+      - repository-foundation-run-001
+    submission_id: base-camp-submission-001
+    review_id: base-camp-review-001
+  - attempt_id: jira-attempt-001
+    quest_id: jira-read-assigned-stories
+    quest_version: 1
+    content_hash: sha256:2222222222222222222222222222222222222222222222222222222222222222
+    state: evidence_ready
+    started_at: "2026-09-12T13:30:00Z"
+    updated_at: "2026-09-16T14:05:00Z"
+    evidence_path: participant/evidence/jira-read-assigned-stories/jira-attempt-001
+    validation_result_ids:
+      - jira-read-assigned-run-001
+updated_at: "2026-09-16T14:05:00Z"

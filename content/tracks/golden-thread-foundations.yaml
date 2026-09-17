@@ -1,0 +1,16 @@
+id: golden-thread-foundations
+version: 1
+title: Golden Thread Foundations
+summary: A starter track demonstrating repository safety, one work-management integration, and one maintainable validation workflow.
+quest_ids:
+  - base-camp-repository-safety
+  - jira-read-assigned-stories
+  - playwright-first-independent-test
+focus_tags:
+  - foundation
+  - synchronization
+  - testing
+balance:
+  intent_minimum: 1
+  validation_minimum: 1
+  cross_bookend_minimum: 0

@@ -1,0 +1,11 @@
+id: golden-thread-keeper
+version: 1
+title: Golden Thread Keeper
+summary: Preserved traceability from intent through implementation evidence and verified outcome across multiple kinds of work.
+award_type: reviewer
+icon: golden-thread
+criteria:
+  verified_quest_count: 8
+  required_tags:
+    - traceability
+  reviewer_statement: The reviewer confirms that the participant preserved a credible end-to-end trace from intent to verified outcome.

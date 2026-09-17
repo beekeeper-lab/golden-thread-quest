@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://golden-thread.local/schemas/review.schema.json",
+  "title": "Golden Thread review decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "review_id",
+    "quest_id",
+    "quest_version",
+    "attempt_id",
+    "evidence_hash",
+    "reviewer",
+    "reviewed_at",
+    "decision",
+    "findings"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "review_id": { "$ref": "#/$defs/id" },
+    "quest_id": { "$ref": "#/$defs/id" },
+    "quest_version": { "type": "integer", "minimum": 1 },
+    "attempt_id": { "$ref": "#/$defs/id" },
+    "evidence_hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "reviewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["display_name"],
+      "properties": {
+        "display_name": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "identity_reference": { "type": "string", "maxLength": 300 }
+      }
+    },
+    "reviewed_at": { "type": "string", "format": "date-time" },
+    "decision": { "type": "string", "enum": ["approved", "needs_changes", "rejected"] },
+    "verification_statement": { "type": "string", "minLength": 20, "maxLength": 2000 },
+    "validation_result_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "decision": { "const": "approved" } }, "required": ["decision"] },
+      "then": { "required": ["verification_statement"] }
+    },
+    {
+      "if": { "properties": { "decision": { "enum": ["needs_changes", "rejected"] } }, "required": ["decision"] },
+      "then": { "properties": { "findings": { "minItems": 1 } } }
+    }
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 120
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "severity", "summary", "evidence"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "severity": { "type": "string", "enum": ["blocking", "high", "medium", "low", "advisory"] },
+        "summary": { "type": "string", "minLength": 5, "maxLength": 500 },
+        "evidence": { "type": "string", "minLength": 5, "maxLength": 4000 },
+        "required_change": { "type": "string", "maxLength": 2000 }
+      }
+    }
+  }
+}

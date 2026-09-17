@@ -1,0 +1,19 @@
+schema_version: 1
+review_id: base-camp-review-001
+quest_id: base-camp-repository-safety
+quest_version: 1
+attempt_id: base-camp-attempt-001
+evidence_hash: sha256:3333333333333333333333333333333333333333333333333333333333333333
+reviewer:
+  display_name: Morgan Lee
+  identity_reference: local-demo-reviewer
+reviewed_at: "2026-09-11T18:15:00Z"
+decision: approved
+verification_statement: I reproduced the repository checks and confirmed that the submitted evidence demonstrates the quest outcomes.
+validation_result_ids:
+  - repository-foundation-run-001
+findings:
+  - id: document-recovery-boundary
+    severity: advisory
+    summary: Document the recovery boundary for future external write integrations.
+    evidence: The current example covers simulated writes but no production connector.

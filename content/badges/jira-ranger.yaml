@@ -1,0 +1,9 @@
+id: jira-ranger
+version: 1
+title: Jira Ranger
+summary: Demonstrated a safe and repeatable Jira-to-local-context synchronization workflow.
+award_type: automatic
+icon: trail
+criteria:
+  all_quests:
+    - jira-read-assigned-stories

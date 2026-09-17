@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://golden-thread.local/schemas/progress.schema.json",
+  "title": "Golden Thread participant progress",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "participant", "selected_track", "attempts"],
+  "properties": {
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "participant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "display_name"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "display_name": { "type": "string", "minLength": 1, "maxLength": 100 }
+      }
+    },
+    "selected_track": { "$ref": "#/$defs/id" },
+    "focus_tags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "session_capacity_minutes": { "type": "integer", "minimum": 5, "maximum": 1440 },
+    "attempts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/attempt" }
+    },
+    "updated_at": { "$ref": "#/$defs/timestamp" }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 100
+    },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt_id",
+        "quest_id",
+        "quest_version",
+        "content_hash",
+        "state",
+        "started_at",
+        "updated_at",
+        "evidence_path"
+      ],
+      "properties": {
+        "attempt_id": { "$ref": "#/$defs/id" },
+        "quest_id": { "$ref": "#/$defs/id" },
+        "quest_version": { "type": "integer", "minimum": 1 },
+        "content_hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "state": {
+          "type": "string",
+          "enum": ["in_progress", "evidence_ready", "locally_validated", "submitted", "needs_changes", "verified"]
+        },
+        "started_at": { "$ref": "#/$defs/timestamp" },
+        "updated_at": { "$ref": "#/$defs/timestamp" },
+        "evidence_path": {
+          "type": "string",
+          "pattern": "^participant/evidence/(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+        },
+        "validation_result_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "submission_id": { "$ref": "#/$defs/id" },
+        "review_id": { "$ref": "#/$defs/id" }
+      }
+    }
+  }
+}

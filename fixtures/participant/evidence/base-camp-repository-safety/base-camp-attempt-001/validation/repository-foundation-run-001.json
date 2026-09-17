@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "run_id": "repository-foundation-run-001",
+  "validator_id": "validate-repository-foundation",
+  "validator_version": 1,
+  "quest_id": "base-camp-repository-safety",
+  "attempt_id": "base-camp-attempt-001",
+  "started_at": "2026-09-11T18:00:00Z",
+  "completed_at": "2026-09-11T18:00:01Z",
+  "duration_ms": 944,
+  "outcome": "pass",
+  "environment": {
+    "fixture_mode": true,
+    "git_repository": true
+  },
+  "checks": [
+    {
+      "id": "ownership-zones-documented",
+      "outcome": "pass",
+      "severity": "high",
+      "summary": "Program, participant, generated, and private runtime zones are documented."
+    },
+    {
+      "id": "secret-paths-ignored",
+      "outcome": "pass",
+      "severity": "blocking",
+      "summary": "Representative credential and raw-response paths are excluded from Git."
+    },
+    {
+      "id": "participant-cleanup-protected",
+      "outcome": "pass",
+      "severity": "blocking",
+      "summary": "The cleanup fixture preserves every participant-owned file."
+    }
+  ],
+  "output_excerpt": "Foundation checks passed against the sanitized design fixture.",
+  "output_truncated": false,
+  "redaction_applied": true,
+  "result_path": "participant/evidence/base-camp-repository-safety/base-camp-attempt-001/validation/repository-foundation-run-001.json"
+}

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="{{ page.description }}">
+    <title>{{ page.title }} — {{ site.title }}</title>
+    <link rel="stylesheet" href="{{ assets.application_css }}">
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    {% include "components/app-navigation.html.j2" %}
+    <main id="main-content">
+      {% block main %}{% endblock %}
+    </main>
+    {% if assets.application_js %}<script src="{{ assets.application_js }}"></script>{% endif %}
+  </body>
+</html>

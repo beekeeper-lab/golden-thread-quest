@@ -1,0 +1,13 @@
+id: scrum-village
+version: 1
+title: Scrum Village
+short_title: Scrum
+summary: Use agentic context to improve planning, flow, team awareness, retrospectives, and stakeholder communication without replacing judgment.
+order: 70
+accent: green
+icon: village
+outcomes:
+  - Produce evidence-based team and sprint summaries.
+  - Detect blockers, aging work, scope change, and missing decisions.
+  - Convert retrospectives into owned, traceable experiments.
+tags: [scrum, organization, reporting]

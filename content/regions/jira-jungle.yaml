@@ -1,0 +1,13 @@
+id: jira-jungle
+version: 1
+title: Jira Jungle
+short_title: Jira
+summary: Build repeatable Jira read, synchronization, creation, update, and reconciliation workflows without losing human control.
+order: 20
+accent: blue
+icon: jira
+outcomes:
+  - Synchronize assigned and queried Jira work into traceable local Markdown.
+  - Preview and safely perform approved Jira changes.
+  - Detect duplicates, conflicts, stale context, and incomplete pagination.
+tags: [jira, integration, work-management]

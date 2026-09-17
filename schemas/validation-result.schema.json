@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://golden-thread.local/schemas/validation-result.schema.json",
+  "title": "Golden Thread validation result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "validator_id",
+    "validator_version",
+    "quest_id",
+    "attempt_id",
+    "started_at",
+    "completed_at",
+    "duration_ms",
+    "outcome",
+    "checks",
+    "redaction_applied"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "run_id": { "$ref": "#/$defs/id" },
+    "validator_id": { "$ref": "#/$defs/id" },
+    "validator_version": { "type": "integer", "minimum": 1 },
+    "quest_id": { "$ref": "#/$defs/id" },
+    "attempt_id": { "$ref": "#/$defs/id" },
+    "started_at": { "$ref": "#/$defs/timestamp" },
+    "completed_at": { "$ref": "#/$defs/timestamp" },
+    "duration_ms": { "type": "integer", "minimum": 0 },
+    "outcome": {
+      "type": "string",
+      "enum": ["pass", "fail", "warning", "environment_failure", "inconclusive", "interrupted"]
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": { "type": ["string", "number", "boolean", "null"] }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/check" }
+    },
+    "output_excerpt": { "type": "string", "maxLength": 20000 },
+    "output_truncated": { "type": "boolean", "default": false },
+    "redaction_applied": { "type": "boolean" },
+    "result_path": {
+      "type": "string",
+      "pattern": "^participant/evidence/(?!.*(?:^|/)\\.\\.(?:/|$)).+\\.json$"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 120
+    },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "outcome", "summary"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "outcome": { "type": "string", "enum": ["pass", "fail", "warning", "skipped", "inconclusive"] },
+        "severity": { "type": "string", "enum": ["blocking", "high", "medium", "low", "information"] },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "evidence": { "type": "string", "maxLength": 4000 },
+        "suggested_action": { "type": "string", "maxLength": 1000 },
+        "artifact": { "type": "string", "maxLength": 300 }
+      }
+    }
+  }
+}

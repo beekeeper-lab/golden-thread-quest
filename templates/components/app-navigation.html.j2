@@ -1,0 +1,18 @@
+<aside class="app-navigation" aria-label="Primary navigation">
+  <a class="brand" href="{{ site.home_route }}">{{ site.title }}</a>
+  <nav>
+    <ul>
+      {% for item in site.navigation %}
+        <li>
+          <a href="{{ item.route }}"{% if item.id == page.current_navigation_id %} aria-current="page"{% endif %}>{{ item.label }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  </nav>
+  {% if participant %}
+    <section aria-label="Participant progress">
+      <strong>{{ participant.display_name }}</strong>
+      <span>{{ participant.verified_xp }} verified XP</span>
+    </section>
+  {% endif %}
+</aside>

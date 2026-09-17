@@ -1,0 +1,13 @@
+id: context-library
+version: 1
+title: Context Library
+short_title: Context
+summary: Build trustworthy local Markdown context that reconciles multiple systems and supports explainable next-work recommendations.
+order: 50
+accent: amber
+icon: library
+outcomes:
+  - Maintain stable local representations of work, decisions, and evidence.
+  - Detect stale, conflicting, missing, and duplicated context.
+  - Recommend next work with cited, inspectable reasons.
+tags: [context, markdown, prioritization]

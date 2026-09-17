@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv:*)",
+      "Bash(python:*)",
+      "Bash(pytest:*)",
+      "Bash(ruff:*)",
+      "Bash(mypy:*)",
+      "Bash(make:*)",
+      "Bash(yq:*)",
+      "Bash(npm install:*)",
+      "Bash(npx playwright:*)",
+      "Read(//home/gregg/Nextcloud/workspace/golden-thread-quest-design/**)",
+      "Edit(//home/gregg/Nextcloud/workspace/golden-thread-quest-design/**)",
+      "Write(//home/gregg/Nextcloud/workspace/golden-thread-quest-design/**)"
+    ]
+  }
+}

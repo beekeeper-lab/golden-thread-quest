@@ -1,0 +1,13 @@
+id: ba-ruins
+version: 1
+title: BA Ruins
+short_title: Business Analysis
+summary: Recover intent from conversations and turn it into clear decisions, requirements, stories, acceptance criteria, and change analysis.
+order: 60
+accent: rust
+icon: compass
+outcomes:
+  - Extract traceable work from meetings and source material.
+  - Surface ambiguity, contradiction, risk, and missing decisions.
+  - Create well-scoped work only after human approval.
+tags: [business-analysis, requirements, intent]

@@ -1,0 +1,13 @@
+id: playwright-labyrinth
+version: 1
+title: Playwright Labyrinth
+short_title: Playwright
+summary: Design risk-based tests, build maintainable Playwright automation, capture evidence, and diagnose failures without weakening validation.
+order: 80
+accent: rose
+icon: validation
+outcomes:
+  - Translate intent and risk into maintainable automated tests.
+  - Execute tagged, independent tests and preserve useful evidence.
+  - Distinguish product defects, test defects, environment failures, and inconclusive results.
+tags: [playwright, testing, validation]

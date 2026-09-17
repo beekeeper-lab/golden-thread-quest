@@ -1,0 +1,49 @@
+{% extends "layouts/base.html.j2" %}
+
+{% block main %}
+<header class="page-heading">
+  <p>{{ quest.region.title }}</p>
+  <h1>{{ quest.title }}</h1>
+  <p>{{ quest.summary }}</p>
+</header>
+
+{% if quest.lock_notice %}
+  <aside class="notice notice-warning">{{ quest.lock_notice }}</aside>
+{% endif %}
+
+<div class="workbench">
+  <article>
+    {% for section in quest.narrative_sections %}
+      <section aria-labelledby="{{ section.heading_id }}">
+        <h2 id="{{ section.heading_id }}">{{ section.title }}</h2>
+        {{ section.safe_rendered_html | safe }}
+      </section>
+    {% endfor %}
+
+    <section aria-labelledby="quest-outcomes">
+      <h2 id="quest-outcomes">Outcomes</h2>
+      <ul>{% for outcome in quest.outcomes %}<li>{{ outcome }}</li>{% endfor %}</ul>
+    </section>
+
+    <section aria-labelledby="quest-criteria">
+      <h2 id="quest-criteria">Acceptance criteria</h2>
+      <ol>{% for criterion in quest.acceptance_criteria %}<li id="{{ criterion.dom_id }}">{{ criterion.text }}</li>{% endfor %}</ol>
+    </section>
+  </article>
+
+  <aside aria-label="Quest status and actions">
+    <span class="state state-{{ quest.state.id }}">{{ quest.state.label }}</span>
+    <dl>
+      <dt>Version</dt><dd>{{ quest.version }}</dd>
+      <dt>Level</dt><dd>{{ quest.level.label }}</dd>
+      <dt>Experience</dt><dd>{{ quest.xp }} XP</dd>
+      <dt>Estimate</dt><dd>{{ quest.estimated_minutes }} minutes</dd>
+    </dl>
+    {% if quest.primary_action.enabled %}
+      <a class="button button-primary" href="{{ quest.primary_action.route }}">{{ quest.primary_action.label }}</a>
+    {% else %}
+      <button class="button" disabled>{{ quest.primary_action.label }}</button>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

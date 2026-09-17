@@ -1,0 +1,16 @@
+{# Requires a normalized quest summary view model named `quest`. #}
+<article class="quest-card">
+  <header>
+    <span>{{ quest.region.title }}</span>
+    <span class="state state-{{ quest.state.id }}">{{ quest.state.label }}</span>
+  </header>
+  <h2><a href="{{ quest.route }}">{{ quest.title }}</a></h2>
+  <p>{{ quest.summary }}</p>
+  <ul class="tag-list" aria-label="Quest tags">
+    {% for tag in quest.tags %}<li>{{ tag }}</li>{% endfor %}
+  </ul>
+  <footer>
+    <span>{{ quest.level.label }} · {{ quest.xp }} XP</span>
+    <span>{{ quest.estimated_minutes }} minutes</span>
+  </footer>
+</article>

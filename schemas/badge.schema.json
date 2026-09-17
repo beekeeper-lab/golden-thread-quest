@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://golden-thread.local/schemas/badge.schema.json",
+  "title": "Golden Thread badge",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "title", "summary", "award_type", "icon", "criteria"],
+  "properties": {
+    "id": { "$ref": "#/$defs/id" },
+    "version": { "type": "integer", "minimum": 1 },
+    "title": { "type": "string", "minLength": 3, "maxLength": 80 },
+    "summary": { "type": "string", "minLength": 15, "maxLength": 300 },
+    "award_type": {
+      "type": "string",
+      "enum": ["automatic", "reviewer", "program"]
+    },
+    "icon": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "criteria": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "all_quests": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "any_quests": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "verified_quest_count": { "type": "integer", "minimum": 1 },
+        "verified_xp": { "type": "integer", "minimum": 1 },
+        "region": { "$ref": "#/$defs/id" },
+        "required_tags": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "reviewer_statement": { "type": "string", "minLength": 10, "maxLength": 500 }
+      },
+      "minProperties": 1
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 80
+    }
+  }
+}

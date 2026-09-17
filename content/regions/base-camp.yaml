@@ -1,0 +1,13 @@
+id: base-camp
+version: 1
+title: Base Camp
+short_title: Base Camp
+summary: Establish the repository, safety, context, and audit foundations required before agents touch real work systems.
+order: 10
+accent: slate
+icon: camp
+outcomes:
+  - Operate through a reviewable repository with explicit ownership boundaries.
+  - Protect secrets and require confirmation for consequential writes.
+  - Resume interrupted agent work without duplicating or corrupting artifacts.
+tags: [foundation, git, safety, context]

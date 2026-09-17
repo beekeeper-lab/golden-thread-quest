@@ -1,0 +1,9 @@
+id: context-scout
+version: 1
+title: Context Scout
+summary: Established a safe, inspectable repository foundation for agentic context work.
+award_type: automatic
+icon: compass
+criteria:
+  all_quests:
+    - base-camp-repository-safety

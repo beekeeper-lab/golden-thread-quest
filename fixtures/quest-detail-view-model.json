@@ -1,0 +1,48 @@
+{
+  "site": {
+    "title": "The Golden Thread Quest",
+    "tagline": "From human intent to verified delivery."
+  },
+  "page": {
+    "title": "Synchronize My Assigned Jira Stories",
+    "description": "Retrieve every Jira story assigned to the authenticated user.",
+    "route": "/quests/jira-read-assigned-stories/",
+    "current_navigation_id": "catalog"
+  },
+  "quest": {
+    "id": "jira-read-assigned-stories",
+    "version": 1,
+    "title": "Synchronize My Assigned Jira Stories",
+    "summary": "Retrieve every Jira story assigned to the authenticated user and preserve it as normalized, updateable local Markdown.",
+    "route": "/quests/jira-read-assigned-stories/",
+    "region": {
+      "id": "jira-jungle",
+      "title": "Jira Jungle",
+      "route": "/regions/jira-jungle/"
+    },
+    "state": {
+      "id": "evidence_ready",
+      "label": "Evidence ready",
+      "authority": "participant",
+      "explanation": "Required evidence has been assembled; local validation and review remain."
+    },
+    "level": { "id": "builder", "label": "Builder" },
+    "xp": 30,
+    "estimated_minutes": 90,
+    "tags": ["jira", "read-only", "synchronization", "markdown"],
+    "outcomes": [
+      "Identify the authenticated Jira user without hardcoding a username.",
+      "Retrieve all assigned stories while correctly handling pagination.",
+      "Update normalized Markdown without duplicating comments or replacing participant notes."
+    ],
+    "acceptance_criteria": [
+      { "id": "resolve-user", "dom_id": "criterion-resolve-user", "text": "Authenticated identity is resolved from Jira." },
+      { "id": "all-pages", "dom_id": "criterion-all-pages", "text": "Pagination continues until no results remain." }
+    ],
+    "narrative_sections": [
+      { "heading_id": "mission", "title": "Mission", "safe_rendered_html": "<p>Build a reusable, read-only synchronization skill.</p>" }
+    ],
+    "lock_notice": null,
+    "primary_action": { "id": "open-evidence", "label": "Open evidence workspace", "enabled": true, "route": "/evidence/jira-read-assigned-stories/" }
+  }
+}

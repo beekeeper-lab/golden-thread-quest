@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://golden-thread.local/schemas/track.schema.json",
+  "title": "Golden Thread learning track",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "title", "summary", "quest_ids"],
+  "properties": {
+    "id": { "$ref": "#/$defs/id" },
+    "version": { "type": "integer", "minimum": 1 },
+    "title": { "type": "string", "minLength": 3, "maxLength": 100 },
+    "summary": { "type": "string", "minLength": 20, "maxLength": 400 },
+    "quest_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "focus_tags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "balance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "intent_minimum": { "type": "integer", "minimum": 0 },
+        "validation_minimum": { "type": "integer", "minimum": 0 },
+        "cross_bookend_minimum": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 80
+    }
+  }
+}

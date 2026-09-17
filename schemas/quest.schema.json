@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://golden-thread.local/schemas/quest.schema.json",
+  "title": "Golden Thread quest front matter",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "title",
+    "summary",
+    "region",
+    "level",
+    "xp",
+    "estimated_minutes",
+    "tags",
+    "outcomes",
+    "proof"
+  ],
+  "properties": {
+    "id": { "$ref": "#/$defs/id" },
+    "version": { "type": "integer", "minimum": 1 },
+    "title": { "type": "string", "minLength": 4, "maxLength": 100 },
+    "summary": { "type": "string", "minLength": 20, "maxLength": 280 },
+    "region": { "$ref": "#/$defs/id" },
+    "level": {
+      "type": "string",
+      "enum": ["scout", "explorer", "builder", "navigator", "boss"]
+    },
+    "xp": { "type": "integer", "minimum": 1, "maximum": 1000 },
+    "estimated_minutes": { "type": "integer", "minimum": 5, "maximum": 2400 },
+    "order": { "type": "integer", "minimum": 0 },
+    "tags": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "tools": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 60 }
+    },
+    "bookend": {
+      "type": "string",
+      "enum": ["intent", "validation", "cross-bookend", "foundation"]
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["external_write"],
+      "properties": {
+        "external_write": { "type": "boolean" },
+        "sensitive_data": { "type": "boolean", "default": false },
+        "notes": { "type": "string", "maxLength": 500 }
+      }
+    },
+    "prerequisites": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" },
+      "default": []
+    },
+    "related_quests": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "outcomes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": { "type": "string", "minLength": 10, "maxLength": 300 }
+    },
+    "proof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required"],
+      "properties": {
+        "required": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/proofItem" }
+        },
+        "optional": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/proofItem" },
+          "default": []
+        }
+      }
+    },
+    "validators": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "author": { "type": "string", "maxLength": 100 },
+    "last_reviewed": { "type": "string", "format": "date" },
+    "deprecated": { "type": "boolean", "default": false }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 80
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\u0000).+$"
+    },
+    "proofItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "description"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "type": {
+          "type": "string",
+          "enum": ["file", "directory", "validator", "command-record", "screenshot", "demonstration", "review"]
+        },
+        "description": { "type": "string", "minLength": 10, "maxLength": 500 },
+        "path": { "$ref": "#/$defs/relativePath" },
+        "validator": { "$ref": "#/$defs/id" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "enum": ["file", "directory", "screenshot", "command-record"] } }, "required": ["type"] },
+          "then": { "required": ["path"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "validator" } }, "required": ["type"] },
+          "then": { "required": ["validator"] }
+        }
+      ]
+    }
+  }
+}

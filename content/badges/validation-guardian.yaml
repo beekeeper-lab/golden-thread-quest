@@ -1,0 +1,9 @@
+id: validation-guardian
+version: 1
+title: Validation Guardian
+summary: Demonstrated maintainable automation that validates a meaningful business outcome.
+award_type: automatic
+icon: shield-check
+criteria:
+  all_quests:
+    - playwright-first-independent-test

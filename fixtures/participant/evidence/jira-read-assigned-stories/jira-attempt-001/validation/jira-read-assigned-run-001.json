@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "run_id": "jira-read-assigned-run-001",
+  "validator_id": "validate-jira-read-assigned",
+  "validator_version": 1,
+  "quest_id": "jira-read-assigned-stories",
+  "attempt_id": "jira-attempt-001",
+  "started_at": "2026-09-16T14:00:00Z",
+  "completed_at": "2026-09-16T14:00:04Z",
+  "duration_ms": 4382,
+  "outcome": "warning",
+  "environment": {
+    "fixture_mode": true,
+    "python": "3.13",
+    "pages": 3
+  },
+  "checks": [
+    {
+      "id": "authenticated-user-resolution",
+      "outcome": "pass",
+      "severity": "high",
+      "summary": "The workflow resolves the authenticated Jira account before querying assignments.",
+      "evidence": "Fixture call order records /myself before the search request."
+    },
+    {
+      "id": "pagination-complete",
+      "outcome": "pass",
+      "severity": "blocking",
+      "summary": "All three fixture result pages were retrieved exactly once.",
+      "evidence": "37 of 37 expected issue keys are present in the generated index."
+    },
+    {
+      "id": "participant-notes-preserved",
+      "outcome": "pass",
+      "severity": "blocking",
+      "summary": "A seeded participant note remained unchanged after the second synchronization.",
+      "artifact": "participant/context/jira/assigned/DEMO-12.md"
+    },
+    {
+      "id": "removed-item-policy",
+      "outcome": "warning",
+      "severity": "medium",
+      "summary": "Removed items are retained and reported, but the reconciliation report does not yet distinguish deleted from permission-denied.",
+      "suggested_action": "Record the source API response classification when Jira makes it available."
+    }
+  ],
+  "output_excerpt": "Validation used sanitized fixtures. No secret-like values were detected.",
+  "output_truncated": false,
+  "redaction_applied": true,
+  "result_path": "participant/evidence/jira-read-assigned-stories/jira-attempt-001/validation/jira-read-assigned-run-001.json"
+}

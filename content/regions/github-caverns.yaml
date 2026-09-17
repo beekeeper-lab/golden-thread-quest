@@ -1,0 +1,13 @@
+id: github-caverns
+version: 1
+title: GitHub Caverns
+short_title: GitHub
+summary: Connect issues, pull requests, commits, CI results, and test evidence into a traceable delivery record.
+order: 40
+accent: violet
+icon: github
+outcomes:
+  - Synchronize and safely manage GitHub Issues.
+  - Connect requested work to implementation and validation evidence.
+  - Preserve repository conventions and human review authority.
+tags: [github, integration, traceability]

@@ -1,0 +1,35 @@
+schema_version: 1
+title: The Golden Thread Quest
+curriculum: The AI Context Engineer Journey
+professional_role: AI Context Engineer
+tagline: From human intent to verified delivery.
+default_track: golden-thread-foundations
+navigation:
+  - id: home
+    label: Home
+    route: /
+    icon: home
+  - id: quest-map
+    label: Quest Map
+    route: /map/
+    icon: map
+  - id: catalog
+    label: Catalog
+    route: /catalog/
+    icon: search
+  - id: evidence
+    label: Evidence
+    route: /evidence/
+    icon: evidence
+  - id: passport
+    label: Passport
+    route: /passport/
+    icon: passport
+  - id: environment
+    label: Environment
+    route: /health/
+    icon: pulse
+  - id: reviewer
+    label: Reviewer
+    route: /review/
+    icon: review

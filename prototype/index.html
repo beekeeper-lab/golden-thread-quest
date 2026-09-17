@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="description" content="Clickable design prototype for The Golden Thread Quest.">
+    <title>The Golden Thread Quest — Design Prototype</title>
+    <link rel="stylesheet" href="assets/styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <div class="prototype-banner" role="note">
+      Design prototype — fixture data only. Actions demonstrate intended behavior and do not modify files.
+    </div>
+
+    <div class="app-shell">
+      <aside class="sidebar" id="primary-navigation" aria-label="Primary navigation">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <div>
+            <strong>Golden Thread</strong>
+            <span>AI Context Engineer Journey</span>
+          </div>
+        </div>
+
+        <nav class="nav-list">
+          <a href="#home" data-route="home"><span aria-hidden="true">⌂</span> Home</a>
+          <a href="#map" data-route="map"><span aria-hidden="true">◇</span> Quest Map</a>
+          <a href="#catalog" data-route="catalog"><span aria-hidden="true">⌕</span> Catalog</a>
+          <a href="#evidence" data-route="evidence"><span aria-hidden="true">▤</span> Evidence</a>
+          <a href="#passport" data-route="passport"><span aria-hidden="true">◎</span> Passport</a>
+          <a href="#health" data-route="health"><span aria-hidden="true">◉</span> Environment</a>
+          <a href="#review" data-route="review"><span aria-hidden="true">✓</span> Reviewer</a>
+        </nav>
+
+        <div class="sidebar-spacer"></div>
+
+        <section class="sidebar-progress" aria-labelledby="sidebar-progress-heading">
+          <div class="eyebrow" id="sidebar-progress-heading">Verified journey</div>
+          <div class="progress-row">
+            <strong id="nav-verified-xp">0 XP</strong>
+            <span id="nav-progress-percent">0%</span>
+          </div>
+          <div class="progress-track" aria-hidden="true"><span id="nav-progress-bar"></span></div>
+          <p>Verified by evidence and review</p>
+        </section>
+
+        <section class="sidebar-user" aria-label="Current participant">
+          <div class="avatar" id="nav-avatar">AR</div>
+          <div>
+            <strong id="nav-user-name">Participant</strong>
+            <span id="nav-user-role">AI Context Engineer candidate</span>
+          </div>
+        </section>
+      </aside>
+
+      <div class="content-shell">
+        <header class="topbar">
+          <button class="icon-button menu-button" id="menu-button" type="button" aria-expanded="false" aria-controls="primary-navigation">
+            <span aria-hidden="true">☰</span>
+            <span class="sr-only">Open navigation</span>
+          </button>
+          <div class="breadcrumb" id="breadcrumb">Journey / Home</div>
+          <div class="topbar-actions">
+            <span class="service-state"><span class="signal-dot"></span> Local service ready</span>
+            <a class="quiet-link" href="#health">View environment</a>
+          </div>
+        </header>
+
+        <main id="main-content" tabindex="-1"></main>
+
+        <footer class="app-footer">
+          <span id="build-label">Design prototype</span>
+          <span>Content → schema → view model → presentation</span>
+        </footer>
+      </div>
+    </div>
+
+    <div class="mobile-scrim" id="mobile-scrim" hidden></div>
+    <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="data/prototype-data.js"></script>
+    <script src="assets/app.js"></script>
+  </body>
+</html>
