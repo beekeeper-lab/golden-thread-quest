@@ -52,7 +52,9 @@ FORM_CONTENT_TYPE = "application/x-www-form-urlencoded"
 TOKEN_PLACEHOLDER = "__GTQ_REQUEST_TOKEN__"  # noqa: S105 - a marker to replace, not a secret
 # Where a refusal message is rendered into a served page. Substituted at request time from
 # the `problem` query parameter, so it works with no JavaScript and survives a redirect.
-FLASH_PLACEHOLDER = "__GTQ_FLASH__"
+# It is an HTML comment so that a statically built page opened from disk shows nothing rather
+# than the literal marker; the whole comment is replaced, not just the text inside it.
+FLASH_PLACEHOLDER = "<!--__GTQ_FLASH__-->"
 LOOPBACK_ADDRESSES = frozenset({"127.0.0.1", "::1", "localhost"})
 JSON_CONTENT_TYPE = "application/json"
 

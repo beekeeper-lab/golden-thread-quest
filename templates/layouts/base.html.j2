@@ -84,9 +84,11 @@
     {% endfor %}
 
     {# The running service substitutes a refusal message here as it serves the page, so a
-       refused action says so without JavaScript and without a second request. A page built
-       by `quest build` keeps the empty placeholder, which renders as nothing. #}
-    __GTQ_FLASH__
+       refused action says so without JavaScript and without a second request. The placeholder
+       is an HTML comment because a page built by `quest build` and opened directly from disk
+       keeps it: bare text would render as the literal string. The service replaces the whole
+       comment, so nothing is left behind either way. #}
+    <!--__GTQ_FLASH__-->
 
     {% block main %}{% endblock %}
   </main>

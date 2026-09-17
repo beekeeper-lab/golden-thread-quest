@@ -18,6 +18,7 @@ from quest_app.build import build_site
 from quest_app.config import AppConfig
 from quest_app.errors import ProblemReport
 from quest_app.pipeline import LoadedWorld, load_world
+from quest_app.serve import FLASH_PLACEHOLDER
 
 FIXED_TIME = "2026-09-16T00:00:00+00:00"
 
@@ -483,3 +484,27 @@ def test_a_secret_in_evidence_is_redacted_from_the_generated_preview(config: App
         config.generated_root / "evidence" / "jira-read-assigned-stories" / "index.html"
     ).read_text()
     assert "[REDACTED]" in preview, "the preview should show that something was removed"
+
+
+def test_built_pages_show_no_internal_placeholder(built: AppConfig) -> None:
+    """A page opened straight from disk must not display an internal marker.
+
+    The flash placeholder is substituted by the running service. A statically built
+    page keeps it, so it has to be inert HTML rather than bare text: an external audit
+    found the literal string rendering on every offline page, and the whole browser
+    suite passed anyway, because every browser test reaches pages through the service
+    that substitutes it. This asserts the built artifact directly.
+    """
+    marker = FLASH_PLACEHOLDER.strip("<!->")
+    offenders = []
+    for page in sorted(built.generated_root.rglob("*.html")):
+        html = page.read_text()
+        for match in re.finditer(re.escape(marker), html):
+            opening = html.rfind("<!--", 0, match.start())
+            closing = html.rfind("-->", 0, match.start())
+            if opening == -1 or (closing != -1 and closing > opening):
+                offenders.append(str(page.relative_to(built.generated_root)))
+    assert not offenders, (
+        "internal placeholder is in text position and will render to the reader: "
+        + ", ".join(sorted(set(offenders)))
+    )

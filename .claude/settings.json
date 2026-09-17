@@ -7,17 +7,9 @@
       "Bash(ruff:*)",
       "Bash(mypy:*)",
       "Bash(make:*)",
-      "Bash(yq:*)",
-      "Bash(npm install:*)",
       "Bash(npx playwright:*)",
-      "Read(//home/gregg/Nextcloud/workspace/golden-thread-quest-design/**)",
-      "Edit(//home/gregg/Nextcloud/workspace/golden-thread-quest-design/**)",
-      "Write(//home/gregg/Nextcloud/workspace/golden-thread-quest-design/**)",
-      "Bash(rm:*)",
-      "Bash(kill:*)",
-      "Bash(pkill -f quest_app:*)",
       "Bash(playwright:*)"
     ],
-    "_note": "Bash(rm:*) is listed for clarity only: the global rm-guard hook already auto-approves deletions inside this folder and hard-blocks anything outside it, and a hook decision wins over a permission rule. kill/pkill are here because the global settings ask for them, which blocked audit subagents mid-run and left probe servers behind."
+    "_note": "Repository defaults only: tools this project's Makefile actually invokes, scoped to no path. Anything machine-specific \u2014 absolute paths, deletion permissions, process control \u2014 belongs in .claude/settings.local.json, which is untracked. Do not add Bash(rm:*) here: it would grant every contributor unscoped deletion on the strength of a hook only some of them have."
   }
 }
