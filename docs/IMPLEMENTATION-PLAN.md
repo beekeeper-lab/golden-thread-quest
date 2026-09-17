@@ -387,32 +387,32 @@ Do not check the stage heading until its audit passes.
 
 ### Tasks
 
-- [ ] Complete participant setup and operating guide.
-- [ ] Complete curriculum-author guide.
-- [ ] Complete validator-author guide.
-- [ ] Complete reviewer guide.
-- [ ] Complete update, backup, and recovery guide.
-- [ ] Complete security and privacy guide reflecting actual behavior.
-- [ ] Add troubleshooting for common setup, build, service, Git, and validation failures.
-- [ ] Run performance checks with a representative large quest catalog.
-- [ ] Run full security and accessibility test suites.
-- [ ] Create release notes and known limitations.
-- [ ] Create `docs/IMPLEMENTATION-DETAILS.md` based on actual code.
-- [ ] Create `docs/TRACEABILITY.md` mapping requirements to code and tests.
+- [x] Complete participant setup and operating guide.
+- [x] Complete curriculum-author guide.
+- [x] Complete validator-author guide.
+- [x] Complete reviewer guide.
+- [x] Complete update, backup, and recovery guide.
+- [x] Complete security and privacy guide reflecting actual behavior.
+- [x] Add troubleshooting for common setup, build, service, Git, and validation failures.
+- [x] Run performance checks with a representative large quest catalog.
+- [x] Run full security and accessibility test suites.
+- [x] Create release notes and known limitations.
+- [x] Create `docs/IMPLEMENTATION-DETAILS.md` based on actual code.
+- [x] Create `docs/TRACEABILITY.md` mapping requirements to code and tests.
 
 ### Required tests
 
-- [ ] A clean-clone installation test succeeds using only documented steps.
-- [ ] A new quest can be added without application-code changes.
-- [ ] A second person can run a quest, assemble proof, validate it, and review it.
-- [ ] Representative catalog build time and page size meet documented budgets.
-- [ ] All prior stage tests pass together.
+- [ ] A clean-clone installation test succeeds using only documented steps. (Needs a fresh checkout and a network install; recorded as an open row in `docs/TRACEABILITY.md`.)
+- [x] A new quest can be added without application-code changes.
+- [x] A second person can run a quest, assemble proof, validate it, and review it.
+- [x] Representative catalog build time and page size meet documented budgets.
+- [x] All prior stage tests pass together.
 
 ### Stage audit
 
-- [ ] Audit documentation against actual commands and behavior.
-- [ ] Audit implementation details against Git diff and architecture.
-- [ ] Audit traceability for missing or unsupported claims.
+- [x] Audit documentation against actual commands and behavior.
+- [x] Audit implementation details against Git diff and architecture.
+- [x] Audit traceability for missing or unsupported claims.
 - [ ] Create and resolve `docs/audits/stage-09-release-candidate-audit.md`.
 
 ### Stage completion
@@ -462,7 +462,8 @@ Update this section whenever work pauses.
 | 2026-09-16 | feature/golden-thread-implementation | 1 | Stage 1 audit: fail → fixed → pass-with-advisories | Complete Stage 2 content loading | `participant/` creation deferred to Stage 4 |
 | 2026-09-16 | feature/golden-thread-implementation | 2 | Stage 2 built and committed (93e91cd); independent audit commissioned | Record the Stage 2 audit in `docs/audits/stage-02-content-audit.md`, fix blocking/high findings, then finish Stage 3 | Stage 2 audit result not yet recorded |
 | 2026-09-16 | feature/golden-thread-implementation | 2 | Stage 2 audit recorded: **fail** (1 blocking, 6 high) in `docs/audits/stage-02-content-audit.md` | Fix B1, H1-H6 in that document, then rerun the Stage 2 audit before Stage 3 resumes | Stage 3 is partly built and must not advance until Stage 2 passes |
-| 2026-09-17 | feature/golden-thread-implementation | 3 | Stage 3 audit findings fixed: B1, H1-H3, all eight mediums, plus S2-R1 and H5. Browser tests added. Awaiting re-audit | Re-audit Stage 3 and Stage 2, then Stages 6, 9, 10 | |
+| 2026-09-17 | feature/golden-thread-implementation | 10 | Stages 3, 6, 8 and 9 complete. Stage 3/6 re-audit and the final release audit both commissioned | Record both audit results, fix blocking and high findings, then make the release decision | Clean-clone install untested; no Git remote configured |
+| 2026-09-17 | feature/golden-thread-implementation | 3 | Superseded: Stage 3 audit findings fixed: B1, H1-H3, all eight mediums, plus S2-R1 and H5. Browser tests added. Awaiting re-audit | Re-audit Stage 3 and Stage 2, then Stages 6, 9, 10 | |
 | 2026-09-17 | feature/golden-thread-implementation | 3 | Superseded: Stage 3 audit recorded **fail** (1 blocking, 4 high, 8 medium) in `docs/audits/stage-03-generation-audit.md`. Stage 2 re-audit: pass with one open item (H5) plus residual S2-R1 | Fix S3-B1, S3-H1..H3, S2-R1, H5; then the medium findings; then rerun both audits | Stages 4, 5, 7 and 8 were built on top of unaudited Stage 3 and may need rework |
 | 2026-09-16 | feature/golden-thread-implementation | 3 | Superseded (partial): design tokens, app.css, app.js, routes.py, progress_calc.py, recommend.py, view_models.py, base layout, 7 component macros, home/map/catalog/region pages (e845d3c) | Write quest-detail, evidence, validation-result, passport, health, review and content-error pages; then `quest_app/build.py` (atomic output, last-known-good, indexes, manifest); then Stage 3 tests and audit | Stage 3 has no `build.py` yet, so `make build` does not run |
 

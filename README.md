@@ -29,6 +29,31 @@ The thread running through the curriculum is:
 - A staged, resumable Claude Code implementation plan
 - Stage audits that must pass before implementation advances
 
+## This is now an implementation
+
+The planning package below is preserved as the specification. The application it describes
+is built: `quest_app/` loads and validates the curriculum, generates the site, and runs a
+loopback-only service for the few things a static page cannot safely do.
+
+```bash
+make setup && source .venv/bin/activate
+make check      # format, lint, types, YAML safety, secret scan, 404 tests
+make serve      # build, then serve on 127.0.0.1
+```
+
+| Read this | For |
+|---|---|
+| `docs/guides/PARTICIPANT.md` | Doing the quests |
+| `docs/guides/REVIEWER.md` | Deciding whether evidence is verified |
+| `docs/guides/VALIDATOR-AUTHORING.md` | Writing a check |
+| `docs/guides/UPDATING.md` | Taking upstream curriculum changes |
+| `docs/CONTENT-AUTHORING-GUIDE.md` | Writing a quest |
+| `docs/SETUP.md` | Installing and troubleshooting |
+| `docs/IMPLEMENTATION-DETAILS.md` | What was actually built, and where it diverges |
+| `docs/TRACEABILITY.md` | Which test holds which requirement |
+| `docs/RELEASE-NOTES.md` | What works, and the seven known limitations |
+| `docs/audits/` | Every stage audit, including the ones that failed |
+
 ## Start here
 
 ### Review the planning package
