@@ -1,0 +1,120 @@
+"""Where things are, decided once.
+
+Every root is injected rather than derived at the point of use, which is what makes the
+participant root movable (ADR-018) and the whole loader testable against `fixtures/`
+without writing anywhere near a real participant's work.
+"""
+
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Final, Self
+
+# The schema version this build understands. A document declaring a higher one is refused
+# rather than partially interpreted.
+SUPPORTED_SCHEMA_VERSION: Final = 1
+
+APPLICATION_VERSION: Final = "0.1.0"
+
+DEFAULT_SERVICE_HOST: Final = "127.0.0.1"
+DEFAULT_SERVICE_PORT: Final = 8765
+
+
+@dataclass(frozen=True, slots=True)
+class AppConfig:
+    repo_root: Path
+    content_root: Path
+    schemas_root: Path
+    templates_root: Path
+    assets_root: Path
+    participant_root: Path
+    generated_root: Path
+    local_data_root: Path
+    validators_root: Path
+    service_host: str = DEFAULT_SERVICE_HOST
+    service_port: int = DEFAULT_SERVICE_PORT
+
+    @classmethod
+    def for_repo(
+        cls,
+        repo_root: Path,
+        *,
+        participant_root: Path | None = None,
+        generated_root: Path | None = None,
+        local_data_root: Path | None = None,
+        service_host: str | None = None,
+        service_port: int | None = None,
+    ) -> Self:
+        root = repo_root.resolve()
+        return cls(
+            repo_root=root,
+            content_root=root / "content",
+            schemas_root=root / "schemas",
+            templates_root=root / "templates",
+            assets_root=root / "assets",
+            participant_root=(participant_root or root / "participant").resolve(),
+            generated_root=(generated_root or root / "generated").resolve(),
+            local_data_root=(local_data_root or root / "local-data").resolve(),
+            validators_root=root / "validators",
+            service_host=service_host or DEFAULT_SERVICE_HOST,
+            service_port=service_port if service_port is not None else DEFAULT_SERVICE_PORT,
+        )
+
+    @classmethod
+    def from_environment(cls, repo_root: Path | None = None) -> Self:
+        """Configuration as the CLI sees it. Only the documented variables are read."""
+        root = repo_root or Path(__file__).resolve().parent.parent
+        participant = os.environ.get("GTQ_PARTICIPANT_ROOT")
+        port = os.environ.get("GTQ_SERVICE_PORT")
+        return cls.for_repo(
+            root,
+            participant_root=Path(participant) if participant else None,
+            service_host=os.environ.get("GTQ_SERVICE_HOST"),
+            service_port=int(port) if port else None,
+        )
+
+    def relative(self, path: Path) -> str:
+        """A repository-relative string for display. Never leaks the developer's home directory."""
+        try:
+            return str(path.resolve().relative_to(self.repo_root))
+        except ValueError:
+            # Outside the repository: name the file only, never the absolute path.
+            return path.name
+
+    def resolve_participant_path(self, declared: str) -> Path:
+        """Turn a `participant/...` contract path into a real one, proven inside the root.
+
+        The prefix is part of the published schemas and is not relaxed (ADR-018); only the
+        base directory moves. Resolution follows symbolic links and then re-checks, so a
+        link planted inside the participant tree cannot reach outside it.
+        """
+        prefix = "participant/"
+        if not declared.startswith(prefix):
+            raise ValueError(f"participant path must start with {prefix!r}, got {declared!r}")
+        relative = PurePosixCheck(declared[len(prefix) :]).checked()
+        candidate = (self.participant_root / relative).resolve()
+        root = self.participant_root.resolve()
+        if candidate != root and root not in candidate.parents:
+            raise ValueError(f"{declared!r} resolves outside the participant root")
+        return candidate
+
+
+@dataclass(frozen=True, slots=True)
+class PurePosixCheck:
+    """Rejects the path shapes that make traversal possible, before anything touches disk."""
+
+    raw: str
+
+    def checked(self) -> str:
+        if not self.raw:
+            raise ValueError("empty participant path")
+        if self.raw.startswith("/"):
+            raise ValueError("participant path must be relative")
+        if "\x00" in self.raw:
+            raise ValueError("participant path contains a null byte")
+        parts = self.raw.split("/")
+        if any(part == ".." for part in parts):
+            raise ValueError("participant path contains a parent-directory segment")
+        return self.raw

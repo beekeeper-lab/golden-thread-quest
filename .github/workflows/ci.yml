@@ -35,17 +35,18 @@ jobs:
           uv venv .venv --python ${{ matrix.python-version }}
           uv pip install --python .venv/bin/python -e ".[dev]"
 
-      # These are the same targets documented in the Makefile and README, run separately so a
-      # failure names the check that failed rather than "make check".
+      # Each step invokes the Makefile target rather than repeating its command, so the
+      # Makefile is the single definition and CI cannot drift away from what a developer
+      # runs locally. Separate steps so a failure names the check that failed.
       - name: Format check
-        run: .venv/bin/ruff format --check quest_app validators tests tools
+        run: make format-check
       - name: Lint
-        run: .venv/bin/ruff check quest_app validators tests tools
+        run: make lint
       - name: Type check
-        run: .venv/bin/mypy
+        run: make typecheck
       - name: YAML safety (ADR-025)
-        run: .venv/bin/python tools/check_yaml_safe.py
+        run: make yaml-safe
       - name: Secret scan
-        run: .venv/bin/python tools/secret_scan.py
+        run: make secret-scan
       - name: Tests
-        run: .venv/bin/pytest -m "not ui"
+        run: make test

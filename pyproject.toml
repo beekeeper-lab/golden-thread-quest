@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "The Golden Thread Quest — a local-first training application for the AI Context Engineer Journey."
 readme = "README.md"
 requires-python = ">=3.12"
-license = { text = "Proprietary" }
+license = { file = "LICENSE" }
 
 # Runtime dependencies. Each one is justified in docs/DECISIONS.md.
 dependencies = [
@@ -18,10 +18,10 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0,<9",
-    "pytest-cov>=5.0",
     "ruff>=0.6,<1",
     "mypy>=1.11,<2",
     "types-PyYAML>=6.0",
+    "types-jsonschema>=4.21",
 ]
 ui = [
     "pytest-playwright>=0.5",

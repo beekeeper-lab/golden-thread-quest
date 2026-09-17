@@ -12,6 +12,7 @@ venv/
 .mypy_cache/
 .ruff_cache/
 .coverage
+coverage.xml
 htmlcov/
 # Node (Playwright only)
 node_modules/
@@ -29,6 +30,10 @@ credentials.json
 service-account*.json
 .netrc
 .npmrc
+.envrc
+.pgpass
+*.jks
+*.keystore
 *.token
 **/secrets/
 # Editor and OS

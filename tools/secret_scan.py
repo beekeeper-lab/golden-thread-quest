@@ -3,6 +3,16 @@
 Scans tracked text files (or explicit paths) with `quest_app.secret_patterns`. Prints
 findings as `path:line:column: [pattern] description`, never the secret itself.
 
+A line ending in `# secret-scan: allow` is skipped. This is how the scanner's own test
+fixtures — which must contain strings that look exactly like real credentials — live in the
+repository without failing the build, and it is why the alternative of loosening `PATTERNS`
+was not taken.
+
+The pragma is deliberately implemented **here** and not in `quest_app.secret_patterns`. This
+file is repository hygiene over program-owned code that a reviewer reads. Evidence scanning
+and validator-output redaction call `scan_text` directly, so a participant cannot switch off
+the check on their own submission by writing a comment in it.
+
 Usage:
     python tools/secret_scan.py                  # every tracked file
     python tools/secret_scan.py path [path ...]  # specific paths
@@ -48,6 +58,10 @@ SKIP_SUFFIXES = frozenset(
 SKIP_DIRS = frozenset({"generated", "local-data", ".git", "node_modules", ".venv", "__pycache__"})
 MAX_BYTES = 2_000_000
 
+# A line carrying this marker is not scanned. Kept strict — an exact substring, not a regex —
+# so it cannot be triggered by accident.
+ALLOW_PRAGMA = "# secret-scan: allow"
+
 
 def tracked_files() -> list[Path]:
     """Files git knows about, so an untracked scratch file never fails the build."""
@@ -74,11 +88,27 @@ def eligible(path: Path) -> bool:
 
 
 def scan_path(path: Path) -> list[SecretMatch]:
+    """Findings in one file, minus any line that carries the allow pragma."""
     try:
         text = path.read_text(encoding="utf-8")
     except (UnicodeDecodeError, OSError):
         return []
-    return scan_text(text)
+    allowed_lines = {
+        number for number, line in enumerate(text.splitlines(), start=1) if ALLOW_PRAGMA in line
+    }
+    return [match for match in scan_text(text) if match.line not in allowed_lines]
+
+
+def display_path(path: Path) -> str:
+    """A repository-relative path, or the plain path when the caller named one outside it.
+
+    `relative_to` raises for a path outside the root, which turned `secret_scan.py /tmp/x`
+    into an unhandled traceback.
+    """
+    try:
+        return str(path.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -107,12 +137,11 @@ def main(argv: list[str] | None = None) -> int:
                     "scanned": scanned,
                     "findings": [
                         {
-                            "path": str(path.relative_to(REPO_ROOT)),
+                            "path": display_path(path),
                             "line": m.line,
                             "column": m.column,
                             "pattern": m.pattern_id,
                             "description": m.description,
-                            "excerpt": m.excerpt,
                         }
                         for path, m in findings
                     ],
@@ -123,8 +152,8 @@ def main(argv: list[str] | None = None) -> int:
         )
     else:
         for path, m in findings:
-            rel = path.relative_to(REPO_ROOT)
-            print(f"{rel}:{m.line}:{m.column}: [{m.pattern_id}] {m.description} — {m.excerpt}")
+            location = display_path(path)
+            print(f"{location}:{m.line}:{m.column}: [{m.pattern_id}] {m.description} — {m.excerpt}")
         print(f"secret-scan: {scanned} files scanned, {len(findings)} finding(s)", file=sys.stderr)
 
     return 1 if findings else 0

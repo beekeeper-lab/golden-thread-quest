@@ -99,18 +99,76 @@ def test_apply_removes_generated_and_leaves_participant_intact(
     assert (evidence / "PROOF.md").read_text() == "# Proof\n"
 
 
-def test_symlinked_generated_directory_is_unlinked_not_followed(
+def test_symlink_inside_the_repository_is_refused_not_followed(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A symlink named `generated` must not become a path to delete someone else's files."""
+    """`generated` as a link to a program-owned directory must not delete that directory.
+
+    The Stage 1 audit did exactly this: `ln -s prototype generated && clean.py --apply`
+    removed `prototype/` and everything in it, because the target was resolved before it was
+    screened and `is_symlink()` was then asked of the already-resolved path.
+    """
+    monkeypatch.setattr(clean, "REPO_ROOT", tmp_path)
+    real = tmp_path / "prototype"
+    real.mkdir()
+    (real / "index.html").write_text("<!doctype html>")
+    (tmp_path / "generated").symlink_to(real, target_is_directory=True)
+
+    with pytest.raises(clean.UnsafeTargetError, match="symbolic link"):
+        clean.resolve_target("generated")
+
+    assert clean.main(["--apply"]) == 0
+    assert (real / "index.html").exists()
+    assert (tmp_path / "generated").is_symlink(), "the link itself is left alone, not followed"
+
+
+def test_symlink_pointing_outside_the_repository_is_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(clean, "REPO_ROOT", tmp_path)
     outside = tmp_path.parent / "outside-target"
-    outside.mkdir()
+    outside.mkdir(exist_ok=True)
     (outside / "keep.txt").write_text("keep me")
     (tmp_path / "generated").symlink_to(outside, target_is_directory=True)
 
-    # resolve_target() resolves symlinks, so a link pointing outside the repository is refused
-    # outright rather than followed.
     with pytest.raises(clean.UnsafeTargetError):
         clean.resolve_target("generated")
     assert (outside / "keep.txt").exists()
+
+
+@pytest.mark.parametrize(
+    "escape",
+    [
+        "generated/../README.md",
+        "local-data/../.github",
+        ".coverage/../Makefile",
+        "generated/../../etc",
+    ],
+)
+def test_parent_directory_escapes_are_refused(escape: str) -> None:
+    """Resolving first and screening the result let these through; they are rejected now."""
+    with pytest.raises(clean.UnsafeTargetError):
+        clean.resolve_target(escape)
+
+
+def test_protected_names_are_compared_case_insensitively() -> None:
+    """A case-sensitive check is a hole on macOS, where `Participant/` is `participant/`."""
+    with pytest.raises(clean.UnsafeTargetError):
+        clean.resolve_target("Participant/evidence")
+
+
+def test_an_unsafe_entry_added_to_removable_is_still_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`REMOVABLE` is data, so the guard must not depend on it being written correctly."""
+    monkeypatch.setattr(clean, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(clean, "REMOVABLE", ("generated", "participant", "generated/../docs"))
+    (tmp_path / "participant" / "evidence").mkdir(parents=True)
+    (tmp_path / "participant" / "evidence" / "PROOF.md").write_text("# Proof\n")
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "keep.md").write_text("keep")
+
+    assert clean.main(["--apply"]) == 0
+
+    assert (tmp_path / "participant" / "evidence" / "PROOF.md").exists()
+    assert (tmp_path / "docs" / "keep.md").exists()

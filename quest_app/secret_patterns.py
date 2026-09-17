@@ -45,6 +45,28 @@ def _c(pattern: str) -> re.Pattern[str]:
     return re.compile(pattern, re.IGNORECASE)
 
 
+# Field names whose value is a credential. Deliberately broader than the obvious three:
+# evidence packages and raw API responses are where this module does most of its work, and
+# there the field is as likely to be `apiKey` in JSON or `token` in YAML as `password`.
+_KEYWORDS = "|".join(
+    (
+        r"passw(?:or)?d",
+        r"passphrase",
+        r"secret",
+        r"api[_-]?key",
+        r"apikey",
+        r"access[_-]?token",
+        r"auth[_-]?token",
+        r"client[_-]?secret",
+        r"refresh[_-]?token",
+        r"private[_-]?key",
+        r"credential",
+        r"token",
+        r"bearer",
+    )
+)
+
+
 # Ordered most specific first: a GitHub token should be reported as a GitHub token, not as
 # a generic high-entropy assignment.
 PATTERNS: Final[tuple[SecretPattern, ...]] = (
@@ -81,12 +103,32 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
         _c(r"\b[a-z][a-z0-9+.-]*://[^/\s:@]+:([^/\s:@]{3,})@"),
     ),
     SecretPattern(
-        "generic-assignment",
+        "stripe-key", "Stripe secret key", _c(r"\b((?:sk|rk)_(?:live|test)_[A-Za-z0-9]{10,})\b")
+    ),
+    SecretPattern("npm-token", "npm access token", _c(r"\b(npm_[A-Za-z0-9]{20,})\b")),
+    SecretPattern(
+        "bearer-header",
+        "Bearer credential in a header",
+        _c(r"authorization\s*:\s*bearer\s+([A-Za-z0-9._~+/=-]{12,})"),
+    ),
+    SecretPattern(
+        "basic-auth-url",
+        "Credentials embedded in a URL",
+        _c(r"\b[a-z][a-z0-9+.-]*://[^/\s:@]+:([^/\s:@]{3,})@"),
+    ),
+    # Quoted assignment first, so a quoted value keeps its exact span even when it contains
+    # characters the unquoted form would stop at.
+    SecretPattern(
+        "secret-assignment",
         "Secret-like assignment",
-        _c(
-            r"(?:password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret)"
-            r"\s*[=:]\s*['\"]([^'\"\s]{8,})['\"]"
-        ),
+        _c(r"[\"']?(?:" + _KEYWORDS + r")[\"']?\s*[=:]\s*[\"']([^\"'\n]{8,})[\"']"),
+    ),
+    # Unquoted: `.env` lines, shell transcripts and YAML. Stops at whitespace and at the
+    # punctuation that ends a value in JSON, YAML flow style or a shell command.
+    SecretPattern(
+        "secret-assignment-unquoted",
+        "Secret-like assignment",
+        _c(r"[\"']?(?:" + _KEYWORDS + r")[\"']?\s*[=:]\s*([^\s\"',;}\]]{8,})"),
     ),
 )
 
@@ -120,8 +162,15 @@ def _is_placeholder(value: str) -> bool:
     lowered = value.strip().lower()
     if lowered in PLACEHOLDERS:
         return True
-    # Angle-bracket and dollar-brace templates are instructions to the reader, not values.
-    if lowered.startswith(("<", "${", "$(")) or lowered.endswith(">"):
+    # Templates are instructions to the reader, not values: shell and CI expansions
+    # (`${VAR}`, `$(cmd)`), documentation placeholders (`<your-token>`), and the format
+    # placeholders that appear wherever this scanner reads its own source or a template.
+    if lowered.startswith(("<", "${", "$(", "{{")) or lowered.endswith(">"):
+        return True
+    # Any brace at all means a template fragment. Real credentials — tokens, keys, JWTs,
+    # base64 — do not contain braces, so this costs no detection and removes a whole class
+    # of false positive from source code, Jinja templates and CI configuration.
+    if "{" in lowered or "}" in lowered:
         return True
     # A run of a single repeated character is a mask, not a secret.
     return len(set(lowered)) <= 2
@@ -173,10 +222,16 @@ def scan_text(text: str) -> list[SecretMatch]:
 
 
 def _excerpt(value: str) -> str:
-    """Enough of a value to recognise it, never enough to use it."""
-    if len(value) <= 8:
-        return value[:2] + "…"
-    return f"{value[:4]}…{value[-2:]} ({len(value)} chars)"
+    """Enough to tell two findings apart, never enough to reconstruct either.
+
+    Findings are printed in CI logs, which are themselves a place secrets leak from. The
+    first pass printed four leading and two trailing characters plus the exact length; for a
+    short token that is most of it. Only a short leading fragment survives, and only when the
+    value is long enough for a fragment to be meaningless on its own.
+    """
+    if len(value) < 12:
+        return f"{len(value)} chars"
+    return f"{value[:3]}… ({len(value)} chars)"
 
 
 def redact_text(text: str) -> tuple[str, bool]:

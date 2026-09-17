@@ -1,9 +1,14 @@
 """Remove generated output — and nothing else.
 
-`make clean` in a repository that also holds the participant's own work is the single most
-dangerous convenience command here, so removal is an explicit allowlist rather than a
-pattern, every target is verified to sit inside the repository, and the paths a participant
-owns are refused even if they are somehow named.
+`make clean` in a repository that also holds a participant's own work is the most dangerous
+convenience command here, so this is an allowlist in the strict sense: a target is removed
+only when its repository-relative path is *exactly* an entry in `REMOVABLE`.
+
+The earlier version resolved the path first and then screened the result against a denylist
+of protected top-level names. That is not the same thing, and the Stage 1 audit broke it:
+`generated` as a symlink to `prototype/` resolved to an unprotected path and `rmtree`
+followed the link, and `generated/../README.md` resolved to a file the denylist never
+mentioned. Both are closed below.
 
 Usage:
     python tools/clean.py            # show what would be removed
@@ -19,8 +24,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-# The only paths this script may ever remove. Documented in docs/ARCHITECTURE.md as
-# machine-owned and disposable.
+# The only paths this script may ever remove, as exact repository-relative paths.
 REMOVABLE: tuple[str, ...] = (
     "generated",
     "local-data/cache",
@@ -31,45 +35,89 @@ REMOVABLE: tuple[str, ...] = (
     ".coverage",
 )
 
-# Never removable, whatever else changes. A defence against a future edit to REMOVABLE.
+# A second, independent refusal. `REMOVABLE` is already exact, so nothing here should ever
+# be reachable — which is the point: if a future edit adds an unsafe entry, this still
+# refuses. Compared case-insensitively, because macOS filesystems are.
 PROTECTED: tuple[str, ...] = (
     "participant",
     "fixtures",
     "content",
     "schemas",
     "templates",
+    "prototype",
     "docs",
     "quest_app",
     "validators",
     "tests",
     "assets",
     "tools",
+    ".github",
     ".git",
 )
 
 
 class UnsafeTargetError(RuntimeError):
-    """A cleanup target that is outside the repository or inside protected territory."""
+    """A cleanup target that is not exactly an allowed path, or is reached through a link."""
+
+
+def _contains_symlink(relative: Path) -> bool:
+    """Whether any component of `relative`, walking down from the repository root, is a link.
+
+    Checked on the *unresolved* path. A resolved path has no symlinks left in it, which is
+    why resolving first and asking `is_symlink()` afterwards always answered "no".
+    """
+    current = REPO_ROOT
+    for part in relative.parts:
+        current = current / part
+        if current.is_symlink():
+            return True
+    return False
 
 
 def resolve_target(name: str) -> Path:
-    # `~` means home, not a directory literally named "~". Expanding first means a target
-    # that points outside the repository is refused rather than silently reinterpreted.
+    """The path `name` refers to, proven safe to remove, or `UnsafeTargetError`.
+
+    Returns the *unresolved* path, so a caller removing it unlinks a symlink rather than
+    deleting whatever it points at.
+    """
     expanded = Path(name).expanduser()
-    target = (expanded if expanded.is_absolute() else REPO_ROOT / expanded).resolve()
-    if target == REPO_ROOT:
-        raise UnsafeTargetError(f"refusing to remove the repository root via {name!r}")
-    if REPO_ROOT not in target.parents:
-        raise UnsafeTargetError(f"{name!r} resolves outside the repository: {target}")
-    relative = target.relative_to(REPO_ROOT)
-    if relative.parts and relative.parts[0] in PROTECTED:
-        raise UnsafeTargetError(f"{name!r} is inside protected path {relative.parts[0]!r}")
-    return target
+    if expanded.is_absolute():
+        raise UnsafeTargetError(
+            f"{name!r} is an absolute path; cleanup targets are repository-relative"
+        )
+
+    relative = Path(name)
+    if any(part in ("..", "") for part in relative.parts):
+        raise UnsafeTargetError(f"{name!r} contains a parent-directory segment")
+    if relative.as_posix() not in REMOVABLE:
+        raise UnsafeTargetError(f"{name!r} is not one of the removable paths")
+    if any(part.casefold() in {p.casefold() for p in PROTECTED} for part in relative.parts):
+        raise UnsafeTargetError(f"{name!r} names a protected path")
+    if _contains_symlink(relative):
+        raise UnsafeTargetError(f"{name!r} is, or is reached through, a symbolic link")
+
+    unresolved = REPO_ROOT / relative
+    # Belt and braces: even with no symlink in the path, confirm it lands inside the repo.
+    if (
+        REPO_ROOT not in unresolved.resolve().parents
+        and unresolved.resolve() != REPO_ROOT / relative
+    ):
+        raise UnsafeTargetError(f"{name!r} resolves outside the repository")
+    return unresolved
 
 
 def plan() -> list[Path]:
-    """Existing removable paths, each already proven safe."""
-    return [target for name in REMOVABLE if (target := resolve_target(name)).exists()]
+    """Existing removable paths, each already proven safe. Unsafe entries are refused loudly."""
+    targets: list[Path] = []
+    for name in REMOVABLE:
+        try:
+            target = resolve_target(name)
+        except UnsafeTargetError as exc:
+            print(f"clean: skipping {name}: {exc}", file=sys.stderr)
+            continue
+        if target.exists() or target.is_symlink():
+            targets.append(target)
+    return targets
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -86,10 +134,10 @@ def main(argv: list[str] | None = None) -> int:
     for target in targets:
         relative = target.relative_to(REPO_ROOT)
         if args.apply:
-            if target.is_dir() and not target.is_symlink():
-                shutil.rmtree(target)
-            else:
+            if target.is_symlink() or target.is_file():
                 target.unlink()
+            else:
+                shutil.rmtree(target)
             print(f"removed {relative}")
         else:
             print(f"would remove {relative}")

@@ -67,35 +67,35 @@ Do not check the stage heading until its audit passes.
 
 ### Tasks
 
-- [ ] Create the production package structure described in `docs/ARCHITECTURE.md`.
-- [ ] Create `pyproject.toml` with supported Python range and pinned-compatible dependencies.
-- [ ] Configure formatting, linting, type checking, and tests.
-- [ ] Configure a task runner or documented commands for setup, lint, test, build, and serve.
-- [ ] Add `.gitignore` entries for generated output, runtime data, credentials, caches, raw API responses, and common secret files.
-- [ ] Add a safe example environment file containing no secrets.
-- [ ] Add pre-commit or equivalent local checks without making setup opaque.
-- [ ] Add CI that runs format verification, lint, type checks, unit tests, schema tests, and secret scanning.
-- [ ] Add contributor and local setup documentation.
-- [ ] Add a test proving participant-owned fixture paths are not removed by cleanup/build tasks.
+- [x] Create the production package structure described in `docs/ARCHITECTURE.md`. (`participant/` deferred to Stage 4 — see audit L5.)
+- [x] Create `pyproject.toml` with supported Python range and pinned-compatible dependencies.
+- [x] Configure formatting, linting, type checking, and tests.
+- [x] Configure a task runner or documented commands for setup, lint, test, build, and serve.
+- [x] Add `.gitignore` entries for generated output, runtime data, credentials, caches, raw API responses, and common secret files.
+- [x] Add a safe example environment file containing no secrets.
+- [x] Add pre-commit or equivalent local checks without making setup opaque.
+- [x] Add CI that runs format verification, lint, type checks, unit tests, schema tests, and secret scanning.
+- [x] Add contributor and local setup documentation.
+- [x] Add a test proving participant-owned fixture paths are not removed by cleanup/build tasks.
 
 ### Required tests
 
-- [ ] Clean-environment dependency installation succeeds.
-- [ ] All quality commands can run from the repository root.
-- [ ] Secret scanner detects a seeded fake secret fixture and ignores safe examples appropriately.
-- [ ] Cleanup removes only documented generated paths.
+- [x] Clean-environment dependency installation succeeds.
+- [x] All quality commands can run from the repository root.
+- [x] Secret scanner detects a seeded fake secret fixture and ignores safe examples appropriately.
+- [x] Cleanup removes only documented generated paths.
 
 ### Stage audit
 
-- [ ] Review dependency necessity and license compatibility.
-- [ ] Review scripts for destructive or overly broad filesystem behavior.
-- [ ] Review `.gitignore` and example configuration for secret leakage.
-- [ ] Verify CI matches documented local commands.
-- [ ] Create and resolve `docs/audits/stage-01-foundation-audit.md`.
+- [x] Review dependency necessity and license compatibility.
+- [x] Review scripts for destructive or overly broad filesystem behavior.
+- [x] Review `.gitignore` and example configuration for secret leakage.
+- [x] Verify CI matches documented local commands.
+- [x] Create and resolve `docs/audits/stage-01-foundation-audit.md`.
 
 ### Stage completion
 
-- [ ] **Stage 1 complete and audited**
+- [x] **Stage 1 complete and audited**
 
 ---
 
@@ -459,6 +459,7 @@ Update this section whenever work pauses.
 | Date/time | Branch | Current stage | Last completed item | Next action | Blockers |
 |---|---|---:|---|---|---|
 | 2026-09-16 | feature/golden-thread-implementation | 0 | Stage 0 audit: pass-with-advisories | Begin Stage 1 foundation |  |
+| 2026-09-16 | feature/golden-thread-implementation | 1 | Stage 1 audit: fail → fixed → pass-with-advisories | Complete Stage 2 content loading | `participant/` creation deferred to Stage 4 |
 
 ## Deferred work register
 

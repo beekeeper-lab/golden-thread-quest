@@ -3,14 +3,18 @@
 repos:
   - repo: local
     hooks:
+      # Verify, never rewrite. A hook that reformats during `git commit` changes the
+      # content under the commit the developer just reviewed, and CI runs --check anyway,
+      # so a mutating hook can only hide a difference rather than prevent one.
+      # Run `make format` yourself when this fails.
       - id: ruff-format
-        name: ruff format
-        entry: .venv/bin/ruff format
+        name: ruff format --check
+        entry: .venv/bin/ruff format --check
         language: system
         types: [python]
       - id: ruff-check
         name: ruff check
-        entry: .venv/bin/ruff check --fix
+        entry: .venv/bin/ruff check
         language: system
         types: [python]
       - id: yaml-safe
