@@ -54,13 +54,13 @@ These are implementation choices Claude may recommend during Stage 0, but it mus
 
 Claude must first:
 
-- [ ] Create a feature branch; never work directly on `main`.
-- [ ] Read every document referenced by `CLAUDE.md`.
-- [ ] Run the design-package validation instructions.
-- [ ] Compare the prototype against the screen and component specifications.
-- [ ] Identify contradictions, omissions, unsafe assumptions, or infeasible requirements.
-- [ ] Record findings in `docs/audits/stage-00-planning-audit.md`.
-- [ ] Resolve all blocking findings before Stage 1.
+- [x] Create a feature branch; never work directly on `main`.
+- [x] Read every document referenced by `CLAUDE.md`.
+- [x] Run the design-package validation instructions.
+- [x] Compare the prototype against the screen and component specifications.
+- [x] Identify contradictions, omissions, unsafe assumptions, or infeasible requirements.
+- [x] Record findings in `docs/audits/stage-00-planning-audit.md`.
+- [x] Resolve all blocking findings before Stage 1.
 
 ## Definition of planning complete
 

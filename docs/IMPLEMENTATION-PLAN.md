@@ -35,29 +35,29 @@ Do not check the stage heading until its audit passes.
 
 ### Tasks
 
-- [ ] Read the files listed in `CLAUDE.md` in order.
-- [ ] Inspect all schemas, examples, fixtures, and prototype screens.
-- [ ] Compare every required screen to the component catalog.
-- [ ] Compare content examples to schema requirements.
-- [ ] Identify duplicated, contradictory, missing, or untestable requirements.
-- [ ] Identify security assumptions needing proof or revision.
-- [ ] Confirm the Python/Jinja/local-service approach satisfies the first-release scope.
-- [ ] Recommend final package choices for Python versions, schema library, Markdown renderer, local service, test runner, formatter, and linter.
-- [ ] Record accepted choices in `docs/DECISIONS.md`.
-- [ ] Create `docs/audits/stage-00-planning-audit.md`.
-- [ ] Correct the planning package or document approved deviations.
+- [x] Read the files listed in `CLAUDE.md` in order.
+- [x] Inspect all schemas, examples, fixtures, and prototype screens.
+- [x] Compare every required screen to the component catalog.
+- [x] Compare content examples to schema requirements.
+- [x] Identify duplicated, contradictory, missing, or untestable requirements.
+- [x] Identify security assumptions needing proof or revision.
+- [x] Confirm the Python/Jinja/local-service approach satisfies the first-release scope.
+- [x] Recommend final package choices for Python versions, schema library, Markdown renderer, local service, test runner, formatter, and linter.
+- [x] Record accepted choices in `docs/DECISIONS.md`.
+- [x] Create `docs/audits/stage-00-planning-audit.md`.
+- [x] Correct the planning package or document approved deviations.
 
 ### Audit gate
 
-- [ ] No unresolved blocking finding.
-- [ ] No unresolved high-severity contradiction.
-- [ ] Every deferred implementation choice has an owner and decision point.
-- [ ] The prototype and written specification agree on primary behavior.
-- [ ] Audit rerun result is `pass` or `pass-with-advisories`.
+- [x] No unresolved blocking finding.
+- [x] No unresolved high-severity contradiction.
+- [x] Every deferred implementation choice has an owner and decision point.
+- [x] The prototype and written specification agree on primary behavior.
+- [x] Audit rerun result is `pass` or `pass-with-advisories`.
 
 ### Stage completion
 
-- [ ] **Stage 0 complete and audited**
+- [x] **Stage 0 complete and audited**
 
 ---
 
@@ -458,7 +458,7 @@ Update this section whenever work pauses.
 
 | Date/time | Branch | Current stage | Last completed item | Next action | Blockers |
 |---|---|---:|---|---|---|
-| _Not started_ |  | 0 |  | Perform Stage 0 planning audit |  |
+| 2026-09-16 | feature/golden-thread-implementation | 0 | Stage 0 audit: pass-with-advisories | Begin Stage 1 foundation |  |
 
 ## Deferred work register
 
