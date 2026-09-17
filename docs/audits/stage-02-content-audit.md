@@ -156,3 +156,66 @@ only consumer with the deleted template.
 5. H5 — stop leaking `str(OSError)`; extend the constructor guard to `received`.
 6. H6 — enable the format checker.
 7. Rerun this audit and record the result.
+
+
+---
+
+# Stage 2 re-audit (2026-09-17)
+
+**Audited commit:** `264de55`
+**Auditor:** independent review agent, fresh context, read-only
+**Result:** `pass with one open item`
+
+Every fix was verified by execution rather than by reading the commit message.
+
+| Finding | Verdict |
+|---|---|
+| B1 quest-detail page and ADR-016 reference | **fixed** |
+| H1 bullet-list decision | **fixed** — ADR-026, code and decision log now agree |
+| H2 criterion derivation | **mostly fixed** — every named case plus nine more; one residual (S2-R1) |
+| H3 multi-line criterion | **fixed** — continuation preserved, and editing it changes the hash |
+| H4 content-hash comparison | **fixed**, with the warning-not-error deviation accepted as correctly reasoned |
+| H5 absolute path in `received` | **partially fixed** — see below |
+| H6 format checker | **fixed, and better than the audit recommended** |
+| M1 deep nesting, M2 duplicate keys, M5 record misfiling | **fixed** |
+| M8 tests passing on one branch | **half fixed** — the sanitizer half is genuine; the resolver branch is still untested |
+
+## H6 — the recommendation would have produced a fake fix
+
+Worth recording because it nearly happened twice. The original audit recommended
+`Draft202012Validator.FORMAT_CHECKER`, whose checkers in this environment are
+`date, email, idn-email, ipv4, ipv6, regex, uuid` — **no `date-time`**. The implementation
+used `FormatChecker()` with the `[format]` extra pinned, which does register it. Verified:
+`started_at: "banana"` and `last_reviewed: "nope"` are both now rejected.
+
+## H5 — the open item
+
+The leak itself is closed at both call sites: `chmod 000`, a broken symlink, a directory
+where a file is expected and invalid UTF-8 all now report `Permission denied`,
+`No such file or directory`, `Is a directory` and `invalid start byte` respectively, with no
+absolute path in any field.
+
+Three parts of the correction were not done:
+
+1. **The constructor guard was never extended to `received`.** `ContentProblem.__post_init__`
+   still checks `source` only, and `_looks_absolute()` — written for exactly this — is dead
+   code called from nowhere.
+2. `progress.py` still passes `str(exc)` from `resolve_participant_path`, whose message
+   embeds the offending path. Participant-supplied rather than developer-supplied, but the
+   same class of value, and the guard that would catch it exists and is unwired.
+3. No regression test covers the unreadable-file path.
+
+## S2-R1 — residual, medium
+
+`first_list_items` treats a list inside a **blockquote** as the first list. A quoted example
+under `## Acceptance criteria` becomes `ac-1` and the real criteria are then reported as a
+split list — or, with no second list present, the quoted example silently *becomes* the
+acceptance criteria with no warning at all. That is the exact class of failure ADR-016
+exists to prevent.
+
+**Correction:** refuse to open the first list while inside `blockquote_open`.
+
+## Gate
+
+Stage 2 stays unticked until H5 is closed properly, S2-R1 is fixed, and this re-audit is
+rerun against the result.
