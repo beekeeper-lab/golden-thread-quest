@@ -1,0 +1,25 @@
+{
+  "description": "Four stories split across two pages, so a single request misses two.",
+  "stories": [
+    {
+      "key": "GTQ-101",
+      "status": "To Do",
+      "summary": "Fixture story GTQ-101"
+    },
+    {
+      "key": "GTQ-102",
+      "status": "To Do",
+      "summary": "Fixture story GTQ-102"
+    },
+    {
+      "key": "GTQ-201",
+      "status": "To Do",
+      "summary": "Fixture story GTQ-201"
+    },
+    {
+      "key": "GTQ-202",
+      "status": "To Do",
+      "summary": "Fixture story GTQ-202"
+    }
+  ]
+}

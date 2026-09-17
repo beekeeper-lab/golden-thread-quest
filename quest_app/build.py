@@ -528,14 +528,12 @@ def _quest_detail_context(
 
 
 def _evidence_context(entry: QuestProgress, summary: Any, world: LoadedWorld) -> dict[str, Any]:
+    from quest_app.evidence import detect_proof, scan_evidence
+
     quest = entry.quest
     results = _results_for(entry, world)
-    detected = {
-        item.id: "validated"
-        for item in quest.required_proof
-        if item.type == "validator"
-        and any(r.validator_id == item.validator and r.qualifies for r in results)
-    }
+    evidence_path = entry.attempt.evidence_path if entry.attempt else None
+    detected = detect_proof(quest, world.config, evidence_path, results)
     required, optional = build_proof_views(quest, detected)
     latest: dict[str, Any] = {r.validator_id: r for r in results}
     validators = tuple(
@@ -575,10 +573,22 @@ def _evidence_context(entry: QuestProgress, summary: Any, world: LoadedWorld) ->
         "validators": validators,
         "results": results,
         "proof_document": None,
-        "secret_scan_clean": None,
+        # The scan runs at build time so the page can say something true about the evidence
+        # as it stands. It is also enforced at the moment of submission, which is the check
+        # that actually matters.
+        "secret_scan_clean": (
+            not scan_evidence(world.config, evidence_path) if evidence_path else None
+        ),
         "actions": actions if entry.attempt else (),
-        "git_summary": {},
+        "git_summary": git_summary_for(world, evidence_path),
     }
+
+
+def git_summary_for(world: LoadedWorld, evidence_path: str | None) -> dict[str, Any]:
+    """Repository status for the evidence page. Reports and advises; never acts."""
+    from quest_app.git_status import summary_for
+
+    return summary_for(world.config.repo_root, evidence_path)
 
 
 def _review_queue_context(

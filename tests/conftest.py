@@ -48,8 +48,15 @@ def content_repo(tmp_path: Path) -> Path:
     """
     import shutil
 
-    for name in ("content", "schemas", "templates", "assets"):
-        shutil.copytree(REPO_ROOT / name, tmp_path / name)
+    for name in ("content", "schemas", "templates", "assets", "validators"):
+        shutil.copytree(
+            REPO_ROOT / name,
+            tmp_path / name,
+            ignore=shutil.ignore_patterns("__pycache__"),
+        )
+    # The repository ignore rules are a narrow read root for one validator, so a copy needs
+    # them or that check has nothing to look at.
+    shutil.copy2(REPO_ROOT / ".gitignore", tmp_path / ".gitignore")
     shutil.copytree(REPO_ROOT / "fixtures" / "participant", tmp_path / "participant")
     return tmp_path
 

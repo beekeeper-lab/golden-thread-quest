@@ -49,7 +49,7 @@ JSON_CONTENT_TYPE = "application/json"
 
 # Every action the service will perform. A request naming anything else is refused before
 # any state is read, and the list is the complete surface of what this process can change.
-MUTATING_ACTIONS = frozenset(BY_ACTION) | {"rebuild"}
+MUTATING_ACTIONS = frozenset(BY_ACTION) | {"rebuild", "run-validator"}
 READ_ACTIONS = frozenset({"health", "git-status", "actions"})
 
 
@@ -267,6 +267,10 @@ class ActionHandler(BaseHTTPRequestHandler):
             raise ValueError("That quest does not exist.")
         quest = world.content.quests[quest_id]
 
+        if action == "run-validator":
+            # Not a transition (ADR-017). It appends a result and changes nothing else.
+            return self._run_validator(world, quest_id, payload)
+
         if action == "start-quest":
             attempt_id = start_attempt(
                 store,
@@ -279,6 +283,8 @@ class ActionHandler(BaseHTTPRequestHandler):
         else:
             if action == "mark-locally-validated":
                 self._require_qualifying_validation(world, quest_id)
+            if action in ("mark-evidence-ready", "submit-for-review"):
+                self._require_clean_secret_scan(world, quest_id)
             new_state = transition_attempt(
                 store, quest_id=quest_id, action=action, schemas=self.state.schemas
             )
@@ -293,6 +299,76 @@ class ActionHandler(BaseHTTPRequestHandler):
             "state": state,
             "attempt_id": attempt_id,
         }
+
+    def _run_validator(self, world: Any, quest_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+        from quest_app.evidence import new_run_id, store_result
+        from quest_app.validator_registry import ValidatorError, load_registry
+        from quest_app.validator_runner import run_validator
+
+        validator_id = payload.get("validator_id")
+        if not isinstance(validator_id, str):
+            raise ValueError("A validator ID is required.")
+        quest = world.content.quests[quest_id]
+        if validator_id not in quest.validators:
+            # The quest decides which validators apply to it, so a caller cannot run an
+            # arbitrary registered validator against arbitrary work.
+            raise ValueError("That validator is not declared by this quest.")
+
+        report = ProblemReport()
+        registry = load_registry(self.state.config, report)
+        if registry is None:
+            raise StoreError("The validator registry could not be loaded.")
+
+        participant = world.participant
+        attempt = participant.progress.attempt_for(quest_id) if participant else None
+        if attempt is None:
+            raise StoreError("Start the quest before running its checks.")
+
+        try:
+            definition = registry.get(validator_id)
+            result = run_validator(
+                definition,
+                self.state.config,
+                quest_id=quest_id,
+                attempt_id=attempt.attempt_id,
+                run_id=new_run_id(validator_id),
+                parameters=payload.get("parameters"),
+            )
+        except ValidatorError as exc:
+            raise ValueError(str(exc)) from exc
+
+        stored = store_result(self.state.config, attempt.evidence_path, result.to_document())
+        build_site(self._load())
+        return {
+            "ok": True,
+            "action": "run-validator",
+            "quest_id": quest_id,
+            "validator_id": validator_id,
+            "outcome": result.outcome,
+            "run_id": result.run_id,
+            "result_path": stored,
+            "note": "A validation run never changes quest state.",
+        }
+
+    def _require_clean_secret_scan(self, world: Any, quest_id: str) -> None:
+        """Refuse to prepare a submission that carries a credential.
+
+        The asymmetry is the argument: a false positive costs a minute, and a missed
+        credential costs a rotation and an awkward conversation.
+        """
+        from quest_app.evidence import scan_evidence
+
+        participant = world.participant
+        attempt = participant.progress.attempt_for(quest_id) if participant else None
+        if attempt is None:
+            return
+        findings = scan_evidence(self.state.config, attempt.evidence_path)
+        if findings:
+            locations = ", ".join(f"{f.path}:{f.line}" for f in findings[:3])
+            raise StoreError(
+                f"Something secret-like is in your evidence ({locations}). "
+                "Remove it before submitting; the scan never reports the value itself."
+            )
 
     def _require_qualifying_validation(self, world: Any, quest_id: str) -> None:
         """`locally_validated` is a claim about validator results, so the results decide.

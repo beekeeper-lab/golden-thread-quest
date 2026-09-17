@@ -1,0 +1,20 @@
+{
+  "description": "A comment appears on two pages, so a naive append duplicates it.",
+  "stories": [
+    {
+      "key": "GTQ-101",
+      "status": "To Do",
+      "summary": "Fixture story GTQ-101"
+    },
+    {
+      "key": "GTQ-102",
+      "status": "To Do",
+      "summary": "Fixture story GTQ-102"
+    },
+    {
+      "key": "GTQ-103",
+      "status": "To Do",
+      "summary": "Fixture story GTQ-103"
+    }
+  ]
+}

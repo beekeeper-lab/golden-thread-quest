@@ -18,6 +18,7 @@ EXPECTED = {
     "site",
     "track",
     "validation-result",
+    "validator-registry",
 }
 
 

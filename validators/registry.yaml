@@ -1,0 +1,72 @@
+# The complete set of programs this application may execute.
+#
+# Quest content references a validator by ID. It cannot supply a command, an argument, a
+# path or an environment variable — those all live here, in a program-owned file that is
+# reviewed like code (ADR-014).
+schema_version: 1
+
+validators:
+  - id: validate-repository-foundation
+    version: 1
+    display_name: Repository foundation
+    description: >-
+      Checks that the participant's repository has the ownership boundaries, ignore rules and
+      evidence structure that every later quest depends on.
+    entrypoint: validators.repository_foundation:run
+    working_directory: participant
+    timeout_seconds: 30
+    max_output_bytes: 200000
+    environment_allowlist: []
+    read_roots:
+      - participant
+      # The repository ignore rules are what this quest is about, so the file itself is a
+      # read root. Naming one file rather than the repository root keeps the grant narrow.
+      - .gitignore
+    write_roots: []
+    network: denied
+    quest_ids:
+      - base-camp-repository-safety
+
+  - id: validate-jira-read-assigned
+    version: 1
+    display_name: Jira assigned-story synchronization
+    description: >-
+      Checks that synchronized Jira stories are normalized, traceable to their source, and
+      free of raw private responses, using a local fixture rather than a live connection.
+    entrypoint: validators.jira_read_assigned:run
+    working_directory: participant
+    timeout_seconds: 60
+    max_output_bytes: 200000
+    parameters:
+      fixture_set:
+        type: enum
+        description: Which local fixture to evaluate against.
+        allowed: [happy-path, pagination, stale-item, duplicate-comment]
+        default: happy-path
+    environment_allowlist:
+      - JIRA_BASE_URL
+    read_roots:
+      - participant
+      - validators/fixtures/jira
+    write_roots: []
+    network: denied
+    quest_ids:
+      - jira-read-assigned-stories
+
+  - id: validate-playwright-quality
+    version: 1
+    display_name: Playwright test quality
+    description: >-
+      Checks that the submitted test targets behaviour rather than markup, has no arbitrary
+      waits, and carries the evidence needed to reproduce a failure.
+    entrypoint: validators.playwright_quality:run
+    working_directory: participant
+    timeout_seconds: 120
+    max_output_bytes: 500000
+    environment_allowlist: []
+    read_roots:
+      - participant
+    write_roots: []
+    network: denied
+    quest_ids:
+      - playwright-first-independent-test

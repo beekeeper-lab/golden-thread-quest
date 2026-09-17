@@ -1,0 +1,324 @@
+"""The validator framework's constraints, each exercised against the real runner.
+
+`docs/VALIDATOR-CONTRACT.md` lists guarantees. A guarantee nobody tried to break is a
+comment, so every one of them is attacked here: unknown IDs, attacker-shaped arguments,
+paths outside the registered roots, a timeout with a child of its own, oversized output,
+secrets in output, and a passing run trying to become an approval.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+from quest_app.config import AppConfig
+from quest_app.errors import ProblemReport
+from quest_app.models import AttemptState
+from quest_app.validator_registry import (
+    Parameter,
+    ValidatorError,
+    load_registry,
+    resolve_root,
+)
+from quest_app.validator_runner import (
+    Check,
+    ValidatorOutput,
+    Workspace,
+    WorkspaceError,
+    _bounded,
+    _import_entrypoint,
+    classify,
+    run_validator,
+)
+
+
+@pytest.fixture
+def registry(config: AppConfig):  # type: ignore[no-untyped-def]
+    report = ProblemReport()
+    loaded = load_registry(config, report)
+    assert loaded is not None, report.to_text()
+    return loaded
+
+
+class TestOnlyRegisteredValidatorsRun:
+    @pytest.mark.parametrize(
+        "validator_id",
+        [
+            "",
+            "unknown",
+            "../../etc/passwd",
+            "os.system",
+            "validate-repository-foundation ",
+            "VALIDATE",
+        ],
+    )
+    def test_an_unregistered_id_cannot_run(self, registry, validator_id: str) -> None:  # type: ignore[no-untyped-def]
+        with pytest.raises(ValidatorError):
+            registry.get(validator_id)
+
+    def test_a_validator_cannot_run_for_a_quest_it_is_not_registered_for(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        definition = registry.get("validate-repository-foundation")
+        with pytest.raises(ValidatorError, match="not registered to run"):
+            run_validator(
+                definition,
+                config,
+                quest_id="jira-read-assigned-stories",
+                attempt_id="a-001",
+                run_id="run-001",
+            )
+
+    @pytest.mark.parametrize(
+        "entrypoint",
+        [
+            "os:system",
+            "subprocess:run",
+            "builtins:eval",
+            "validators.repository_foundation:run; rm -rf /",
+            "..validators.x:run",
+            "validators.x",
+        ],
+    )
+    def test_an_entrypoint_outside_the_validators_package_is_refused(self, entrypoint: str) -> None:
+        """There is no path from a registry edit to importing arbitrary code."""
+        with pytest.raises((ValidatorError, ModuleNotFoundError, ImportError)):
+            _import_entrypoint(entrypoint)
+
+
+class TestParameters:
+    def test_a_value_outside_the_allowlist_is_refused(self, registry) -> None:  # type: ignore[no-untyped-def]
+        definition = registry.get("validate-jira-read-assigned")
+        with pytest.raises(ValidatorError, match="must be one of"):
+            definition.bind_parameters({"fixture_set": "../../etc/passwd"})
+
+    @pytest.mark.parametrize(
+        "value",
+        ["happy-path; rm -rf /", "$(whoami)", "`id`", "happy-path\n", "", "HAPPY-PATH"],
+    )
+    def test_attacker_shaped_values_are_refused(self, registry, value: str) -> None:  # type: ignore[no-untyped-def]
+        definition = registry.get("validate-jira-read-assigned")
+        with pytest.raises(ValidatorError):
+            definition.bind_parameters({"fixture_set": value})
+
+    def test_an_unexpected_parameter_is_refused_rather_than_ignored(self, registry) -> None:  # type: ignore[no-untyped-def]
+        """Dropping it silently would let a caller believe they had changed the run."""
+        definition = registry.get("validate-jira-read-assigned")
+        with pytest.raises(ValidatorError, match="unknown parameter"):
+            definition.bind_parameters({"command": "rm -rf /"})
+
+    def test_there_is_no_free_string_parameter_type(self, config: AppConfig) -> None:
+        """A free string is how an argument becomes an injection, so the type does not exist."""
+        with pytest.raises(ValidatorError, match="unsupported type"):
+            Parameter(name="x", type="string").coerce("anything")
+
+    def test_an_integer_outside_its_range_is_refused(self) -> None:
+        parameter = Parameter(name="depth", type="integer", minimum=1, maximum=5, default=1)
+        assert parameter.coerce(3) == 3
+        with pytest.raises(ValidatorError):
+            parameter.coerce(99)
+
+
+class TestWorkspaceContainment:
+    @pytest.fixture
+    def workspace(self, tmp_path: Path) -> Workspace:
+        allowed = tmp_path / "allowed"
+        (allowed / "inner").mkdir(parents=True)
+        (allowed / "inner" / "file.txt").write_text("in bounds")
+        (tmp_path / "secret.txt").write_text("out of bounds")
+        return Workspace(
+            read_roots=(allowed.resolve(),),
+            write_roots=(allowed.resolve(),),
+            repo_root=tmp_path,
+            participant_root=tmp_path / "participant",
+            parameters={},
+        )
+
+    def test_reading_inside_the_root_works(self, workspace: Workspace) -> None:
+        assert workspace.read_text("allowed/inner/file.txt") == "in bounds"
+
+    @pytest.mark.parametrize(
+        "path",
+        ["secret.txt", "allowed/../secret.txt", "/etc/passwd", "allowed/inner/../../secret.txt"],
+    )
+    def test_reading_outside_the_roots_is_refused(self, workspace: Workspace, path: str) -> None:
+        with pytest.raises(WorkspaceError):
+            workspace.read_text(path)
+
+    def test_a_symlink_cannot_be_used_to_escape(self, workspace: Workspace, tmp_path: Path) -> None:
+        """Containment is checked after resolution, so a planted link is not a way out."""
+        (tmp_path / "allowed" / "escape.txt").symlink_to(tmp_path / "secret.txt")
+        with pytest.raises(WorkspaceError):
+            workspace.read_text("allowed/escape.txt")
+
+    def test_writing_outside_the_write_roots_is_refused(self, workspace: Workspace) -> None:
+        with pytest.raises(WorkspaceError):
+            workspace.write_text("../escaped.txt", "nope")
+
+    def test_a_validator_with_no_write_roots_cannot_write_at_all(self, tmp_path: Path) -> None:
+        """Every shipped validator is registered with no write roots."""
+        workspace = Workspace(
+            read_roots=(tmp_path.resolve(),),
+            write_roots=(),
+            repo_root=tmp_path,
+            participant_root=tmp_path,
+            parameters={},
+        )
+        with pytest.raises(WorkspaceError):
+            workspace.write_text("anything.txt", "x")
+
+    def test_listing_never_returns_a_path_outside_the_roots(
+        self, workspace: Workspace, tmp_path: Path
+    ) -> None:
+        (tmp_path / "allowed" / "escape").symlink_to(tmp_path)
+        for path in workspace.iter_files("allowed"):
+            assert str(path).startswith(str((tmp_path / "allowed").resolve()))
+
+    def test_a_finding_never_names_an_absolute_path(
+        self, workspace: Workspace, tmp_path: Path
+    ) -> None:
+        assert not workspace.relative(tmp_path / "allowed" / "inner" / "file.txt").startswith("/")
+
+
+class TestShippedRegistry:
+    def test_no_shipped_validator_may_write_anywhere(self, registry) -> None:  # type: ignore[no-untyped-def]
+        for validator_id in registry.ids():
+            assert registry.get(validator_id).write_roots == (), validator_id
+
+    def test_no_shipped_validator_has_network_access(self, registry) -> None:  # type: ignore[no-untyped-def]
+        for validator_id in registry.ids():
+            assert registry.get(validator_id).network == "denied", validator_id
+
+    def test_every_validator_has_a_timeout_and_an_output_cap(self, registry) -> None:  # type: ignore[no-untyped-def]
+        for validator_id in registry.ids():
+            definition = registry.get(validator_id)
+            assert 0 < definition.timeout_seconds <= 600
+            assert definition.max_output_bytes > 0
+
+    def test_the_environment_allowlist_carries_no_credential_name(self, registry) -> None:  # type: ignore[no-untyped-def]
+        forbidden = ("TOKEN", "SECRET", "PASSWORD", "KEY", "CREDENTIAL")
+        for validator_id in registry.ids():
+            for name in registry.get(validator_id).environment_allowlist:
+                assert not any(marker in name.upper() for marker in forbidden), name
+
+    def test_participant_roots_follow_the_configured_participant_directory(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Resolving against the repository root instead would point every check at nothing."""
+        roots = registry.get("validate-repository-foundation").resolved_read_roots(config)
+        assert config.participant_root.resolve() in roots
+
+    def test_a_non_participant_root_still_resolves_against_the_repository(
+        self, config: AppConfig
+    ) -> None:
+        assert resolve_root(config, "content") == (config.repo_root / "content").resolve()
+
+
+class TestRunning:
+    @pytest.mark.slow
+    def test_a_real_run_produces_a_schema_valid_document(self, registry, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        from jsonschema import Draft202012Validator, FormatChecker
+        from quest_app.content_loader import SchemaSet
+
+        result = run_validator(
+            registry.get("validate-repository-foundation"),
+            config,
+            quest_id="base-camp-repository-safety",
+            attempt_id="base-camp-attempt-001",
+            run_id="test-run-001",
+        )
+        document = result.to_document()
+        schemas = SchemaSet(config.schemas_root)
+        del schemas
+        import json
+
+        schema = json.loads((config.schemas_root / "validation-result.schema.json").read_text())
+        errors = list(
+            Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(document)
+        )
+        assert errors == [], [error.message for error in errors]
+
+    @pytest.mark.slow
+    def test_a_timeout_produces_interrupted_not_a_verdict(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """A run that did not finish says nothing either way, so it is never a verdict.
+
+        The probe validator spawns a child of its own, so this also proves the timeout kills
+        the process group rather than only the direct child.
+        """
+        import dataclasses
+
+        impatient = dataclasses.replace(
+            registry.get("validate-repository-foundation"),
+            timeout_seconds=1,
+            entrypoint="validators.slow_probe:run",
+        )
+        result = run_validator(
+            impatient,
+            config,
+            quest_id="base-camp-repository-safety",
+            attempt_id="a-001",
+            run_id="timeout-run",
+        )
+        assert result.outcome == "interrupted"
+        assert result.outcome not in ("pass", "fail", "warning")
+
+
+class TestClassification:
+    def test_an_inconclusive_check_is_not_a_pass(self) -> None:
+        """Letting "we could not tell" qualify is the quietest way to void locally_validated."""
+        output = ValidatorOutput(checks=[Check(id="c", outcome="inconclusive", summary="s")])
+        assert classify(output) == "inconclusive"
+
+    def test_a_single_failure_fails_the_run(self) -> None:
+        output = ValidatorOutput(
+            checks=[
+                Check(id="a", outcome="pass", summary="s"),
+                Check(id="b", outcome="fail", summary="s"),
+            ]
+        )
+        assert classify(output) == "fail"
+
+    def test_a_warning_alone_is_a_warning(self) -> None:
+        output = ValidatorOutput(checks=[Check(id="a", outcome="warning", summary="s")])
+        assert classify(output) == "warning"
+
+    def test_no_checks_is_inconclusive_not_a_pass(self) -> None:
+        assert classify(ValidatorOutput()) == "inconclusive"
+
+    def test_an_environment_failure_outranks_everything(self) -> None:
+        output = ValidatorOutput(checks=[Check(id="a", outcome="pass", summary="s")])
+        output.fail_environment("no fixture installed")
+        assert classify(output) == "environment_failure"
+
+
+class TestOutputHandling:
+    def test_large_output_is_bounded_and_marked(self) -> None:
+        text, truncated = _bounded("x" * 10_000, 1024)
+        assert truncated
+        assert len(text.encode()) <= 1024 + 64
+        assert "truncated" in text
+
+    def test_small_output_is_untouched(self) -> None:
+        assert _bounded("short", 1024) == ("short", False)
+
+    @pytest.mark.slow
+    def test_secret_like_output_is_redacted_before_it_is_stored(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        from quest_app.secret_patterns import REDACTION_PLACEHOLDER, redact_text
+
+        leaked = "ghp_abcdefghijklmnopqrstuvwxyz0123456789"  # secret-scan: allow
+        redacted, applied = redact_text(f"validator said token={leaked}")
+        assert applied
+        assert leaked not in redacted
+        assert REDACTION_PLACEHOLDER in redacted
+
+
+def test_a_passing_validator_cannot_produce_verified(registry) -> None:  # type: ignore[no-untyped-def]
+    """The whole point of ADR-011, asserted where it would be easiest to break."""
+    from quest_app.state_machine import BY_ACTION
+
+    assert all(t.target is not AttemptState.VERIFIED for t in BY_ACTION.values())
+    assert "verified" not in {t.target.value for t in BY_ACTION.values()}

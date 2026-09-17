@@ -78,19 +78,28 @@
     </div>
     {% endif %}
 
-    {% if git_summary %}
     {# C19 — reports and advises. It never commits, pushes, merges or cleans. #}
     <section aria-labelledby="git-heading">
       <h3 id="git-heading">Repository</h3>
+      {% if git_summary.get('available') %}
       <dl class="definition-list">
-        <dt>Branch</dt><dd>{{ git_summary.branch or 'unknown' }}</dd>
-        <dt>Changed files</dt><dd>{{ git_summary.changed | default(0) }}</dd>
-        <dt>Untracked</dt><dd>{{ git_summary.untracked | default(0) }}</dd>
-        <dt>Evidence committed</dt><dd>{{ 'yes' if git_summary.evidence_committed else 'not yet' }}</dd>
+        <dt>Branch</dt><dd>{{ git_summary.get('branch') or 'unknown' }}</dd>
+        <dt>Upstream</dt><dd>{{ git_summary.get('upstream') or 'none set' }}</dd>
+        <dt>Changed files</dt><dd>{{ git_summary.get('changed', 0) }}</dd>
+        <dt>Untracked</dt><dd>{{ git_summary.get('untracked', 0) }}</dd>
+        <dt>Evidence committed</dt>
+        <dd>
+          {% if git_summary.get('evidence_committed') is none %}unknown
+          {% elif git_summary.get('evidence_committed') %}yes
+          {% else %}not yet{% endif %}
+        </dd>
       </dl>
+      {% if git_summary.get('advice') %}<p>{{ git_summary.get('advice') }}</p>{% endif %}
+      {% else %}
+      <p class="authority">{{ git_summary.get('reason', 'Git status is unavailable here.') }}</p>
+      {% endif %}
       <p class="authority">This panel only reports. Commit and push yourself.</p>
     </section>
-    {% endif %}
 
     {% for item in actions %}{{ action_button(item, url) }}{% endfor %}
   </aside>

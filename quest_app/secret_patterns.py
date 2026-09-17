@@ -167,6 +167,20 @@ def _is_placeholder(value: str) -> bool:
     # placeholders that appear wherever this scanner reads its own source or a template.
     if lowered.startswith(("<", "${", "$(", "{{")) or lowered.endswith(">"):
         return True
+    # Parentheses mean source code, not a credential: `token=secrets.token_urlsafe(32)` and
+    # `token = payload.get("token")` are both assignments whose value is a call. No real
+    # token, key, JWT or base64 blob contains one.
+    if "(" in lowered or ")" in lowered:
+        return True
+    # A short dotted identifier chain is an attribute path, not a secret. The length bounds
+    # matter: without them this also matches a JWT, whose three base64 segments are exactly
+    # a long dotted chain.
+    if (
+        len(lowered) <= 40
+        and re.fullmatch(r"[a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)+", lowered)
+        and all(len(segment) <= 20 for segment in lowered.split("."))
+    ):
+        return True
     # Any brace at all means a template fragment. Real credentials — tokens, keys, JWTs,
     # base64 — do not contain braces, so this costs no detection and removes a whole class
     # of false positive from source code, Jinja templates and CI configuration.

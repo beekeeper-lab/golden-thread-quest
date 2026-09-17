@@ -1,0 +1,8 @@
+{
+  "description": "Three assigned stories on a single page, nothing unusual.",
+  "stories": [
+    {"key": "GTQ-101", "summary": "Capture the intake conversation", "status": "In Progress"},
+    {"key": "GTQ-102", "summary": "Define acceptance criteria for intake", "status": "To Do"},
+    {"key": "GTQ-103", "summary": "Add regression coverage for intake", "status": "To Do"}
+  ]
+}

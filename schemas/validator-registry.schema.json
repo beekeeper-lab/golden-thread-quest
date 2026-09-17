@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://golden-thread.local/schemas/validator-registry.schema.json",
+  "title": "Golden Thread validator registry",
+  "description": "The complete set of programs this application may execute. Quest content references a validator by stable ID and can never supply a command, an argument or a path.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "validators"],
+  "properties": {
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "validators": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/validator" }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 120
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\u0000)[A-Za-z0-9._/-]+$"
+    },
+    "validator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "display_name",
+        "description",
+        "entrypoint",
+        "working_directory",
+        "timeout_seconds",
+        "max_output_bytes",
+        "read_roots",
+        "write_roots",
+        "network"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "version": { "type": "integer", "minimum": 1 },
+        "display_name": { "type": "string", "minLength": 3, "maxLength": 100 },
+        "description": { "type": "string", "minLength": 20, "maxLength": 500 },
+        "entrypoint": {
+          "description": "A Python callable as module:function. Program-owned: never assembled from a request.",
+          "type": "string",
+          "pattern": "^validators\\.[a-z_][a-z0-9_]*(?:\\.[a-z_][a-z0-9_]*)*:[a-z_][a-z0-9_]*$"
+        },
+        "working_directory": {
+          "description": "Where the validator runs, relative to the repository root.",
+          "$ref": "#/$defs/relativePath"
+        },
+        "timeout_seconds": { "type": "integer", "minimum": 1, "maximum": 600 },
+        "max_output_bytes": { "type": "integer", "minimum": 1024, "maximum": 2000000 },
+        "parameters": {
+          "description": "Typed, allowlisted inputs. A value outside its allowed set is refused before the validator is loaded.",
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/parameter" }
+        },
+        "environment_allowlist": {
+          "description": "Environment variable names passed through. The validator's environment is constructed from this list, never inherited.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" }
+        },
+        "read_roots": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/relativePath" }
+        },
+        "write_roots": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/relativePath" }
+        },
+        "network": {
+          "type": "string",
+          "enum": ["denied", "allowed-with-confirmation"],
+          "default": "denied"
+        },
+        "quest_ids": {
+          "description": "Quests this validator may run for. Absent means any quest that declares it.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        }
+      }
+    },
+    "parameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "enum": ["enum", "boolean", "integer"] },
+        "description": { "type": "string", "maxLength": 300 },
+        "allowed": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$", "maxLength": 60 }
+        },
+        "minimum": { "type": "integer" },
+        "maximum": { "type": "integer" },
+        "default": { "type": ["string", "boolean", "integer"] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "enum" } }, "required": ["type"] },
+          "then": { "required": ["allowed"] }
+        }
+      ]
+    }
+  }
+}
