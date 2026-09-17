@@ -20,7 +20,6 @@
 </div>
 {% endif %}
 
-{% if participant %}
 <section class="panel stack" aria-labelledby="progress-heading">
   <h2 id="progress-heading">Your progress</h2>
   {{ meter(totals.verified_quests, totals.total_quests, 'Verified quests', 'reviewer', totals.claimed_quests, 'Claimed') }}
@@ -31,13 +30,22 @@
   </div>
   <p class="authority">Verified XP comes only from a reviewer approval. Claimed XP is your own record of what you have finished.</p>
 </section>
-{% endif %}
 
 {% if is_new_participant %}
+{# The first region in curriculum order, named by the content rather than by this file.
+   Writing the region's name here meant any program whose first region was different got a
+   wrong empty state and no error (Stage 3 audit S3-B1). #}
+{% if first_region %}
 {{ empty_state(
-     'Start at Base Camp',
-     'Nothing is recorded yet. Base Camp sets up the repository, safety and context habits every other region relies on.',
+     'Start at ' ~ first_region.region.title,
+     first_region.region.summary,
+     'Open ' ~ first_region.region.title, first_region.route, url) }}
+{% else %}
+{{ empty_state(
+     'Nothing to start yet',
+     'No curriculum has been published, so there is nothing to begin.',
      'Open the quest map', '/map/', url) }}
+{% endif %}
 {% endif %}
 
 {% if primary %}

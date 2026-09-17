@@ -9,9 +9,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}{{ page.title }}{% endblock %} · {{ site.title }}</title>
 <meta name="description" content="{{ page.description }}">
-{# No remote scripts, styles, fonts, images or analytics. The policy is enforced by the
-   service too, but a static page opened from disk gets it from here. #}
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'">
+{# No remote scripts, styles, fonts, images or analytics. The local service sends the same
+   policy as a header, which is the enforceable form; this meta copy is what protects a page
+   opened straight from disk, where there is no server to send a header.
+
+   `frame-ancestors` is deliberately absent here and present in the header: a browser ignores
+   it in a meta element and logs a console error saying so. Keeping it in both places bought
+   nothing and produced a warning on every page load. #}
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; form-action 'self'; base-uri 'none'">
 <meta name="referrer" content="no-referrer">
 <link rel="stylesheet" href="{{ url('/assets/css/tokens.css') }}">
 <link rel="stylesheet" href="{{ url('/assets/css/app.css') }}">

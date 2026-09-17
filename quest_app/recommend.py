@@ -6,7 +6,7 @@ to the participant. Both constraints point the same way: the score is a small ta
 weighted signals, each of which can state its own reason in a sentence.
 
 Determinism matters beyond reproducibility. A participant who is told "because this
-finishes the Base Camp region" and then sees a different answer on reload stops trusting the
+finishes this region" and then sees a different answer on reload stops trusting the
 recommendation, and a recommendation nobody trusts is worse than a list.
 """
 

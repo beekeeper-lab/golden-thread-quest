@@ -1,4 +1,13 @@
-{# C03 — progress toward a defined total. The readable value is text, not only a bar. #}
+{# C03 — progress toward a defined total. The readable value is text, not only a bar.
+
+   Widths are classes, not inline styles. The Content Security Policy has no
+   'unsafe-inline', and an inline `style` attribute falls under style-src-attr, which falls
+   back to style-src — so every meter was rendering empty (Stage 3 audit S3-H1). The scale
+   is in 5% steps, which is finer than the bar can show and keeps the stylesheet small. #}
+{% macro percent_class(value, maximum) -%}
+w-{{ ((value / maximum * 100) // 5 * 5) | int if maximum else 0 }}
+{%- endmacro %}
+
 {% macro meter(value, maximum, label, authority='system', secondary=none, secondary_label=none) -%}
 <div class="meter">
   <div class="meter-label">
@@ -8,9 +17,9 @@
   <div class="meter-track" role="img"
        aria-label="{{ label }}: {{ value }} of {{ maximum }}, recorded by {{ authority | replace('_', ' ') }}">
     {% if secondary is not none and maximum %}
-    <div class="meter-fill is-claimed" style="width: {{ (secondary / maximum * 100) | round(1) }}%"></div>
+    <div class="meter-fill is-claimed {{ percent_class(secondary, maximum) }}"></div>
     {% endif %}
-    <div class="meter-fill" style="width: {{ (value / maximum * 100) | round(1) if maximum else 0 }}%"></div>
+    <div class="meter-fill {{ percent_class(value, maximum) }}"></div>
   </div>
   {% if secondary is not none %}
   <p class="authority">{{ secondary_label or 'Claimed' }}: {{ secondary }} · {{ label }}: {{ value }}</p>

@@ -22,6 +22,10 @@ EVIDENCE_INDEX = "/evidence/"
 ERRORS = "/errors/"
 
 
+def tag(tag_id: str) -> str:
+    return f"/tags/{tag_id}/"
+
+
 def region(region_id: str) -> str:
     return f"/regions/{region_id}/"
 

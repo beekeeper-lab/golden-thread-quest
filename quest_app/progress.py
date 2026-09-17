@@ -205,8 +205,12 @@ def load_participant_state(
                     source=relative,
                     entity_id=attempt.attempt_id,
                     field_path="attempts[].evidence_path",
-                    expected="a path under participant/evidence/ with no parent-directory segments",
-                    received=str(exc),
+                    expected=(
+                        "a path under participant/evidence/ with no parent-directory segments"
+                    ),
+                    # Never `str(exc)`: the resolver's message quotes the offending path,
+                    # which for an absolute one would put it in front of a browser.
+                    received=type(exc).__name__,
                 )
             )
             continue

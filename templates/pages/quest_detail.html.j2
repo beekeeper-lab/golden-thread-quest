@@ -114,7 +114,7 @@
 
     {% if quest.tags %}
     <ul class="tag-list" aria-label="Tags">
-      {% for tag in quest.tags %}<li><a class="tag" href="{{ url('/catalog/') }}?tag={{ tag }}">{{ tag }}</a></li>{% endfor %}
+      {% for tag in quest.tags %}<li><a class="tag" href="{{ url('/tags/' ~ tag ~ '/') }}">{{ tag }}</a></li>{% endfor %}
     </ul>
     {% endif %}
 

@@ -1,23 +1,16 @@
 {# U04 — find a quest by capability, tool, risk, difficulty or time.
 
-   The form is a real form with a real submit button: filtering works with JavaScript
-   disabled by reloading with a query string. The script hides the submit button and
-   filters live only once it has taken over. #}
+   Without JavaScript this page lists every quest and the filter form is inert: a static
+   page cannot filter itself, and the earlier version of this comment claimed otherwise
+   (Stage 3 audit S3-H2). The routes that work with no scripting are real pages — a region
+   page and a tag page — and they are linked from every card and every quest.
+
+   With JavaScript the form filters live, reflects itself in the query string, and reads
+   that query string back on load so a filtered URL can be shared. #}
 {% extends "layouts/base.html.j2" %}
 {% from "components/quest_card.html.j2" import quest_card %}
 {% from "components/empty_state.html.j2" import empty_state %}
-
-{% macro filter_select(name, label, options, selected) -%}
-<div class="field">
-  <label for="filter-{{ name }}">{{ label }}</label>
-  <select id="filter-{{ name }}" name="{{ name }}">
-    <option value="">All</option>
-    {% for option in options %}
-    <option value="{{ option.value }}"{% if selected == option.value %} selected{% endif %}>{{ option.label }} ({{ option.count }})</option>
-    {% endfor %}
-  </select>
-</div>
-{%- endmacro %}
+{% from "components/filters.html.j2" import filter_form %}
 
 {% block main %}
 <header class="page-heading">
@@ -25,32 +18,8 @@
   <p>{{ page.description }}</p>
 </header>
 
-<form class="filter-form panel" method="get" action="{{ url('/catalog/') }}" data-catalog-filter role="search" aria-label="Filter quests">
-  <div class="field">
-    <label for="filter-q">Search</label>
-    <input type="search" id="filter-q" name="q" value="{{ selected.q | default('') }}"
-           placeholder="Title, summary, tag, region or tool">
-    <p class="hint">Searches published quest text only, never your evidence.</p>
-  </div>
+{{ filter_form('/catalog/', url, regions, states, levels, tags, bookends, risks, times, selected) }}
 
-  <div class="filter-row">
-    {{ filter_select('region', 'Region', regions, selected.region | default('')) }}
-    {{ filter_select('state', 'State', states, selected.state | default('')) }}
-    {{ filter_select('level', 'Difficulty', levels, selected.level | default('')) }}
-    {{ filter_select('tag', 'Tag', tags, selected.tag | default('')) }}
-    {{ filter_select('bookend', 'Bookend', bookends, selected.bookend | default('')) }}
-    {{ filter_select('risk', 'Risk', risks, selected.risk | default('')) }}
-  </div>
-
-  <div class="button-row">
-    <button type="submit" class="button button-primary" data-filter-submit>Apply filters</button>
-    <button type="reset" class="button" data-filter-reset>Reset all</button>
-  </div>
-</form>
-
-{# The results are a section of this page, so they need a heading between the page's h1
-   and the cards' h3. It is visually hidden because the count below already says it in
-   words, but without it the outline jumps a level. #}
 <h2 class="visually-hidden">Matching quests</h2>
 <p role="status"><strong data-result-count>{{ quests | length }}</strong> quest(s) match.</p>
 

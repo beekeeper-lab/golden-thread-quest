@@ -90,6 +90,7 @@ def first_list_items(markdown: str) -> tuple[list[ListItem], bool]:
     """
     tokens = _tokens(markdown)
     depth = 0
+    quote_depth = 0
     list_depth: int | None = None
     ordered = False
     items: list[ListItem] = []
@@ -106,8 +107,20 @@ def first_list_items(markdown: str) -> tuple[list[ListItem], bool]:
         buffer = []
 
     for token in tokens:
+        if token.type == "blockquote_open":
+            # A list inside a quotation is an example the author is citing, not the
+            # criteria. Treating it as the first list made a quoted example silently
+            # become the acceptance criteria, which is the exact failure ADR-016 exists
+            # to prevent (Stage 3 audit S2-R1).
+            quote_depth += 1
+            depth += 1
+            continue
+        if token.type == "blockquote_close":
+            quote_depth -= 1
+            depth -= 1
+            continue
         if token.type in ("ordered_list_open", "bullet_list_open"):
-            if list_depth is None:
+            if list_depth is None and quote_depth == 0:
                 list_depth = depth
                 ordered = token.type == "ordered_list_open"
             depth += 1

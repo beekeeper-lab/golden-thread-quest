@@ -59,6 +59,15 @@ class ContentProblem:
             raise ValueError(
                 f"ContentProblem.source must be repository-relative, got {self.source!r}"
             )
+        # `received` reaches a browser too, and the usual way an absolute path gets there is
+        # `str(OSError)`, which embeds the filename (Stage 2 audit H5). Refusing it at
+        # construction means the next person to write that cannot ship it. The first attempt
+        # at this fix wrote `_looks_absolute` and never called it, so the guard that was
+        # supposed to make the leak impossible was itself dead code.
+        if self.received is not None and _looks_absolute(self.received):
+            raise ValueError(
+                f"ContentProblem.received must not contain an absolute path; got {self.received!r}"
+            )
 
     @classmethod
     def build(cls, *, received: object = None, **kwargs: Any) -> Self:

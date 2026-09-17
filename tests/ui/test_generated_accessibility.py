@@ -213,9 +213,11 @@ def test_the_content_security_policy_is_restrictive(generated: Path) -> None:
     assert policy
     directives = policy.group(1)
     assert "default-src 'none'" in directives
-    assert "frame-ancestors 'none'" in directives
     assert "unsafe-inline" not in directives
     assert "unsafe-eval" not in directives
+    # `frame-ancestors` belongs in the header only: a browser ignores it in a meta element
+    # and logs an error. The service's header is asserted in tests/security/test_service.py.
+    assert "frame-ancestors" not in directives
 
 
 def test_no_inline_script_or_style_would_be_blocked_by_that_policy(generated: Path) -> None:

@@ -3,6 +3,7 @@
 {% from "components/quest_card.html.j2" import quest_card %}
 {% from "components/meter.html.j2" import meter %}
 {% from "components/empty_state.html.j2" import empty_state %}
+{% from "components/filters.html.j2" import filter_form %}
 
 {% block main %}
 <header class="page-heading">
@@ -23,8 +24,22 @@
 <section class="stack" aria-labelledby="sequence-heading">
   <h2 id="sequence-heading">Suggested sequence</h2>
   <p>Ordered by the curriculum and by what each quest unlocks. You may work in any order your prerequisites allow.</p>
-  <div class="card-grid">
+
+  {# U03 requires filters relevant to the region. The options come from this region's own
+     quests, so it never offers a filter that would empty the page. #}
+  {{ filter_form(region_route, url, regions, states, levels, tags, bookends, risks, times,
+                 selected, show_region=false) }}
+
+  <p role="status"><strong data-result-count>{{ sequence | length }}</strong> quest(s) match.</p>
+
+  <div class="card-grid" data-catalog-results>
     {% for quest in sequence %}{{ quest_card(quest, url) }}{% endfor %}
+  </div>
+
+  <div data-empty-results hidden>
+    {{ empty_state('No quests in this region match these filters',
+        'Reset the filters to see everything in this region again.',
+        'Back to the map', '/map/', url) }}
   </div>
 </section>
 {% else %}

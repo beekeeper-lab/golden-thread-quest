@@ -1,0 +1,57 @@
+{# The catalog filter form, shared by the catalog and by a region page (U03 requires
+   "filters relevant to the region"). Options come from the view model, so a region's form
+   offers only what that region actually contains. #}
+
+{% macro filter_select(name, label, options, selected) -%}
+<div class="field">
+  <label for="filter-{{ name }}">{{ label }}</label>
+  <select id="filter-{{ name }}" name="{{ name }}">
+    <option value="">All</option>
+    {% for option in options %}
+    <option value="{{ option.value }}"{% if selected == option.value %} selected{% endif %}>{{ option.label }} ({{ option.count }})</option>
+    {% endfor %}
+  </select>
+</div>
+{%- endmacro %}
+
+{% macro filter_form(action, url, regions, states, levels, tags, bookends, risks, times, selected, show_region=true) -%}
+<form class="filter-form panel" method="get" action="{{ url(action) }}" data-catalog-filter
+      role="search" aria-label="Filter quests">
+  <div class="field">
+    <label for="filter-q">Search</label>
+    <input type="search" id="filter-q" name="q" value="{{ selected.q | default('') }}"
+           placeholder="Title, summary, tag, region or difficulty">
+    <p class="hint">Searches published quest text only, never your evidence.</p>
+  </div>
+
+  <div class="filter-row">
+    {% if show_region %}{{ filter_select('region', 'Region', regions, selected.region | default('')) }}{% endif %}
+    {{ filter_select('state', 'State', states, selected.state | default('')) }}
+    {{ filter_select('level', 'Difficulty', levels, selected.level | default('')) }}
+    {{ filter_select('tag', 'Tag', tags, selected.tag | default('')) }}
+    {{ filter_select('bookend', 'Bookend', bookends, selected.bookend | default('')) }}
+    {{ filter_select('risk', 'Risk', risks, selected.risk | default('')) }}
+    {{ filter_select('time', 'Time available', times, selected.time | default('')) }}
+
+    <div class="field">
+      <label for="filter-sort">Sort by</label>
+      <select id="filter-sort" name="sort">
+        <option value="">Recommended order</option>
+        <option value="title">Title</option>
+        <option value="time">Time, shortest first</option>
+        <option value="xp">Experience, highest first</option>
+        <option value="state">State</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="button-row">
+    <button type="submit" class="button button-primary" data-filter-submit>Apply filters</button>
+    <button type="reset" class="button" data-filter-reset>Reset all</button>
+  </div>
+</form>
+
+{# C07's removable-filter variant. Populated by the script, because a static page has no
+   filters applied; the container exists so there is one place for them to appear. #}
+<ul class="tag-list" data-active-filters aria-label="Active filters"></ul>
+{%- endmacro %}

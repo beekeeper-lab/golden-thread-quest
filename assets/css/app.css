@@ -234,8 +234,33 @@ code {
 .meter { display: grid; gap: var(--space-2); }
 .meter-label { display: flex; justify-content: space-between; gap: var(--space-3); font-size: var(--text-sm); }
 .meter-track { height: 0.6rem; background: var(--surface-muted); border-radius: var(--radius-pill); overflow: hidden; border: 1px solid var(--line); }
-.meter-fill { height: 100%; background: var(--gold-500); }
+.meter-fill { height: 100%; width: 0; background: var(--gold-500); }
 .meter-fill.is-claimed { background: var(--ink-500); }
+
+/* Width as a class rather than an inline style attribute. The Content Security Policy has
+ * no 'unsafe-inline', so `style="width: 60%"` was being dropped and every meter rendered
+ * empty. 5% steps are finer than the bar resolves. */
+.meter-fill.w-0 { width: 0%; }
+.meter-fill.w-5 { width: 5%; }
+.meter-fill.w-10 { width: 10%; }
+.meter-fill.w-15 { width: 15%; }
+.meter-fill.w-20 { width: 20%; }
+.meter-fill.w-25 { width: 25%; }
+.meter-fill.w-30 { width: 30%; }
+.meter-fill.w-35 { width: 35%; }
+.meter-fill.w-40 { width: 40%; }
+.meter-fill.w-45 { width: 45%; }
+.meter-fill.w-50 { width: 50%; }
+.meter-fill.w-55 { width: 55%; }
+.meter-fill.w-60 { width: 60%; }
+.meter-fill.w-65 { width: 65%; }
+.meter-fill.w-70 { width: 70%; }
+.meter-fill.w-75 { width: 75%; }
+.meter-fill.w-80 { width: 80%; }
+.meter-fill.w-85 { width: 85%; }
+.meter-fill.w-90 { width: 90%; }
+.meter-fill.w-95 { width: 95%; }
+.meter-fill.w-100 { width: 100%; }
 
 /* Claimed and verified totals are never merged into one unlabelled number (C02). */
 .totals { display: flex; gap: var(--space-5); flex-wrap: wrap; }

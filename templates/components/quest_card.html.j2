@@ -11,7 +11,10 @@
          data-level="{{ quest.level_id }}"
          data-tag="{{ quest.tags | join(' ') }}"
          data-bookend="{{ quest.bookend or '' }}"
-         data-risk="{{ quest.risk_id }}">
+         data-risk="{{ quest.risk_id }}"
+         data-minutes="{{ quest.estimated_minutes }}"
+         data-xp="{{ quest.xp }}"
+         data-title="{{ quest.title }}">
   <div class="card-header">
     <a class="tag" href="{{ url(quest.region.route) }}">{{ quest.region.title }}</a>
     {{ state_badge(quest.state) }}

@@ -256,6 +256,7 @@ class FilterOption:
 @dataclass(frozen=True, slots=True)
 class CatalogView(BaseView):
     quests: tuple[QuestSummaryView, ...] = ()
+    times: tuple[FilterOption, ...] = ()
     regions: tuple[FilterOption, ...] = ()
     states: tuple[FilterOption, ...] = ()
     levels: tuple[FilterOption, ...] = ()
@@ -592,7 +593,22 @@ def build_filter_options(
 
     from quest_app.models import BOOKEND_LABELS, LEVEL_LABELS, STATE_LABELS
 
+    # Time buckets rather than raw minutes: a participant asks "have I got half an hour?",
+    # not "is this quest under 47 minutes?". Only buckets that would match something are
+    # offered, so no filter can empty the page on its own.
+    buckets = ((30, "30 minutes or less"), (60, "An hour or less"), (120, "Two hours or less"))
+    time_options = tuple(
+        FilterOption(
+            value=str(limit),
+            label=label,
+            count=sum(1 for q in quests if q.estimated_minutes <= limit),
+        )
+        for limit, label in buckets
+        if any(q.estimated_minutes <= limit for q in quests)
+    )
+
     return {
+        "times": time_options,
         "regions": tuple(
             FilterOption(value=r.id, label=r.title, count=region_counts.get(r.id, 0))
             for r in bundle.ordered_regions()

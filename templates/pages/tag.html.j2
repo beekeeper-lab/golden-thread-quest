@@ -1,0 +1,21 @@
+{# Every quest carrying one tag. A real page, so a tag link works with no JavaScript —
+   the catalog's live filtering is an enhancement on top of this, not the only way in. #}
+{% extends "layouts/base.html.j2" %}
+{% from "components/quest_card.html.j2" import quest_card %}
+
+{% block main %}
+<header class="page-heading">
+  <p class="eyebrow">Tag</p>
+  <h1>{{ tag }}</h1>
+  <p>{{ quests | length }} quest(s) carry this tag.</p>
+</header>
+
+<h2 class="visually-hidden">Quests tagged {{ tag }}</h2>
+<div class="card-grid">
+  {% for quest in quests %}{{ quest_card(quest, url) }}{% endfor %}
+</div>
+
+<p class="button-row">
+  <a class="button" href="{{ url('/catalog/') }}">Browse the whole catalog</a>
+</p>
+{% endblock %}

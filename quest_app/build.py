@@ -168,6 +168,7 @@ def build_site(world: LoadedWorld, *, built_at: str | None = None) -> BuildResul
                 "activity": _recent_activity(world, states),
                 "environment_warning": None,
                 "is_new_participant": participant is None or not participant.progress.attempts,
+                "first_region": region_cards[0] if region_cards else None,
             },
         )
     )
@@ -235,8 +236,30 @@ def build_site(world: LoadedWorld, *, built_at: str | None = None) -> BuildResul
                     "quests": region_quests,
                     "badges": tuple(b for b in badges if b.badge.criteria.region == card.region.id),
                     "selected": {},
+                    "region_route": card.route,
                     **build_filter_options(region_quests, bundle),
                 },
+            )
+        )
+
+    # ---- Tag pages. A tag link has to lead somewhere without JavaScript.
+    for tag_name in bundle.all_tags():
+        tagged = tuple(summary for summary in ordered_summaries if tag_name in summary.tags)
+        pages.append(
+            (
+                routes.tag(tag_name),
+                "pages/tag.html.j2",
+                shared(
+                    "catalog",
+                    PageView(
+                        title=f"Tag · {tag_name}",
+                        description=f"Every quest carrying the {tag_name} tag.",
+                        route=routes.tag(tag_name),
+                        nav_id="catalog",
+                        heading=tag_name,
+                    ),
+                )
+                | {"tag": tag_name, "quests": tagged},
             )
         )
 
