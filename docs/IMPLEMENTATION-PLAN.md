@@ -461,10 +461,16 @@ Update this section whenever work pauses.
 | 2026-09-16 | feature/golden-thread-implementation | 0 | Stage 0 audit: pass-with-advisories | Begin Stage 1 foundation |  |
 | 2026-09-16 | feature/golden-thread-implementation | 1 | Stage 1 audit: fail → fixed → pass-with-advisories | Complete Stage 2 content loading | `participant/` creation deferred to Stage 4 |
 | 2026-09-16 | feature/golden-thread-implementation | 2 | Stage 2 built and committed (93e91cd); independent audit commissioned | Record the Stage 2 audit in `docs/audits/stage-02-content-audit.md`, fix blocking/high findings, then finish Stage 3 | Stage 2 audit result not yet recorded |
-| 2026-09-16 | feature/golden-thread-implementation | 3 | Partial: design tokens, app.css, app.js, routes.py, progress_calc.py, recommend.py, view_models.py, base layout, 7 component macros, home/map/catalog/region pages (e845d3c) | Write quest-detail, evidence, validation-result, passport, health, review and content-error pages; then `quest_app/build.py` (atomic output, last-known-good, indexes, manifest); then Stage 3 tests and audit | Stage 3 has no `build.py` yet, so `make build` does not run |
+| 2026-09-16 | feature/golden-thread-implementation | 2 | Stage 2 audit recorded: **fail** (1 blocking, 6 high) in `docs/audits/stage-02-content-audit.md` | Fix B1, H1-H6 in that document, then rerun the Stage 2 audit before Stage 3 resumes | Stage 3 is partly built and must not advance until Stage 2 passes |
+| 2026-09-16 | feature/golden-thread-implementation | 3 | Partial (blocked by the Stage 2 audit): design tokens, app.css, app.js, routes.py, progress_calc.py, recommend.py, view_models.py, base layout, 7 component macros, home/map/catalog/region pages (e845d3c) | Write quest-detail, evidence, validation-result, passport, health, review and content-error pages; then `quest_app/build.py` (atomic output, last-known-good, indexes, manifest); then Stage 3 tests and audit | Stage 3 has no `build.py` yet, so `make build` does not run |
 
 ## Deferred work register
 
 | ID | Description | Reason deferred | Target | Owner | Approval |
 |---|---|---|---|---|---|
-|  |  |  |  |  |  |
+| D1 | Glossary content type (`content/glossary/`) | No schema, no sample, no screen renders one | Post-release | Curriculum maintainer | Stage 0 audit F5 |
+| D2 | Coverage reporting | `pytest-cov` was installed with nothing configured; half-configured is worse than absent | Stage 9 | Implementation | Stage 1 audit L1 |
+| D3 | `attempts[].validation_result_ids` and `submission_id` consumers | Submission records are Stage 7 | Stage 7 | Implementation | Stage 2 audit M6 |
+| D4 | `review.evidence_hash`, `review.quest_version` comparison, `hashing.hash_directory()` caller | Changed-evidence detection is Stage 7 | Stage 7 | Implementation | Stage 2 audit M6 |
+| D5 | Validator-registry and submission schemas | Authored with the stages that use them | Stages 5 and 7 | Implementation | Stage 0 audit F7 |
+| D6 | Presentation-only reserved fields (`quest.tools`, `author`, `last_reviewed`, `risk.notes`, `region.icon`, `badge.icon`, `track.focus_tags`, `site.professional_role`) | Consumed by pages that arrive in Stage 3 and Stage 6 | Stages 3 and 6 | Implementation | Stage 2 audit M6 |
