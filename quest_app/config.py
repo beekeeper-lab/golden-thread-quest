@@ -11,6 +11,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Final, Self
+from urllib.parse import unquote
 
 # The schema version this build understands. A document declaring a higher one is refused
 # rather than partially interpreted.
@@ -114,7 +115,14 @@ class PurePosixCheck:
             raise ValueError("participant path must be relative")
         if "\x00" in self.raw:
             raise ValueError("participant path contains a null byte")
-        parts = self.raw.split("/")
-        if any(part == ".." for part in parts):
-            raise ValueError("participant path contains a parent-directory segment")
+        # Percent-decode before checking. Nothing legitimate in a participant path is
+        # percent-encoded, and `..%2f..%2f` is the form a traversal takes once a path has
+        # been round-tripped through a URL — which it will be, the moment the local service
+        # in Stage 4 starts handing route fragments around.
+        decoded = unquote(self.raw)
+        if decoded != self.raw and ("/" in decoded.replace(self.raw, "") or ".." in decoded):
+            raise ValueError("participant path contains percent-encoded path characters")
+        for candidate in (self.raw, decoded):
+            if any(part == ".." for part in candidate.split("/")):
+                raise ValueError("participant path contains a parent-directory segment")
         return self.raw

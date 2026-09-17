@@ -51,6 +51,7 @@ build: ## Generate the site into generated/
 serve: ## Build, then serve on 127.0.0.1 with the local action service
 	$(BIN)/python -m quest_app.cli serve
 
+
 clean: ## Remove generated output and caches (never participant files)
 	$(BIN)/python tools/clean.py --apply
 

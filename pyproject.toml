@@ -29,8 +29,8 @@ ui = [
 ]
 
 [project.scripts]
-quest-build = "quest_app.cli:build_main"
-quest-serve = "quest_app.cli:serve_main"
+# Registered per stage, so an installed command always exists. `quest-build` and
+# `quest-serve` are added with the generator and the local service.
 quest-validate = "quest_app.cli:validate_main"
 
 [build-system]

@@ -28,6 +28,17 @@ make check
 This runs format verification, lint, strict type checking, the YAML-safety rule, the secret scan,
 and the test suite. All of it works offline.
 
+## Validate the curriculum
+
+```bash
+make validate-content
+```
+
+This loads every quest, region, badge and track, validates each against its published
+schema, cross-checks references, and reports problems with the file, the field and a
+suggested correction. Errors go to stderr and warnings to stdout, so a pipeline can separate
+them; `--json` gives the same result machine-readably.
+
 ## Run the application
 
 ```bash
