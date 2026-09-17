@@ -346,3 +346,66 @@ def test_validation_findings_are_ordered_by_severity(built: AppConfig) -> None:
         "c-medium",
         "c-low",
     ]
+
+
+@pytest.mark.slow
+def test_a_reviewer_page_exists_for_every_attempt(built: AppConfig) -> None:
+    """The queue linked to per-quest reviewer pages that were never generated."""
+    import yaml
+
+    progress = yaml.safe_load((built.participant_root / "progress.yaml").read_text())
+    for attempt in progress["attempts"]:
+        page = built.generated_root / "review" / attempt["quest_id"] / "index.html"
+        assert page.exists(), f"no reviewer page for {attempt['quest_id']}"
+        html = page.read_text()
+        assert attempt["attempt_id"] in html
+        assert "Secret and redaction status" in html
+
+
+@pytest.mark.slow
+def test_no_broken_links_with_an_attempt_awaiting_review(config: AppConfig) -> None:
+    """The link check passed only because the fixture had nothing in `submitted`."""
+    import yaml
+
+    path = config.participant_root / "progress.yaml"
+    data = yaml.safe_load(path.read_text())
+    for attempt in data["attempts"]:
+        if attempt["quest_id"] == "jira-read-assigned-stories":
+            attempt["state"] = "submitted"
+    path.write_text(yaml.safe_dump(data, sort_keys=False))
+
+    build(config)
+
+    assert internal_links(config.generated_root) == []
+    queue = (config.generated_root / "review" / "index.html").read_text()
+    assert "jira-read-assigned-stories" in queue
+
+
+@pytest.mark.slow
+def test_a_page_built_by_the_cli_offers_no_live_action(built: AppConfig) -> None:
+    """A page built without a service says so, and offers no control that would fail."""
+    html = (
+        built.generated_root / "evidence" / "jira-read-assigned-stories" / "index.html"
+    ).read_text()
+    assert "Working offline" in html
+    assert "Start the local service" in html
+    assert "<form" not in html, "a page with no service must offer no live control"
+
+
+@pytest.mark.slow
+def test_a_page_built_by_the_service_offers_live_actions(config: AppConfig) -> None:
+    """The service view was a build-time constant, so every action was permanently dead."""
+    from quest_app.view_models import online_service_view
+
+    report = ProblemReport()
+    world = load_world(config, report)
+    assert world is not None, report.to_text()
+    build_site(world, built_at=FIXED_TIME, service=online_service_view())
+
+    html = (
+        config.generated_root / "evidence" / "jira-read-assigned-stories" / "index.html"
+    ).read_text()
+    assert "Working offline" not in html
+    assert "<form" in html, "the generated site contained no form at all"
+    assert 'name="token"' in html
+    assert "__GTQ_REQUEST_TOKEN__" in html, "the placeholder is substituted at serve time"

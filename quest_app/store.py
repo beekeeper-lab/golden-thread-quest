@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -122,8 +123,18 @@ def start_attempt(
     quest_version: int,
     content_hash: str,
     schemas: Any,
+    participant_id: str = "participant",
+    display_name: str = "Participant",
+    track_id: str | None = None,
 ) -> str:
-    """Create an attempt and its evidence package. Returns the attempt ID."""
+    """Create an attempt and its evidence package. Returns the attempt ID.
+
+    Creates the progress file first if there is none. The first version required the file
+    to exist and offered starting a quest as the only way to create it, so a new
+    participant met a circular refusal on their very first action.
+    """
+    if not store.path.exists():
+        store.initialise(participant_id, display_name, track_id or "", schemas)
     data = store.read()
     existing = [a for a in data["attempts"] if a["quest_id"] == quest_id]
     current = AttemptState(existing[-1]["state"]) if existing else None
@@ -157,9 +168,20 @@ def start_attempt(
 
 
 def transition_attempt(
-    store: ProgressStore, *, quest_id: str, action: str, schemas: Any
+    store: ProgressStore,
+    *,
+    quest_id: str,
+    action: str,
+    schemas: Any,
+    guard: Callable[[str], None] | None = None,
 ) -> AttemptState:
-    """Apply one allowed transition to the latest attempt for `quest_id`."""
+    """Apply one allowed transition to the latest attempt for `quest_id`.
+
+    `guard` is called with the action before anything is written, for the conditions the
+    transition table cannot express — notably that `locally_validated` needs qualifying
+    validator results. It lives here rather than in the service so that no other caller can
+    reach the transition without it.
+    """
     data = store.read()
     attempts = [a for a in data["attempts"] if a["quest_id"] == quest_id]
     if not attempts:
@@ -170,6 +192,8 @@ def transition_attempt(
         transition = check(action, current)
     except TransitionError as exc:
         raise StoreError(str(exc)) from exc
+    if guard is not None:
+        guard(action)
 
     attempt["state"] = transition.target.value
     attempt["updated_at"] = _now()

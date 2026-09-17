@@ -22,6 +22,16 @@ EVIDENCE_INDEX = "/evidence/"
 ERRORS = "/errors/"
 
 
+def action(action_id: str, quest_id: str, validator_id: str | None = None) -> str:
+    """Where a form posts to perform one allowed action.
+
+    The path carries only IDs the server resolves against loaded content, never a path or a
+    command, so a form is exactly as constrained as a JSON request.
+    """
+    route = f"/api/action/{action_id}/{quest_id}/"
+    return f"{route}{validator_id}/" if validator_id else route
+
+
 def tag(tag_id: str) -> str:
     return f"/tags/{tag_id}/"
 

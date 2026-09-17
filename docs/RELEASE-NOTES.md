@@ -47,16 +47,20 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 404, of which 70 drive a real browser |
+| Tests | 417 under `make check`, plus 31 browser-driven under `make test-ui` |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3, plus a probe used only to prove the timeout |
-| Build time, 203 quests | under one second |
+| Build budget, 203 quests | asserted under 60s; observed under 1s |
 
 ## Known limitations
 
 These are real and deliberate. Each one is written down where it matters rather than only
 here.
+
+0. **The reviewer decision form needs the local service.** A reviewer reads everything from
+   generated pages, but recording a decision writes files, so it happens through the running
+   service like every other state change.
 
 1. **Reviewer provenance is conventional, not cryptographic** (ADR-030). A reviewer is
    identified by the display name in the record and by Git history. A participant with write

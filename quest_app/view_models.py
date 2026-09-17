@@ -674,11 +674,23 @@ def default_build_view(bundle: ContentBundle, built_at: str) -> BuildView:
 
 
 def offline_service_view() -> ServiceView:
+    """What a page built by `quest build` says: nothing can change state."""
     return ServiceView(
         available=False,
         reason="The local action service is not running, so nothing here can change state.",
         cli_alternative="make serve",
     )
+
+
+def online_service_view() -> ServiceView:
+    """What a page built by the running service says.
+
+    The distinction matters because `build_site` used a constant: a page served by the
+    service still told the participant the service was down, and every action on it was
+    disabled. The site is rebuilt after every action, so the page always reflects the
+    process that produced it.
+    """
+    return ServiceView(available=True, reason="The local action service is running.")
 
 
 def build_badge_views(badges: list[BadgeProgress]) -> tuple[BadgeProgress, ...]:

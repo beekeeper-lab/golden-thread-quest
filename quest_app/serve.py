@@ -42,8 +42,13 @@ from quest_app.git_status import summary_for
 from quest_app.pipeline import load_world
 from quest_app.state_machine import BY_ACTION, allowed_actions
 from quest_app.store import ProgressStore, StoreError, start_attempt, transition_attempt
+from quest_app.view_models import online_service_view
 
 MAX_BODY_BYTES = 64 * 1024
+FORM_CONTENT_TYPE = "application/x-www-form-urlencoded"
+# Replaced in served HTML so a form can carry the token without it ever being written to a
+# file. A page built by `quest build` keeps the placeholder, and the service refuses it.
+TOKEN_PLACEHOLDER = "__GTQ_REQUEST_TOKEN__"  # noqa: S105 - a marker to replace, not a secret
 LOOPBACK_ADDRESSES = frozenset({"127.0.0.1", "::1", "localhost"})
 JSON_CONTENT_TYPE = "application/json"
 
@@ -211,7 +216,11 @@ class ActionHandler(BaseHTTPRequestHandler):
         self._serve_static(path)
 
     def do_POST(self) -> None:
-        if urlparse(self.path).path != "/api/action":
+        path = urlparse(self.path).path
+        if path.startswith("/api/action/"):
+            self._handle_form_action(path)
+            return
+        if path != "/api/action":
             self._refuse(HTTPStatus.NOT_FOUND, "There is no such endpoint.")
             return
         if not self._origin_is_acceptable():
@@ -240,6 +249,114 @@ class ActionHandler(BaseHTTPRequestHandler):
             except ValueError as exc:
                 self._refuse(HTTPStatus.BAD_REQUEST, str(exc))
 
+    def _handle_form_action(self, path: str) -> None:
+        """An ordinary HTML form submission, so the UI works with no JavaScript.
+
+        The path carries only IDs, which are resolved against loaded content exactly as a
+        JSON request's are. The token arrives as a hidden field the service itself
+        substituted into the page it served.
+        """
+        if not self._origin_is_acceptable():
+            self._refuse(HTTPStatus.FORBIDDEN, "Cross-origin requests are refused.")
+            return
+        parts = [segment for segment in path[len("/api/action/") :].split("/") if segment]
+        if not 2 <= len(parts) <= 3:
+            self._refuse(HTTPStatus.NOT_FOUND, "There is no such action.")
+            return
+
+        fields = self._read_form_body()
+        if fields is None:
+            return
+        token = fields.get("token", [""])[0]
+        if not secrets.compare_digest(token, self.state.token):
+            self._refuse(
+                HTTPStatus.FORBIDDEN,
+                "This page was not served by the running application. Reload it and try again.",
+            )
+            return
+
+        action, quest_id = parts[0], parts[1]
+        if action not in MUTATING_ACTIONS:
+            self._refuse(HTTPStatus.BAD_REQUEST, "That is not an action this application performs.")
+            return
+
+        payload: dict[str, Any] = {"action": action, "quest_id": quest_id}
+        if len(parts) == 3:
+            payload["validator_id"] = parts[2]
+        payload.update(self._review_fields(fields))
+
+        with self.state.lock:
+            try:
+                self._perform(action, payload)
+            except StoreError as exc:
+                self._redirect_back(str(exc))
+                return
+            except ValueError as exc:
+                self._redirect_back(str(exc))
+                return
+        self._redirect_back(None)
+
+    @staticmethod
+    def _review_fields(fields: dict[str, list[str]]) -> dict[str, Any]:
+        """Reviewer form fields, with empty findings dropped rather than submitted blank."""
+        severities = fields.get("finding_severity", [])
+        summaries = fields.get("finding_summary", [])
+        evidence = fields.get("finding_evidence", [])
+        findings = [
+            {
+                "id": f"finding-{index + 1}",
+                "severity": severity,
+                "summary": summary,
+                "evidence": observed,
+            }
+            for index, (severity, summary, observed) in enumerate(
+                zip(severities, summaries, evidence, strict=False)
+            )
+            if severity and summary and observed
+        ]
+        extra: dict[str, Any] = {}
+        if "decision" in fields:
+            extra["decision"] = fields["decision"][0]
+            extra["reviewer_name"] = fields.get("reviewer_name", ["Reviewer"])[0]
+            extra["verification_statement"] = fields.get("verification_statement", [""])[0]
+            extra["findings"] = findings
+            extra["acknowledge_changed_evidence"] = bool(fields.get("acknowledge_changed_evidence"))
+        return extra
+
+    def _read_form_body(self) -> dict[str, list[str]] | None:
+        content_type = (self.headers.get("Content-Type") or "").split(";")[0].strip()
+        if content_type != FORM_CONTENT_TYPE:
+            self._refuse(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "Send a form submission.")
+            return None
+        try:
+            length = int(self.headers.get("Content-Length") or "0")
+        except ValueError:
+            self._refuse(HTTPStatus.BAD_REQUEST, "A valid Content-Length is required.")
+            return None
+        if not 0 < length <= MAX_BODY_BYTES:
+            self._refuse(HTTPStatus.BAD_REQUEST, "The request body is empty or too large.")
+            return None
+        from urllib.parse import parse_qs
+
+        return parse_qs(
+            self.rfile.read(length).decode("utf-8", errors="replace"), keep_blank_values=True
+        )
+
+    def _redirect_back(self, message: str | None) -> None:
+        """Return the browser to the page it came from, which the rebuild has refreshed."""
+        target = self.headers.get("Referer") or "/"
+        parsed = urlparse(target)
+        location = parsed.path or "/"
+        if message:
+            from urllib.parse import quote
+
+            location = f"{location}?problem={quote(message[:300])}"
+        self.send_response(HTTPStatus.SEE_OTHER)
+        self.send_header("Location", location)
+        self.send_header("Content-Length", "0")
+        self._security_headers()
+        self.end_headers()
+
     # ---------------------------------------------------------------- work
 
     def _load(self) -> Any:
@@ -257,7 +374,7 @@ class ActionHandler(BaseHTTPRequestHandler):
         store = ProgressStore(self.state.config)
 
         if action == "rebuild":
-            result = build_site(world)
+            result = build_site(world, service=online_service_view())
             return {"ok": True, "action": action, "pages": result.page_count}
 
         quest_id = payload.get("quest_id")
@@ -275,28 +392,39 @@ class ActionHandler(BaseHTTPRequestHandler):
             return self._run_validator(world, quest_id, payload)
 
         if action == "start-quest":
+            # A participant with no progress file gets one here, seeded from the site's own
+            # configuration. Without this the very first action of the pilot failed.
             attempt_id = start_attempt(
                 store,
                 quest_id=quest_id,
                 quest_version=quest.version,
                 content_hash=quest.content_hash,
                 schemas=self.state.schemas,
+                display_name=_default_display_name(),
+                track_id=world.content.site.default_track,
             )
             state = "in_progress"
         else:
             if action == "submit-for-review":
                 return self._submit(world, quest, store)
-            if action == "mark-locally-validated":
-                self._require_qualifying_validation(world, quest_id)
             if action == "mark-evidence-ready":
                 self._require_clean_secret_scan(world, quest_id)
+
+            def guard(requested: str) -> None:
+                if requested == "mark-locally-validated":
+                    self._require_qualifying_validation(world, quest_id)
+
             new_state = transition_attempt(
-                store, quest_id=quest_id, action=action, schemas=self.state.schemas
+                store,
+                quest_id=quest_id,
+                action=action,
+                schemas=self.state.schemas,
+                guard=guard,
             )
             state = new_state.value
             attempt_id = None
 
-        build_site(self._load())
+        build_site(self._load(), service=online_service_view())
         return {
             "ok": True,
             "action": action,
@@ -329,7 +457,7 @@ class ActionHandler(BaseHTTPRequestHandler):
         except ReviewError as exc:
             raise StoreError(str(exc)) from exc
 
-        build_site(self._load())
+        build_site(self._load(), service=online_service_view())
         return {
             "ok": True,
             "action": "submit-for-review",
@@ -375,7 +503,7 @@ class ActionHandler(BaseHTTPRequestHandler):
         except ReviewError as exc:
             raise StoreError(str(exc)) from exc
 
-        build_site(self._load())
+        build_site(self._load(), service=online_service_view())
         return {
             "ok": True,
             "action": "record-review",
@@ -422,7 +550,7 @@ class ActionHandler(BaseHTTPRequestHandler):
             raise ValueError(str(exc)) from exc
 
         stored = store_result(self.state.config, attempt.evidence_path, result.to_document())
-        build_site(self._load())
+        build_site(self._load(), service=online_service_view())
         return {
             "ok": True,
             "action": "run-validator",
@@ -520,6 +648,10 @@ class ActionHandler(BaseHTTPRequestHandler):
 
         body = candidate.read_bytes()
         content_type = mimetypes.guess_type(candidate.name)[0] or "application/octet-stream"
+        if content_type == "text/html":
+            # Substituted as the page is served, so the token reaches a form without ever
+            # being written to a file.
+            body = body.replace(TOKEN_PLACEHOLDER.encode(), self.state.token.encode())
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
@@ -562,7 +694,7 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
             print(problem.to_text(), file=sys.stderr)
         print("content does not validate, so nothing was generated", file=sys.stderr)
         return 1
-    build_site(world)
+    build_site(world, service=online_service_view())
 
     try:
         server, state = create_server(config)
@@ -581,6 +713,20 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
     finally:
         server.server_close()
     return 0
+
+
+def _default_display_name() -> str:
+    """A name for a brand-new participant's record.
+
+    The local account name is a better first guess than "Participant", and it is theirs to
+    change: `participant/progress.yaml` is an ordinary file in their repository.
+    """
+    import getpass
+
+    try:
+        return getpass.getuser()[:100] or "Participant"
+    except Exception:
+        return "Participant"
 
 
 def quest_id_of(payload: dict[str, Any]) -> str:

@@ -7,6 +7,7 @@ disk, and whether catalog filtering actually works. Both are settled here.
 
 from __future__ import annotations
 
+import os
 import shutil
 import threading
 from collections.abc import Iterator
@@ -78,7 +79,12 @@ def browser() -> Iterator[object]:
         try:
             instance = driver.chromium.launch(executable_path=_executable())
         except Error as exc:  # pragma: no cover - environment without any Chromium
-            pytest.skip(f"no usable Chromium: {str(exc).splitlines()[0]}")
+            # In CI a missing browser is a broken job, not a reason to pass quietly: a
+            # suite that skips itself is one nobody notices has stopped running.
+            message = f"no usable Chromium: {str(exc).splitlines()[0]}"
+            if os.environ.get("CI"):
+                raise RuntimeError(message) from exc
+            pytest.skip(message)
         try:
             yield instance
         finally:

@@ -37,12 +37,14 @@ from quest_app.progress_calc import (
     totals,
 )
 from quest_app.recommend import recommend
+from quest_app.state_machine import allowed_actions
 from quest_app.view_models import (
     ActionView,
     ActivityEvent,
     EnvironmentCheck,
     PageView,
     PrerequisiteView,
+    ServiceView,
     ValidatorView,
     build_badge_views,
     build_filter_options,
@@ -155,7 +157,9 @@ def url_for(current_route: str) -> Any:
     return url
 
 
-def build_site(world: LoadedWorld, *, built_at: str | None = None) -> BuildResult:
+def build_site(
+    world: LoadedWorld, *, built_at: str | None = None, service: ServiceView | None = None
+) -> BuildResult:
     """Render every page and swap the result into place atomically."""
     config = world.config
     bundle = world.content
@@ -171,7 +175,9 @@ def build_site(world: LoadedWorld, *, built_at: str | None = None) -> BuildResul
 
     stamp = built_at or datetime.now(UTC).isoformat(timespec="seconds")
     build_view = default_build_view(bundle, stamp)
-    service = offline_service_view()
+    # A build from the CLI produces pages that say state cannot change; a build from the
+    # running service produces pages whose actions work. Same templates, different truth.
+    service = service or offline_service_view()
     environment = make_environment(config.templates_root)
 
     staging = config.generated_root.with_suffix(OUTPUT_SUFFIX_NEW)
@@ -336,7 +342,7 @@ def build_site(world: LoadedWorld, *, built_at: str | None = None) -> BuildResul
                         heading=quest.title,
                     ),
                 )
-                | _quest_detail_context(entry, bundle, summaries, world),
+                | _quest_detail_context(entry, bundle, summaries, world, service),
             )
         )
 
@@ -357,7 +363,7 @@ def build_site(world: LoadedWorld, *, built_at: str | None = None) -> BuildResul
                         heading=quest.title,
                     ),
                 )
-                | _evidence_context(entry, summaries[quest.id], world),
+                | _evidence_context(entry, summaries[quest.id], world, service),
             )
         )
         for result in _results_for(entry, world):
@@ -425,6 +431,30 @@ def build_site(world: LoadedWorld, *, built_at: str | None = None) -> BuildResul
             | {"attempts": attempt_rows},
         )
     )
+
+    # ---- One reviewer page per attempt. The queue linked to these and they were never
+    # generated, so every entry in it was a 404 (final audit B3).
+    for quest_id, entry in sorted(states.items()):
+        if entry.attempt is None:
+            continue
+        route = routes.review(quest_id)
+        pages.append(
+            (
+                route,
+                "pages/review.html.j2",
+                shared(
+                    "reviewer",
+                    PageView(
+                        title=f"Review · {entry.quest.title}",
+                        description="Evidence, and the decision only you can make.",
+                        route=route,
+                        nav_id="reviewer",
+                        heading=entry.quest.title,
+                    ),
+                )
+                | _review_context(entry, summaries[quest_id], world, service),
+            )
+        )
 
     pages.append(
         (
@@ -533,7 +563,11 @@ def _results_for(entry: QuestProgress, world: LoadedWorld) -> tuple[Any, ...]:
 
 
 def _quest_detail_context(
-    entry: QuestProgress, bundle: Any, summaries: dict[str, Any], world: LoadedWorld
+    entry: QuestProgress,
+    bundle: Any,
+    summaries: dict[str, Any],
+    world: LoadedWorld,
+    service: ServiceView,
 ) -> dict[str, Any]:
     quest = entry.quest
     required, optional = build_proof_views(quest)
@@ -581,9 +615,10 @@ def _quest_detail_context(
         action = ActionView(
             id="start-quest",
             label="Start quest",
-            enabled=False,
-            route=routes.evidence(quest.id),
-            reason="Start the local service to record progress.",
+            enabled=service.available,
+            route=routes.action("start-quest", quest.id),
+            reason=None if service.available else "Start the local service to record progress.",
+            confirm="Start this quest and create an evidence package in my repository",
         )
     else:
         action = ActionView(
@@ -633,7 +668,9 @@ def _quest_detail_context(
     }
 
 
-def _evidence_context(entry: QuestProgress, summary: Any, world: LoadedWorld) -> dict[str, Any]:
+def _evidence_context(
+    entry: QuestProgress, summary: Any, world: LoadedWorld, service: ServiceView
+) -> dict[str, Any]:
     from quest_app.evidence import detect_proof, scan_evidence
 
     quest = entry.quest
@@ -659,25 +696,43 @@ def _evidence_context(entry: QuestProgress, summary: Any, world: LoadedWorld) ->
         ActionView(
             id=f"run-{validator.id}",
             label=f"Run {validator.display_name.lower()}",
-            enabled=False,
-            reason="Start the local service to run this check.",
+            enabled=service.available,
+            route=routes.action("run-validator", quest.id, validator.id),
+            reason=None if service.available else "Start the local service to run this check.",
         )
         for validator in validators
     )
-    actions = (
+    allowed = {
+        transition.action
+        for transition in allowed_actions(entry.attempt.recorded_state if entry.attempt else None)
+    }
+    actions = tuple(
         ActionView(
-            id="mark-evidence-ready",
-            label="Mark evidence ready",
-            enabled=False,
-            reason="Start the local service to change state.",
-        ),
-        ActionView(
-            id="submit-for-review",
-            label="Submit for review",
-            enabled=False,
-            reason="Start the local service to submit.",
-            consequential=True,
-        ),
+            id=action_id,
+            label=label,
+            enabled=service.available and action_id in allowed,
+            route=routes.action(action_id, quest.id),
+            reason=(
+                "Start the local service to change state."
+                if not service.available
+                else f"Not possible from {entry.state.label.lower()}."
+            ),
+            consequential=consequential,
+            confirm=confirm,
+        )
+        for action_id, label, consequential, confirm in (
+            ("mark-evidence-ready", "Mark evidence ready", False, None),
+            ("mark-locally-validated", "Record local validation", False, None),
+            (
+                "submit-for-review",
+                "Submit for review",
+                True,
+                "Submit this evidence for review. A reviewer will read it",
+            ),
+            ("reopen-evidence", "Go back to working on it", False, None),
+            ("withdraw-submission", "Withdraw the submission", False, None),
+            ("resume-quest", "Resume after review", False, None),
+        )
     )
     return {
         "quest": summary,
@@ -695,7 +750,9 @@ def _evidence_context(entry: QuestProgress, summary: Any, world: LoadedWorld) ->
         "secret_scan_clean": (
             not scan_evidence(world.config, evidence_path) if evidence_path else None
         ),
-        "actions": actions if entry.attempt else (),
+        "actions": tuple(a for a in actions if a.enabled or a.id in allowed)
+        if entry.attempt
+        else (),
         "git_summary": git_summary_for(world, evidence_path),
     }
 
@@ -724,6 +781,68 @@ def git_summary_for(world: LoadedWorld, evidence_path: str | None) -> dict[str, 
     from quest_app.git_status import summary_for
 
     return summary_for(world.config.repo_root, evidence_path)
+
+
+def _review_context(
+    entry: QuestProgress, summary: Any, world: LoadedWorld, service: ServiceView
+) -> dict[str, Any]:
+    """Everything U10 requires about one attempt."""
+    from quest_app.evidence import detect_proof, scan_evidence
+    from quest_app.review import evidence_changed, read_submission, review_history
+
+    attempt = entry.attempt
+    assert attempt is not None
+    config = world.config
+    results = _results_for(entry, world)
+    submission = read_submission(config, attempt) or {}
+    required, _ = build_proof_views(
+        entry.quest, detect_proof(entry.quest, config, attempt.evidence_path, results)
+    )
+    history = review_history(config, attempt)
+
+    return {
+        "quest": summary,
+        "attempt_id": attempt.attempt_id,
+        "quest_version": attempt.quest_version,
+        "submission_id": submission.get("submission_id"),
+        "submitted_at": submission.get("submitted_at"),
+        "secret_scan_clean": not scan_evidence(config, attempt.evidence_path),
+        "evidence_hash": submission.get("evidence_hash"),
+        "evidence_changed": evidence_changed(config, attempt),
+        "outcomes": entry.quest.outcomes,
+        "acceptance_criteria": entry.quest.acceptance_criteria,
+        "required_proof": required,
+        "results": results,
+        "history": tuple(_decision_view(item) for item in history),
+        "queue": (),
+        "reproduction": _proof_document(world, attempt.evidence_path),
+        # A decision needs the service, because recording one writes files.
+        "can_decide": service.available and entry.state.id is QuestState.SUBMITTED,
+        "blocked_reason": (
+            "Start the local service to record a decision."
+            if not service.available
+            else f"This attempt is {entry.state.label.lower()}, not awaiting a decision."
+        ),
+        "decision_route": routes.action("record-review", entry.quest.id),
+    }
+
+
+def _decision_view(document: dict[str, Any]) -> Any:
+    """A stored review document, shaped for the template."""
+    from types import SimpleNamespace
+
+    return SimpleNamespace(
+        decision=document.get("decision", "unknown"),
+        reviewed_at=document.get("reviewed_at", ""),
+        reviewer_display_name=(document.get("reviewer") or {}).get("display_name", "unknown"),
+        verification_statement=document.get("verification_statement"),
+        findings=tuple(
+            SimpleNamespace(
+                severity=finding.get("severity", ""), summary=finding.get("summary", "")
+            )
+            for finding in document.get("findings", [])
+        ),
+    )
 
 
 def _review_queue_context(
@@ -758,6 +877,7 @@ def _review_queue_context(
         "history": (),
         "queue": queue,
         "reproduction": None,
+        "decision_route": None,
         "can_decide": False,
         "blocked_reason": (
             "Recording a decision needs the local service. Until Stage 7 lands the reviewer "

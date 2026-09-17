@@ -147,8 +147,18 @@
     <p>{{ blocked_reason or 'Reviewer mode is not configured, so no decision can be recorded here.' }}</p>
   </div>
   {% else %}
-  <form method="post" action="{{ url('/review/' ~ quest.id ~ '/') }}"
+  <form method="post" action="{{ url(decision_route) }}"
         data-confirm="Record this decision? Approval produces verified completion and verified XP.">
+    <input type="hidden" name="token" value="__GTQ_REQUEST_TOKEN__">
+    <div class="field">
+      <label for="reviewer_name">Your name</label>
+      <input type="text" id="reviewer_name" name="reviewer_name" required
+             aria-describedby="reviewer-name-hint">
+      <p class="hint" id="reviewer-name-hint">
+        Recorded in the review and in Git history. Release one does not sign review records,
+        so this is a convention, not proof — see the reviewer guide.
+      </p>
+    </div>
     <div class="field">
       <label for="decision">Decision</label>
       <select id="decision" name="decision" required>

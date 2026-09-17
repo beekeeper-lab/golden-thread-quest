@@ -11,7 +11,9 @@ Two rules are absolute:
   transition;
 * a validation run is not a transition (ADR-017). Running validators appends a result; the
   participant then asks for `locally_validated`, and that request is refused unless the
-  results actually support it.
+  results actually support it. That condition cannot be expressed in the table below, so it
+  is passed to `store.transition_attempt` as a guard — in the store rather than in the
+  service, so no other caller can reach the transition without it.
 """
 
 from __future__ import annotations

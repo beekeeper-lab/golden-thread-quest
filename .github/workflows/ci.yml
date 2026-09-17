@@ -50,3 +50,21 @@ jobs:
         run: make secret-scan
       - name: Tests
         run: make test
+
+  # A separate job because it needs a browser. Without it, CI never runs axe, the contrast
+  # suite or any keyboard flow — and the accessibility claims would rest on a suite that
+  # only ever ran on one developer's machine.
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - name: Install
+        run: |
+          uv venv .venv --python 3.12
+          uv pip install --python .venv/bin/python -e ".[dev,ui]"
+          .venv/bin/playwright install --with-deps chromium
+      - name: Browser and accessibility tests
+        run: make test-ui
