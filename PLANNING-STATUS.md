@@ -3,7 +3,9 @@
 ## Current readiness
 
 **Status (2026-09-17):** Implemented. Stages 0 to 9 are complete and audited; the Stage 10
-release decision is pending a final re-audit. See `docs/RELEASE-NOTES.md` for what works and
+release decision is *not ready for participant release*: three release audits and one
+external review have run, the engine is a release candidate, and the open blocker is that the
+curriculum is still three quests across eight regions. See `docs/RELEASE-NOTES.md` for what works and
 the known limitations, and `docs/audits/` for every audit including the ones that failed.
 
 The original planning status follows, preserved because it is the specification the

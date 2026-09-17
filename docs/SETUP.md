@@ -86,3 +86,14 @@ downloads Chromium.
 **The secret scan fails on a file you know is safe.** It reports a pattern and a truncated excerpt,
 never the value. If the value really is documentation, use one of the placeholder forms the scanner
 recognizes (`<your-token>`, `${VAR}`, `changeme`) rather than loosening the scanner.
+
+## Why there is no lockfile
+
+Dependency resolution floats within the ranges in `pyproject.toml`, and `make check` is the
+gate that says whether your resolution is sound. This is deliberate. A lockfile would pin a
+resolution produced on one maintainer's machine and hand a participant on a different Python
+patch a resolution failure instead of a working install, which is a worse first experience
+than a version drift the test suite would catch anyway.
+
+The trade is real: a future dependency release can break a previously working setup. `make
+check` is how you find out, and it runs entirely offline in about a minute.

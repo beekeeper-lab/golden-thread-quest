@@ -68,3 +68,15 @@ jobs:
           .venv/bin/playwright install --with-deps chromium
       - name: Browser and accessibility tests
         run: make test-ui
+
+  clean-export:
+    name: Clean export installs and builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Export tracked files only, then install, validate and build
+        run: make verify-package

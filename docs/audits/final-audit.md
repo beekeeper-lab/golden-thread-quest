@@ -1,16 +1,18 @@
 # Final Audit
 
 `CLAUDE.md` and `docs/IMPLEMENTATION-PLAN.md` name this file. It is an index rather than a
-copy, because the release audit ran twice and both rounds matter — the second exists only
-because the first found three blocking defects.
+copy, because the release audit has run three times and an external reviewer has since
+looked at the result. Every round matters: each one exists because the round before it found
+something the suite did not.
 
 | Round | Commit | Verdict | Record |
 |---|---|---|---|
 | First | `1418b78` | **do-not-release** — 3 blocking, 4 high, 6 medium, 4 low | `stage-10-final-audit.md` |
 | Re-audit | `128617e` | **do-not-release** — 1 blocking, 3 high, 9 medium, 4 low | `stage-10-final-re-audit.md` |
-| Second re-audit | pending | pending | — |
+| Second re-audit | `aafce28` | **do-not-release** — 1 blocking, 2 high, 2 medium | `stage-10-final-re-audit.md` |
+| External review | `a69a8b8` | **not ready for participant release** — curriculum skeletal, 1 visible defect | `external-review-2026-09-17.md` |
 
-## What the two rounds found, in one sentence each
+## What each round found, in one sentence
 
 **Round one:** three blocking defects sat on the primary path — a new participant could not
 create their progress file, no action in the generated UI was ever enabled, and the reviewer
@@ -44,4 +46,8 @@ from one healthy example.
 - [x] Pilot limitations are visible to participants and reviewers, in the guides and in
       `docs/RELEASE-NOTES.md`.
 
-**The release decision is not made in this file.** It is pending the second re-audit.
+**The release decision is not made in this file.** As of the external review the decision
+is *not ready for participant release*, and the reason is no longer the engine: it is that
+three quests across eight regions is a demonstration rather than a journey. The engine is a
+release candidate. See `external-review-2026-09-17.md` for the finding list and its
+disposition.

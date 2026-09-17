@@ -69,7 +69,7 @@ traceability document.
 
 ## Documentation and handoff
 
-- [ ] **DH1** — Setup instructions work from a clean clone.
+- [x] **DH1** — Setup instructions work from a clean clone. *(Closed by `make verify-package`: exports tracked files only via `git archive`, then installs, validates content and builds in a fresh venv. Runs as the `clean-export` job in CI, so it is asserted on every change rather than confirmed once by hand.)*
 - [x] **DH2** — Content-authoring instructions include a full quest example.
 - [x] **DH3** — Validator-authoring instructions describe the safety boundary.
 - [x] **DH4** — Update and migration behavior is documented.

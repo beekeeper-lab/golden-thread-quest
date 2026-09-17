@@ -42,3 +42,4 @@ service-account*.json
 .vscode/
 *.swp
 .claude/settings.local.json
+dist/

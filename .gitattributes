@@ -1,0 +1,4 @@
+# Kept out of `make package`: tooling for people working ON the app, not with it.
+.claude/       export-ignore
+.github/       export-ignore
+.gitattributes export-ignore

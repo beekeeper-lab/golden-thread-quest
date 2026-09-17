@@ -47,14 +47,14 @@ address. Open it.
 | `docs/RELEASE-NOTES.md` | What works, and the eight known limitations |
 | `docs/IMPLEMENTATION-DETAILS.md` | What was actually built, and where it diverges from the plan |
 | `docs/TRACEABILITY.md` | Which test holds which requirement |
-| `docs/audits/` | Every audit, including the four that failed |
+| `docs/audits/` | Every audit, including the four that failed and the external review |
 | `CONTRIBUTING.md` | Working on the application itself |
 
 ## What is here
 
 | | |
 |---|---|
-| Tests | 522 — 480 under `make check`, 42 driving a real browser |
+| Tests | 528 — 486 under `make check`, 42 driving a real browser |
 | Screens | 13 page templates, 10 reusable components |
 | Schemas | 10, validating content, progress, reviews, validation results and the validator registry |
 | Sample curriculum | 8 regions, 3 quests, 4 badges, 1 track |
@@ -97,12 +97,13 @@ application code. A test fails if one does.
 ## Status
 
 Stages 0 to 9 of `docs/IMPLEMENTATION-PLAN.md` are complete. The Stage 10 release decision is
-open: two independent release audits have run, both returned `do-not-release`, every finding
-from both is fixed, and a third round is in progress. `docs/audits/final-audit.md` holds the
-current state and the gate.
+open. Three release audits have run, each returned `do-not-release`, and every finding from
+all three is fixed. An external reviewer then audited the result: the engine is a release
+candidate, the participant journey is not, because three quests across eight regions is a
+demonstration rather than a journey. `docs/audits/final-audit.md` holds the gate.
 
-The application works end to end today. What is not yet signed off is the recommendation to
-put it in front of a cohort.
+The application works end to end today. What is not signed off is putting it in front of a
+cohort, and the blocker is curriculum depth rather than engine quality.
 
 ## The planning package
 
