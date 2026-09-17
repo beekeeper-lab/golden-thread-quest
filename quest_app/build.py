@@ -24,7 +24,7 @@ from typing import Any
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, select_autoescape
 
 from quest_app import routes
-from quest_app.config import AppConfig
+from quest_app.config import APPLICATION_VERSION, AppConfig
 from quest_app.errors import ProblemReport
 from quest_app.markdown_render import strip_markdown
 from quest_app.models import QuestState
@@ -270,7 +270,19 @@ def build_site(
                     heading="Catalog",
                 ),
             )
-            | {"quests": ordered_summaries, "selected": {}, **filters},
+            | {
+                "quests": ordered_summaries,
+                "selected": {},
+                # Pre-filtered links built by the route helper, so the query string is
+                # encoded once and in one place rather than assembled in a template.
+                "filter_links": {
+                    "by_region": {
+                        option.value: routes.catalog_filtered(region=option.value)
+                        for option in filters["regions"]
+                    }
+                },
+                **filters,
+            },
         )
     )
 
@@ -1086,8 +1098,7 @@ def _write_indexes(
     }
 
     manifest = {
-        "application_version": world.config
-        and __import__("quest_app.config", fromlist=["x"]).APPLICATION_VERSION,
+        "application_version": APPLICATION_VERSION,
         "content_hash": bundle.content_hash,
         "built_at": stamp,
         "quests": len(bundle.quests),

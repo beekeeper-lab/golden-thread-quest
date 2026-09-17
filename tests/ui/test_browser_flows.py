@@ -228,14 +228,27 @@ class TestKeyboardAndFocus:
     def test_the_primary_journey_is_reachable_by_keyboard(
         self, browser: object, served: str
     ) -> None:
-        """Home to a quest to its evidence workspace, without a mouse."""
+        """Home to a quest to its evidence workspace, with the keyboard only.
+
+        The first version called `.click()` — a mouse click — and stopped at the region page
+        despite a docstring promising the evidence workspace. Every step here is a real key
+        press, and the journey ends where the docstring says it does.
+        """
         page = page_for(browser, f"{served}/")
-        page.get_by_role("link", name="Quest Map").click()
-        page.wait_for_load_state("load")
-        assert "/map/" in page.url
-        page.get_by_role("link", name="Base Camp", exact=True).first.click()
-        page.wait_for_load_state("load")
-        assert "/regions/base-camp/" in page.url
+
+        for route, name in (
+            ("/catalog/", "Catalog"),
+            ("/quests/", "Synchronize"),
+            ("/evidence/jira-read-assigned-stories/", "evidence workspace"),
+        ):
+            target = page.get_by_role("link", name=name).first
+            target.focus()
+            assert target.evaluate("el => el === document.activeElement"), name
+            target.press("Enter")
+            page.wait_for_load_state("load")
+            assert route in page.url, f"keyboard navigation did not reach {route}"
+
+        assert page.get_by_role("heading", level=1).first.is_visible()
         page.close()
 
 
@@ -310,11 +323,17 @@ class TestResponsive:
 
     @pytest.mark.parametrize("name", list(VIEWPORTS))
     def test_no_horizontal_scrolling(self, browser: object, served: str, name: str) -> None:
+        """Every audited page, not a hand-picked four.
+
+        The first version checked home, catalogue, one quest and the passport. The evidence
+        workspace overflowed by 179px at phone width and nothing saw it, because it was not
+        on the list. The list is now the same one the accessibility audit uses.
+        """
         width, height = self.VIEWPORTS[name]
         context = browser.new_context(viewport={"width": width, "height": height})  # type: ignore[attr-defined]
         page = context.new_page()
         try:
-            for route in ("/", "/catalog/", "/quests/jira-read-assigned-stories/", "/passport/"):
+            for route in AUDITED_PAGES:
                 page.goto(f"{served}{route}", wait_until="load")
                 overflow = page.evaluate(
                     "document.documentElement.scrollWidth - document.documentElement.clientWidth"
@@ -324,21 +343,43 @@ class TestResponsive:
             page.close()
             context.close()
 
-    def test_usable_at_two_hundred_percent_zoom(self, browser: object, served: str) -> None:
-        """Doubling the scale factor halves the effective viewport, which is what 200% means."""
+    @pytest.mark.parametrize("route", AUDITED_PAGES)
+    def test_usable_at_two_hundred_percent_zoom(
+        self, browser: object, served: str, route: str
+    ) -> None:
+        """Doubling the scale factor halves the effective viewport, which is what 200% means.
+
+        Every audited page, for the same reason as above: checking only the catalogue is how
+        a 246px overflow on the evidence workspace went unnoticed.
+        """
         context = browser.new_context(viewport={"width": 720, "height": 450})  # type: ignore[attr-defined]
         page = context.new_page()
         try:
-            page.goto(f"{served}/catalog/", wait_until="load")
+            page.goto(f"{served}{route}", wait_until="load")
             page.evaluate("document.body.style.zoom = '2'")
             overflow = page.evaluate(
                 "document.documentElement.scrollWidth - document.documentElement.clientWidth"
             )
-            assert overflow <= 1, f"scrolls horizontally by {overflow}px at 200% zoom"
-            assert page.locator("#filter-q").is_visible()
+            assert overflow <= 1, f"{route} scrolls horizontally by {overflow}px at 200% zoom"
         finally:
             page.close()
             context.close()
+
+    def test_a_scrollable_table_can_be_reached_by_keyboard(
+        self, browser: object, served: str
+    ) -> None:
+        """A scroll container a keyboard user cannot focus is not an alternative to stacking."""
+        page = page_for(browser, f"{served}/health/")
+        containers = page.eval_on_selector_all(
+            ".table-scroll",
+            "nodes => nodes.map(n => ({tab: n.getAttribute('tabindex'), "
+            "label: n.getAttribute('aria-label')}))",
+        )
+        page.close()
+        assert containers
+        for container in containers:
+            assert container["tab"] == "0", container
+            assert container["label"], container
 
     def test_the_primary_action_is_reachable_on_a_phone(self, browser: object, served: str) -> None:
         context = browser.new_context(viewport={"width": 390, "height": 844})  # type: ignore[attr-defined]

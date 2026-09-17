@@ -20,6 +20,13 @@
 
 {{ filter_form('/catalog/', url, regions, states, levels, tags, bookends, risks, times, selected) }}
 
+{# Shareable pre-filtered views, and the routes that work with no scripting at all. #}
+<nav aria-label="Jump to a region" class="tag-list">
+  {% for option in regions %}
+  <a class="tag" href="{{ url(filter_links.by_region[option.value]) }}">{{ option.label }}</a>
+  {% endfor %}
+</nav>
+
 <h2 class="visually-hidden">Matching quests</h2>
 <p role="status"><strong data-result-count>{{ quests | length }}</strong> quest(s) match.</p>
 

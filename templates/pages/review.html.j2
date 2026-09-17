@@ -18,7 +18,7 @@
 {% if queue %}
 <section class="stack" aria-labelledby="queue-heading">
   <h2 id="queue-heading">Waiting for review</h2>
-  <div class="table-scroll">
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Table">
     <table>
       <thead><tr><th scope="col">Quest</th><th scope="col">Attempt</th><th scope="col">Submitted</th></tr></thead>
       <tbody>
@@ -72,7 +72,7 @@
 </section>
 
 {% if evidence_changed %}
-<div class="alert alert-warning" role="alert">
+<div class="alert alert-warning" role="status">
   <h2>The evidence changed since it was last reviewed</h2>
   <p>Acknowledge this before approving. A decision must apply to the evidence in front of you.</p>
 </div>
@@ -100,7 +100,7 @@
 {% if results %}
 <section class="stack" aria-labelledby="results-heading">
   <h2 id="results-heading">Automated validation</h2>
-  <div class="table-scroll">
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Table">
     <table>
       <thead><tr><th scope="col">Validator</th><th scope="col">Outcome</th><th scope="col">When</th></tr></thead>
       <tbody>

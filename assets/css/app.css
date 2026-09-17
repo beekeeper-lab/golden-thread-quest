@@ -67,6 +67,8 @@ code {
   background: var(--surface-muted);
   padding: 0.1em 0.35em;
   border-radius: var(--radius-sm);
+  /* A repository path has no spaces, so without this it is one unbreakable word. */
+  overflow-wrap: anywhere;
 }
 
 /* Focus is always visible. Never removed, only shaped. */
@@ -166,10 +168,11 @@ code {
 .prose { max-width: var(--prose-max); }
 .prose > :last-child { margin-bottom: 0; }
 
-.stack { display: grid; gap: var(--space-5); }
+.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
 .card-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); }
 
 .panel {
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -179,7 +182,7 @@ code {
 
 .workbench {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 20rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
   gap: var(--space-6);
   align-items: start;
 }
@@ -278,6 +281,8 @@ code {
 
 .card {
   position: relative;
+  min-width: 0;
+  overflow-wrap: anywhere;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -298,7 +303,19 @@ code {
   background: var(--region-accent, var(--ink-500));
 }
 
-.card-header { display: flex; justify-content: space-between; gap: var(--space-3); align-items: flex-start; }
+/* `min-width: 0` on both the container and its children is what lets a flex item shrink
+ * below its content width. Without it a long proof description makes the whole page scroll
+ * sideways on a phone, and a scroll a participant cannot avoid is a control they cannot
+ * reach. */
+.card-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-3);
+  align-items: flex-start;
+  min-width: 0;
+}
+.card-header > * { min-width: 0; overflow-wrap: anywhere; }
 .card h3 { margin: 0; font-size: var(--text-lg); }
 .card h3 a { color: inherit; text-decoration: none; }
 .card h3 a:hover { text-decoration: underline; }
@@ -403,7 +420,15 @@ a.tag:hover, button.tag:hover { background: var(--line); }
 
 /* ---------------------------------------------------------------- Lists and tables */
 
-.definition-list { display: grid; grid-template-columns: auto 1fr; gap: var(--space-2) var(--space-4); margin: 0; }
+/* `minmax(0, …)` on both tracks: an `auto` track sizes to max-content, and a long evidence
+ * path in a <code> element has no break opportunity, so it pushed the page sideways. */
+.definition-list {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+.definition-list dd, .definition-list dt { overflow-wrap: anywhere; min-width: 0; }
 .definition-list dt { font-size: var(--text-sm); color: var(--text-muted); }
 .definition-list dd { margin: 0; font-size: var(--text-sm); }
 
@@ -411,14 +436,28 @@ table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 th, td { text-align: left; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--line); vertical-align: top; }
 th { font-weight: 600; color: var(--ink-700); }
 
+/* Focusable so a keyboard user can scroll it, which is the whole point of offering a
+ * scroll container instead of stacked rows. */
 .table-scroll { overflow-x: auto; }
+.table-scroll:focus-visible { box-shadow: var(--focus-ring); }
 
 .checklist { list-style: none; padding: 0; display: grid; gap: var(--space-3); }
-.checklist li { display: grid; gap: var(--space-1); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); }
+/* An explicit `minmax(0, 1fr)` track: the implicit `auto` track sizes to max-content and
+ * cannot shrink, which is what overflowed the evidence workspace. */
+.checklist li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
 
 /* ---------------------------------------------------------------- Disclosure */
 
-details { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: var(--space-3) var(--space-4); background: var(--surface); }
+details { min-width: 0; overflow-wrap: anywhere; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: var(--space-3) var(--space-4); background: var(--surface); }
 summary { cursor: pointer; font-weight: 600; min-height: 2.75rem; display: flex; align-items: center; }
 details[open] summary { margin-bottom: var(--space-3); }
 

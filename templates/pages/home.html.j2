@@ -14,7 +14,7 @@
 </header>
 
 {% if environment_warning %}
-<div class="alert alert-warning" role="alert">
+<div class="alert alert-warning" role="status">
   <h2>Your environment needs attention</h2>
   <p>{{ environment_warning }}</p>
   <p><a href="{{ url('/health/') }}">Open environment health</a></p>

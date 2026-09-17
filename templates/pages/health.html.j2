@@ -13,7 +13,7 @@
 
 {% set failing = checks | selectattr('status', 'equalto', 'fail') | list %}
 {% if failing %}
-<div class="alert alert-error" role="alert">
+<div class="alert alert-error" role="status">
   <h2>{{ failing | length }} check(s) need attention</h2>
   <p>Each one below lists the command that fixes it.</p>
 </div>
@@ -25,7 +25,7 @@
 {% endif %}
 
 {# C14 — one row per dependency or safety condition. #}
-<div class="table-scroll">
+<div class="table-scroll" tabindex="0" role="region" aria-label="Environment checks">
   <table>
     <caption class="visually-hidden">Environment checks</caption>
     <thead>

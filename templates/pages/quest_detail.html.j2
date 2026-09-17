@@ -17,7 +17,7 @@
 </header>
 
 {% if lock_notice %}
-<div class="alert alert-warning" role="alert">
+<div class="alert alert-warning" role="status">
   <h2>This quest is locked</h2>
   <p>{{ lock_notice }}</p>
 </div>
@@ -62,8 +62,8 @@
       </ol>
     </section>
 
-    {{ proof_list(required_proof, 'Required evidence') }}
-    {{ proof_list(optional_proof, 'Optional evidence', 'No optional evidence for this quest.') }}
+    {{ proof_list(required_proof, 'Required evidence', slug='quest-required') }}
+    {{ proof_list(optional_proof, 'Optional evidence', 'No optional evidence for this quest.', slug='quest-optional') }}
 
     {% if prerequisites %}
     {# C09 — unmet prerequisites are links with a resolution path, never a dead end. #}
