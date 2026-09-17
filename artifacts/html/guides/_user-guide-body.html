@@ -35,12 +35,10 @@
 </nav>
 
 <div class="callout callout--warning" role="note">
-  <p class="mt-0"><strong>Four diagrams are pending correction.</strong> The first-hour flow,
-  the state-authority columns, the ownership zones and the passport each contain an error
-  found on review: two steps in the wrong lane, one state in the wrong column, a zone labeled
-  &ldquo;program&rdquo;, and two invented figures that show verified above claimed. They are
-  marked below. The prose beside each one is correct and
-  is what to trust until the corrected versions land.</p>
+  <p class="mt-0"><strong>One diagram is pending.</strong> The first-hour flow below shows
+  &ldquo;run checks&rdquo; and &ldquo;submit&rdquo; happening in your terminal. Both happen in
+  the application, as steps 6 and 7 state. It is being redrawn once the workflow settles;
+  trust the numbered steps, not the picture.</p>
 </div>
 
 <section id="s1" class="card">
@@ -183,12 +181,7 @@ source .venv/bin/activate</code></pre>
 
   <figure class="diagram">
     <img src="{{IMG_02}}" alt="Eight quest states in three columns by who sets them: the application sets locked and available; you set in progress, evidence ready, locally validated and submitted; only a reviewer sets needs changes and verified." />
-    <figcaption class="diagram-caption">
-      <span class="badge badge--warning">Pending correction</span>
-      Authority over each state. <strong>This version shows &ldquo;locally validated&rdquo; in
-      the reviewer column; it belongs to you</strong>, as the table above states. The reviewer
-      column holds exactly two states: needs changes, and verified.
-    </figcaption>
+    <figcaption class="diagram-caption">Authority over each state. The reviewer column holds exactly two: needs changes, and verified, and nothing you do reaches them.</figcaption>
   </figure>
 
   <p>Two totals appear everywhere and are <strong>never added together</strong>:</p>
@@ -245,13 +238,7 @@ source .venv/bin/activate</code></pre>
 
   <figure class="diagram">
     <img src="{{IMG_03}}" alt="Three ownership zones side by side: program-owned content and application code, your own work and evidence, and machine-owned generated output that is disposable. Only the middle zone is yours." />
-    <figcaption class="diagram-caption">
-      <span class="badge badge--warning">Pending correction</span>
-      Three ownership zones. Only the middle one is yours, and nothing the application does
-      replaces it. <strong>This version labels the left zone &ldquo;program&rdquo;</strong>,
-      which reads as a broadcast and is not the project&rsquo;s term; it should say
-      &ldquo;program&rdquo;.
-    </figcaption>
+    <figcaption class="diagram-caption">Three ownership zones. Only the middle one is yours, and nothing the application does replaces it.</figcaption>
   </figure>
 
   <h3>Inside <code>participant/</code>, only these, only through documented actions</h3>
@@ -396,12 +383,7 @@ make check              # is my whole installation sound?</code></pre>
 
   <figure class="diagram">
     <img src="{{IMG_05}}" alt="The passport shows claimed and verified progress as two separate totals that are never added together." />
-    <figcaption class="diagram-caption">
-      <span class="badge badge--warning">Pending correction</span>
-      Claimed and verified are two separate totals the application never combines.
-      <strong>The two figures in this version are invented and show verified above claimed,
-      which cannot happen</strong> &mdash; verified is always a subset of claimed.
-    </figcaption>
+    <figcaption class="diagram-caption">Claimed and verified are two separate totals the application never combines. Verified is always a subset of claimed.</figcaption>
   </figure>
 </section>
 

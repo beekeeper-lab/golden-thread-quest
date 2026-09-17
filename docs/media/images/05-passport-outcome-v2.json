@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-17T14:30:21",
+  "provider": "gemini",
+  "model": "gemini-3-pro-image-preview",
+  "prompt": "Goal: Show that claimed progress and verified progress are two separate figures the\napplication never combines, that verified is always the smaller, and that only verified\nmarks are gold.\nScene: One flat passport page with a thin ruled header reading \"passport\". Below it, a\nsingle row of eight large square marks \u2014 the first five outlined ink-navy, the last three\nsolid amber-gold. Below that, two separated boxed totals with wide open parchment between\nthem and no line, bar or arrow joining them: the left box reads \"claimed 8\" and the right\nbox reads \"verified 3\".\nStyle: Flat vector, restrained and formal, thin rules, generous whitespace, subtle paper\ntexture, amber-gold used only for verified marks, no shadows, no gradients.\nAspect ratio: 3:2\nBackground: warm parchment #f7f4ec\nText in image: exactly four pieces of text \u2014 \"passport\", \"claimed 8\", \"verified 3\". No\nregion names, no other numerals, no other text.\nAvoid: any number other than 8 and 3, a verified figure larger than the claimed figure,\ntrophies, medals, stars, ribbons, a single progress bar merging the two values,\npercentage rings, confetti, document stacks, large empty areas, any sentence-length text",
+  "output_file": "05-passport-outcome-v2.png",
+  "generation_time_ms": 16749,
+  "usage": {
+    "prompt_tokens": 278,
+    "candidates_tokens": 1419,
+    "total_tokens": 2052
+  }
+}

@@ -386,6 +386,54 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
 
 ---
 
+### Image 10: 03-ownership-zones-v3
+
+- **File**: docs/media/images/03-ownership-zones-v3.png
+- **Fixes**: v2 labeled the left zone "system". The instruction "avoid the word programme in
+  any form" pushed the model away from the whole word family rather than toward the one word
+  wanted, so it substituted a synonym. The word is now stated positively and spelled out, and
+  the negative instruction is gone. v2 also drew the folder glyphs as filled color blocks and
+  lost the left zone's solid fill; both are restored to v1, which was right about everything
+  except the one word.
+- **Page**: User guide, Section 6 — What the application writes
+- **Alt text**: "Three ownership zones side by side: program-owned content and application
+  code, your own work and evidence, and machine-owned generated output that is disposable.
+  Only the middle zone is yours, and nothing the application does replaces it."
+- **Description**: Three adjacent rectangular regions in a single row on a field map, not
+  nested and not overlapping. The left region is filled solid deep ink-navy with light text
+  and is headed with the single word "program". The centre region is warm parchment with an
+  amber-gold border, drawn noticeably taller and wider than both neighbours so it anchors the
+  composition, headed "yours". The right region is pale grey with a dashed border, headed
+  "machine". Each region holds two small outlined folder glyphs with short lowercase labels
+  beside them, and a small filled or hollow dot after each label showing whether it is in Git.
+  A compact two-line key sits in the lower right.
+- **Prompt**:
+  Goal: Make it immediately obvious which files belong to the participant, and that the
+    machine-owned zone is disposable and safe to delete.
+  Scene: Three adjacent map regions in one row, not nested and not overlapping. LEFT region:
+    filled solid deep ink-navy, light text, heading is exactly the seven-letter English word
+    "program" (p-r-o-g-r-a-m), holding two small outlined folder glyphs labeled content and
+    quest app. CENTRE region: warm parchment fill with an amber-gold border, visibly taller
+    and wider than both neighbours, heading "yours", holding two small outlined folder glyphs
+    labeled participant and evidence. RIGHT region: pale grey fill with a dashed border,
+    heading "machine", holding two small outlined folder glyphs labeled generated and local
+    data. A small filled dot follows each label in the left and centre regions; a small hollow
+    dot follows each label in the right region. A compact two-line key in the lower right
+    corner reads "in git" with a filled dot and "not in git" with a hollow dot.
+  Style: Flat vector field-guide map, thin precise borders, dashed border on the disposable
+    zone only, muted palette, generous whitespace, no shadows, no gradients. Folder glyphs are
+    thin outlines, never filled color blocks.
+  Aspect ratio: 3:2
+  Background: warm parchment #f7f4ec
+  Text in image: three headings "program", "yours", "machine"; six folder labels — content,
+    quest app, participant, evidence, generated, local data; key words "in git" and
+    "not in git". No other text.
+  Avoid: cloud icons, server racks, padlocks, database cylinders, 3D isometric views, nested
+    or overlapping regions, folder glyphs drawn as solid filled blocks, any sentence-length
+    text
+
+---
+
 ## What was considered and left out
 
 | Candidate | Why not |
@@ -401,10 +449,10 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
 
 | | |
 |---|---|
-| Images | 5 generated, 4 corrections pending |
+| Images | 4 of 5 final; the first-hour flow waits on the workflow change |
 | Provider | Gemini `gemini-3-pro-image-preview` |
 | Round 1 actual | **$0.70** (5 images, 9,939 tokens, 89s) |
-| Round 2 estimate | **~$0.48** (4 × ~$0.12) |
+| Round 2 actual | **$0.58** (4 images: 3 corrections plus one retake) |
 
 ## If a take is wrong
 
@@ -415,4 +463,16 @@ the sidecar JSON records what changed between them.
 ## Approval state
 
 Round 1 (images 1-5) was approved and generated on 2026-09-17.
-Round 2 (images 6-9) is a proposal and has not been generated.
+Round 2 generated images 7, 9 and 10 (`02-state-authority-v2`,
+`03-ownership-zones-v2` then `-v3`, `05-passport-outcome-v2`) on 2026-09-17.
+Image 6, `01-first-hour-flow-v2`, is deliberately not generated: see below.
+
+## Why the first-hour flow is not regenerated
+
+Its v2 entry draws the split as "in the app" against "in your terminal".
+Participants on the installed Cowork app have no terminal, and the steps the
+entry puts in the application currently require a browser reaching a server
+inside Cowork's VM, which is unverified. The lanes are the thing the image
+teaches, and they are the thing about to change. Drawing it now buys an asset
+that would be rebought. It is regenerated once the CLI action layer lands and
+the Cowork flow is settled.

@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-17T14:29:47",
+  "provider": "gemini",
+  "model": "gemini-3-pro-image-preview",
+  "prompt": "Goal: Show at a glance that verified completion is the reviewer's alone, and that the\nparticipant cannot reach it however much work they do.\nScene: Three columns of rounded pill chips under plain text headings. Column 1 heading\n\"application\" with exactly these two chips: locked, available. Column 2 heading \"you\"\nwith exactly these four chips: in progress, evidence ready, locally validated, submitted.\nColumn 3 heading \"reviewer\" with exactly these two chips and nothing else: needs changes,\nverified. Exactly one thin vertical rule, placed between column 2 and column 3, with a\nwider gap there than between columns 1 and 2. All chips outlined except verified, which\nis solid amber-gold.\nStyle: Flat vector, rounded pills, muted status colors, thin rules, generous whitespace,\nno shadows, no gradients.\nAspect ratio: 3:2\nBackground: warm parchment #f7f4ec\nText in image: three plain headings \"application\", \"you\", \"reviewer\", and the eight chip\nlabels exactly as assigned above. No caption, no numbers, no other text.\nAvoid: headings drawn as pills or boxes, more than one vertical rule, any chip in a column\nother than the one assigned, padlock cliches, traffic lights, arrows or connectors\nbetween chips, gradients, any sentence-length text",
+  "output_file": "02-state-authority-v2.png",
+  "generation_time_ms": 16666,
+  "usage": {
+    "prompt_tokens": 288,
+    "candidates_tokens": 1475,
+    "total_tokens": 2014
+  }
+}

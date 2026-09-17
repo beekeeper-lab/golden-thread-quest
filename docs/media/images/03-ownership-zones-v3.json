@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-17T14:31:25",
+  "provider": "gemini",
+  "model": "gemini-3-pro-image-preview",
+  "prompt": "Goal: Make it immediately obvious which files belong to the participant, and that the\nmachine-owned zone is disposable and safe to delete.\nScene: Three adjacent map regions in one row, not nested and not overlapping. LEFT region:\nfilled solid deep ink-navy, light text, heading is exactly the seven-letter English word\n\"program\" (p-r-o-g-r-a-m), holding two small outlined folder glyphs labeled content and\nquest app. CENTRE region: warm parchment fill with an amber-gold border, visibly taller\nand wider than both neighbours, heading \"yours\", holding two small outlined folder glyphs\nlabeled participant and evidence. RIGHT region: pale grey fill with a dashed border,\nheading \"machine\", holding two small outlined folder glyphs labeled generated and local\ndata. A small filled dot follows each label in the left and centre regions; a small hollow\ndot follows each label in the right region. A compact two-line key in the lower right\ncorner reads \"in git\" with a filled dot and \"not in git\" with a hollow dot.\nStyle: Flat vector field-guide map, thin precise borders, dashed border on the disposable\nzone only, muted palette, generous whitespace, no shadows, no gradients. Folder glyphs are\nthin outlines, never filled color blocks.\nAspect ratio: 3:2\nBackground: warm parchment #f7f4ec\nText in image: three headings \"program\", \"yours\", \"machine\"; six folder labels \u2014 content,\nquest app, participant, evidence, generated, local data; key words \"in git\" and\n\"not in git\". No other text.\nAvoid: cloud icons, server racks, padlocks, database cylinders, 3D isometric views, nested\nor overlapping regions, folder glyphs drawn as solid filled blocks, any sentence-length\ntext",
+  "output_file": "03-ownership-zones-v3.png",
+  "generation_time_ms": 17984,
+  "usage": {
+    "prompt_tokens": 393,
+    "candidates_tokens": 1625,
+    "total_tokens": 2336
+  }
+}

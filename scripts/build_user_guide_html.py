@@ -23,11 +23,11 @@ OUT = ROOT / "artifacts/html/guides/user-guide.html"
 IMAGES = ROOT / "docs/media/images"
 
 DIAGRAMS = [
-    "01-first-hour-flow",
-    "02-state-authority",
-    "03-ownership-zones",
+    "01-first-hour-flow",       # v1: two steps in the wrong lane, pending O1
+    "02-state-authority-v2",
+    "03-ownership-zones-v3",
     "04-evidence-package",
-    "05-passport-outcome",
+    "05-passport-outcome-v2",
 ]
 
 # Project palette over the canonical tokens, plus the dark mode the canonical
