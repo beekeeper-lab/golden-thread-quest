@@ -49,7 +49,7 @@ JSON_CONTENT_TYPE = "application/json"
 
 # Every action the service will perform. A request naming anything else is refused before
 # any state is read, and the list is the complete surface of what this process can change.
-MUTATING_ACTIONS = frozenset(BY_ACTION) | {"rebuild", "run-validator"}
+MUTATING_ACTIONS = frozenset(BY_ACTION) | {"rebuild", "run-validator", "record-review"}
 READ_ACTIONS = frozenset({"health", "git-status", "actions"})
 
 
@@ -267,6 +267,9 @@ class ActionHandler(BaseHTTPRequestHandler):
             raise ValueError("That quest does not exist.")
         quest = world.content.quests[quest_id]
 
+        if action == "record-review":
+            return self._record_review(world, quest_id_of(payload), payload)
+
         if action == "run-validator":
             # Not a transition (ADR-017). It appends a result and changes nothing else.
             return self._run_validator(world, quest_id, payload)
@@ -281,9 +284,11 @@ class ActionHandler(BaseHTTPRequestHandler):
             )
             state = "in_progress"
         else:
+            if action == "submit-for-review":
+                return self._submit(world, quest, store)
             if action == "mark-locally-validated":
                 self._require_qualifying_validation(world, quest_id)
-            if action in ("mark-evidence-ready", "submit-for-review"):
+            if action == "mark-evidence-ready":
                 self._require_clean_secret_scan(world, quest_id)
             new_state = transition_attempt(
                 store, quest_id=quest_id, action=action, schemas=self.state.schemas
@@ -298,6 +303,85 @@ class ActionHandler(BaseHTTPRequestHandler):
             "quest_id": quest_id,
             "state": state,
             "attempt_id": attempt_id,
+        }
+
+    def _submit(self, world: Any, quest: Any, store: ProgressStore) -> dict[str, Any]:
+        """Submission is a record, not just a state change.
+
+        The record captures the evidence hash at this moment, which is the only thing that
+        later makes "has this changed since I reviewed it?" answerable.
+        """
+        from quest_app.review import ReviewError, create_submission, submission_instructions
+
+        participant = world.participant
+        attempt = participant.progress.attempt_for(quest.id) if participant else None
+        if attempt is None:
+            raise StoreError("There is nothing to submit.")
+        try:
+            record = create_submission(
+                self.state.config,
+                store,
+                quest=quest,
+                attempt=attempt,
+                participant=participant,
+                schemas=self.state.schemas,
+            )
+        except ReviewError as exc:
+            raise StoreError(str(exc)) from exc
+
+        build_site(self._load())
+        return {
+            "ok": True,
+            "action": "submit-for-review",
+            "quest_id": quest.id,
+            "state": "submitted",
+            "submission_id": record.submission_id,
+            # The application never pushes and never opens a pull request. Those are claims
+            # on the participant's behalf that the work is finished.
+            "next_steps": submission_instructions(quest.id, attempt.attempt_id, None),
+        }
+
+    def _record_review(self, world: Any, quest_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+        from quest_app.review import ReviewError, record_decision
+
+        if quest_id not in world.content.quests:
+            raise ValueError("That quest does not exist.")
+        participant = world.participant
+        attempt = participant.progress.attempt_for(quest_id) if participant else None
+        if attempt is None:
+            raise StoreError("There is nothing to review.")
+
+        reviewer = payload.get("reviewer_name")
+        if not isinstance(reviewer, str) or not reviewer.strip():
+            raise ValueError("A reviewer name is required.")
+        findings = payload.get("findings") or []
+        if not isinstance(findings, list):
+            raise ValueError("Findings must be a list.")
+
+        try:
+            decision = record_decision(
+                self.state.config,
+                ProgressStore(self.state.config),
+                quest=world.content.quests[quest_id],
+                attempt=attempt,
+                participant=participant,
+                decision=str(payload.get("decision", "")),
+                reviewer_name=reviewer.strip()[:100],
+                verification_statement=payload.get("verification_statement"),
+                findings=findings,
+                schemas=self.state.schemas,
+                acknowledge_changed_evidence=bool(payload.get("acknowledge_changed_evidence")),
+            )
+        except ReviewError as exc:
+            raise StoreError(str(exc)) from exc
+
+        build_site(self._load())
+        return {
+            "ok": True,
+            "action": "record-review",
+            "quest_id": quest_id,
+            "decision": decision.decision,
+            "review_id": decision.review_id,
         }
 
     def _run_validator(self, world: Any, quest_id: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -497,6 +581,13 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
     finally:
         server.server_close()
     return 0
+
+
+def quest_id_of(payload: dict[str, Any]) -> str:
+    value = payload.get("quest_id")
+    if not isinstance(value, str):
+        raise ValueError("A quest ID is required.")
+    return value
 
 
 def describe_actions(current: Any) -> list[dict[str, str]]:

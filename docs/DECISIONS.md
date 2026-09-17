@@ -287,3 +287,45 @@ exception to the `yaml.load` ban.
 point of validating authored content in a pull request. Separately, around nine hundred
 levels of nesting raised `RecursionError`, which is not a `YAMLError`, so it escaped the
 loader's handling and ended the run with a traceback containing absolute paths.
+
+---
+
+## Stage 7 decisions (2026-09-16)
+
+## ADR-030 — Reviewer provenance is conventional in release one, and said so plainly
+
+**Decision:** A reviewer is identified by the display name in the review record and by Git
+history. Review records are not cryptographically signed. The application refuses every
+*internally inconsistent* claim — a review that does not match the attempt, an approval with
+no verification statement, an approval of evidence that changed since submission, a
+`verified` state with no approval behind it — and the remaining gap is documented in the
+reviewer guide and visible in the interface rather than papered over.
+
+**Reason:** Signing needs key distribution, key custody and a revocation story, none of
+which exist for a pilot cohort, and a half-implemented signature is worse than none because
+it invites trust it has not earned. The threat this release actually defends against is
+mistake and drift, not a determined forger with write access to their own repository. Saying
+which one is which is the honest position, and `SECURITY-AND-PRIVACY.md` already requires
+that the limitation be visible.
+
+## ADR-031 — The evidence hash covers the participant's work, not the records about it
+
+**Decision:** `evidence_hash` excludes `validation/`, `submission.yaml` and every
+`review*.yaml`.
+
+**Reason:** Found by a test that should have passed and did not. Writing the submission
+record into the evidence directory changed the very hash the record had just captured, so a
+freshly submitted attempt read as "changed since submission" the moment it was submitted.
+The same applies to a validation re-run and to the review record itself. The question the
+hash answers is "has the participant's work changed?", so the application's own bookkeeping
+has no business in it.
+
+## ADR-032 — The application never pushes, opens a pull request, or merges
+
+**Decision:** Submission prints the exact Git commands and stops. `git_status.py` runs only
+an allowlisted set of read-only commands and raises if asked for anything else.
+
+**Reason:** Pushing evidence or opening a pull request is a claim, on the participant's
+behalf, that work is finished and ready for someone else's attention. That claim is theirs
+to make. It is also the difference between a tool that enhances a repository and one that
+takes it over, which `PRODUCT-BRIEF.md` draws explicitly.

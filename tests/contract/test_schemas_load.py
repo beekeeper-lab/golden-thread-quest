@@ -19,6 +19,7 @@ EXPECTED = {
     "track",
     "validation-result",
     "validator-registry",
+    "submission",
 }
 
 

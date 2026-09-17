@@ -130,8 +130,11 @@ def scan_evidence(config: AppConfig, evidence_path: str) -> list[SecretFinding]:
 def evidence_hash(config: AppConfig, evidence_path: str) -> str | None:
     """A hash over an evidence package, for detecting change after review.
 
-    The validation directory is excluded: a re-run writes a new result with a new timestamp,
-    which would make every review look stale without any of the reviewed work changing.
+    It covers the participant's *work*, not the records the application writes about that
+    work. The validation directory is excluded because a re-run writes a new result with a
+    new timestamp, and the submission and review records are excluded because writing them
+    would otherwise change the very hash they had just recorded — which made a freshly
+    submitted attempt read as "changed since submission" the moment it was submitted.
     """
     try:
         root = config.resolve_participant_path(evidence_path)
@@ -139,7 +142,11 @@ def evidence_hash(config: AppConfig, evidence_path: str) -> str | None:
         return None
     if not root.is_dir():
         return None
-    return hash_directory(root, skip_names=frozenset({"validation"}))
+    return hash_directory(
+        root,
+        skip_names=frozenset({"validation"}),
+        skip_globs=("submission.yaml", "review.yaml", "review-*.yaml"),
+    )
 
 
 def new_run_id(validator_id: str) -> str:
