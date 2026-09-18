@@ -158,7 +158,7 @@ This is the part worth understanding properly, because the whole product turns o
 | **Needs changes** | **A reviewer** | Corrections required; your evidence is untouched |
 | **Verified** | **A reviewer** | Approved |
 
-![Eight quest states in three columns by who sets them: the application sets locked and available; you set in progress, evidence ready, locally validated and submitted; only a reviewer sets needs changes and verified.](media/images/02-state-authority.png)
+![Eight quest states in three columns by who sets them: the application sets locked and available; you set in progress, evidence ready, locally validated and submitted; only a reviewer sets needs changes and verified.](media/images/02-state-authority-v2.png)
 
 Two totals appear everywhere and are **never added together**:
 
@@ -327,7 +327,7 @@ There is no completion certificate, and that is the point. What you have at the 
 That is the thing you show someone. It is worth more than a score because none of it is
 self-assessed.
 
-![The passport shows claimed and verified progress as two separate totals that are never added together.](media/images/05-passport-outcome.png)
+![The passport shows claimed and verified progress as two separate totals that are never added together: eight region marks, five outlined for claimed and three filled amber for verified, with claimed at eight and verified at three kept deliberately apart.](media/images/05-passport-outcome-v2.png)
 
 ---
 

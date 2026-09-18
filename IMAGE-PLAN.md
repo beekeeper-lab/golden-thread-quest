@@ -348,7 +348,7 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
 ### Image 9: 03-ownership-zones-v2
 
 - **File**: docs/media/images/03-ownership-zones-v2.png
-- **Fixes**: v1 labeled the left zone "program". In British English that word most often
+- **Fixes**: v1 labeled the left zone "programme". In British English that word most often
   means a television or radio broadcast, and it is not the project's term either — the
   codebase and `CLAUDE.md` say "program-owned" throughout, 42 uses against zero. The label is
   now "program".
@@ -357,7 +357,7 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
   code, your own work and evidence, and machine-owned generated output that is disposable.
   Only the middle zone is yours, and nothing the application does replaces it."
 - **Description**: Identical in every respect to v1, which was otherwise correct, with the
-  single change that the left zone is labeled "program" rather than "program". Three
+  single change that the left zone is labeled "program" rather than "programme". Three
   adjacent rectangular regions in a single row, drawn as areas on a field map rather than
   boxes in a diagram, separated by narrow parchment gutters and never overlapping or nested.
   Left: program-owned, flat ink-navy fill with a solid border, holding folder glyphs for
@@ -381,7 +381,7 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
   Text in image: three zone names "program", "yours", "machine"; six short folder labels —
     content, quest app, participant, evidence, generated, local data; key words "in git" and
     "not in git". No other text.
-  Avoid: the word "program" in any form, cloud icons, server racks, padlocks, database
+  Avoid: the word "programme" in any form, cloud icons, server racks, padlocks, database
     cylinders, 3D isometric views, nested or overlapping regions, any sentence-length text
 
 ---
@@ -662,3 +662,29 @@ inside Cowork's VM, which is unverified. The lanes are the thing the image
 teaches, and they are the thing about to change. Drawing it now buys an asset
 that would be rebought. It is regenerated once the CLI action layer lands and
 the Cowork flow is settled.
+
+## Which take each page ships
+
+Generating a correction and wiring it into the page are two separate acts, and round 2 did
+only the first. Three of the five diagrams in `docs/USER-GUIDE.md` were still the superseded
+round-1 takes until this table existed. It is the record of what the guide actually renders.
+
+| Section | File the guide references | Why |
+|---|---|---|
+| 3 — The first hour | `01-first-hour-flow-v3.png` | Round 3 take; v1 and v2 superseded. |
+| 4 — The eight states | `02-state-authority-v2.png` | v1 placed `locally validated` in the reviewer column, contradicting the one rule the image exists to state. |
+| 6 — What the application writes | `03-ownership-zones.png` | **v1, deliberately.** See below. |
+| 7 — Evidence | `04-evidence-package.png` | Correct in round 1; never superseded. |
+| 11 — Knowing when you are finished | `05-passport-outcome-v2.png` | v1 read `claimed 10601 / verified 10602`, showing verified exceeding claimed, which the application cannot produce. |
+
+### Why section 6 keeps the v1 take
+
+The ownership-zones image has no correct take. v1 is right in every respect except that it
+labels the left zone "programme"; v3 fixes the word and loses the spacing, printing the
+in-git dots hard against their labels, so "content ●" renders as "content." and "generated ○"
+as "generatedo". A wrong-register word is a smaller fault than a legend a reader misreads as
+punctuation, so v1 ships.
+
+Neither is right, and the fix is a fourth take or a hand-edit of the label. Both need a
+decision from whoever holds the image budget, so this is recorded as open rather than
+resolved quietly.
