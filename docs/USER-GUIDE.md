@@ -258,6 +258,10 @@ acknowledging they have re-read it.
 they checked and how. **To ask for changes, they must record at least one finding.** A
 decision you cannot act on is not allowed.
 
+**Reviewers in Cowork use the command line too.** `make serve` is unreachable there for
+the same reason it is unreachable for you, so a reviewer records a decision with
+`quest-app action record-review`. `docs/guides/REVIEWER.md` has the commands.
+
 **If you get "needs changes":** your evidence is preserved exactly as it was. Read the
 findings, resume the quest, address them, and resubmit. This is the normal path, not a
 failure.

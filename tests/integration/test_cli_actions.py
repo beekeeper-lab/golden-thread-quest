@@ -154,3 +154,153 @@ def test_a_quest_declaring_a_validator_is_refused_without_a_qualifying_run(
     assert result.returncode != 0, "a validator quest reached locally_validated with no result"
     for validator in QUESTS[quest]:
         assert validator in result.stderr, "the refusal must name the check that is missing"
+
+
+# --- The reviewer's path, which on a browserless surface is the only one -------------
+
+REVIEWED = "trello-read-board"
+STATEMENT = "I read the board export and both runs against every numbered criterion."
+
+
+def submitted(participant: Path, quest: str = REVIEWED) -> None:
+    for action in (
+        "start-quest",
+        "mark-evidence-ready",
+        "mark-locally-validated",
+        "submit-for-review",
+    ):
+        result = run(participant, action, "--quest", quest)
+        assert result.returncode == 0, f"{action}: {result.stderr}"
+
+
+def test_the_cli_and_the_reviewer_module_share_one_decision_vocabulary() -> None:
+    """A second copy of the vocabulary is a second thing to drift, and it did drift.
+
+    The CLI shipped accepting `approve` and `request-changes`; `record_decision` accepts
+    `approved`, `needs_changes` and `rejected`. Nothing translated, so every value argparse
+    allowed was refused one layer down and no decision could be recorded without a browser.
+    """
+    from quest_app.models import Decision
+
+    listed = run(Path("/nonexistent"), "--help").stdout
+    for member in Decision:
+        assert member.value in listed, f"argparse does not offer {member.value!r}"
+    for retired in ("approve", "request-changes"):
+        rejected = run(
+            Path("/nonexistent"), "record-review", "--quest", REVIEWED, "--decision", retired
+        )
+        assert rejected.returncode != 0, f"{retired!r} is accepted and nothing acts on it"
+        assert "invalid choice" in rejected.stderr
+
+
+def test_the_review_form_posts_the_same_decision_values() -> None:
+    """The browser is the other caller of the same vocabulary."""
+    import re
+
+    from quest_app.models import Decision
+
+    template = (ROOT / "templates" / "pages" / "review.html.j2").read_text()
+    form = template.split('name="decision"', 1)[1].split("</select>", 1)[0]
+    posted = set(re.findall(r'<option value="([^"]+)"', form))
+    assert posted == {member.value for member in Decision}
+
+
+def test_a_reviewer_can_approve_without_a_browser(participant: Path) -> None:
+    """The flow the Cowork surface depends on, asserted end to end."""
+    submitted(participant)
+    result = run(
+        participant,
+        "record-review",
+        "--quest",
+        REVIEWED,
+        "--decision",
+        "approved",
+        "--reviewer",
+        "A Reviewer",
+        "--statement",
+        STATEMENT,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "verified" in (participant / "progress.yaml").read_text()
+
+
+def test_approval_without_a_statement_is_refused(participant: Path) -> None:
+    submitted(participant)
+    result = run(participant, "record-review", "--quest", REVIEWED, "--decision", "approved")
+    assert result.returncode != 0
+    assert "verification statement" in result.stderr
+    assert "verified" not in (participant / "progress.yaml").read_text()
+
+
+def test_requesting_changes_needs_a_finding_and_takes_a_well_formed_one(
+    participant: Path,
+) -> None:
+    submitted(participant)
+    bare = run(participant, "record-review", "--quest", REVIEWED, "--decision", "needs_changes")
+    assert bare.returncode != 0
+    assert "at least one finding" in bare.stderr
+
+    result = run(
+        participant,
+        "record-review",
+        "--quest",
+        REVIEWED,
+        "--decision",
+        "needs_changes",
+        "--finding",
+        "high:The second run is missing:logs/second-run.txt is absent",
+    )
+    assert result.returncode == 0, result.stderr
+    assert "needs_changes" in (participant / "progress.yaml").read_text()
+
+
+def test_a_malformed_finding_is_refused_rather_than_dropped(participant: Path) -> None:
+    """Dropping it in silence made the next refusal name the wrong problem."""
+    submitted(participant)
+    result = run(
+        participant,
+        "record-review",
+        "--quest",
+        REVIEWED,
+        "--decision",
+        "needs_changes",
+        "--finding",
+        "high:no evidence",
+    )
+    assert result.returncode != 0
+    assert "severity:summary:evidence" in result.stderr
+    assert "at least one finding" not in result.stderr
+
+
+def test_approving_changed_evidence_needs_the_acknowledgement(participant: Path) -> None:
+    """The browser form has this checkbox; without the flag the CLI reviewer was stuck."""
+    submitted(participant)
+    proof = next((participant / "evidence" / REVIEWED).glob("*/PROOF.md"))
+    proof.write_text(proof.read_text() + "\nAdded after submitting.\n")
+
+    refused = run(
+        participant,
+        "record-review",
+        "--quest",
+        REVIEWED,
+        "--decision",
+        "approved",
+        "--statement",
+        STATEMENT,
+    )
+    assert refused.returncode != 0
+    assert "changed" in refused.stderr
+
+    result = run(
+        participant,
+        "record-review",
+        "--quest",
+        REVIEWED,
+        "--decision",
+        "approved",
+        "--statement",
+        STATEMENT,
+        "--acknowledge-changed-evidence",
+    )
+    assert result.returncode == 0, result.stderr
+    assert "verified" in (participant / "progress.yaml").read_text()

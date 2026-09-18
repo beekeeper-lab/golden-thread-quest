@@ -55,6 +55,20 @@ class AttemptState(StrEnum):
     VERIFIED = "verified"
 
 
+class Decision(StrEnum):
+    """The three decisions a reviewer may record.
+
+    One vocabulary, in one place, because the browser form and the CLI both name these
+    values. The CLI shipped with `approve` and `request-changes`, which nothing accepted, so
+    every decision it would let a reviewer type was refused — and the CLI is the only
+    reviewer path on a surface with no browser.
+    """
+
+    APPROVED = "approved"
+    NEEDS_CHANGES = "needs_changes"
+    REJECTED = "rejected"
+
+
 class QuestState(StrEnum):
     """Every state a quest can be shown in, stored or derived."""
 

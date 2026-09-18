@@ -54,7 +54,7 @@ address. Open it.
 
 | | |
 |---|---|
-| Tests | 544 — 502 under `make check`, 42 driving a real browser |
+| Tests | 551 — 509 under `make check`, 42 driving a real browser |
 | Screens | 13 page templates, 10 reusable components |
 | Schemas | 10, validating content, progress, reviews, validation results and the validator registry |
 | Sample curriculum | 8 regions, 3 quests, 4 badges, 1 track |

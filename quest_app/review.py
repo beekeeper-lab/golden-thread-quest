@@ -29,7 +29,7 @@ import yaml
 
 from quest_app.config import AppConfig
 from quest_app.evidence import evidence_hash, scan_evidence
-from quest_app.models import AttemptState, Quest
+from quest_app.models import AttemptState, Decision, Quest
 from quest_app.progress import Attempt, ParticipantState, ReviewDecision
 from quest_app.store import ProgressStore, append_audit, atomic_write_text
 
@@ -201,8 +201,9 @@ def record_decision(
     nothing; and approving evidence that changed since submission approves something the
     reviewer has not seen.
     """
-    if decision not in ("approved", "needs_changes", "rejected"):
-        raise ReviewError(f"{decision!r} is not a decision.")
+    if decision not in {member.value for member in Decision}:
+        allowed = ", ".join(member.value for member in Decision)
+        raise ReviewError(f"{decision!r} is not a decision. Use one of: {allowed}.")
 
     if attempt.recorded_state is not AttemptState.SUBMITTED:
         raise ReviewError(
@@ -210,7 +211,7 @@ def record_decision(
             f"{attempt.recorded_state.value!r}."
         )
 
-    if decision == "approved":
+    if decision == Decision.APPROVED:
         if not verification_statement or len(verification_statement.strip()) < 20:
             raise ReviewError(
                 "Approval requires a verification statement saying what you checked and how."

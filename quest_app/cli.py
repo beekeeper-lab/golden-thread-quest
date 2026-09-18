@@ -19,6 +19,7 @@ from quest_app.actions import MUTATING_ACTIONS, ActionRunner
 from quest_app.config import APPLICATION_VERSION, AppConfig
 from quest_app.content_loader import SchemaSet
 from quest_app.errors import ProblemReport
+from quest_app.models import Decision
 from quest_app.pipeline import LoadedWorld, load_world
 from quest_app.store import StoreError
 from quest_app.view_models import offline_service_view
@@ -216,6 +217,17 @@ def action_command(args: argparse.Namespace) -> int:
         payload["decision"] = args.decision
         payload["reviewer_name"] = args.reviewer
         payload["verification_statement"] = args.statement or ""
+        payload["acknowledge_changed_evidence"] = args.acknowledge_changed_evidence
+        # A malformed finding used to be dropped in silence, which left a reviewer holding
+        # a refusal that named the wrong problem: "requires at least one finding" when they
+        # had typed one, mis-shaped.
+        malformed = [part for part in args.finding if part.count(":") < 2]
+        if malformed:
+            print(
+                f"--finding needs severity:summary:evidence; {malformed[0]!r} has too few fields.",
+                file=sys.stderr,
+            )
+            return EXIT_USAGE
         payload["findings"] = [
             {
                 "id": f"finding-{index + 1}",
@@ -224,7 +236,7 @@ def action_command(args: argparse.Namespace) -> int:
                 "evidence": evidence,
             }
             for index, (severity, summary, evidence) in enumerate(
-                part.split(":", 2) for part in args.finding if part.count(":") >= 2
+                part.split(":", 2) for part in args.finding
             )
         ]
 
@@ -275,7 +287,9 @@ def build_parser() -> argparse.ArgumentParser:
     action.add_argument("--quest", help="Quest ID the action applies to")
     action.add_argument("--validator", help="Validator ID, for run-validator")
     action.add_argument(
-        "--decision", choices=["approve", "request-changes"], help="For record-review"
+        "--decision",
+        choices=[member.value for member in Decision],
+        help="For record-review; the same three values the browser form posts",
     )
     action.add_argument("--reviewer", default="Reviewer", help="Reviewer name, for record-review")
     action.add_argument("--statement", help="Verification statement, required to approve")
@@ -284,6 +298,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         help="severity:summary:evidence — repeatable; at least one to request changes",
+    )
+    action.add_argument(
+        "--acknowledge-changed-evidence",
+        action="store_true",
+        help="Approve although the evidence changed after submission; the browser form has "
+        "the same checkbox and approval is refused without it",
     )
     action.set_defaults(func=action_command)
 
