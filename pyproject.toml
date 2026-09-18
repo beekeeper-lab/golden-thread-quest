@@ -34,7 +34,10 @@ ui = [
 
 [project.scripts]
 # Registered per stage, so an installed command always exists. `quest-build` and
-# `quest-serve` are added with the generator and the local service.
+# `quest-serve` are added with the generator and the local service. `quest-app` is the one
+# the guides tell participants and reviewers to run, and it went unregistered for a release
+# because every test invoked `python -m quest_app.cli` instead of the installed command.
+quest-app = "quest_app.cli:main"
 quest-validate = "quest_app.cli:validate_main"
 quest-build = "quest_app.cli:build_main"
 quest-serve = "quest_app.cli:serve_main"

@@ -8,6 +8,7 @@ the same guards, the same refusals, the same messages.
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -304,3 +305,38 @@ def test_approving_changed_evidence_needs_the_acknowledgement(participant: Path)
     )
     assert result.returncode == 0, result.stderr
     assert "verified" in (participant / "progress.yaml").read_text()
+
+
+# --- The installed commands, not the module path ------------------------------------
+
+
+def test_the_commands_the_guides_name_are_actually_installed() -> None:
+    """Every test here runs `python -m quest_app.cli`, so none of them can catch this.
+
+    `quest-app` went unregistered for a release while the user guide and the reviewer guide
+    named it thirteen times, including the whole browserless flow the Cowork surface
+    depends on. A participant following the guide would find the command did not exist.
+    """
+    import tomllib
+
+    named = set()
+    for document in ("docs/USER-GUIDE.md", "docs/guides/REVIEWER.md"):
+        # A command, not a placeholder: `quest-app action …` counts, `<quest-id>` does not.
+        named |= set(
+            re.findall(r"(?<![<\w-])(quest-[a-z]+)(?=\s)", (ROOT / document).read_text())
+        )
+
+    registered = set(tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["scripts"])
+    assert named <= registered, f"the guides name commands nothing installs: {named - registered}"
+
+
+def test_the_installed_command_runs(tmp_path: Path) -> None:
+    """A console script can be registered and still be broken on its entry point."""
+    executable = Path(sys.executable).parent / "quest-app"
+    if not executable.exists():
+        pytest.skip("run `uv pip install -e .` to test the installed command")
+    result = subprocess.run(
+        [str(executable), "action", "--list"], cwd=ROOT, capture_output=True, text=True
+    )
+    assert result.returncode == 0, result.stderr
+    assert set(result.stdout.split()) == set(MUTATING_ACTIONS)
