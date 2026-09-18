@@ -1,14 +1,37 @@
-Copyright (c) 2026 E-Gineering. All rights reserved.
+# Licences
 
-This software and the curriculum content in this repository are proprietary.
+Two licences, because this repository holds two different kinds of work.
 
-Participants in The AI Context Engineer Journey are granted permission to fork this
-repository, run the application locally, and create, keep and share their own work under
-`participant/`. Work a participant authors under `participant/` belongs to that participant.
+**Software — MIT.** Everything except `content/`, `docs/` and the Markdown documents at the
+repository root. The full text is below.
 
-No other use, copying, modification, distribution or sublicensing of the program-owned
-portions of this repository is permitted without prior written permission.
+**Curriculum and documentation — Creative Commons Attribution 4.0 International
+(CC BY 4.0).** `content/`, `docs/`, and the Markdown documents at the repository root. See
+`LICENSE-CONTENT`.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-PURPOSE AND NONINFRINGEMENT.
+**Your own work belongs to you.** Anything you author under `participant/` is yours. Neither
+licence above claims it, and nothing in this repository asks you to give it up.
+
+---
+
+MIT License
+
+Copyright (c) 2026 Beekeeper Lab
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

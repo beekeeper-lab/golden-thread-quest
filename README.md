@@ -130,3 +130,17 @@ against it:
 
 `prototype/` holds the original clickable design reference. It is superseded by the
 production screens and is kept only as the visual record of what was approved.
+
+## Licence
+
+Free to use, free to teach from, free to adapt. Two licences, because this repository holds
+two kinds of work:
+
+- **Software — MIT.** Everything except `content/`, `docs/` and the root Markdown documents.
+- **Curriculum and documentation — CC BY 4.0.** `content/`, `docs/`, and the root Markdown
+  documents. Credit Beekeeper Lab and say if you changed anything.
+
+`LICENSE` and `LICENSE-CONTENT` have the terms. `vendor/axe.min.js` is third-party
+(axe-core, Deque Systems, MPL-2.0) and carries its own licence.
+
+Anything you author under `participant/` is yours. Neither licence claims it.
