@@ -3,11 +3,12 @@ name = "golden-thread-quest"
 version = "0.1.0"
 description = "The Golden Thread Quest — a local-first training application for the AI Context Engineer Journey."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 license = { file = "LICENSE" }
 
 # Runtime dependencies. Each one is justified in docs/DECISIONS.md.
 dependencies = [
+    'typing_extensions>=4.5; python_version < "3.11"',
     "Jinja2>=3.1.4,<4",       # ADR-006 deterministic server-side rendering
     "PyYAML>=6.0.1,<7",       # ADR-025 safe_load only
     # ADR-020 validates against the published schemas. The [format] extra is not optional:
@@ -33,7 +34,10 @@ ui = [
 
 [project.scripts]
 # Registered per stage, so an installed command always exists. `quest-build` and
-# `quest-serve` are added with the generator and the local service.
+# `quest-serve` are added with the generator and the local service. `quest-app` is the one
+# the guides tell participants and reviewers to run, and it went unregistered for a release
+# because every test invoked `python -m quest_app.cli` instead of the installed command.
+quest-app = "quest_app.cli:main"
 quest-validate = "quest_app.cli:validate_main"
 quest-build = "quest_app.cli:build_main"
 quest-serve = "quest_app.cli:serve_main"
@@ -47,7 +51,7 @@ packages = ["quest_app", "validators"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py310"
 src = ["quest_app", "validators", "tests", "tools"]
 
 [tool.ruff.lint]
@@ -65,7 +69,7 @@ ignore = [
 # yaml.safe_load is required (ADR-025); yaml.load is caught by tools/check_yaml_safe.py too.
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.11"
 strict = true
 files = ["quest_app", "validators", "tools"]
 warn_unreachable = true

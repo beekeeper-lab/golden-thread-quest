@@ -35,14 +35,15 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import unquote, urlparse
 
+from quest_app.actions import MUTATING_ACTIONS, READ_ACTIONS, ActionRunner
 from quest_app.build import build_site
 from quest_app.config import AppConfig
 from quest_app.content_loader import SchemaSet
 from quest_app.errors import ProblemReport
 from quest_app.git_status import summary_for
 from quest_app.pipeline import load_world
-from quest_app.state_machine import BY_ACTION, allowed_actions
-from quest_app.store import ProgressStore, StoreError, start_attempt, transition_attempt
+from quest_app.state_machine import allowed_actions
+from quest_app.store import StoreError
 from quest_app.view_models import online_service_view
 
 MAX_BODY_BYTES = 64 * 1024
@@ -60,8 +61,6 @@ JSON_CONTENT_TYPE = "application/json"
 
 # Every action the service will perform. A request naming anything else is refused before
 # any state is read, and the list is the complete surface of what this process can change.
-MUTATING_ACTIONS = frozenset(BY_ACTION) | {"rebuild", "run-validator", "record-review"}
-READ_ACTIONS = frozenset({"health", "git-status", "actions"})
 
 
 class UnsafeBindError(RuntimeError):
@@ -408,252 +407,10 @@ class ActionHandler(BaseHTTPRequestHandler):
         return world
 
     def _perform(self, action: str, payload: dict[str, Any]) -> dict[str, Any]:
-        world = self._load()
-        store = ProgressStore(self.state.config)
-
-        if action == "rebuild":
-            result = build_site(world, service=online_service_view())
-            return {"ok": True, "action": action, "pages": result.page_count}
-
-        quest_id = payload.get("quest_id")
-        if not isinstance(quest_id, str) or quest_id not in world.content.quests:
-            # A quest ID is matched against loaded content, so it can only ever name
-            # something the build already knows about. No path reaches the filesystem.
-            raise ValueError("That quest does not exist.")
-        quest = world.content.quests[quest_id]
-
-        if action == "record-review":
-            return self._record_review(world, quest_id_of(payload), payload)
-
-        if action == "run-validator":
-            # Not a transition (ADR-017). It appends a result and changes nothing else.
-            return self._run_validator(world, quest_id, payload)
-
-        if action == "start-quest":
-            # A participant with no progress file gets one here, seeded from the site's own
-            # configuration. Without this the very first action of the pilot failed.
-            attempt_id = start_attempt(
-                store,
-                quest_id=quest_id,
-                quest_version=quest.version,
-                content_hash=quest.content_hash,
-                schemas=self.state.schemas,
-                display_name=_default_display_name(),
-                track_id=world.content.site.default_track,
-            )
-            state = "in_progress"
-        else:
-            if action == "submit-for-review":
-                return self._submit(world, quest, store)
-            if action == "mark-evidence-ready":
-                self._require_clean_secret_scan(world, quest_id)
-
-            def guard(requested: str) -> None:
-                if requested == "mark-locally-validated":
-                    self._require_qualifying_validation(world, quest_id)
-
-            new_state = transition_attempt(
-                store,
-                quest_id=quest_id,
-                action=action,
-                schemas=self.state.schemas,
-                guard=guard,
-            )
-            state = new_state.value
-            attempt_id = None
-
-        build_site(self._load(), service=online_service_view())
-        return {
-            "ok": True,
-            "action": action,
-            "quest_id": quest_id,
-            "state": state,
-            "attempt_id": attempt_id,
-        }
-
-    def _submit(self, world: Any, quest: Any, store: ProgressStore) -> dict[str, Any]:
-        """Submission is a record, not just a state change.
-
-        The record captures the evidence hash at this moment, which is the only thing that
-        later makes "has this changed since I reviewed it?" answerable.
-        """
-        from quest_app.review import ReviewError, create_submission, submission_instructions
-
-        participant = world.participant
-        attempt = participant.progress.attempt_for(quest.id) if participant else None
-        if attempt is None:
-            raise StoreError("There is nothing to submit.")
-        try:
-            record = create_submission(
-                self.state.config,
-                store,
-                quest=quest,
-                attempt=attempt,
-                participant=participant,
-                schemas=self.state.schemas,
-            )
-        except ReviewError as exc:
-            raise StoreError(str(exc)) from exc
-
-        build_site(self._load(), service=online_service_view())
-        return {
-            "ok": True,
-            "action": "submit-for-review",
-            "quest_id": quest.id,
-            "state": "submitted",
-            "submission_id": record.submission_id,
-            # The application never pushes and never opens a pull request. Those are claims
-            # on the participant's behalf that the work is finished.
-            "next_steps": submission_instructions(quest.id, attempt.attempt_id, None),
-        }
-
-    def _record_review(self, world: Any, quest_id: str, payload: dict[str, Any]) -> dict[str, Any]:
-        from quest_app.review import ReviewError, record_decision
-
-        if quest_id not in world.content.quests:
-            raise ValueError("That quest does not exist.")
-        participant = world.participant
-        attempt = participant.progress.attempt_for(quest_id) if participant else None
-        if attempt is None:
-            raise StoreError("There is nothing to review.")
-
-        reviewer = payload.get("reviewer_name")
-        if not isinstance(reviewer, str) or not reviewer.strip():
-            raise ValueError("A reviewer name is required.")
-        findings = payload.get("findings") or []
-        if not isinstance(findings, list):
-            raise ValueError("Findings must be a list.")
-
-        try:
-            decision = record_decision(
-                self.state.config,
-                ProgressStore(self.state.config),
-                quest=world.content.quests[quest_id],
-                attempt=attempt,
-                participant=participant,
-                decision=str(payload.get("decision", "")),
-                reviewer_name=reviewer.strip()[:100],
-                verification_statement=payload.get("verification_statement"),
-                findings=findings,
-                schemas=self.state.schemas,
-                acknowledge_changed_evidence=bool(payload.get("acknowledge_changed_evidence")),
-            )
-        except ReviewError as exc:
-            raise StoreError(str(exc)) from exc
-
-        build_site(self._load(), service=online_service_view())
-        return {
-            "ok": True,
-            "action": "record-review",
-            "quest_id": quest_id,
-            "decision": decision.decision,
-            "review_id": decision.review_id,
-        }
-
-    def _run_validator(self, world: Any, quest_id: str, payload: dict[str, Any]) -> dict[str, Any]:
-        from quest_app.evidence import new_run_id, store_result
-        from quest_app.validator_registry import ValidatorError, load_registry
-        from quest_app.validator_runner import run_validator
-
-        validator_id = payload.get("validator_id")
-        if not isinstance(validator_id, str):
-            raise ValueError("A validator ID is required.")
-        quest = world.content.quests[quest_id]
-        if validator_id not in quest.validators:
-            # The quest decides which validators apply to it, so a caller cannot run an
-            # arbitrary registered validator against arbitrary work.
-            raise ValueError("That validator is not declared by this quest.")
-
-        report = ProblemReport()
-        registry = load_registry(self.state.config, report)
-        if registry is None:
-            raise StoreError("The validator registry could not be loaded.")
-
-        participant = world.participant
-        attempt = participant.progress.attempt_for(quest_id) if participant else None
-        if attempt is None:
-            raise StoreError("Start the quest before running its checks.")
-
-        try:
-            definition = registry.get(validator_id)
-            result = run_validator(
-                definition,
-                self.state.config,
-                quest_id=quest_id,
-                attempt_id=attempt.attempt_id,
-                run_id=new_run_id(validator_id),
-                parameters=payload.get("parameters"),
-            )
-        except ValidatorError as exc:
-            raise ValueError(str(exc)) from exc
-
-        from quest_app.evidence import ResultRejectedError
-
-        try:
-            stored = store_result(
-                self.state.config,
-                attempt.evidence_path,
-                result.to_document(),
-                self.state.schemas,
-            )
-        except ResultRejectedError as exc:
-            raise StoreError(str(exc)) from exc
-        build_site(self._load(), service=online_service_view())
-        return {
-            "ok": True,
-            "action": "run-validator",
-            "quest_id": quest_id,
-            "validator_id": validator_id,
-            "outcome": result.outcome,
-            "run_id": result.run_id,
-            "result_path": stored,
-            "note": "A validation run never changes quest state.",
-        }
-
-    def _require_clean_secret_scan(self, world: Any, quest_id: str) -> None:
-        """Refuse to prepare a submission that carries a credential.
-
-        The asymmetry is the argument: a false positive costs a minute, and a missed
-        credential costs a rotation and an awkward conversation.
-        """
-        from quest_app.evidence import scan_evidence
-
-        participant = world.participant
-        attempt = participant.progress.attempt_for(quest_id) if participant else None
-        if attempt is None:
-            return
-        findings = scan_evidence(self.state.config, attempt.evidence_path)
-        if findings:
-            locations = ", ".join(f"{f.path}:{f.line}" for f in findings[:3])
-            raise StoreError(
-                f"Something secret-like is in your evidence ({locations}). "
-                "Remove it before submitting; the scan never reports the value itself."
-            )
-
-    def _require_qualifying_validation(self, world: Any, quest_id: str) -> None:
-        """`locally_validated` is a claim about validator results, so the results decide.
-
-        Without this the state would be a participant's assertion wearing a validator's
-        authority, which is exactly the blurring the progress model exists to prevent.
-        """
-        quest = world.content.quests[quest_id]
-        if not quest.validators:
-            return
-        participant = world.participant
-        attempt = participant.progress.attempt_for(quest_id) if participant else None
-        if attempt is None:
-            raise StoreError("There is no attempt to validate.")
-        results = participant.results_for(attempt) if participant else ()
-        latest = {result.validator_id: result for result in results}
-        missing = [
-            validator
-            for validator in quest.validators
-            if validator not in latest or not latest[validator].qualifies
-        ]
-        if missing:
-            raise StoreError(
-                "These checks have not returned a qualifying result yet: " + ", ".join(missing)
-            )
+        """Delegate to the shared runner, so HTTP is one caller of the action layer."""
+        return ActionRunner(self.state.config, self.state.schemas, self._load).perform(
+            action, payload
+        )
 
     def _health(self) -> dict[str, Any]:
         report = ProblemReport()
@@ -781,27 +538,6 @@ def _filesystem_message(error: OSError) -> str:
         f"The change could not be written to your participant directory: {reason}. "
         "Check that it exists and that you can write to it."
     )
-
-
-def _default_display_name() -> str:
-    """A name for a brand-new participant's record.
-
-    The local account name is a better first guess than "Participant", and it is theirs to
-    change: `participant/progress.yaml` is an ordinary file in their repository.
-    """
-    import getpass
-
-    try:
-        return getpass.getuser()[:100] or "Participant"
-    except Exception:
-        return "Participant"
-
-
-def quest_id_of(payload: dict[str, Any]) -> str:
-    value = payload.get("quest_id")
-    if not isinstance(value, str):
-        raise ValueError("A quest ID is required.")
-    return value
 
 
 def describe_actions(current: Any) -> list[dict[str, str]]:

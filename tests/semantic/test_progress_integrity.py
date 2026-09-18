@@ -245,3 +245,47 @@ def test_non_verified_states_need_no_review(
     edit_progress(config, mutate)
     load(config, report)
     assert "progress.unverified_verified_state" not in codes(report)
+
+
+class TestLocallyValidatedTellsTheTruth:
+    """`locally_validated` on a quest with no validators is an assertion, not a check.
+
+    Five of the eight quests declare no validators. The state is reachable for them — the
+    guard exits early — but the interface used to label it "by registered validator" and
+    explain it as "Required automated checks passed", which asserts a check that does not
+    exist. The authority field is in the model precisely to stop that.
+    """
+
+    def test_a_quest_with_no_validators_is_attributed_to_the_participant(self) -> None:
+        from quest_app.models import Authority, QuestState
+        from quest_app.progress_calc import StateView
+
+        view = StateView.of(QuestState.LOCALLY_VALIDATED, has_validators=False)
+        assert view.authority is Authority.PARTICIPANT
+        assert "no automated checks" in view.explanation
+        assert "checks passed" not in view.explanation
+
+    def test_a_quest_with_validators_still_credits_the_validators(self) -> None:
+        from quest_app.models import Authority, QuestState
+        from quest_app.progress_calc import StateView
+
+        view = StateView.of(QuestState.LOCALLY_VALIDATED)
+        assert view.authority is Authority.REGISTERED_VALIDATOR
+        assert "checks passed" in view.explanation
+
+    def test_the_legend_keeps_the_general_wording(self) -> None:
+        """A legend describes the state itself, not any one quest."""
+        from quest_app.models import Authority, QuestState
+        from quest_app.view_models import build_legend
+
+        entry = next(s for s in build_legend() if s.id is QuestState.LOCALLY_VALIDATED)
+        assert entry.authority is Authority.REGISTERED_VALIDATOR
+
+    def test_only_locally_validated_is_affected(self) -> None:
+        from quest_app.models import STATE_AUTHORITY, QuestState
+        from quest_app.progress_calc import StateView
+
+        for state in QuestState:
+            if state is QuestState.LOCALLY_VALIDATED:
+                continue
+            assert StateView.of(state, has_validators=False).authority is STATE_AUTHORITY[state]

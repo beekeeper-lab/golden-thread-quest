@@ -18,6 +18,7 @@ from quest_app.models import (
     STATE_AUTHORITY,
     STATE_EXPLANATIONS,
     STATE_LABELS,
+    UNVALIDATED_LOCALLY_VALIDATED,
     Authority,
     Badge,
     ContentBundle,
@@ -38,12 +39,26 @@ class StateView:
     occurred_at: str | None = None
 
     @classmethod
-    def of(cls, state: QuestState, occurred_at: str | None = None) -> StateView:
+    def of(
+        cls,
+        state: QuestState,
+        occurred_at: str | None = None,
+        *,
+        has_validators: bool = True,
+    ) -> StateView:
+        """`has_validators=False` is the case where nothing automated could have run.
+
+        The legend and the region counts describe states in general and keep the general
+        wording. A particular quest that declares no validators does not.
+        """
+        unvalidated = state is QuestState.LOCALLY_VALIDATED and not has_validators
         return cls(
             id=state,
             label=STATE_LABELS[state],
-            authority=STATE_AUTHORITY[state],
-            explanation=STATE_EXPLANATIONS[state],
+            authority=Authority.PARTICIPANT if unvalidated else STATE_AUTHORITY[state],
+            explanation=(
+                UNVALIDATED_LOCALLY_VALIDATED if unvalidated else STATE_EXPLANATIONS[state]
+            ),
             occurred_at=occurred_at,
         )
 
@@ -154,7 +169,11 @@ def compute_states(
             # was already refused as an integrity error during loading.
             state = StateView.of(QuestState.VERIFIED, review.reviewed_at if review else None)
         else:
-            state = StateView.of(QuestState(attempt.recorded_state.value), attempt.updated_at)
+            state = StateView.of(
+                QuestState(attempt.recorded_state.value),
+                attempt.updated_at,
+                has_validators=bool(quest.validators),
+            )
         progress[quest.id] = QuestProgress(quest, state, attempt, review, unmet)
 
     return progress

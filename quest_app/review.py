@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import secrets
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -29,7 +29,7 @@ import yaml
 
 from quest_app.config import AppConfig
 from quest_app.evidence import evidence_hash, scan_evidence
-from quest_app.models import AttemptState, Quest
+from quest_app.models import AttemptState, Decision, Quest
 from quest_app.progress import Attempt, ParticipantState, ReviewDecision
 from quest_app.store import ProgressStore, append_audit, atomic_write_text
 
@@ -79,7 +79,7 @@ class SubmissionRecord:
 
 
 def _now() -> str:
-    return datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
 def readiness_problems(
@@ -146,7 +146,7 @@ def create_submission(
         raise ReviewError("The evidence directory could not be hashed.")
 
     record = SubmissionRecord(
-        submission_id=f"submission-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(3)}",
+        submission_id=f"submission-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(3)}",
         quest_id=quest.id,
         quest_version=quest.version,
         attempt_id=attempt.attempt_id,
@@ -201,8 +201,9 @@ def record_decision(
     nothing; and approving evidence that changed since submission approves something the
     reviewer has not seen.
     """
-    if decision not in ("approved", "needs_changes", "rejected"):
-        raise ReviewError(f"{decision!r} is not a decision.")
+    if decision not in {member.value for member in Decision}:
+        allowed = ", ".join(member.value for member in Decision)
+        raise ReviewError(f"{decision!r} is not a decision. Use one of: {allowed}.")
 
     if attempt.recorded_state is not AttemptState.SUBMITTED:
         raise ReviewError(
@@ -210,7 +211,7 @@ def record_decision(
             f"{attempt.recorded_state.value!r}."
         )
 
-    if decision == "approved":
+    if decision == Decision.APPROVED:
         if not verification_statement or len(verification_statement.strip()) < 20:
             raise ReviewError(
                 "Approval requires a verification statement saying what you checked and how."
@@ -227,9 +228,10 @@ def record_decision(
         )
 
     digest = evidence_hash(config, attempt.evidence_path) or "sha256:" + "0" * 64
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
     document = {
         "schema_version": 1,
-        "review_id": f"review-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(3)}",
+        "review_id": f"review-{stamp}-{secrets.token_hex(3)}",
         "quest_id": quest.id,
         "quest_version": quest.version,
         "attempt_id": attempt.attempt_id,
@@ -354,7 +356,9 @@ def _write_yaml(path: Path, document: dict[str, Any], schemas: Any, schema_name:
         )
     # A superseded decision is archived rather than overwritten, so history survives.
     if path.exists() and schema_name == "review":
-        archive = path.with_name(f"review-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}.yaml")
+        archive = path.with_name(
+            f"review-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.yaml"
+        )
         archive.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
     atomic_write_text(path, yaml.safe_dump(document, sort_keys=False, allow_unicode=True))
 

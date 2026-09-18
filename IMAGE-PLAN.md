@@ -348,7 +348,7 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
 ### Image 9: 03-ownership-zones-v2
 
 - **File**: docs/media/images/03-ownership-zones-v2.png
-- **Fixes**: v1 labeled the left zone "program". In British English that word most often
+- **Fixes**: v1 labeled the left zone "programme". In British English that word most often
   means a television or radio broadcast, and it is not the project's term either — the
   codebase and `CLAUDE.md` say "program-owned" throughout, 42 uses against zero. The label is
   now "program".
@@ -357,7 +357,7 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
   code, your own work and evidence, and machine-owned generated output that is disposable.
   Only the middle zone is yours, and nothing the application does replaces it."
 - **Description**: Identical in every respect to v1, which was otherwise correct, with the
-  single change that the left zone is labeled "program" rather than "program". Three
+  single change that the left zone is labeled "program" rather than "programme". Three
   adjacent rectangular regions in a single row, drawn as areas on a field map rather than
   boxes in a diagram, separated by narrow parchment gutters and never overlapping or nested.
   Left: program-owned, flat ink-navy fill with a solid border, holding folder glyphs for
@@ -381,7 +381,7 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
   Text in image: three zone names "program", "yours", "machine"; six short folder labels —
     content, quest app, participant, evidence, generated, local data; key words "in git" and
     "not in git". No other text.
-  Avoid: the word "program" in any form, cloud icons, server racks, padlocks, database
+  Avoid: the word "programme" in any form, cloud icons, server racks, padlocks, database
     cylinders, 3D isometric views, nested or overlapping regions, any sentence-length text
 
 ---
@@ -431,6 +431,50 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
   Avoid: cloud icons, server racks, padlocks, database cylinders, 3D isometric views, nested
     or overlapping regions, folder glyphs drawn as solid filled blocks, any sentence-length
     text
+
+---
+
+### Image 14: 01-first-hour-flow-v3
+
+- **File**: docs/media/images/01-first-hour-flow-v3.png
+- **Fixes**: v1 put two steps in the wrong lane. v2 was never generated because its lanes were
+  "in the app" against "in your terminal", and that division stopped being true: every action
+  is now a `quest-app action` command, and participants on Cowork have no terminal. The lanes
+  are now what the application does against what only the participant can do, which is true on
+  every surface and is the thing the section is actually about.
+- **Page**: User guide, Section 3 — Your first hour
+- **Alt text**: "The first hour splits by authority, not by tool: the application starts the
+  quest, runs checks, records the result and accepts the submission, while only you can do the
+  work, write the proof and commit and push. Nothing in either lane reaches verified."
+- **Description**: Two horizontal lanes sharing one continuous path. The upper lane is labeled
+  "the application does" and holds four solid ink-navy markers: start quest, run checks, record
+  result, submit. The lower lane is labeled "only you can" and holds three outlined markers: do
+  the work, write proof, commit and push. The path weaves between the lanes as authority
+  changes hands, and the final marker, commit and push, sits alone in the lower lane after a
+  gap the path does not cross. At the right edge, separated by a thin vertical rule and touched
+  by nothing, a single amber-gold marker labeled verified sits in neither lane.
+- **Prompt**:
+  Goal: Show that the first hour divides by who has the authority to act, not by which tool is
+    open, and that verified sits outside both lanes entirely.
+  Scene: Two horizontal lanes separated by a thin rule. Upper lane labeled "the application
+    does" with four solid filled ink-navy circular markers in this order: start quest, run
+    checks, record result, submit. Lower lane labeled "only you can" with three outlined
+    ink-navy markers: do the work, write proof, commit and push. One continuous thin path
+    connects them in reading order, crossing between lanes wherever the lane changes, and it
+    stops before the final marker: "commit and push" stands alone in the lower lane after a
+    clear empty gap that no line crosses. At the far right, past a thin vertical rule, one
+    solid amber-gold marker labeled "verified" sits vertically centred between the two lanes,
+    with nothing connecting it to anything.
+  Style: Flat vector field-guide illustration, thin precise strokes, subtle paper texture,
+    muted palette, generous whitespace, no shadows, no gradients.
+  Aspect ratio: 3:2
+  Background: warm parchment #f7f4ec
+  Text in image: two lane labels "the application does" and "only you can"; seven marker
+    labels — start quest, run checks, record result, submit, do the work, write proof, commit
+    and push; and one label "verified". No other text, no numbers.
+  Avoid: swimlane business diagrams, UML, numbered step badges, browser chrome, terminal
+    windows, screenshots, any line or arrow touching the verified marker, arrows with heavy
+    heads, any sentence-length text, human figures
 
 ---
 
@@ -591,10 +635,11 @@ the sparkle collision is judged acceptable.
 
 | | |
 |---|---|
-| Images | 4 of 5 final; the first-hour flow waits on the workflow change |
+| Images | 5 of 5 final; see which take each page ships, below |
 | Provider | Gemini `gemini-3-pro-image-preview` |
 | Round 1 actual | **$0.70** (5 images, 9,939 tokens, 89s) |
 | Round 2 actual | **$0.58** (4 images: 3 corrections plus one retake) |
+| Round 3 actual | **~$0.14** (1 image, 2,282 tokens, 17s) — derived at round 1's per-image rate, not separately metered |
 
 ## If a take is wrong
 
@@ -607,14 +652,45 @@ the sidecar JSON records what changed between them.
 Round 1 (images 1-5) was approved and generated on 2026-09-17.
 Round 2 generated images 7, 9 and 10 (`02-state-authority-v2`,
 `03-ownership-zones-v2` then `-v3`, `05-passport-outcome-v2`) on 2026-09-17.
-Image 6, `01-first-hour-flow-v2`, is deliberately not generated: see below.
+Round 3 generated image 14, `01-first-hour-flow-v3`, on 2026-09-17 at 20:17.
+Image 6, `01-first-hour-flow-v2`, was never generated and never will be: the
+division it drew stopped being true before it was worth buying. Image 14
+replaces it.
 
-## Why the first-hour flow is not regenerated
+## Which take each page ships
 
-Its v2 entry draws the split as "in the app" against "in your terminal".
-Participants on the installed Cowork app have no terminal, and the steps the
-entry puts in the application currently require a browser reaching a server
-inside Cowork's VM, which is unverified. The lanes are the thing the image
-teaches, and they are the thing about to change. Drawing it now buys an asset
-that would be rebought. It is regenerated once the CLI action layer lands and
-the Cowork flow is settled.
+Generating a correction and wiring it into the page are two separate acts, and round 2 did
+only the first. Three of the five diagrams in `docs/USER-GUIDE.md` were still the superseded
+round-1 takes until this table existed. It is the record of what the guide actually renders.
+
+| Section | File the guide references | Why |
+|---|---|---|
+| 3 — The first hour | `01-first-hour-flow-v3.png` | Round 3 take; v1 and v2 superseded. |
+| 4 — The eight states | `02-state-authority-v2.png` | v1 placed `locally validated` in the reviewer column, contradicting the one rule the image exists to state. |
+| 6 — What the application writes | `03-ownership-zones.png` | **v1, deliberately.** See below. |
+| 7 — Evidence | `04-evidence-package.png` | Correct in round 1; never superseded. |
+| 11 — Knowing when you are finished | `05-passport-outcome-v2.png` | v1 read `claimed 10601 / verified 10602`, showing verified exceeding claimed, which the application cannot produce. |
+
+### Why section 6 keeps the v1 take
+
+The ownership-zones image has no correct take. v1 is right in every respect except that it
+labels the left zone "programme"; v3 fixes the word and loses the spacing, printing the
+in-git dots hard against their labels, so "content ●" renders as "content." and "generated ○"
+as "generatedo". A wrong-register word is a smaller fault than a legend a reader misreads as
+punctuation, so v1 ships.
+
+Neither is right, and the fix is a fourth take or a hand-edit of the label. Both need a
+decision from whoever holds the image budget, so this is recorded as open rather than
+resolved quietly.
+
+## Why image 6 was skipped, and what it cost to wait
+
+Kept because the reasoning was right and is worth reusing. Image 6 drew the first hour as
+"in the app" against "in your terminal". That division was about to stop being true: the CLI
+action layer was landing, and participants on the installed Cowork app have no terminal at
+all. The lanes were both the thing the image teaches and the thing about to change, so
+drawing it then bought an asset that would be rebought.
+
+The wait cost one round's delay and saved one image. Image 14 divides by authority instead —
+what the application does against what only the participant can do — which is true on every
+surface and does not depend on which tool is open.

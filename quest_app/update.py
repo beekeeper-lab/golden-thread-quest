@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import subprocess
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from quest_app.config import AppConfig
@@ -76,7 +76,7 @@ def _git(repo_root: Path, arguments: tuple[str, ...]) -> str | None:
 
 
 def backup_branch_name() -> str:
-    return f"backup/pre-update-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}"
+    return f"backup/pre-update-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
 
 
 def preflight(config: AppConfig) -> Preflight:

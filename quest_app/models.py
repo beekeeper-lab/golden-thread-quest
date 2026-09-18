@@ -11,9 +11,10 @@ found later can name the file an author has to open.
 
 from __future__ import annotations
 
-import enum
 from dataclasses import dataclass, field
 from typing import Final
+
+from quest_app.compat import StrEnum
 
 # CONTENT-MODEL.md difficulty table. The typical XP is advisory: an unusual value produces a
 # warning, never an error, because a maintainer may weight a quest deliberately.
@@ -39,7 +40,7 @@ BOOKEND_LABELS: Final[dict[str, str]] = {
 }
 
 
-class AttemptState(enum.StrEnum):
+class AttemptState(StrEnum):
     """The six states a participant record can hold.
 
     `locked` and `available` are deliberately absent: they are computed from prerequisites
@@ -54,7 +55,21 @@ class AttemptState(enum.StrEnum):
     VERIFIED = "verified"
 
 
-class QuestState(enum.StrEnum):
+class Decision(StrEnum):
+    """The three decisions a reviewer may record.
+
+    One vocabulary, in one place, because the browser form and the CLI both name these
+    values. The CLI shipped with `approve` and `request-changes`, which nothing accepted, so
+    every decision it would let a reviewer type was refused — and the CLI is the only
+    reviewer path on a surface with no browser.
+    """
+
+    APPROVED = "approved"
+    NEEDS_CHANGES = "needs_changes"
+    REJECTED = "rejected"
+
+
+class QuestState(StrEnum):
     """Every state a quest can be shown in, stored or derived."""
 
     LOCKED = "locked"
@@ -67,7 +82,7 @@ class QuestState(enum.StrEnum):
     VERIFIED = "verified"
 
 
-class Authority(enum.StrEnum):
+class Authority(StrEnum):
     """Who put a quest in its current state.
 
     This is the field that stops the interface implying a validator verified something.
@@ -114,6 +129,15 @@ STATE_EXPLANATIONS: Final[dict[QuestState, str]] = {
     QuestState.NEEDS_CHANGES: "A reviewer asked for corrections. Your evidence is preserved.",
     QuestState.VERIFIED: "A reviewer approved this evidence.",
 }
+
+# `locally_validated` normally means validators returned qualifying results. A quest that
+# declares none reaches the same state on the participant's word alone, and saying "required
+# automated checks passed" there would be the interface asserting a check that does not
+# exist — the one thing the authority field is in the model to prevent.
+UNVALIDATED_LOCALLY_VALIDATED: Final[str] = (
+    "This quest declares no automated checks, so this is your own assertion. "
+    "Reviewer approval remains required."
+)
 
 
 @dataclass(frozen=True, slots=True)

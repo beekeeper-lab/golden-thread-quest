@@ -1,17 +1,42 @@
 # Reviewer Guide
 
-## Before anything else: start the service
+## Before anything else: pick your surface
+
+Reading evidence works from the generated pages alone. **Recording a decision does not** — it
+writes files, so like every other state change it goes through the application.
+
+### In a browser
 
 ```bash
 make serve
 ```
 
-Reading evidence works from the generated pages alone. **Recording a decision does not** — it
-writes files, so like every other state change it happens through the running service. A
-page built by `make build` shows the evidence and says "Start the local service to record a
-decision" where the form would be.
+Open `/review/` for the queue, then the quest you are reviewing. A page built by `make build`
+alone shows the evidence and says "Start the local service to record a decision" where the
+form would be.
 
-Open `/review/` for the queue, then the quest you are reviewing.
+### Without a browser
+
+On the installed Cowork app the server runs inside the sandbox and your browser is outside
+it, so `make serve` is unreachable. Review through the command line instead. It is the same
+code behind the same guards, not a shortcut around them:
+
+```bash
+quest-app action record-review --quest <quest-id> \
+  --decision approved \
+  --reviewer "Your Name" \
+  --statement "What you checked and how, in your own words."
+
+quest-app action record-review --quest <quest-id> \
+  --decision needs_changes \
+  --reviewer "Your Name" \
+  --finding "high:What is wrong:Where you saw it"
+```
+
+`--decision` takes the same three values the browser form posts: `approved`,
+`needs_changes`, `rejected`. Repeat `--finding` for each one; each needs all three fields,
+`severity:summary:evidence`. Add `--acknowledge-changed-evidence` to approve evidence that
+changed after submission, which is the checkbox the browser form shows for the same purpose.
 
 ## What you are deciding
 

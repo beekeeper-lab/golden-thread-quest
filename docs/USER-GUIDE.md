@@ -33,76 +33,113 @@ is deliberate, and the application enforces it rather than trusting it.
 
 ## 2. Install it
 
+This guide assumes you are using the installed **Cowork** desktop app. If you work in Claude
+Code or a terminal instead, every instruction here has an obvious equivalent — where this says
+"ask Claude to run X", you run X yourself.
+
 ### What you need
 
 | | |
 |---|---|
-| Python | 3.12 or newer |
-| [uv](https://docs.astral.sh/uv/) | any recent version |
-| Git | 2.30 or newer |
-| A browser | anything current |
+| Cowork | The desktop app, on macOS or Windows |
+| Python | 3.10 or newer — the Cowork sandbox already has it |
+| Git | 2.30 or newer — already in the sandbox |
+| Disk | About 200 MB once installed |
 
-Nothing else. No database, no Docker, no account, no network connection after install.
+No database, no Docker, no account, and no network connection after install.
 
 ### Do this
+
+1. **Get the repository onto your machine.** Clone it, or unpack the archive you were given,
+   into a folder you will keep. This is your portfolio; put it somewhere you would not delete.
+
+2. **Open Cowork and connect that folder.** Cowork works inside the folders you connect to it
+   and nowhere else, so this is the equivalent of changing directory in a terminal.
+
+3. **Ask Claude to set it up.** In your own words, or literally:
+
+   > Run `make setup`, then `make check`, and tell me if anything failed.
+
+   `make check` runs formatting, linting, type checking, a YAML-safety rule, a secret scan and
+   the full non-browser test suite. It takes about a minute and works entirely offline. If it
+   passes, your installation is sound. If it does not, go to [Section 9](#9-when-something-goes-wrong).
+
+### How you read and do things
+
+Two things work differently here than they would in a browser, and knowing this up front saves
+an hour of confusion.
+
+**You read quests as files.** The application generates a website, but that site is served
+inside the sandbox and your browser is outside it. So rather than browsing, ask Claude to show
+you a quest — it will read `content/quests/` and tell you what the brief and the acceptance
+criteria are. Ask it to list what is available and it will.
+
+**You change state with a command, not a button.** Every action has a command:
+
+```
+quest-app action --list
+quest-app action start-quest --quest <quest-id>
+```
+
+Ask Claude to run them. It is the same action layer the web interface uses, with the same
+rules applied — nothing here is a shortcut around anything.
+
+### If you are in a terminal instead
 
 ```bash
 git clone <your fork of the quest repository> golden-thread-quest
 cd golden-thread-quest
 make setup
 source .venv/bin/activate
-```
-
-Then prove it works:
-
-```bash
 make check
-```
-
-That runs formatting, linting, type checking, a YAML-safety rule, a secret scan and 486
-tests. It takes about a minute and works entirely offline. If it passes, your installation is
-sound. If it does not, go to [Section 9](#9-when-something-goes-wrong).
-
-### Start it
-
-```bash
 make serve
 ```
 
-It builds the site, starts a service bound to `127.0.0.1` only, and prints an address. Open
-that address in your browser.
-
-**Leave it running while you work.** Reading works without it; changing anything does not.
-
----
+`make serve` builds the site, starts a service bound to `127.0.0.1` only, and prints an
+address to open. That path gives you the full web interface, and the buttons do what the
+`quest-app action` commands do. It is not available from inside Cowork, because the server
+would be in the sandbox and your browser is not.
 
 ## 3. Your first hour
 
-![Your first hour splits in two: the application handles starting the quest, recording validation and submitting, while you do the actual work in your own repository and commit and push it yourself.](media/images/01-first-hour-flow.png)
+![The first hour divides by authority, not by tool: the application starts the quest, runs checks, records the result and accepts the submission, while only you can do the work, write the proof and commit and push. Nothing in either lane reaches verified.](media/images/01-first-hour-flow-v3.png)
 
-1. **Open the home page.** It shows one recommended quest and says why, in three sentences.
-   The recommendation is calculated, not guessed — it will be the same tomorrow given the same
-   inputs.
+1. **Ask what to work on.** Ask Claude for the recommended quest and why. The recommendation
+   is calculated, not guessed — it will be the same tomorrow given the same inputs.
 
-2. **Read the whole quest page before starting.** Especially *How this is judged* — those
-   criteria are numbered, and a reviewer's findings will refer to them by number.
+2. **Read the whole quest before starting.** Especially *How this is judged* — those criteria
+   are numbered, and a reviewer's findings will refer to them by number. Ask Claude to show
+   you the full brief rather than a summary.
 
-3. **Press Start quest.** Three things happen:
+3. **Start it:** `quest-app action start-quest --quest <quest-id>`. Three things happen:
    - `participant/progress.yaml` is created if it did not exist
    - an evidence package appears at `participant/evidence/<quest-id>/<attempt-id>/`
    - a line is added to `participant/ACTIVITY.md` saying what was done
 
-4. **Do the work in your repository.** Not in the browser. The application is where you read
-   the brief and record what happened; your editor and terminal are where the work happens.
+4. **Do the work in your repository.** The application is where you read the brief and record
+   what happened; the work itself happens in the files. You can do it yourself or with
+   Claude's help — what matters is that the evidence is real and you can explain it.
 
 5. **Fill in `PROOF.md`.** It is a template with the questions a reviewer will ask. Answer
    them.
 
-6. **Run the checks.** Each one tells you what it looked at and what it found.
+6. **Run the checks:** `quest-app action run-validator --quest <quest-id> --validator <id>`.
+   Each one tells you what it looked at and what it found. A failing check is information,
+   not a verdict.
 
-7. **Mark evidence ready**, then **Record local validation**, then **Submit for review**.
+7. **Then, in order:**
 
-8. **Commit and push.** The application prints the commands and runs none of them.
+   ```
+   quest-app action mark-evidence-ready   --quest <quest-id>
+   quest-app action mark-locally-validated --quest <quest-id>
+   quest-app action submit-for-review      --quest <quest-id>
+   ```
+
+   Each refuses if you are not entitled to it yet, and says what state it is legal from.
+
+8. **Commit and push.** The application never does this for you — not in Cowork, not in a
+   terminal. Ask Claude to commit and push, or do it yourself. Your work being in Git is what
+   makes it a portfolio.
 
 ---
 
@@ -121,7 +158,7 @@ This is the part worth understanding properly, because the whole product turns o
 | **Needs changes** | **A reviewer** | Corrections required; your evidence is untouched |
 | **Verified** | **A reviewer** | Approved |
 
-![Eight quest states in three columns by who sets them: the application sets locked and available; you set in progress, evidence ready, locally validated and submitted; only a reviewer sets needs changes and verified.](media/images/02-state-authority.png)
+![Eight quest states in three columns by who sets them: the application sets locked and available; you set in progress, evidence ready, locally validated and submitted; only a reviewer sets needs changes and verified.](media/images/02-state-authority-v2.png)
 
 Two totals appear everywhere and are **never added together**:
 
@@ -221,6 +258,10 @@ acknowledging they have re-read it.
 they checked and how. **To ask for changes, they must record at least one finding.** A
 decision you cannot act on is not allowed.
 
+**Reviewers in Cowork use the command line too.** `make serve` is unreachable there for
+the same reason it is unreachable for you, so a reviewer records a decision with
+`quest-app action record-review`. `docs/guides/REVIEWER.md` has the commands.
+
 **If you get "needs changes":** your evidence is preserved exactly as it was. Read the
 findings, resume the quest, address them, and resubmit. This is the normal path, not a
 failure.
@@ -240,10 +281,13 @@ carries the identity. `docs/guides/REVIEWER.md` says the same thing to reviewers
 | `make setup` cannot find uv | uv is not installed | Install from <https://docs.astral.sh/uv/>, or `python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"` |
 | The build fails and you cannot tell why | Content does not validate, so nothing was published | `make validate-content` prints file, field and a suggested fix. A failed `make build` also writes `local-data/build-errors/index.html` |
 | `make serve` refuses to start | You passed a bind address that is not loopback | It binds to `127.0.0.1` only, by design. Drop the `--host` |
+| The printed `make serve` address will not open | You are in Cowork; the server is inside the sandbox and your browser is outside it | Expected. Use `quest-app action` commands instead — they do everything the buttons do |
+| `make setup` fails on the Python version | Your interpreter is older than 3.10 | Ask Claude to check `python3 -V`. The Cowork sandbox ships 3.10, which is supported |
+| A `quest-app action` command says the action is not possible | The transition is not legal from your current state | The message names the states it *is* legal from. Ask Claude what state you are in |
 | "only possible from…" | The transition is not legal from your current state | The message names the states it *is* legal from |
 | A check says `inconclusive` | It could not tell — not a failure | The finding says what was missing |
-| The site looks unstyled from disk | You opened `generated/index.html` instead of using `make serve` | Use `make serve`. Reading from disk works; controls do not |
-| Buttons do nothing | The service is not running, or you are on a stale page | Check `make serve` is up, then reload |
+| The site looks unstyled from disk | You opened `generated/index.html` directly | Reading from disk works; controls do not. In Cowork, ask Claude to read the quest files instead |
+| Buttons do nothing | The service is not running, or you are on a stale page | Check `make serve` is up, then reload. In Cowork there are no buttons — use the commands |
 | Your work seems lost | It is in Git | `git status`, `git stash list`, `git reflog` |
 
 Two commands worth remembering:
@@ -287,7 +331,7 @@ There is no completion certificate, and that is the point. What you have at the 
 That is the thing you show someone. It is worth more than a score because none of it is
 self-assessed.
 
-![The passport shows claimed and verified progress as two separate totals that are never added together.](media/images/05-passport-outcome.png)
+![The passport shows claimed and verified progress as two separate totals that are never added together: eight region marks, five outlined for claimed and three filled amber for verified, with claimed at eight and verified at three kept deliberately apart.](media/images/05-passport-outcome-v2.png)
 
 ---
 

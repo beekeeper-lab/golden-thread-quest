@@ -9,18 +9,18 @@ that it will be rendered in a browser.
 
 from __future__ import annotations
 
-import enum
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Self
+from typing import Any
 
+from quest_app.compat import Self, StrEnum
 from quest_app.secret_patterns import redact_text
 
 MAX_RECEIVED_SUMMARY = 120
 
 
-class Severity(enum.StrEnum):
+class Severity(StrEnum):
     """Severities from `CLAUDE.md`. Only `error` and `blocking` stop a build."""
 
     BLOCKING = "blocking"
