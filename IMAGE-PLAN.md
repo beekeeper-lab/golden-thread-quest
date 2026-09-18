@@ -434,6 +434,50 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
 
 ---
 
+### Image 14: 01-first-hour-flow-v3
+
+- **File**: docs/media/images/01-first-hour-flow-v3.png
+- **Fixes**: v1 put two steps in the wrong lane. v2 was never generated because its lanes were
+  "in the app" against "in your terminal", and that division stopped being true: every action
+  is now a `quest-app action` command, and participants on Cowork have no terminal. The lanes
+  are now what the application does against what only the participant can do, which is true on
+  every surface and is the thing the section is actually about.
+- **Page**: User guide, Section 3 — Your first hour
+- **Alt text**: "The first hour splits by authority, not by tool: the application starts the
+  quest, runs checks, records the result and accepts the submission, while only you can do the
+  work, write the proof and commit and push. Nothing in either lane reaches verified."
+- **Description**: Two horizontal lanes sharing one continuous path. The upper lane is labeled
+  "the application does" and holds four solid ink-navy markers: start quest, run checks, record
+  result, submit. The lower lane is labeled "only you can" and holds three outlined markers: do
+  the work, write proof, commit and push. The path weaves between the lanes as authority
+  changes hands, and the final marker, commit and push, sits alone in the lower lane after a
+  gap the path does not cross. At the right edge, separated by a thin vertical rule and touched
+  by nothing, a single amber-gold marker labeled verified sits in neither lane.
+- **Prompt**:
+  Goal: Show that the first hour divides by who has the authority to act, not by which tool is
+    open, and that verified sits outside both lanes entirely.
+  Scene: Two horizontal lanes separated by a thin rule. Upper lane labeled "the application
+    does" with four solid filled ink-navy circular markers in this order: start quest, run
+    checks, record result, submit. Lower lane labeled "only you can" with three outlined
+    ink-navy markers: do the work, write proof, commit and push. One continuous thin path
+    connects them in reading order, crossing between lanes wherever the lane changes, and it
+    stops before the final marker: "commit and push" stands alone in the lower lane after a
+    clear empty gap that no line crosses. At the far right, past a thin vertical rule, one
+    solid amber-gold marker labeled "verified" sits vertically centred between the two lanes,
+    with nothing connecting it to anything.
+  Style: Flat vector field-guide illustration, thin precise strokes, subtle paper texture,
+    muted palette, generous whitespace, no shadows, no gradients.
+  Aspect ratio: 3:2
+  Background: warm parchment #f7f4ec
+  Text in image: two lane labels "the application does" and "only you can"; seven marker
+    labels — start quest, run checks, record result, submit, do the work, write proof, commit
+    and push; and one label "verified". No other text, no numbers.
+  Avoid: swimlane business diagrams, UML, numbered step badges, browser chrome, terminal
+    windows, screenshots, any line or arrow touching the verified marker, arrows with heavy
+    heads, any sentence-length text, human figures
+
+---
+
 ## Brand marks
 
 Not diagrams. These are the application's own identity, so they follow the house palette but

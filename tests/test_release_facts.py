@@ -18,13 +18,13 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 
 # Every place a suite size is asserted in prose, and the pytest marker expression the
-# number is supposed to describe.
+# number is supposed to describe. The user guide is deliberately absent: it now says what
+# `make check` does without quoting a total, which is one fewer number to drift.
 CLAIMS = [
     (Path("README.md"), r"(\d+) under `make check`", "not ui"),
     (Path("README.md"), r"(\d+) driving a real browser", "ui"),
     (Path("docs/RELEASE-NOTES.md"), r"(\d+) under `make check`", "not ui"),
     (Path("docs/RELEASE-NOTES.md"), r"plus (\d+) browser-driven", "ui"),
-    (Path("docs/USER-GUIDE.md"), r"a secret scan and (\d+)", "not ui"),
 ]
 
 

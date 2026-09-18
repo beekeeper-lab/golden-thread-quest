@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-17T20:17:39",
+  "provider": "gemini",
+  "model": "gemini-3-pro-image-preview",
+  "prompt": "Goal: Show that the first hour divides by who has the authority to act, not by which tool is\nopen, and that verified sits outside both lanes entirely.\nScene: Two horizontal lanes separated by a thin rule. Upper lane labeled \"the application\ndoes\" with four solid filled ink-navy circular markers in this order: start quest, run\nchecks, record result, submit. Lower lane labeled \"only you can\" with three outlined\nink-navy markers: do the work, write proof, commit and push. One continuous thin path\nconnects them in reading order, crossing between lanes wherever the lane changes, and it\nstops before the final marker: \"commit and push\" stands alone in the lower lane after a\nclear empty gap that no line crosses. At the far right, past a thin vertical rule, one\nsolid amber-gold marker labeled \"verified\" sits vertically centred between the two lanes,\nwith nothing connecting it to anything.\nStyle: Flat vector field-guide illustration, thin precise strokes, subtle paper texture,\nmuted palette, generous whitespace, no shadows, no gradients.\nAspect ratio: 3:2\nBackground: warm parchment #f7f4ec\nText in image: two lane labels \"the application does\" and \"only you can\"; seven marker\nlabels \u2014 start quest, run checks, record result, submit, do the work, write proof, commit\nand push; and one label \"verified\". No other text, no numbers.\nAvoid: swimlane business diagrams, UML, numbered step badges, browser chrome, terminal\nwindows, screenshots, any line or arrow touching the verified marker, arrows with heavy\nheads, any sentence-length text, human figures",
+  "output_file": "01-first-hour-flow-v3.png",
+  "generation_time_ms": 17165,
+  "usage": {
+    "prompt_tokens": 353,
+    "candidates_tokens": 1581,
+    "total_tokens": 2282
+  }
+}

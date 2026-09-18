@@ -184,7 +184,11 @@ class TestCatalogFiltering:
         titles = page.eval_on_selector_all(
             "[data-search]:not([hidden])", "n => n.map(x => x.getAttribute('data-title'))"
         )
-        assert titles == sorted(titles)
+        # The page sorts with localeCompare, which is what a reader expects: "a" comes
+        # before "M". Python's sorted() compares code points and puts every uppercase
+        # letter first, so casefold is what actually describes the intended behavior.
+        # With three quests the two orders happened to agree; with eight they do not.
+        assert titles == sorted(titles, key=str.casefold)
         page.close()
 
     def test_a_tag_page_works_without_any_script(self, browser: object, served: str) -> None:

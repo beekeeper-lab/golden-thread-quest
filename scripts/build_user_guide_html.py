@@ -23,7 +23,7 @@ OUT = ROOT / "artifacts/html/guides/user-guide.html"
 IMAGES = ROOT / "docs/media/images"
 
 DIAGRAMS = [
-    "01-first-hour-flow",       # v1: two steps in the wrong lane, pending O1
+    "01-first-hour-flow-v3",
     "02-state-authority-v2",
     "03-ownership-zones-v3",
     "04-evidence-package",
