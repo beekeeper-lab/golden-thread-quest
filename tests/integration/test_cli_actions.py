@@ -96,3 +96,61 @@ def test_no_cli_action_can_produce_verified(participant: Path) -> None:
         else ""
     )
     assert "verified" not in written, "a participant reached verified without a reviewer"
+
+
+def _declared_validators() -> dict[str, tuple[str, ...]]:
+    """Every quest in the catalogue and the validators it declares.
+
+    Derived from the content tree rather than a hand-written list, so a quest authored
+    tomorrow is covered by the two tests below without anyone remembering to add it.
+    """
+    quests: dict[str, tuple[str, ...]] = {}
+    for path in sorted((ROOT / "content" / "quests").glob("*/*.md")):
+        text = path.read_text()
+        if not text.startswith("---\n"):
+            continue
+        front = yaml.safe_load(text.split("\n---\n", 1)[0].removeprefix("---\n"))
+        quests[front["id"]] = tuple(front.get("validators") or ())
+    return quests
+
+
+QUESTS = _declared_validators()
+WITHOUT_VALIDATORS = sorted(q for q, v in QUESTS.items() if not v)
+WITH_VALIDATORS = sorted(q for q, v in QUESTS.items() if v)
+
+
+def test_the_catalogue_contains_both_kinds_of_quest() -> None:
+    """Both tests below are vacuous if the content tree stops exercising a branch."""
+    assert WITHOUT_VALIDATORS, "no quest declares zero validators; the guard's early exit is dead"
+    assert WITH_VALIDATORS, "no quest declares a validator; the guard is never exercised"
+
+
+@pytest.mark.parametrize("quest", WITHOUT_VALIDATORS)
+def test_a_quest_declaring_no_validators_can_still_reach_submitted(
+    participant: Path, quest: str
+) -> None:
+    """The guard on `mark-locally-validated` must not strand a quest that asks for nothing.
+
+    `validators/registry.yaml` is program-owned, so a quest authored under a content-only
+    scope has no way to declare one. If the guard demanded a qualifying run regardless,
+    every such quest would be a dead end at `evidence_ready`.
+    """
+    for action in ("start-quest", "mark-evidence-ready", "mark-locally-validated"):
+        result = run(participant, action, "--quest", quest)
+        assert result.returncode == 0, f"{action} on {quest}: {result.stderr}"
+    result = run(participant, "submit-for-review", "--quest", quest)
+    assert result.returncode == 0, result.stderr
+    assert "submitted" in (participant / "progress.yaml").read_text()
+
+
+@pytest.mark.parametrize("quest", WITH_VALIDATORS)
+def test_a_quest_declaring_a_validator_is_refused_without_a_qualifying_run(
+    participant: Path, quest: str
+) -> None:
+    """The other half of the same guard: the early exit must not have widened into a hole."""
+    run(participant, "start-quest", "--quest", quest)
+    run(participant, "mark-evidence-ready", "--quest", quest)
+    result = run(participant, "mark-locally-validated", "--quest", quest)
+    assert result.returncode != 0, "a validator quest reached locally_validated with no result"
+    for validator in QUESTS[quest]:
+        assert validator in result.stderr, "the refusal must name the check that is missing"
