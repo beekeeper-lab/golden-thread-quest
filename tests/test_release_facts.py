@@ -62,3 +62,44 @@ def test_documented_test_counts_are_true(document: Path, pattern: str, marker: s
         f"{document} claims {claimed} tests for -m {marker!r}, but pytest collects "
         f"{actual}. Update the document, or explain the difference."
     )
+
+
+# --- Which diagram each page ships -------------------------------------------------
+
+GUIDE = Path("docs/USER-GUIDE.md")
+IMAGE_PLAN = Path("IMAGE-PLAN.md")
+_GUIDE_IMAGE = re.compile(r"!\[[^\]]*\]\(media/(images/[^)]+)\)")
+_PLAN_ROW = re.compile(r"^\|[^|]+\|\s*\**`(images?/[^`]+|[^`|]+\.png)`\**\s*\|", re.MULTILINE)
+
+
+def _guide_images() -> list[str]:
+    return _GUIDE_IMAGE.findall((ROOT / GUIDE).read_text())
+
+
+def _planned_images() -> list[str]:
+    """The files the 'Which take each page ships' table says the guide renders."""
+    text = (ROOT / IMAGE_PLAN).read_text()
+    table = text.split("## Which take each page ships", 1)
+    assert len(table) == 2, f"{IMAGE_PLAN} no longer records which take each page ships"
+    rows = re.findall(r"^\|[^|]+\|\s*`([^`]+\.png)`\s*\|", table[1], re.MULTILINE)
+    return [f"images/{name}" for name in rows]
+
+
+def test_every_diagram_the_guide_references_exists() -> None:
+    """A broken image in the onboarding document is invisible to every other check."""
+    missing = [ref for ref in _guide_images() if not (ROOT / "docs" / "media" / ref).exists()]
+    assert not missing, f"{GUIDE} references files that are not on disk: {missing}"
+
+
+def test_the_guide_ships_the_take_the_plan_says_it_ships() -> None:
+    """Generating a correction and wiring it in are two acts, and round 2 did only the first.
+
+    Three superseded diagrams stayed in the guide for a release because nothing compared
+    the two lists. One of them put `locally validated` in the reviewer column, which is the
+    opposite of the rule the image exists to state.
+    """
+    assert _guide_images() == _planned_images(), (
+        f"{GUIDE} and the 'Which take each page ships' table in {IMAGE_PLAN} disagree. "
+        "Update whichever is wrong; a correction that is generated but not referenced is "
+        "not shipped."
+    )
