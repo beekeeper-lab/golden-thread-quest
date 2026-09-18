@@ -635,10 +635,11 @@ the sparkle collision is judged acceptable.
 
 | | |
 |---|---|
-| Images | 4 of 5 final; the first-hour flow waits on the workflow change |
+| Images | 5 of 5 final; see which take each page ships, below |
 | Provider | Gemini `gemini-3-pro-image-preview` |
 | Round 1 actual | **$0.70** (5 images, 9,939 tokens, 89s) |
 | Round 2 actual | **$0.58** (4 images: 3 corrections plus one retake) |
+| Round 3 actual | **~$0.14** (1 image, 2,282 tokens, 17s) — derived at round 1's per-image rate, not separately metered |
 
 ## If a take is wrong
 
@@ -651,17 +652,10 @@ the sidecar JSON records what changed between them.
 Round 1 (images 1-5) was approved and generated on 2026-09-17.
 Round 2 generated images 7, 9 and 10 (`02-state-authority-v2`,
 `03-ownership-zones-v2` then `-v3`, `05-passport-outcome-v2`) on 2026-09-17.
-Image 6, `01-first-hour-flow-v2`, is deliberately not generated: see below.
-
-## Why the first-hour flow is not regenerated
-
-Its v2 entry draws the split as "in the app" against "in your terminal".
-Participants on the installed Cowork app have no terminal, and the steps the
-entry puts in the application currently require a browser reaching a server
-inside Cowork's VM, which is unverified. The lanes are the thing the image
-teaches, and they are the thing about to change. Drawing it now buys an asset
-that would be rebought. It is regenerated once the CLI action layer lands and
-the Cowork flow is settled.
+Round 3 generated image 14, `01-first-hour-flow-v3`, on 2026-09-17 at 20:17.
+Image 6, `01-first-hour-flow-v2`, was never generated and never will be: the
+division it drew stopped being true before it was worth buying. Image 14
+replaces it.
 
 ## Which take each page ships
 
@@ -688,3 +682,15 @@ punctuation, so v1 ships.
 Neither is right, and the fix is a fourth take or a hand-edit of the label. Both need a
 decision from whoever holds the image budget, so this is recorded as open rather than
 resolved quietly.
+
+## Why image 6 was skipped, and what it cost to wait
+
+Kept because the reasoning was right and is worth reusing. Image 6 drew the first hour as
+"in the app" against "in your terminal". That division was about to stop being true: the CLI
+action layer was landing, and participants on the installed Cowork app have no terminal at
+all. The lanes were both the thing the image teaches and the thing about to change, so
+drawing it then bought an asset that would be rebought.
+
+The wait cost one round's delay and saved one image. Image 14 divides by authority instead —
+what the application does against what only the participant can do — which is true on every
+surface and does not depend on which tool is open.
