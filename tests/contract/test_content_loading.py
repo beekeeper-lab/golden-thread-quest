@@ -27,19 +27,45 @@ def test_the_shipped_package_is_publishable(
     report = ProblemReport()
     world = load_world(config, report)
 
+    authored_quests = len(list((repo_root / "content" / "quests").rglob("*.md")))
+    authored_regions = len(list((repo_root / "content" / "regions").glob("*.yaml")))
+
     assert world is not None, report.to_text()
     assert report.errors == []
-    assert len(world.content.quests) == 3
-    assert len(world.content.regions) == 8
+    # Counted from the files rather than written down, so a quest that fails to load is
+    # caught here instead of quietly shrinking the curriculum.
+    assert len(world.content.quests) == authored_quests
+    assert len(world.content.regions) == authored_regions
 
 
-def test_warnings_do_not_stop_a_build(repo_root: Path, fixture_participant_root: Path) -> None:
+def test_warnings_do_not_stop_a_build(content_repo: Path) -> None:
     """Empty regions and unreachable badges are exactly what ARCHITECTURE.md calls warnings.
 
     Curriculum is published incrementally: a build that failed on a region with no quests yet
-    would block every author until the whole backlog existed.
+    would block every author until the whole backlog existed. The incomplete curriculum is
+    built here rather than shipped, so `content/` can be complete and this stay covered.
     """
-    config = AppConfig.for_repo(repo_root, participant_root=fixture_participant_root)
+    (content_repo / "content" / "regions" / "unwritten-frontier.yaml").write_text(
+        "id: unwritten-frontier\n"
+        "version: 1\n"
+        "title: Unwritten Frontier\n"
+        "summary: A region whose quests have not been authored yet.\n"
+        "order: 900\n"
+        "accent: slate\n"
+        "outcomes:\n"
+        "  - Nothing yet, because no quest names this region.\n"
+    )
+    (content_repo / "content" / "badges" / "far-horizon.yaml").write_text(
+        "id: far-horizon\n"
+        "version: 1\n"
+        "title: Far Horizon\n"
+        "summary: A badge that needs more verified quests than the curriculum contains.\n"
+        "award_type: automatic\n"
+        "icon: horizon\n"
+        "criteria:\n"
+        "  verified_quest_count: 500\n"
+    )
+    config = AppConfig.for_repo(content_repo, participant_root=content_repo / "participant")
     report = ProblemReport()
     world = load_world(config, report)
 
@@ -47,6 +73,7 @@ def test_warnings_do_not_stop_a_build(repo_root: Path, fixture_participant_root:
     codes = {p.code for p in report.warnings}
     assert "semantic.empty_region" in codes
     assert "semantic.badge_unreachable" in codes
+    assert report.errors == []
     assert report.ok
 
 

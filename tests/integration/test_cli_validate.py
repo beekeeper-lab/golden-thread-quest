@@ -21,8 +21,10 @@ def test_validating_the_shipped_package_succeeds(
             str(fixture_participant_root),
         ]
     )
+    authored_quests = len(list((repo_root / "content" / "quests").rglob("*.md")))
+
     assert exit_code == 0
-    assert "validated 3 quest(s)" in capsys.readouterr().err
+    assert f"validated {authored_quests} quest(s)" in capsys.readouterr().err
 
 
 def test_no_participant_file_is_not_an_error(
@@ -51,19 +53,30 @@ def test_broken_content_exits_non_zero_and_writes_errors_to_stderr(
 
 
 def test_warnings_go_to_stdout_so_a_pipeline_can_separate_them(
-    repo_root: Path, fixture_participant_root: Path, capsys: pytest.CaptureFixture[str]
+    content_repo: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    main(
-        [
-            "validate",
-            "--repo-root",
-            str(repo_root),
-            "--participant-root",
-            str(fixture_participant_root),
-        ]
+    """A warning must never reach stderr, where a pipeline would read it as a failure.
+
+    The warning is manufactured in a copy rather than relied on in `content/`, so closing a
+    gap in the shipped curriculum cannot quietly delete this coverage.
+    """
+    (content_repo / "content" / "regions" / "unwritten-frontier.yaml").write_text(
+        "id: unwritten-frontier\n"
+        "version: 1\n"
+        "title: Unwritten Frontier\n"
+        "summary: A region whose quests have not been authored yet.\n"
+        "order: 900\n"
+        "accent: slate\n"
+        "outcomes:\n"
+        "  - Nothing yet, because no quest names this region.\n"
     )
+
+    exit_code = main(["validate", "--repo-root", str(content_repo)])
     captured = capsys.readouterr()
+
+    assert exit_code == 0
     assert "contains no quests" in captured.out
+    assert "contains no quests" not in captured.err
 
 
 def test_json_output_is_machine_readable_and_sorted(

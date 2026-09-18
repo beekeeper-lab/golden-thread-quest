@@ -202,7 +202,9 @@ class TestCatalogFiltering:
         context = browser.new_context(java_script_enabled=False)  # type: ignore[attr-defined]
         page = context.new_page()
         page.goto(f"{served}/catalog/", wait_until="load")
-        assert page.locator("[data-search]").count() == 3
+        repo_root = Path(__file__).resolve().parents[2]
+        authored_quests = len(list((repo_root / "content" / "quests").rglob("*.md")))
+        assert page.locator("[data-search]").count() == authored_quests
         page.close()
         context.close()
 
