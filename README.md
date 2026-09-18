@@ -4,6 +4,18 @@
 **Curriculum:** The AI Context Engineer Journey
 **Tagline:** From human intent to verified delivery.
 
+> **Status: work in progress. Not released, and not yet recommended for use.**
+>
+> The engine is substantially built and the whole of it is under test, but a release
+> audit is open and has confirmed findings still being worked through. Interfaces,
+> content and file layouts can change without notice, and no upgrade path is promised
+> between now and a first release. Nobody has yet run this on the installed Cowork
+> app, which is its primary target surface.
+>
+> `docs/ACCEPTANCE-CRITERIA.md` tracks what is done. `docs/audits/` holds the audit
+> record, including what is currently open. `docs/RELEASE-NOTES.md` lists the known
+> limitations.
+
 A local-first training application. The curriculum lives in Markdown and YAML, your work
 lives in ordinary files in your own Git repository, and the application reads them, checks
 them, and presents them. It does not own them.
@@ -54,10 +66,10 @@ address. Open it.
 
 | | |
 |---|---|
-| Tests | 555 — 513 under `make check`, 42 driving a real browser |
+| Tests | 557 — 515 under `make check`, 42 driving a real browser |
 | Screens | 13 page templates, 10 reusable components |
 | Schemas | 10, validating content, progress, reviews, validation results and the validator registry |
-| Sample curriculum | 8 regions, 3 quests, 4 badges, 1 track |
+| Sample curriculum | 8 regions, 8 quests, 4 badges, 1 track |
 | Sample validators | 3, plus a probe used only to prove the timeout kills a process group |
 | Build time | 203 quests in under a second |
 

@@ -103,3 +103,37 @@ def test_the_guide_ships_the_take_the_plan_says_it_ships() -> None:
         "Update whichever is wrong; a correction that is generated but not referenced is "
         "not shipped."
     )
+
+
+# --- What the curriculum contains --------------------------------------------------
+
+
+def test_the_readme_states_the_curriculum_it_actually_has() -> None:
+    """The README said "3 quests" for a release after five more were authored.
+
+    Test counts were already enforced here; nothing enforced the counts that describe the
+    content, which is the first thing a reader of the front page looks at.
+    """
+    counted = {
+        "regions": len(list((ROOT / "content" / "regions").glob("*.yaml"))),
+        "quests": len(list((ROOT / "content" / "quests").glob("*/*.md"))),
+        "badges": len(list((ROOT / "content" / "badges").glob("*.yaml"))),
+        "tracks": len(list((ROOT / "content" / "tracks").glob("*.yaml"))),
+    }
+    row = re.search(r"\| Sample curriculum \| ([^|]+) \|", (ROOT / "README.md").read_text())
+    assert row, "README.md no longer states what the sample curriculum contains"
+    claimed = {
+        noun: int(number)
+        for number, noun in re.findall(r"(\d+) (regions?|quests?|badges?|tracks?)", row.group(1))
+    }
+    normalised = {noun.rstrip("s") + "s": n for noun, n in claimed.items()}
+    assert normalised == counted, (
+        f"README.md claims {normalised}, the content tree holds {counted}."
+    )
+
+
+def test_the_readme_says_the_project_is_not_released() -> None:
+    """It is public and unfinished, and a reader must not have to infer the second part."""
+    head = (ROOT / "README.md").read_text().split("## ", 1)[0].lower()
+    assert "work in progress" in head
+    assert "not released" in head
