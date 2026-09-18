@@ -130,6 +130,15 @@ STATE_EXPLANATIONS: Final[dict[QuestState, str]] = {
     QuestState.VERIFIED: "A reviewer approved this evidence.",
 }
 
+# `locally_validated` normally means validators returned qualifying results. A quest that
+# declares none reaches the same state on the participant's word alone, and saying "required
+# automated checks passed" there would be the interface asserting a check that does not
+# exist — the one thing the authority field is in the model to prevent.
+UNVALIDATED_LOCALLY_VALIDATED: Final[str] = (
+    "This quest declares no automated checks, so this is your own assertion. "
+    "Reviewer approval remains required."
+)
+
 
 @dataclass(frozen=True, slots=True)
 class AcceptanceCriterion:
