@@ -31,7 +31,7 @@ import subprocess
 import sys
 import time
 from dataclasses import asdict, dataclass, field, replace
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -258,7 +258,7 @@ def run_validator(
         parameters=bound,
     )
 
-    started = datetime.now(UTC)
+    started = datetime.now(timezone.utc)
     start_monotonic = time.monotonic()
 
     # The environment is constructed, never inherited: a validator cannot read a credential
@@ -327,7 +327,7 @@ def run_validator(
                 # more useful than the line count. Redacted like any other captured output.
                 notes.append(f"Its last message was: {stderr.strip().splitlines()[-1][:300]}")
 
-    completed = datetime.now(UTC)
+    completed = datetime.now(timezone.utc)
     duration_ms = int((time.monotonic() - start_monotonic) * 1000)
 
     output = ValidatorOutput(

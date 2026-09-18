@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 import shutil
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -111,7 +111,7 @@ def render_error_page(config: AppConfig, report: ProblemReport) -> Path:
         build=BuildView(
             application_version=APPLICATION_VERSION,
             content_version="unpublished",
-            built_at=datetime.now(UTC).isoformat(timespec="seconds"),
+            built_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
             deterministic=False,
         ),
         flash=(),
@@ -173,7 +173,7 @@ def build_site(
         bundle, states, regions, participant.progress if participant else None
     )
 
-    stamp = built_at or datetime.now(UTC).isoformat(timespec="seconds")
+    stamp = built_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
     build_view = default_build_view(bundle, stamp)
     # A build from the CLI produces pages that say state cannot change; a build from the
     # running service produces pages whose actions work. Same templates, different truth.

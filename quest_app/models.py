@@ -11,9 +11,10 @@ found later can name the file an author has to open.
 
 from __future__ import annotations
 
-import enum
 from dataclasses import dataclass, field
 from typing import Final
+
+from quest_app.compat import StrEnum
 
 # CONTENT-MODEL.md difficulty table. The typical XP is advisory: an unusual value produces a
 # warning, never an error, because a maintainer may weight a quest deliberately.
@@ -39,7 +40,7 @@ BOOKEND_LABELS: Final[dict[str, str]] = {
 }
 
 
-class AttemptState(enum.StrEnum):
+class AttemptState(StrEnum):
     """The six states a participant record can hold.
 
     `locked` and `available` are deliberately absent: they are computed from prerequisites
@@ -54,7 +55,7 @@ class AttemptState(enum.StrEnum):
     VERIFIED = "verified"
 
 
-class QuestState(enum.StrEnum):
+class QuestState(StrEnum):
     """Every state a quest can be shown in, stored or derived."""
 
     LOCKED = "locked"
@@ -67,7 +68,7 @@ class QuestState(enum.StrEnum):
     VERIFIED = "verified"
 
 
-class Authority(enum.StrEnum):
+class Authority(StrEnum):
     """Who put a quest in its current state.
 
     This is the field that stops the interface implying a validator verified something.

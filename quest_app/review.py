@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import secrets
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -79,7 +79,7 @@ class SubmissionRecord:
 
 
 def _now() -> str:
-    return datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
 def readiness_problems(
@@ -146,7 +146,7 @@ def create_submission(
         raise ReviewError("The evidence directory could not be hashed.")
 
     record = SubmissionRecord(
-        submission_id=f"submission-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(3)}",
+        submission_id=f"submission-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(3)}",
         quest_id=quest.id,
         quest_version=quest.version,
         attempt_id=attempt.attempt_id,
@@ -227,9 +227,10 @@ def record_decision(
         )
 
     digest = evidence_hash(config, attempt.evidence_path) or "sha256:" + "0" * 64
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
     document = {
         "schema_version": 1,
-        "review_id": f"review-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(3)}",
+        "review_id": f"review-{stamp}-{secrets.token_hex(3)}",
         "quest_id": quest.id,
         "quest_version": quest.version,
         "attempt_id": attempt.attempt_id,
@@ -354,7 +355,9 @@ def _write_yaml(path: Path, document: dict[str, Any], schemas: Any, schema_name:
         )
     # A superseded decision is archived rather than overwritten, so history survives.
     if path.exists() and schema_name == "review":
-        archive = path.with_name(f"review-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}.yaml")
+        archive = path.with_name(
+            f"review-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.yaml"
+        )
         archive.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
     atomic_write_text(path, yaml.safe_dump(document, sort_keys=False, allow_unicode=True))
 

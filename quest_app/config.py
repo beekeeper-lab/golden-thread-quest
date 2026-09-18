@@ -10,8 +10,10 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Final, Self
+from typing import Final
 from urllib.parse import unquote
+
+from quest_app.compat import Self
 
 # The schema version this build understands. A document declaring a higher one is refused
 # rather than partially interpreted.

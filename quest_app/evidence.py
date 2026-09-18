@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import secrets
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from quest_app.config import AppConfig
@@ -151,7 +151,7 @@ def evidence_hash(config: AppConfig, evidence_path: str) -> str | None:
 
 def new_run_id(validator_id: str) -> str:
     """A run identifier that sorts by time and cannot collide."""
-    stamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
     return f"{validator_id}-{stamp}-{secrets.token_hex(3)}"
 
 
