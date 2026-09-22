@@ -110,3 +110,55 @@ naming a port a *different* repository's service later binds.
 `make validate-content`, `make build` and `make verify-package`, each with the output the
 documents describe. It could not run `make test-ui`: the sandbox blocked the Chromium
 download, so the 42 browser tests were counted rather than executed. They are run here.
+
+## Gates
+
+| Gate | Result |
+|---|---|
+| `make check` | pass — 598 passed, 42 deselected |
+| `make test-ui` | pass — 42 passed |
+| `make validate-content` | pass — 8 quests, 8 regions, 4 badges, 1 track, 0 warnings |
+| Clean clone from `origin` at `31a74cb` | pass, run by the documentation lens against the commit under audit |
+| Clean clone at this branch's head | **not run.** The lens's clone covers the tree this round started from; the fixes in this round are covered by the local gates only |
+| Each fix reverted one at a time | 14 of 17 code fixes caught by a test. The three not covered this way are content: the required evidence added to four quests and the two rewritten Jira fixtures, which `make validate-content` and the rendered pages verify instead |
+
+The suite grew from 555 to 598.
+
+## Verdict
+
+**Round 7 does not close DH7.** Twenty-six findings: one Blocking, eight High, the rest below.
+Every one is fixed, and every code fix has a test that fails without it.
+
+The round has two themes.
+
+The first is the one round 6 named, appearing again in the code round 6 wrote and in code
+older than that: **a mechanism correct in the case it was written for and one step short
+everywhere else.** ADR-038 made a failed rebuild an advisory on the transition path and left
+three other paths rebuilding bare. Round 6 closed the body-smuggling hole on refusals and
+left it open on `GET`. The origin check has guarded state changes since round 4 and nothing
+ever checked the name a request arrived under, while every page served carries the token.
+ADR-033 moved the rules out of the templates and left the one rule that is a checkbox.
+
+The second is new, and it is the one worth carrying into round 8: **a check that cannot see
+what it is judging.** The validator contract named read roots, write roots, a timeout, an
+environment and a network policy, and never named the attempt. So two validators asked the
+filesystem "what is the newest evidence here?" and answered a question about one participant's
+work with another's, in both directions — a complete attempt failed by a stranger's blank
+template, and a missing failure record satisfied by a stranger's log. The same shape is in
+the fixtures: `stale-item` and `duplicate-comment` described behaviours that the fixture data
+could not contain and the checks could not see. In each case the machinery around the check
+was correct and the check was looking at the wrong thing.
+
+Round 8 should run against the merge commit, with the same three lenses and the same rule
+that a lens is a source rather than a verdict. Point it at:
+
+- the four mechanisms this round added to the service — `Host` validation, the `GET` body
+  refusal, the catch-all on both handlers, and the confirmation gate — because each one
+  touches every request;
+- the advisory now carried into the page, which is the first thing this application tells a
+  participant about a failure that did not stop their change;
+- `Workspace.attempt_files` and the three validators, since a scope that is too narrow fails
+  as quietly as one that was too wide;
+- the clean-clone gate at the branch head, which this round did not run;
+- and the areas no lens has reached yet: `view_models`, `recommend`, `markdown_structure`,
+  `update`, `migrations`, and the accessibility of the pages the browser tests do not assert.
