@@ -136,13 +136,26 @@ class ActionRunner:
             state = new_state.value
             attempt_id = None
 
-        build_site(self.load(), service=self.service())
+        # The change is already on disk. A rebuild that fails afterwards is bad news about
+        # the generated site, not about the participant's work, and reporting it as a failed
+        # action told them their change had not happened while `progress.yaml` said it had.
+        # Generated output is disposable and rebuildable; their record is neither.
+        advisories: list[str] = []
+        try:
+            build_site(self.load(), service=self.service())
+        except OSError as exc:
+            reason = exc.strerror or type(exc).__name__
+            advisories.append(
+                f"Your change was recorded. The site could not be rebuilt ({reason}); "
+                "run `quest-app build` once that is fixed."
+            )
         return {
             "ok": True,
             "action": action,
             "quest_id": quest_id,
             "state": state,
             "attempt_id": attempt_id,
+            "advisories": tuple(advisories),
         }
 
     def _submit(self, world: Any, quest: Any, store: ProgressStore) -> dict[str, Any]:

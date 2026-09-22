@@ -385,6 +385,13 @@ are all builds.
 leaves the publish itself racing over `generated.previous`, which is the step that decides
 what a participant sees.
 
+**Amended in round 6.** This ADR and ADR-036 both claimed the build lock fell through the way
+the progress lock does. It did not: `_exclusive_output` handled a missing `fcntl` module and
+nothing else, so an unwritable `generated.lock` or a filesystem answering `ENOLCK` crashed
+every publisher, on exactly the filesystem the fall-through was written for. Two of round 6's
+three lenses found it independently. The code now matches what was written here, and a test
+covers each case.
+
 ## ADR-036 — Not being able to lock is never a reason to refuse the work
 
 **Decision:** Where a lock cannot be taken, the work proceeds unlocked. That covers a missing
@@ -403,6 +410,14 @@ degraded path is the application's own previous behaviour rather than a new risk
 **Rejected:** failing loudly so the participant knows the lock is gone. The participant
 cannot act on it, and the failure lands on the surface least able to explain it.
 
+**Amended in round 6.** Round 5 also deleted the lock file and the participant directory
+around it when an action was refused before writing anything, so that a refusal left no
+trace. It left something worse: a second process holding `flock` on that inode was left
+holding a lock on an orphan, the next process created a fresh file and entered at once, and
+two writers sat in the critical section together. The cleanup is gone. A refused first action
+leaves one hidden, ignored file in a directory the participant owns, which is the cheaper of
+the two, and `.gitignore` now ignores that file wherever the participant root is.
+
 ## ADR-037 — The service records the port it actually bound
 
 **Decision:** `run_service` writes its bound port to `local-data/service-port` and removes it
@@ -419,3 +434,28 @@ defect ADR-033's round set out to fix.
 **Rejected:** adding `--port` to `action` and `build`. It fixes the command a participant
 remembers to type correctly and leaves the one they do not, and the port is a fact the
 service already knows.
+
+**Amended in round 6.** One file was one too few. `serve --port` exists so a repository can
+host more than one service, and a single `service-port` file meant the second overwrote the
+first's claim while either one's shutdown deleted it for both: stopping one left the other
+serving pages with every control dead, which is the defect this file was added to prevent.
+There is now one file per bound port under `local-data/service-ports/`, written by the
+service that bound it and removed by that service alone; the probe asks at each in turn and
+still requires this application's own header before believing any of them. The read is
+bounded and range-checked, because an entry symlinked at `/dev/zero` otherwise hangs the
+reader forever.
+
+## ADR-038 — A rebuild that fails does not deny a change that already happened
+
+**Decision:** An action performs its state change, then rebuilds. A failure of that rebuild
+is reported as an advisory on a successful action, not as a failed action.
+
+**Reason:** The change is on disk before the rebuild starts. Reporting an `OSError` from the
+build as a failure told the participant their work had not been recorded, pointed them at
+their participant directory when the problem was the output directory, and exited non-zero
+while `progress.yaml` said the change had happened. Generated output is disposable and
+rebuildable by a single command; the participant's record is neither, and the two must not
+share a failure mode.
+
+**Rejected:** rolling the state change back so the report is true. It throws away the one
+thing in the transaction that cannot be regenerated.
