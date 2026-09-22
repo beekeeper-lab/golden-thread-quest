@@ -68,6 +68,19 @@ class ActionRunner:
         self.service = service if service is not None else online_service_view
 
     def perform(self, action: str, payload: dict[str, Any]) -> dict[str, Any]:
+        """One mutation at a time, across processes as well as within one.
+
+        The service serialises requests with a lock its own process holds. Since the CLI
+        landed, a second process performs the same read-modify-write against the same file,
+        and that lock cannot see it. The file lock is held across the load as well as the
+        write, because reading state that another process is about to replace is the race.
+        """
+        if action not in MUTATING_ACTIONS:
+            return self._perform(action, payload)
+        with ProgressStore(self.config).exclusive():
+            return self._perform(action, payload)
+
+    def _perform(self, action: str, payload: dict[str, Any]) -> dict[str, Any]:
         world = self.load()
         store = ProgressStore(self.config)
 
@@ -90,6 +103,7 @@ class ActionRunner:
             return self._run_validator(world, quest_id, payload)
 
         if action == "start-quest":
+            self._require_met_prerequisites(world, quest_id)
             # A participant with no progress file gets one here, seeded from the site's own
             # configuration. Without this the very first action of the pilot failed.
             attempt_id = start_attempt(
@@ -162,6 +176,9 @@ class ActionRunner:
             "quest_id": quest.id,
             "state": "submitted",
             "submission_id": record.submission_id,
+            # Not blockers, or the submission would have been refused. A participant who is
+            # never told a declared check went unrun learns it from a reviewer instead.
+            "advisories": list(record.advisories),
             # The application never pushes and never opens a pull request. Those are claims
             # on the participant's behalf that the work is finished.
             "next_steps": submission_instructions(quest.id, attempt.attempt_id, None),
@@ -289,6 +306,26 @@ class ActionRunner:
                 f"Something secret-like is in your evidence ({locations}). "
                 "Remove it before submitting; the scan never reports the value itself."
             )
+
+    def _require_met_prerequisites(self, world: Any, quest_id: str) -> None:
+        """A locked quest is locked on every surface, not only where a button can be greyed.
+
+        Prerequisites were computed for display and enforced nowhere. The browser disabled
+        Start on a locked quest and the CLI started it, so a participant with nothing verified
+        could take a quest three links down the chain and carry it to `verified`. The rule
+        that makes prerequisites mean anything is the same one `compute_states` uses:
+        satisfied means *verified*, not merely attempted.
+        """
+        from quest_app.progress_calc import compute_states
+
+        progress = compute_states(world.content, world.participant).get(quest_id)
+        if progress is None or not progress.unmet_prerequisites:
+            return
+        titles = [
+            world.content.quests[p].title if p in world.content.quests else p
+            for p in progress.unmet_prerequisites
+        ]
+        raise StoreError("This quest is locked until a reviewer has verified: " + ", ".join(titles))
 
     def _require_qualifying_validation(self, world: Any, quest_id: str) -> None:
         """`locally_validated` is a claim about validator results, so the results decide.

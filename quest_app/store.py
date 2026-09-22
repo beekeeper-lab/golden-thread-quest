@@ -16,7 +16,8 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -30,6 +31,8 @@ from quest_app.state_machine import TransitionError, check
 from quest_app.yaml_loader import strict_safe_load
 
 PROGRESS_FILENAME = "progress.yaml"
+# Never read as data and safe to delete; it exists only while a change is in flight.
+LOCK_FILENAME = ".progress.lock"
 AUDIT_FILENAME = "ACTIVITY.md"
 EVIDENCE_TEMPLATE_DIRECTORIES = ("validation", "screenshots", "logs")
 
@@ -72,6 +75,38 @@ class ProgressStore:
     @property
     def path(self) -> Path:
         return self.config.participant_root / PROGRESS_FILENAME
+
+    @property
+    def lock_path(self) -> Path:
+        return self.config.participant_root / LOCK_FILENAME
+
+    @contextmanager
+    def exclusive(self) -> Iterator[None]:
+        """Hold an exclusive lock on this participant's progress for the whole change.
+
+        Every mutation here is a read, a decision, and a write. The service held a lock
+        across that sequence, but only within its own process, and since the CLI action
+        layer landed a second process can do the same sequence at the same time. Four
+        concurrent `quest-app action start-quest` calls each read the same file, each
+        decided they were first, and three attempts and four activity lines survived.
+
+        The lock is advisory and POSIX-only. On a platform without `fcntl` the block still
+        runs: a local-first application must not refuse to work because it cannot lock, and
+        the atomic replace in `atomic_write_text` still keeps the file readable.
+        """
+        try:
+            import fcntl
+        except ImportError:  # pragma: no cover - POSIX everywhere this is tested
+            yield
+            return
+
+        self.lock_path.parent.mkdir(parents=True, exist_ok=True)
+        with self.lock_path.open("a+", encoding="utf-8") as handle:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
     def read(self) -> dict[str, Any]:
         if not self.path.exists():

@@ -336,3 +336,34 @@ an allowlisted set of read-only commands and raises if asked for anything else.
 behalf, that work is finished and ready for someone else's attention. That claim is theirs
 to make. It is also the difference between a tool that enhances a repository and one that
 takes it over, which `PRODUCT-BRIEF.md` draws explicitly.
+
+## ADR-033 — A rule the browser enforces is enforced in the action layer, not the template
+
+**Decision:** Every rule that decides whether a participant may do something lives in
+`quest_app/actions.py`, the layer both the loopback service and the CLI call. A template may
+grey out a control, but never as the only thing standing in the way.
+
+**Reason:** Round 4 found prerequisites computed for display and enforced nowhere. The quest
+page disabled Start on a locked quest, and one CLI command started it — a participant with
+nothing verified could take a quest three links down the chain and carry it to `verified`.
+The defect was invisible while the browser was the only caller, because the view was the
+enforcement. A second caller made it a hole. The same reasoning covers the secret-scan gate,
+the validator guard and the review guards, which were already there.
+
+## ADR-034 — One mutation at a time, across processes
+
+**Decision:** `ProgressStore.exclusive()` takes an exclusive POSIX file lock on
+`participant/.progress.lock`, and `ActionRunner.perform` holds it around the whole action,
+loading included. The lock is advisory and POSIX-only: where `fcntl` is unavailable the
+action still runs.
+
+**Reason:** Every mutation is a read, a decision and a write, and the service's lock is held
+inside one process. Once the CLI could perform the same sequence, two processes could
+interleave it: four concurrent starts produced four activity lines and three attempts. The
+lock spans the load because reading state another process is about to replace is the race,
+not just writing it. It is not held over a validator run, which is slow and appends rather
+than replaces.
+
+**Rejected:** refusing to act when the lock cannot be taken. A local-first application that
+will not record a participant's own work because of a lock file is worse than the race it
+prevents, and `atomic_write_text` still guarantees the file is never half-written.

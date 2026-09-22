@@ -40,14 +40,17 @@ are re-verified here before they are accepted; a lens is a source, not a verdict
 | Gate | Result |
 |---|---|
 | `make check` at `207a7b3`, unmodified | **fail** — `format-check` rejects `tests/integration/test_cli_actions.py:325`. See R4-8. |
-| `make check` after the fixes in this round | pass — see the closing gate table |
-| `make test-ui` | pass — 42 passed, 20.9s |
+| `make check` after the fixes in this round | pass — 533 passed, 42 deselected |
+| `make test-ui` | pass — 42 passed, 17.9s |
 | Clean clone from `origin`, `make setup`, `make validate-content`, `make build` | pass, and it is what caught R4-8 |
 | The suite on Python 3.10, the declared floor | **fail** at `207a7b3` — see R4-10 |
 
 The browser suite is included. The external review could not run it, because the Playwright
 download timed out in their environment; it runs here, so the gap that review left open is
 closed for this round.
+
+The suite grew from 517 to 533: sixteen tests, each one written against a finding in this
+round and each one failing without its fix.
 
 The gate result that matters most this round is the first row. Three previous rounds recorded
 `make check` as passing, and it does pass on a machine that has been building this repository
@@ -79,8 +82,79 @@ These were found before the lenses returned and are already fixed on the branch.
 
 ## Lens findings
 
-Pending.
+Each lens was given paths and a commit range and nothing else. Every finding below was
+re-verified here — by opening the file, running the command, or reproducing the behaviour —
+before it was accepted. A lens is a source, not a verdict.
+
+### Curriculum
+
+| # | Finding | Severity | Verification | Disposition |
+|---|---|---|---|---|
+| CUR-2 | `content/regions/trello-islands.yaml` promised "Create and update cards" and `github-caverns.yaml` "safely manage GitHub Issues", while the only quest in each region is explicitly read-only (`read-board.md:94`, `read-assigned-issues.md:96`). `ba-ruins.yaml` promised creation on the same pattern. | High | Confirmed, and confirmed to reach participants: the text is rendered on the home page, the map and the passport, not only in the source file | **Fixed.** The three outcomes now describe what the shipped quest delivers. The fuller arc stays in `docs/CURRICULUM-BACKLOG.md`, where it is a plan rather than a promise. |
+| CUR-1 | `scrum-standup-digest` ships as Builder; `docs/CURRICULUM-BACKLOG.md:133` planned it as Explorer. | Low | Confirmed. The shipped level is the right one: XP and estimate match every other Builder quest and no other quest disagrees | **Fixed** in the backlog, which is the document that was wrong. |
+| CUR-3 | The three quests written before this range use bullet acceptance criteria while the five new ones are numbered and tell the participant to cite by number. The validator warned on all three. | Low | Confirmed by `quest-app validate`: three warnings | **Fixed.** All criteria are numbered; validation is now clean. |
+| CUR-4 | Raised by the lens as unverified: `context-canonical-work-item` criterion 9 needs items from two source systems, but only the Jira quest is a hard prerequisite. | Medium | Verified as real. The other two systems are `related_quests`, which gate nothing, and nothing in the quest said a second was needed | **Fixed** in the scenario text, which now names the two quests that satisfy it and says why only one is a prerequisite. |
+
+The lens's overall read: the prerequisite graph is sound, every region and badge is reachable,
+and the tone holds across the eight quests. Nothing blocking.
+
+### Engine
+
+| # | Finding | Severity | Verification | Disposition |
+|---|---|---|---|---|
+| ENG-7 | Prerequisites are computed for display and enforced nowhere. The browser disables Start on a locked quest; the CLI starts it. | High | Reproduced independently: one command started `scrum-standup-digest` with nothing verified, three links down its chain | **Fixed.** `_require_met_prerequisites` runs in the action layer both callers share, so the CLI and the no-JavaScript form route refuse it with the same message. Both directions are tested, and the test helper that unlocks a chain walks it through real reviewer approvals rather than writing `verified` into a file. |
+| ENG-1 | One `quest-app action` rebuilds `generated/` with the offline service view while a server is running, disabling every control on every served page, with no recovery but a restart. | High | Confirmed in the code path: the CLI passed a constant. `make build` had the same effect | **Fixed.** Both probe for a running service first, matching on the application's own response header rather than a bare TCP connect, which would call anything holding the port this application. |
+| ENG-2 | No cross-process lock on `progress.yaml`. The service's lock is held within its own process, and the CLI is a second process performing the same read-modify-write. | High | Confirmed by the lens in 3 runs of 6 — four concurrent starts, four activity lines, three attempts | **Fixed.** `ProgressStore.exclusive()` takes a POSIX file lock, and `ActionRunner.perform` holds it across the load as well as the write, because reading state another process is about to replace is the race. Four concurrent starts now produce one attempt, one line, one success. |
+| ENG-3 | `token=é` takes both POST endpoints down: `secrets.compare_digest` raises on a non-ASCII `str`, inside the handler, so there is no HTTP response and a traceback carrying absolute paths reaches stderr. | Medium | Confirmed: `secrets.compare_digest('é','abc')` raises `TypeError` | **Fixed.** Both checks go through one helper that encodes before comparing, so the comparison stays constant-time and a non-ASCII token is an ordinary refusal. The old test missed it because its wrong token was made of the letter x. |
+| ENG-4 | Python 3.10 declared, shimmed, and untested; one test imports `tomllib`. | High | The same defect this round already recorded as R4-10 | **Fixed** in `e77cef4`, which landed while the lens was running. |
+| ENG-5 | The action allowlist is named in the two callers rather than owned by the layer that enforces it. | Low | Confirmed; `state_machine.check` is what actually refuses an unknown action | **Accepted, not changed.** A test asserts the two callers share one set. Moving it is a refactor with no behaviour to gain. |
+| ENG-6 | A comment in `update.py` describes mutating Git commands its allowlist does not contain. | Low | Confirmed | **Open, cosmetic.** Recorded rather than fixed in the same breath as security work. |
+
+**Test quality.** The lens disabled twelve security controls in a scratch copy and reran the
+suite. Eleven produced a failure naming the broken control. The miss was the no-JavaScript
+form route: every token and allowlist test posted to `/api/action`, so the form route carried
+the same guards with nothing asserting them. That route now has three tests of its own.
+
+All six architecture rules in scope were checked against the code rather than against the
+comments, and hold.
+
+### Documentation
+
+Nine findings, all verified and all fixed: the "three quests" claim in `README.md:114` and
+`PLANNING-STATUS.md:8` after the curriculum reached eight; a `RELEASE-NOTES.md` limitation
+saying clean-clone installation is untested when the `clean-export` CI job tests it; the
+`TRACEABILITY.md` DH1 row still open while `ACCEPTANCE-CRITERIA.md` recorded the same
+criterion closed; `SETUP.md` requiring Python 3.12 against a `>=3.10` floor; ADR-019 never
+amended when that floor moved; a "why there is no lockfile" section standing beside a tracked
+`uv.lock`; `actions.py` and `compat.py` missing from the module tree; no traceability rows for
+the CLI action layer; and a template count of twelve against thirteen files on disk.
+
+The lens's own summary is worth keeping: the machine-checked claims held, and everything left
+to prose had drifted.
 
 ## Verdict
 
-Pending.
+**The commit under audit, `207a7b3`, does not pass.** Ten findings at High, one at Medium
+with a live crash behind it, and the first gate in `docs/SETUP.md` failing on a clean clone.
+
+Every one of them is fixed on `chore/round-04-completion`, with a test that fails without the
+fix, and the gates are green again on the result. What the round says about the work is
+better than that list reads: three of the High findings are the same kind of defect — a rule
+enforced on the surface a reviewer looks at and nowhere else — and the CLI action layer is
+what made them visible. Adding a second caller to a system built around one is how you find
+out which rules lived in the view.
+
+**DH7 stays open.** The criterion is *a final audit that reports no unresolved blocking or
+high findings*, and this round is not that: it reported eleven and then fixed them. A round
+closes that criterion by finding nothing, not by fixing everything it found. Round 5 should
+run against the merge commit, with the same three lenses and the same rule that a lens is a
+source rather than a verdict.
+
+Two things round 5 should be pointed at specifically, because this round changed them and its
+own tests are the only ones that have ever looked:
+
+- the prerequisite guard, which is new enforcement on a rule the product has always stated;
+- the file lock, which now sits in the path of every mutation on both surfaces.
+
+What is *not* left open: the browser suite ran, the clean clone ran, the declared Python floor
+ran, and no finding from any lens is recorded here as fixed without evidence that it is.

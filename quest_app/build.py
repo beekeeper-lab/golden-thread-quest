@@ -823,6 +823,9 @@ def _review_context(
         "quest_version": attempt.quest_version,
         "submission_id": submission.get("submission_id"),
         "submitted_at": submission.get("submitted_at"),
+        # What the participant was told did not block submission. A reviewer could otherwise
+        # only infer an unrun check from an empty result list, which reads as "none declared".
+        "advisories": tuple(submission.get("advisories") or ()),
         "secret_scan_clean": not scan_evidence(config, attempt.evidence_path),
         "evidence_hash": submission.get("evidence_hash"),
         "evidence_changed": evidence_changed(config, attempt),

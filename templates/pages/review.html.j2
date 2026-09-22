@@ -71,6 +71,19 @@
   <p class="authority">Validator output is stored redacted and is never rendered as HTML.</p>
 </section>
 
+{% if advisories %}
+{# The participant was told these at submission and they did not block it. A reviewer who is
+   not told them can only infer an unrun check from an empty result list, which reads the
+   same as a quest that declares none. #}
+<section class="panel" aria-labelledby="advisories-heading">
+  <h2 id="advisories-heading">Told to the participant, not blocking</h2>
+  <ul>
+    {% for advisory in advisories %}<li>{{ advisory }}</li>{% endfor %}
+  </ul>
+  <p class="authority">These did not stop the submission. Whether they stop an approval is your decision.</p>
+</section>
+{% endif %}
+
 {% if evidence_changed %}
 <div class="alert alert-warning" role="status">
   <h2>The evidence changed since it was last reviewed</h2>

@@ -37,7 +37,7 @@ from urllib.parse import unquote, urlparse
 
 from quest_app.actions import MUTATING_ACTIONS, READ_ACTIONS, ActionRunner
 from quest_app.build import build_site
-from quest_app.config import AppConfig
+from quest_app.config import APPLICATION_VERSION, AppConfig
 from quest_app.content_loader import SchemaSet
 from quest_app.errors import ProblemReport
 from quest_app.git_status import summary_for
@@ -112,6 +112,45 @@ def _is_loopback(address: str) -> bool:
         return False
 
 
+SERVICE_HEADER = "X-Quest-App"
+
+
+def is_service_running(config: AppConfig) -> bool:
+    """Whether a service of this application is answering on the configured address.
+
+    `quest-app action` built the site with the offline view whatever else was happening, so
+    one command from a second terminal replaced every served page with a copy saying the
+    service was down and disabling every control on it. Nothing in the application could
+    undo that; only restarting the server could.
+
+    The probe asks for a page and looks for this application's own header, because a bare
+    TCP connect would call whatever else happened to hold the port a running service.
+    """
+    import urllib.error
+    import urllib.request
+
+    url = f"http://{config.service_host}:{config.service_port}/"
+    try:
+        with urllib.request.urlopen(url, timeout=0.5) as response:
+            return bool(response.headers.get(SERVICE_HEADER))
+    except urllib.error.HTTPError as error:
+        return bool(error.headers.get(SERVICE_HEADER))
+    except OSError:
+        return False
+
+
+def _token_matches(supplied: str, expected: str) -> bool:
+    """Compare a caller-supplied token in constant time, whatever bytes it contains.
+
+    `secrets.compare_digest` raises on a `str` holding a non-ASCII character, and the raise
+    happens inside the request handler, so a single `token=\u00e9` took the endpoint down
+    without an HTTP response and printed a traceback carrying absolute paths. The wrong-token
+    test missed it because it built its wrong token out of the letter x. Encoding both sides
+    first keeps the comparison constant-time and makes a non-ASCII token an ordinary refusal.
+    """
+    return secrets.compare_digest(supplied.encode("utf-8"), expected.encode("utf-8"))
+
+
 class ActionHandler(BaseHTTPRequestHandler):
     """The whole HTTP surface. Two GET routes, one POST route, and static files."""
 
@@ -143,6 +182,9 @@ class ActionHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _security_headers(self) -> None:
+        # Also the signature `is_service_running` probes for. A bare TCP connect would call
+        # anything holding the port this application.
+        self.send_header(SERVICE_HEADER, APPLICATION_VERSION)
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("Cache-Control", "no-store")
@@ -235,7 +277,7 @@ class ActionHandler(BaseHTTPRequestHandler):
         if payload is None:
             return
         token = payload.get("token")
-        if not isinstance(token, str) or not secrets.compare_digest(token, self.state.token):
+        if not isinstance(token, str) or not _token_matches(token, self.state.token):
             # Constant-time comparison: a timing difference here would leak the token one
             # character at a time to anything that can post to this port.
             self._refuse(HTTPStatus.FORBIDDEN, "A valid request token is required.")
@@ -275,7 +317,7 @@ class ActionHandler(BaseHTTPRequestHandler):
         if fields is None:
             return
         token = fields.get("token", [""])[0]
-        if not secrets.compare_digest(token, self.state.token):
+        if not _token_matches(token, self.state.token):
             self._refuse(
                 HTTPStatus.FORBIDDEN,
                 "This page was not served by the running application. Reload it and try again.",

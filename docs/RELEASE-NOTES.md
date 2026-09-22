@@ -26,6 +26,11 @@ them. It does not own them.
   writes the errors as their own page.
 - **Eleven screens**, generated deterministically. Two builds of the same inputs are
   byte-identical. The site works served and opened from disk.
+- **Every state change without a browser.** The CLI action layer performs the same actions
+  through the same allowlist and the same guards, which is the only path on a Cowork sandbox
+  with no terminal and no reachable loopback port. A rule the quest page enforces is enforced
+  here too (ADR-033), and two processes cannot interleave one participant's progress
+  (ADR-034).
 - **A loopback-only service** for the things a static page cannot safely do, with a per-run
   token, origin checks, a body-size cap, and an action allowlist that no path or command
   crosses.
@@ -47,7 +52,7 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 517 under `make check`, plus 42 browser-driven under `make test-ui` |
+| Tests | 533 under `make check`, plus 42 browser-driven under `make test-ui` |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3, plus a probe used only to prove the timeout |

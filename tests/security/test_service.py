@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import threading
 import urllib.error
+import urllib.parse
 import urllib.request
 from collections.abc import Iterator
 from typing import Any
@@ -68,6 +69,26 @@ def post(
         return error.code, json.loads(error.read())
 
 
+def post_form(base: str, path: str, fields: dict[str, str]) -> tuple[int, bytes]:
+    """The no-JavaScript route, which the JSON helper above never reaches.
+
+    Every allowlist and token test here posted to `/api/action`, so the form route carried
+    the same guards with nothing asserting it.
+    """
+    data = urllib.parse.urlencode(fields).encode()
+    request = urllib.request.Request(  # noqa: S310 - fixed loopback URL built in this test
+        f"{base}{path}",
+        data=data,
+        method="POST",
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:  # noqa: S310
+            return response.status, response.read()
+    except urllib.error.HTTPError as error:
+        return error.code, error.read()
+
+
 def get(base: str, path: str) -> int:
     try:
         with urllib.request.urlopen(f"{base}{path}", timeout=10) as response:  # noqa: S310
@@ -92,6 +113,93 @@ class TestBinding:
         assert assert_loopback(host) is None
 
 
+class TestARebuildWhileServing:
+    """A second process rebuilding the site must not disable the pages being served."""
+
+    def test_the_probe_tells_a_running_service_from_a_dead_port(
+        self, service: tuple[str, str], config: AppConfig
+    ) -> None:
+        from quest_app.serve import is_service_running
+
+        base, _ = service
+        port = int(base.rsplit(":", 1)[1])
+        running = AppConfig.for_repo(
+            config.repo_root, participant_root=config.participant_root, service_port=port
+        )
+        # Port 9 is discard: reachable as a concept, never answering as this application.
+        dead = AppConfig.for_repo(
+            config.repo_root, participant_root=config.participant_root, service_port=9
+        )
+
+        assert is_service_running(running) is True
+        assert is_service_running(dead) is False
+
+    def test_a_build_while_serving_keeps_the_controls_alive(
+        self, service: tuple[str, str], config: AppConfig
+    ) -> None:
+        """`quest-app action` built with the offline view whatever was happening.
+
+        One command from a second terminal replaced every served page with a copy saying the
+        service was not running and disabling every control, and only restarting the server
+        undid it.
+        """
+        from quest_app.view_models import offline_service_view, online_service_view
+
+        _, _ = service  # the fixture's value is the running server, not its address
+        report = ProblemReport()
+        world = load_world(config, report)
+        assert world is not None, report.to_text()
+
+        def pages_that_can_act() -> int:
+            return sum(
+                'method="post"' in page.read_text().lower()
+                for page in config.generated_root.rglob("index.html")
+            )
+
+        build_site(world, service=offline_service_view())
+        offline = pages_that_can_act()
+
+        build_site(world, service=online_service_view())
+        online = pages_that_can_act()
+
+        assert offline == 0, "the offline view is exactly what the fix has to avoid producing"
+        assert online > 0, "a page built while the service runs must still be able to act"
+
+
+class TestTheFormRoute:
+    """The route a participant with JavaScript disabled uses, guarded like the JSON one."""
+
+    def test_an_action_outside_the_allowlist_is_refused(self, service: tuple[str, str]) -> None:
+        base, token = service
+        status, _ = post_form(
+            base, "/api/action/delete-everything/base-camp-repository-safety", {"token": token}
+        )
+        assert status == 400
+
+    def test_a_wrong_token_is_refused(self, service: tuple[str, str]) -> None:
+        base, token = service
+        status, _ = post_form(
+            base, "/api/action/start-quest/base-camp-repository-safety", {"token": "x" * len(token)}
+        )
+        assert status == 403
+
+    def test_a_locked_quest_is_refused(self, service: tuple[str, str]) -> None:
+        """The same rule the CLI enforces, from the other caller of the shared action layer.
+
+        Prerequisites were computed for display and enforced nowhere, so the browser greyed
+        out Start while both POST routes performed it.
+        """
+        base, token = service
+        status, body = post_form(
+            base, "/api/action/start-quest/scrum-standup-digest", {"token": token}
+        )
+
+        # The form route answers a refusal the way a page does: a redirect carrying the
+        # problem, not a status code only a script would read.
+        assert status == 200
+        assert b"locked until a reviewer has verified" in body
+
+
 class TestRequestToken:
     def test_a_state_change_without_a_token_is_refused(self, service: tuple[str, str]) -> None:
         base, _ = service
@@ -103,6 +211,21 @@ class TestRequestToken:
         base, token = service
         status, _ = post(base, {"action": "rebuild", "token": "x" * len(token)})
         assert status == 403
+
+    def test_a_token_that_is_not_ascii_is_refused_rather_than_fatal(
+        self, service: tuple[str, str]
+    ) -> None:
+        """A wrong token built out of the letter x cannot catch this.
+
+        `secrets.compare_digest` raises on a `str` carrying a non-ASCII character, inside the
+        handler, so one such token took the endpoint down with no HTTP response and a
+        traceback holding absolute paths.
+        """
+        base, token = service
+        status, _ = post(base, {"action": "rebuild", "token": "é" * len(token)})
+        assert status == 403
+        status, _ = post(base, {"action": "rebuild", "token": token})
+        assert status == 200, "the service is still answering"
 
     def test_the_correct_token_is_accepted(self, service: tuple[str, str]) -> None:
         base, token = service

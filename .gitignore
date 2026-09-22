@@ -46,3 +46,6 @@ dist/
 
 # ADR: dependency resolution floats within the ranges in pyproject.toml (docs/SETUP.md).
 uv.lock
+
+# Held only while a change is in flight; never data.
+participant/.progress.lock

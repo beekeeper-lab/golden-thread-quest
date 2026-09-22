@@ -53,6 +53,7 @@ class SubmissionRecord:
     submitted_by: str
     secret_scan_clean: bool
     validation_result_ids: tuple[str, ...] = ()
+    advisories: tuple[str, ...] = ()
     note: str | None = None
     reproduction: str | None = None
 
@@ -71,6 +72,8 @@ class SubmissionRecord:
         }
         if self.validation_result_ids:
             document["validation_result_ids"] = list(self.validation_result_ids)
+        if self.advisories:
+            document["advisories"] = list(self.advisories)
         if self.note:
             document["note"] = self.note
         if self.reproduction:
@@ -111,7 +114,8 @@ def readiness_problems(
         result = latest.get(validator_id)
         if result is None:
             # An advisory, not a blocker: policy may permit submitting with a validator
-            # unrun, and the reviewer sees that it was not run.
+            # unrun. It is carried onto the submission record and returned to the
+            # participant by the submit action, so saying so is not the same as hiding it.
             problems.append(f"advisory: {validator_id} has not been run.")
         elif not result.qualifies:
             problems.append(
@@ -122,6 +126,19 @@ def readiness_problems(
 
 def blocking(problems: list[str]) -> list[str]:
     return [problem for problem in problems if not problem.startswith("advisory:")]
+
+
+def advisory(problems: list[str]) -> list[str]:
+    """The other half of `blocking`, which nothing used to read.
+
+    These were built on every submission and then dropped: the participant never saw them
+    and the reviewer could only infer them from an empty `validation_result_ids`.
+    """
+    return [
+        problem.removeprefix("advisory: ")
+        for problem in problems
+        if problem.startswith("advisory:")
+    ]
 
 
 def create_submission(
@@ -140,6 +157,7 @@ def create_submission(
     problems = readiness_problems(quest, attempt, participant, config)
     if blocking(problems):
         raise ReviewError("; ".join(blocking(problems)))
+    advisories = tuple(advisory(problems))
 
     digest = evidence_hash(config, attempt.evidence_path)
     if digest is None:
@@ -156,6 +174,7 @@ def create_submission(
         submitted_by=participant.progress.display_name,
         secret_scan_clean=True,
         validation_result_ids=tuple(result.run_id for result in participant.results_for(attempt)),
+        advisories=advisories,
         note=note,
     )
 

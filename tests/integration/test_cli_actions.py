@@ -91,33 +91,76 @@ def test_no_cli_action_can_produce_verified(participant: Path) -> None:
     run(participant, "start-quest", "--quest", QUEST)
     for action in sorted(MUTATING_ACTIONS - {"record-review", "rebuild"}):
         run(participant, action, "--quest", QUEST)
-    written = (
-        (participant / "progress.yaml").read_text()
-        if (participant / "progress.yaml").exists()
-        else ""
+    assert state_of(participant, QUEST) != "verified", (
+        "a participant reached verified without a reviewer"
     )
-    assert "verified" not in written, "a participant reached verified without a reviewer"
 
 
-def _declared_validators() -> dict[str, tuple[str, ...]]:
-    """Every quest in the catalogue and the validators it declares.
+def _front_matter() -> dict[str, dict[str, object]]:
+    """Every quest in the catalogue, by id, with the front matter this module reasons about.
 
     Derived from the content tree rather than a hand-written list, so a quest authored
-    tomorrow is covered by the two tests below without anyone remembering to add it.
+    tomorrow is covered by the tests below without anyone remembering to add it.
     """
-    quests: dict[str, tuple[str, ...]] = {}
+    quests: dict[str, dict[str, object]] = {}
     for path in sorted((ROOT / "content" / "quests").glob("*/*.md")):
         text = path.read_text()
         if not text.startswith("---\n"):
             continue
         front = yaml.safe_load(text.split("\n---\n", 1)[0].removeprefix("---\n"))
-        quests[front["id"]] = tuple(front.get("validators") or ())
+        quests[front["id"]] = front
     return quests
 
 
-QUESTS = _declared_validators()
+FRONT_MATTER = _front_matter()
+QUESTS = {q: tuple(f.get("validators") or ()) for q, f in FRONT_MATTER.items()}
+PREREQUISITES = {q: tuple(f.get("prerequisites") or ()) for q, f in FRONT_MATTER.items()}
 WITHOUT_VALIDATORS = sorted(q for q, v in QUESTS.items() if not v)
 WITH_VALIDATORS = sorted(q for q, v in QUESTS.items() if v)
+
+
+def state_of(participant: Path, quest: str) -> str | None:
+    """The recorded state of one quest, not of the whole file.
+
+    `unlock` carries prerequisites to verified through the reviewer, so asserting on the
+    word "verified" anywhere in `progress.yaml` would now pass or fail for the wrong quest.
+    """
+    path = participant / "progress.yaml"
+    if not path.exists():
+        return None
+    data = yaml.safe_load(path.read_text()) or {}
+    for attempt in data.get("attempts", []):
+        if attempt.get("quest_id") == quest:
+            return str(attempt.get("state"))
+    return None
+
+
+def unlock(participant: Path, quest: str) -> None:
+    """Carry every prerequisite of `quest` to verified, the only way that is possible.
+
+    A locked quest is refused on every surface since round 4, so a test that starts a quest
+    three links down the chain has to walk the chain. It walks it through the product's own
+    commands, reviewer approval included: there is no test-only door into `verified`, and
+    adding one would delete the guarantee these tests exist to hold.
+    """
+    for prerequisite in PREREQUISITES.get(quest, ()):
+        unlock(participant, prerequisite)
+        for action in ("start-quest", "mark-evidence-ready", "submit-for-review"):
+            result = run(participant, action, "--quest", prerequisite)
+            assert result.returncode == 0, f"{prerequisite} {action}: {result.stderr}"
+        result = run(
+            participant,
+            "record-review",
+            "--quest",
+            prerequisite,
+            "--decision",
+            "approved",
+            "--reviewer",
+            "A Reviewer",
+            "--statement",
+            "Read the evidence and confirmed it.",
+        )
+        assert result.returncode == 0, f"{prerequisite} record-review: {result.stderr}"
 
 
 def test_the_catalogue_contains_both_kinds_of_quest() -> None:
@@ -136,6 +179,7 @@ def test_a_quest_declaring_no_validators_can_still_reach_submitted(
     scope has no way to declare one. If the guard demanded a qualifying run regardless,
     every such quest would be a dead end at `evidence_ready`.
     """
+    unlock(participant, quest)
     for action in ("start-quest", "mark-evidence-ready", "mark-locally-validated"):
         result = run(participant, action, "--quest", quest)
         assert result.returncode == 0, f"{action} on {quest}: {result.stderr}"
@@ -144,17 +188,99 @@ def test_a_quest_declaring_no_validators_can_still_reach_submitted(
     assert "submitted" in (participant / "progress.yaml").read_text()
 
 
+def test_four_processes_starting_the_same_quest_produce_one_attempt(participant: Path) -> None:
+    """The service's lock is held inside one process; a second process cannot see it.
+
+    Run concurrently, four `start-quest` calls each read the same progress file, each
+    decided it was the first, and three attempts and four activity lines survived. The
+    outcome was not deterministic — it reproduced in three runs out of six — which is what
+    a race looks like from the outside.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        results = list(
+            pool.map(lambda _: run(participant, "start-quest", "--quest", QUEST), range(4))
+        )
+
+    data = yaml.safe_load((participant / "progress.yaml").read_text())
+    attempts = [a for a in data["attempts"] if a["quest_id"] == QUEST]
+    activity = (participant / "ACTIVITY.md").read_text()
+
+    assert len(attempts) == 1, f"{len(attempts)} attempts from four concurrent starts"
+    assert activity.count("Started") == 1, "one start, one line"
+    assert sum(r.returncode == 0 for r in results) == 1, "only the first start can succeed"
+
+
+LOCKED = sorted(q for q, prerequisites in PREREQUISITES.items() if prerequisites)
+
+
+def test_the_catalogue_contains_a_locked_quest() -> None:
+    """The test below is vacuous if every quest is available from a standing start."""
+    assert LOCKED, "no quest declares a prerequisite; the lock guard is never exercised"
+
+
+@pytest.mark.parametrize("quest", LOCKED)
+def test_a_locked_quest_is_refused_here_too(participant: Path, quest: str) -> None:
+    """The browser greys out Start on a locked quest. Nothing stopped this surface.
+
+    Prerequisites were computed for display and enforced nowhere, so a participant with
+    nothing verified could start a quest three links down the chain and carry it to
+    `verified`. Enforcement belongs in the action layer both callers share, which is why
+    this test and the service's own are the same assertion from two directions.
+    """
+    result = run(participant, "start-quest", "--quest", quest)
+
+    assert result.returncode != 0, "a locked quest started with no prerequisite verified"
+    assert "locked" in result.stderr
+    assert state_of(participant, quest) is None, "a refused start must record nothing"
+
+    unlock(participant, quest)
+    assert run(participant, "start-quest", "--quest", quest).returncode == 0, (
+        "the same quest must start once its prerequisites are verified"
+    )
+
+
 @pytest.mark.parametrize("quest", WITH_VALIDATORS)
 def test_a_quest_declaring_a_validator_is_refused_without_a_qualifying_run(
     participant: Path, quest: str
 ) -> None:
     """The other half of the same guard: the early exit must not have widened into a hole."""
+    unlock(participant, quest)
     run(participant, "start-quest", "--quest", quest)
     run(participant, "mark-evidence-ready", "--quest", quest)
     result = run(participant, "mark-locally-validated", "--quest", quest)
     assert result.returncode != 0, "a validator quest reached locally_validated with no result"
     for validator in QUESTS[quest]:
         assert validator in result.stderr, "the refusal must name the check that is missing"
+
+
+def test_an_unrun_declared_check_is_told_to_the_participant_and_the_reviewer(
+    participant: Path,
+) -> None:
+    """The advisory existed and reached nobody.
+
+    `readiness_problems` built it on every submission, `create_submission` kept only the
+    blocking half, and nothing else called it. The participant was not told before
+    submitting and the reviewer was not told after; a reviewer could infer it from an empty
+    result list, which reads the same as a quest that declares no checks at all.
+    """
+    quest = WITH_VALIDATORS[0]
+    unlock(participant, quest)
+    for action in ("start-quest", "mark-evidence-ready"):
+        assert run(participant, action, "--quest", quest).returncode == 0
+
+    result = run(participant, "submit-for-review", "--quest", quest)
+    assert result.returncode == 0, result.stderr
+    assert "advisory:" in result.stdout, "the participant submitted without being told"
+    for validator in QUESTS[quest]:
+        assert validator in result.stdout
+
+    data = yaml.safe_load((participant / "progress.yaml").read_text())
+    evidence = next(a["evidence_path"] for a in data["attempts"] if a["quest_id"] == quest)
+    submission = yaml.safe_load((participant.parent / evidence / "submission.yaml").read_text())
+    assert submission["advisories"], "the record the reviewer reads carries nothing"
+    assert any(v in " ".join(submission["advisories"]) for v in QUESTS[quest])
 
 
 # --- The reviewer's path, which on a browserless surface is the only one -------------
@@ -164,6 +290,7 @@ STATEMENT = "I read the board export and both runs against every numbered criter
 
 
 def submitted(participant: Path, quest: str = REVIEWED) -> None:
+    unlock(participant, quest)
     for action in (
         "start-quest",
         "mark-evidence-ready",
@@ -222,7 +349,7 @@ def test_a_reviewer_can_approve_without_a_browser(participant: Path) -> None:
         STATEMENT,
     )
     assert result.returncode == 0, result.stderr
-    assert "verified" in (participant / "progress.yaml").read_text()
+    assert state_of(participant, REVIEWED) == "verified"
 
 
 def test_approval_without_a_statement_is_refused(participant: Path) -> None:
@@ -230,7 +357,7 @@ def test_approval_without_a_statement_is_refused(participant: Path) -> None:
     result = run(participant, "record-review", "--quest", REVIEWED, "--decision", "approved")
     assert result.returncode != 0
     assert "verification statement" in result.stderr
-    assert "verified" not in (participant / "progress.yaml").read_text()
+    assert state_of(participant, REVIEWED) != "verified"
 
 
 def test_requesting_changes_needs_a_finding_and_takes_a_well_formed_one(
@@ -304,7 +431,7 @@ def test_approving_changed_evidence_needs_the_acknowledgement(participant: Path)
         "--acknowledge-changed-evidence",
     )
     assert result.returncode == 0, result.stderr
-    assert "verified" in (participant / "progress.yaml").read_text()
+    assert state_of(participant, REVIEWED) == "verified"
 
 
 # --- The installed commands, not the module path ------------------------------------

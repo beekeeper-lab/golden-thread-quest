@@ -18,26 +18,76 @@
     "secret_scan_clean"
   ],
   "properties": {
-    "schema_version": { "type": "integer", "minimum": 1 },
-    "submission_id": { "$ref": "#/$defs/id" },
-    "quest_id": { "$ref": "#/$defs/id" },
-    "quest_version": { "type": "integer", "minimum": 1 },
-    "attempt_id": { "$ref": "#/$defs/id" },
-    "content_hash": { "$ref": "#/$defs/hash" },
-    "evidence_hash": { "$ref": "#/$defs/hash" },
-    "submitted_at": { "type": "string", "format": "date-time" },
-    "submitted_by": { "type": "string", "minLength": 1, "maxLength": 100 },
-    "secret_scan_clean": { "type": "boolean" },
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "submission_id": {
+      "$ref": "#/$defs/id"
+    },
+    "quest_id": {
+      "$ref": "#/$defs/id"
+    },
+    "quest_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "attempt_id": {
+      "$ref": "#/$defs/id"
+    },
+    "content_hash": {
+      "$ref": "#/$defs/hash"
+    },
+    "evidence_hash": {
+      "$ref": "#/$defs/hash"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "submitted_by": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "secret_scan_clean": {
+      "type": "boolean"
+    },
     "validation_result_ids": {
       "type": "array",
       "uniqueItems": true,
-      "items": { "$ref": "#/$defs/id" }
+      "items": {
+        "$ref": "#/$defs/id"
+      }
     },
-    "note": { "type": "string", "maxLength": 2000 },
-    "reproduction": { "type": "string", "maxLength": 4000 }
+    "note": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "reproduction": {
+      "type": "string",
+      "maxLength": 4000
+    },
+    "advisories": {
+      "type": "array",
+      "description": "Everything the participant was told did not block submission but is worth the reviewer's attention: a declared check never run, or one whose last run did not qualify. Optional, because a submission with nothing to say carries no key.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 400
+      },
+      "maxItems": 50
+    }
   },
   "$defs": {
-    "id": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$", "maxLength": 120 },
-    "hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 120
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
   }
 }
