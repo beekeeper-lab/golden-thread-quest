@@ -28,9 +28,11 @@ jobs:
           # tools/secret_scan.py scans tracked files, so it needs the index, not history.
           fetch-depth: 1
 
-      - uses: astral-sh/setup-uv@v3
-        with:
-          enable-cache: true
+      # v5, and no dependency cache. This project has no `uv.lock`, and `enable-cache`
+      # on v3 resolves `**/uv.lock` and fails the job when it matches nothing — which is
+      # how every CI run since 2026-09-18 failed in setup while three audit rounds
+      # recorded their gates as green from a developer's machine.
+      - uses: astral-sh/setup-uv@v5
 
       - name: Install
         run: |
@@ -60,9 +62,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
-        with:
-          enable-cache: true
+      # v5, and no dependency cache. This project has no `uv.lock`, and `enable-cache`
+      # on v3 resolves `**/uv.lock` and fails the job when it matches nothing — which is
+      # how every CI run since 2026-09-18 failed in setup while three audit rounds
+      # recorded their gates as green from a developer's machine.
+      - uses: astral-sh/setup-uv@v5
       - name: Install
         run: |
           uv venv .venv --python 3.12

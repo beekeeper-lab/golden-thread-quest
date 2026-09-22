@@ -111,6 +111,16 @@ naming a port a *different* repository's service later binds.
 documents describe. It could not run `make test-ui`: the sandbox blocked the Chromium
 download, so the 42 browser tests were counted rather than executed. They are run here.
 
+### Found while running the gates
+
+| # | Finding | Severity | Verification | Disposition |
+|---|---|---|---|---|
+| CI-1 | CI has failed in its first step on every run since 2026-09-18, including both audit merges, and three rounds recorded their gates as green from a developer's machine. `astral-sh/setup-uv@v3` with `enable-cache: true` resolves `**/uv.lock`, this project has no lock file, and the action fails the job when the glob matches nothing. Nothing was ever compiled, linted, typed or tested in CI. | High | `gh run list --branch main` shows `failure` on every run; the job log ends `No file in … matched to [**/uv.lock]`. The one job that passed uses `setup-uv@v5` | **Fixed.** All three jobs use `@v5` with no dependency cache, matching the job that worked. |
+
+This one was not found by a lens. It was found by running the round's own gates through CI
+rather than only locally, which is the same lesson round 4 learned about clean clones and had
+not finished learning.
+
 ## Gates
 
 | Gate | Result |
