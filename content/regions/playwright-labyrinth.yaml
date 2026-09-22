@@ -9,5 +9,5 @@ icon: validation
 outcomes:
   - Translate intent and risk into maintainable automated tests.
   - Execute tagged, independent tests and preserve useful evidence.
-  - Distinguish product defects, test defects, environment failures, and inconclusive results.
+  - Capture failure evidence a second person can act on, including trace, screenshot, and a concise reproduction summary.
 tags: [playwright, testing, validation]

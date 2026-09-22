@@ -71,7 +71,7 @@ address. Open it.
 | Schemas | 10, validating content, progress, reviews, validation results and the validator registry |
 | Sample curriculum | 8 regions, 8 quests, 4 badges, 1 track |
 | Sample validators | 3, plus a probe used only to prove the timeout kills a process group |
-| Build time | 203 quests in under a second |
+| Build time | the shipped curriculum plus 200 synthetic quests, in under a second |
 
 ## The rules it holds itself to
 

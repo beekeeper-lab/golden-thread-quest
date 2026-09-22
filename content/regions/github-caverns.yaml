@@ -8,6 +8,6 @@ accent: violet
 icon: github
 outcomes:
   - Read assigned Issues into local context using the narrowest token scope that answers the question.
-  - Connect requested work to implementation and validation evidence.
+  - Record the links from an issue to the pull requests, commits, and issues that answer it, so the thread from request to delivery can be followed.
   - Preserve repository conventions and human review authority.
 tags: [github, integration, traceability]

@@ -56,7 +56,7 @@ them. It does not own them.
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3, plus a probe used only to prove the timeout |
-| Build budget, 203 quests | asserted under 60s; observed under 1s |
+| Build budget, the shipped curriculum plus 200 synthetic quests | asserted under 60s; observed under 1s |
 
 ## Known limitations
 

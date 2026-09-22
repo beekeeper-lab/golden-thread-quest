@@ -199,9 +199,10 @@ Badge presentation must say which authority awarded it.
 5. Proof rules automatically populate the evidence workspace.
 6. Validator references automatically populate available validation actions.
 7. Outcomes appear on quest detail and review views.
-8. Badge criteria drive progress displays without duplicate JavaScript rules.
-9. Search indexes are generated from normalized content.
-10. Content marked deprecated remains linkable for historical attempts but is not recommended to new participants.
+8. A region's `outcomes` state what that region's shipped quests actually deliver, because they render under "What you will be able to do" on the home page, the map, the passport, and the region page, where a participant reads them as a promise about this release. Capability a later quest will add belongs in `docs/CURRICULUM-BACKLOG.md`, which is a plan rather than a promise. No validator can check this — it is a rule for the author and the reviewer, and region prose has drifted from the shipped curriculum in two successive audit rounds.
+9. Badge criteria drive progress displays without duplicate JavaScript rules.
+10. Search indexes are generated from normalized content.
+11. Content marked deprecated remains linkable for historical attempts but is not recommended to new participants.
 
 ## Recommended-next algorithm
 

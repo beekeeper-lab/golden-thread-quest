@@ -10,8 +10,12 @@ source .venv/bin/activate
 make check            # format, lint, types, YAML safety, secret scan, tests
 ```
 
-`make setup` needs [uv](https://docs.astral.sh/uv/) and Python 3.12 or newer. Everything else is
-installed into `.venv`, which is gitignored.
+`make setup` needs [uv](https://docs.astral.sh/uv/) and Python 3.10 or newer, which is the floor
+`pyproject.toml` declares and CI tests. Everything else is installed into `.venv`, which is
+gitignored.
+
+Rebuilding the HTML user guide needs one more package, because it re-encodes the diagrams:
+`uv pip install -e '.[docs]'`, then `python scripts/build_user_guide_html.py`.
 
 Browser-driven tests need one extra step, because they download a browser:
 

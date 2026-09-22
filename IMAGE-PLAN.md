@@ -710,7 +710,11 @@ Image 6, `01-first-hour-flow-v2`, was never generated and never will be: the
 division it drew stopped being true before it was worth buying. Image 14
 replaces it.
 
-**Invocation note.** `scripts/generate_images.py` resolves each entry's **File**
+**Invocation note.** Rebuilding the guide after a new image needs the `docs` extra,
+`uv pip install -e '.[docs]'`, because `scripts/build_user_guide_html.py` re-encodes each
+diagram as a WebP data URI and nothing the application ships imports Pillow.
+
+`scripts/generate_images.py` resolves each entry's **File**
 path under `--images-dir`, which defaults to `<project>/images`. Because this
 plan's paths are written from the repository root, the run needs
 `--images-dir .`; without it the output lands at `images/docs/media/images/`
