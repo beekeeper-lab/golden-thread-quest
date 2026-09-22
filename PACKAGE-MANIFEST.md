@@ -32,7 +32,7 @@
 ## Executable contracts and examples
 
 - `schemas/` — quest, region, badge, track, site, progress, validation, and review contracts
-- `content/` — site configuration, eight regions, four badges, one track, and three representative quests
+- `content/` — site configuration, eight regions, four badges, one track, and eight quests, one per region
 - `fixtures/` — participant progress, nested evidence/review/validation records, and normalized view-model examples
 - `templates/` — illustrative Jinja2 separation contracts
 

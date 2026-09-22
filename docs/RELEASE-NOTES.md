@@ -24,7 +24,11 @@ them. It does not own them.
   validation reports the file, the field, the rule in words, a redacted value and — for a
   mistyped stable ID — a suggestion. A failed build leaves the last good site standing and
   writes the errors as their own page.
-- **Eleven screens**, generated deterministically. Two builds of the same inputs are
+- **Eleven screens**, specified in `docs/ui/SCREEN-SPECS.md` as U01 to U11 and rendered by
+  thirteen page templates — the two extra templates are the tag page and the evidence index,
+  which are generated per tag and per quest rather than being screens of their own. They are
+  generated deterministically: two builds of the same inputs differ only in the build
+  timestamp each page carries, and setting `SOURCE_DATE_EPOCH` to a fixed value makes them
   byte-identical. The site works served and opened from disk.
 - **Every state change without a browser.** The CLI action layer performs the same actions
   through the same allowlist and the same guards, which is the only path on a Cowork sandbox
@@ -52,7 +56,7 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 555 under `make check`, plus 42 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
+| Tests | 565 under `make check`, plus 42 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3, plus a probe used only to prove the timeout |

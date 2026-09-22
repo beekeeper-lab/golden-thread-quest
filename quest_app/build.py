@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import os
 import shutil
 import sys
 from collections.abc import Iterator
@@ -75,6 +76,27 @@ class BuildResult:
     manifest: dict[str, Any]
 
 
+def build_stamp() -> str:
+    """The build timestamp, honouring `SOURCE_DATE_EPOCH`.
+
+    Everything else about a build is a function of its inputs, so this stamp is the only
+    thing that changes between two builds of the same content — which made the documented
+    claim that two builds are byte-identical false for the command a reader actually runs.
+    Setting `SOURCE_DATE_EPOCH` to a fixed value now makes it true, by the same convention
+    the rest of the reproducible-builds world uses.
+    """
+    raw = os.environ.get("SOURCE_DATE_EPOCH")
+    if raw:
+        try:
+            moment = datetime.fromtimestamp(int(raw.strip()), tz=timezone.utc)
+        except (ValueError, OverflowError, OSError):
+            # An unusable value is not worth failing a build over, and silently ignoring it
+            # is better than pretending the output is reproducible when it is not.
+            return datetime.now(timezone.utc).isoformat(timespec="seconds")
+        return moment.isoformat(timespec="seconds")
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
 def render_error_page(config: AppConfig, report: ProblemReport) -> Path:
     """Render the authoring-error screen (U11) somewhere safe to look at it.
 
@@ -116,7 +138,7 @@ def render_error_page(config: AppConfig, report: ProblemReport) -> Path:
         build=BuildView(
             application_version=APPLICATION_VERSION,
             content_version="unpublished",
-            built_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            built_at=build_stamp(),
             deterministic=False,
         ),
         flash=(),
@@ -248,7 +270,7 @@ def _render_and_publish(
         bundle, states, regions, participant.progress if participant else None
     )
 
-    stamp = built_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
+    stamp = built_at or build_stamp()
     build_view = default_build_view(bundle, stamp)
     # A build from the CLI produces pages that say state cannot change; a build from the
     # running service produces pages whose actions work. Same templates, different truth.

@@ -15,7 +15,7 @@ is itself the finding.
 | **CG3** A maintainer can add a quest without editing code | `build.py`, generic templates | `integration/test_build.py::TestAddingContentNeedsNoCodeChange::test_no_ui_file_was_touched` |
 | **CG4** A valid new quest appears in region, catalog, filters, search, prerequisite graph | `build.py` indexes | `TestAddingContentNeedsNoCodeChange` (five assertions) |
 | **CG5** Invalid content prevents publication with an actionable error | `errors.ContentProblem` | `semantic/test_invalid_content.py` (20 rules) |
-| Generated output is deterministic | sorted traversal, sorted JSON | `integration/test_build.py::test_two_builds_of_the_same_inputs_are_identical` |
+| **CG6** Generated output is deterministic for equivalent inputs | sorted traversal, sorted JSON, `build.build_stamp` | `integration/test_build.py::test_two_builds_of_the_same_inputs_are_identical` |
 | **CG7** A failed build preserves the last valid output | `build._swap` | `test_a_build_that_fails_midway_leaves_the_previous_site_intact` |
 
 ## Participant experience
@@ -148,4 +148,4 @@ Every row above carries the stable ID of the criterion it maps to, from
 prose, which is how this document came to name the wrong test file for a criterion twice in
 a row without anyone noticing.
 
-**Criteria with no row here: CG6.** Each one is either covered by a row whose wording differs, or genuinely unmapped; treat an ID appearing in neither place as unverified.
+**Criteria with no row here: none.** Round 6 left this note naming CG6, whose row was present but unlabelled, so the document's own audit trail contradicted its own table. Treat an ID appearing in neither place as unverified.
