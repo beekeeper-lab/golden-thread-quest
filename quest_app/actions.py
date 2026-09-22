@@ -53,6 +53,21 @@ READ_ACTIONS = frozenset({"health", "git-status", "actions"})
 __all__ = ["CONFIRMATIONS", "MUTATING_ACTIONS", "READ_ACTIONS", "ActionRunner"]
 
 
+def _is_confirmed(payload: dict[str, Any]) -> bool:
+    """Whether the caller said, in this request, that it meant this action.
+
+    A browser sends the checkbox value, a JSON client sends `true`, and a CLI caller passes
+    `--confirm`. Anything else — absent, empty, or a word that denies it — is not a
+    confirmation.
+    """
+    value = payload.get("confirm")
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"yes", "on", "true", "1", "confirm", "confirmed"}
+    return False
+
+
 class ActionRunner:
     """Performs actions against one participant's progress, with every guard applied.
 
@@ -78,6 +93,13 @@ class ActionRunner:
         and that lock cannot see it. The file lock is held across the load as well as the
         write, because reading state that another process is about to replace is the race.
         """
+        if action in CONFIRMATIONS and not _is_confirmed(payload):
+            # ADR-033: a rule the page states is kept here, in the layer both the service
+            # and the CLI call. Until round 8 this gate lived in the form handler alone, so
+            # the JSON endpoint and `quest-app action` performed the same actions with no
+            # confirmation at all — including `record-review`, which produces verified
+            # completion and verified XP.
+            raise ValueError(f"{CONFIRMATIONS[action]} — confirm it, then try again.")
         if action not in MUTATING_ACTIONS:
             return self._perform(action, payload)
         with ProgressStore(self.config).exclusive():

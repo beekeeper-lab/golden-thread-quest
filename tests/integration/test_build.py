@@ -328,9 +328,46 @@ def test_every_consequential_action_confirms_without_javascript(built: AppConfig
     for page in sorted(built.generated_root.rglob("*.html")):
         html = page.read_text()
         for form in _re.findall(r"<form[^>]*data-confirm[^>]*>.*?</form>", html, _re.S):
-            assert 'type="checkbox"' in form and "required" in form, (
+            # Named, not merely present: this assertion passed on the reviewer's decision
+            # form because of an unrelated checkbox and a `required` on the name field.
+            assert _re.search(r'type="checkbox"[^>]*name="confirm"[^>]*required', form), (
                 f"{page.relative_to(built.generated_root)} confirms only in script"
             )
+
+
+@pytest.mark.slow
+def test_every_confirming_form_in_the_templates_carries_the_checkbox() -> None:
+    """The built pages only prove it for the forms a fixture happens to render.
+
+    The reviewer's decision form is rendered only for an attempt awaiting a decision with
+    the service running, which no fixture build produces. So the test above never saw it,
+    and its `data-confirm` was a script dialog and nothing else.
+    """
+    import re as _re
+
+    templates = Path(__file__).resolve().parents[2] / "templates"
+    checked = 0
+    for template in sorted(templates.rglob("*.j2")):
+        for form in _re.findall(
+            r"<form[^>]*data-confirm[^>]*>.*?</form>", template.read_text(), _re.S
+        ):
+            checked += 1
+            assert _re.search(r'type="checkbox"[^>]*name="confirm"[^>]*required', form), (
+                f"{template.name} confirms only in script"
+            )
+    assert checked >= 2, "the confirming forms are not being found at all"
+
+
+@pytest.mark.slow
+def test_no_page_gives_two_regions_the_same_name(built: AppConfig) -> None:
+    """Two scroll regions labelled "Table" are two things a screen reader cannot tell apart."""
+    import re as _re
+
+    for page in sorted(built.generated_root.rglob("*.html")):
+        labels = _re.findall(r'role="region"[^>]*aria-label="([^"]+)"', page.read_text())
+        relative = page.relative_to(built.generated_root)
+        assert len(labels) == len(set(labels)), f"{relative} repeats a region label: {labels}"
+        assert "Table" not in labels, f"{relative} names a region after its markup"
 
 
 @pytest.mark.slow

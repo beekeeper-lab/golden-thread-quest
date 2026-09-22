@@ -695,7 +695,12 @@ class TestNothingLeavesARequestUnanswered:
         self._break_the_rebuild(config, monkeypatch)
         status, body = post(
             base,
-            {"action": "start-quest", "quest_id": "ba-ingest-transcript", "token": token},
+            {
+                "action": "start-quest",
+                "quest_id": "ba-ingest-transcript",
+                "token": token,
+                "confirm": True,
+            },
         )
         assert status == 500
         assert "RuntimeError" in body["error"]
@@ -931,6 +936,7 @@ class TestARebuildThatFailsAfterTheRecordIsWritten:
                 "action": "submit-for-review",
                 "quest_id": "jira-read-assigned-stories",
                 "token": token,
+                "confirm": True,
             },
         )
         assert status == 200, body
@@ -952,3 +958,46 @@ class TestARebuildThatFailsAfterTheRecordIsWritten:
         )
         assert status == 200, body
         assert any("rebuilt" in advisory for advisory in body["advisories"]), body["advisories"]
+
+
+class TestTheConfirmationIsNotTheBrowsersAlone:
+    """C21 belongs to the action layer, so every caller meets it (ADR-033).
+
+    Until round 8 it was checked in the form handler and nowhere else: the JSON endpoint
+    and `quest-app action` performed the same actions unconfirmed, and `record-review` —
+    the one action that produces verified completion and verified XP — was not in the list
+    at all, so even the form route confirmed it only in a `window.confirm` dialog.
+    """
+
+    def test_a_json_action_without_the_confirmation_is_refused(
+        self, service: tuple[str, str], config: AppConfig
+    ) -> None:
+        base, token = service
+        status, body = post(
+            base,
+            {"action": "start-quest", "quest_id": "ba-ingest-transcript", "token": token},
+        )
+        assert status == 400, body
+        assert "confirm it" in body["error"]
+        progress = config.participant_root / "progress.yaml"
+        assert "ba-ingest-transcript" not in progress.read_text()
+
+    def test_an_approval_posted_without_the_checkbox_records_nothing(
+        self, service: tuple[str, str], config: AppConfig
+    ) -> None:
+        """The no-JavaScript route, where `window.confirm` never runs."""
+        base, token = service
+        before = (config.participant_root / "progress.yaml").read_text()
+        location = TestTheAdvisoryReachesTheBrowser._redirect_of(
+            base,
+            "/api/action/record-review/jira-read-assigned-stories",
+            {
+                "token": token,
+                "decision": "approved",
+                "reviewer_name": "A Reviewer",
+                "verification_statement": "I read every numbered criterion against the evidence.",
+            },
+        )
+        assert "problem=" in location, location
+        assert "confirm it" in urllib.parse.unquote(location)
+        assert (config.participant_root / "progress.yaml").read_text() == before

@@ -28,6 +28,13 @@ from quest_app.models import AttemptState
 CONFIRMATIONS: dict[str, str] = {
     "start-quest": "Start this quest and create an evidence package in my repository",
     "submit-for-review": "Submit this evidence for review. A reviewer will read it",
+    # The one action that produces verified completion and verified XP, and the last one
+    # this list reached. Until round 8 the reviewer's decision was confirmed by a
+    # `window.confirm` in the page's script and by nothing else, so a browser with
+    # scripting off, the JSON endpoint and the CLI all recorded an approval unguarded.
+    "record-review": (
+        "Record this decision. Approving produces verified completion and verified XP"
+    ),
 }
 
 

@@ -15,13 +15,18 @@ from pathlib import Path
 
 import pytest
 import yaml
-from quest_app.actions import MUTATING_ACTIONS
+from quest_app.actions import CONFIRMATIONS, MUTATING_ACTIONS
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 QUEST = "base-camp-repository-safety"
 
 
-def run(participant: Path, *args: str) -> subprocess.CompletedProcess[str]:
+def run(participant: Path, *args: str, confirm: bool = True) -> subprocess.CompletedProcess[str]:
+    # An action that carries a confirmation is refused without one, on every surface
+    # (ADR-033). A test about something else says it means it, exactly as the browser form
+    # does. `confirm=False` is the gate itself, tested below.
+    needs = bool(args) and args[0] in CONFIRMATIONS and "--confirm" not in args
+    confirmation = ["--confirm"] if confirm and needs else []
     return subprocess.run(
         [
             sys.executable,
@@ -29,6 +34,7 @@ def run(participant: Path, *args: str) -> subprocess.CompletedProcess[str]:
             "quest_app.cli",
             "action",
             *args,
+            *confirmation,
             "--participant-root",
             str(participant),
         ],
@@ -468,3 +474,46 @@ def test_the_installed_command_runs(tmp_path: Path) -> None:
     )
     assert result.returncode == 0, result.stderr
     assert set(result.stdout.split()) == set(MUTATING_ACTIONS)
+
+
+# --- The confirmation, on the surface that has no checkbox ---------------------------
+
+
+@pytest.mark.parametrize("action", sorted(CONFIRMATIONS))
+def test_a_confirmed_action_is_refused_without_the_confirmation(
+    participant: Path, action: str
+) -> None:
+    """C21 on the CLI. The checkbox is the browser's rule; this is the application's.
+
+    Until round 8 the gate lived in the form handler alone, so this command performed the
+    action with nothing saying the caller meant it — `record-review` included, which is the
+    one action that produces verified completion and verified XP.
+    """
+    unlock(participant, QUEST)
+    result = run(participant, action, "--quest", QUEST, confirm=False)
+
+    assert result.returncode != 0
+    assert CONFIRMATIONS[action].split(".")[0][:24] in result.stderr, result.stderr
+    progress = participant / "progress.yaml"
+    assert not progress.exists() or "verified" not in progress.read_text()
+
+
+def test_an_approval_without_the_confirmation_records_nothing(participant: Path) -> None:
+    submitted(participant)
+    result = run(
+        participant,
+        "record-review",
+        "--quest",
+        REVIEWED,
+        "--decision",
+        "approved",
+        "--reviewer",
+        "A Reviewer",
+        "--statement",
+        STATEMENT,
+        confirm=False,
+    )
+
+    assert result.returncode != 0
+    assert "confirm it" in result.stderr
+    assert state_of(participant, REVIEWED) != "verified"

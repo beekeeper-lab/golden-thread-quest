@@ -941,6 +941,8 @@ def _review_context(
             else f"This attempt is {entry.state.label.lower()}, not awaiting a decision."
         ),
         "decision_route": routes.action("record-review", entry.quest.id),
+        # One definition of what the reviewer confirms, shared with the service (ADR-033).
+        "confirm": CONFIRMATIONS["record-review"],
     }
 
 

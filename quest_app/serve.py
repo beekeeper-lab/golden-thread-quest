@@ -476,9 +476,12 @@ class ActionHandler(BaseHTTPRequestHandler):
             self._redirect_back(str(exc))
             return
 
-        if action in CONFIRMATIONS and not fields.get("confirm", [""])[0]:
+        payload["confirm"] = fields.get("confirm", [""])[0]
+        if action in CONFIRMATIONS and not payload["confirm"]:
             # C21 is rendered as a required checkbox, which is the browser's rule and not
-            # this service's. A rule the page enforces is enforced here too (ADR-033).
+            # this service's. The action layer refuses it too (ADR-033); this branch exists
+            # so the refusal reaches the participant as a message on the page they came
+            # from rather than as a JSON error body.
             self._redirect_back(f"{CONFIRMATIONS[action]} — confirm it, then try again.")
             return
 
