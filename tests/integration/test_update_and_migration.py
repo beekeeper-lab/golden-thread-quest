@@ -175,12 +175,19 @@ class TestGitSafety:
         assert backup_branch_name().startswith("backup/pre-update-")
 
     @pytest.mark.slow
-    def test_the_preflight_names_one_branch(self, config: AppConfig) -> None:
+    def test_the_preflight_names_one_branch(
+        self, config: AppConfig, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """The name is built from the clock, and it was built twice.
 
         A preflight that straddled a second boundary reported one branch in
         `backup_branch` and told the participant to create another in `instructions`.
+        Forcing a different name per call turns that once-a-second race into an assertion.
         """
+        from quest_app import update as update_module
+
+        names = iter(["backup/pre-update-first", "backup/pre-update-second"])
+        monkeypatch.setattr(update_module, "backup_branch_name", lambda: next(names))
         _init_repo(config.repo_root, commit=True)
         result = preflight(config)
 
