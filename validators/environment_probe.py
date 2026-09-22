@@ -8,6 +8,7 @@ did, cannot tell you that the parent applied them.
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -27,7 +28,7 @@ def run(workspace: Workspace, output: ValidatorOutput) -> None:
             id="working-directory",
             outcome="pass",
             summary="The directory the child was started in",
-            evidence=os.getcwd(),
+            evidence=str(Path.cwd()),
         )
     )
     for name in WATCHED:
