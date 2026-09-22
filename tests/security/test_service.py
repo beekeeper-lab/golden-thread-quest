@@ -960,7 +960,7 @@ class TestARebuildThatFailsAfterTheRecordIsWritten:
         assert any("rebuilt" in advisory for advisory in body["advisories"]), body["advisories"]
 
 
-class TestTheConfirmationIsNotTheBrowsersAlone:
+class TestEveryCallerMeetsTheConfirmation:
     """C21 belongs to the action layer, so every caller meets it (ADR-033).
 
     Until round 8 it was checked in the form handler and nowhere else: the JSON endpoint

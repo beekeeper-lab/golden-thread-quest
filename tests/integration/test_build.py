@@ -178,9 +178,18 @@ def test_core_content_survives_without_javascript(built: AppConfig) -> None:
 
 @pytest.mark.slow
 def test_claimed_and_verified_are_never_presented_as_one_total(built: AppConfig) -> None:
+    """Both words appearing somewhere on the page proved nothing about either number.
+
+    The fixture participant has one verified quest worth 20 and one unverified worth 30,
+    so the two totals must differ, each must carry its own value, and neither may be shown
+    as a single combined figure.
+    """
     passport = (built.generated_root / "passport" / "index.html").read_text()
-    assert "Claimed XP" in passport
-    assert "Verified XP" in passport
+    totals = dict(re.findall(r"<dt>([^<]+)</dt><dd>(\d+)</dd>", passport))
+
+    assert totals.get("Claimed XP") == "50", totals
+    assert totals.get("Verified XP") == "20", totals
+    assert not re.search(r"<dt>\s*(Total|XP)\s*</dt>", passport), "one total for two facts"
 
 
 class TestAddingContentNeedsNoCodeChange:

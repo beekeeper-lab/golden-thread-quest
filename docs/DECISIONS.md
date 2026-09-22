@@ -104,7 +104,11 @@ Evidence and reasoning: `docs/audits/stage-00-planning-audit.md`.
 **Decision:** Acceptance criteria are parsed from the ordered list under the quest body's
 `## Acceptance criteria` heading. Each criterion gets the positional ID `ac-<n>` (1-based) and a
 `text_hash` of its normalized text. Reviewer findings and evidence status reference the positional ID.
-A build error is raised when the heading is missing or contains no ordered list.
+A build error is raised when the heading is missing or contains no list.
+
+**Amended by ADR-026:** a bullet list produces the same positional IDs and a warning asking
+the author to number them, not a build error. An empty item is still an error, and so is a
+list split in two by an intervening paragraph.
 
 **Reason:** `COMPONENT-CATALOG.md` C10, `VIEW-MODEL-CONTRACT.md`, and the quest-detail page
 (`templates/pages/quest_detail.html.j2`, which renders each criterion at its own

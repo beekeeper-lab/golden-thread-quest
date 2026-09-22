@@ -4,6 +4,10 @@
 **Validation date:** 2026-09-16  
 **Result:** Pass with one manual-review advisory
 
+> Preserved as written on the validation date, before Stage 1. Its counts describe the
+> planning package of that day — eight schemas then, ten now. `README.md` and
+> `PACKAGE-MANIFEST.md` carry the current numbers.
+
 ## Passed checks
 
 - [x] Every JSON document parses successfully.

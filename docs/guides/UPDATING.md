@@ -6,6 +6,18 @@ You can take improvements to the curriculum and keep everything you wrote. That 
 because program-owned and participant-owned files live in separate top-level directories and
 nothing upstream touches yours.
 
+## First, name where updates come from
+
+A fresh clone has one remote, `origin`, pointing at wherever you cloned from. Every command
+below fetches from `upstream`, which nothing creates for you:
+
+```bash
+git remote add upstream https://github.com/beekeeper-lab/golden-thread-quest.git
+```
+
+Until you do, `make update-check` reports `[fail] No 'upstream' remote is configured.` and
+prints that command. That is the check working, not a broken clone.
+
 ## Before you merge
 
 ```bash

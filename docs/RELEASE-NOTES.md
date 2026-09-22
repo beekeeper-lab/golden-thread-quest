@@ -56,10 +56,10 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 598 under `make check`, plus 42 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
+| Tests | 624 under `make check`, plus 42 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
-| Sample validators | 3, plus a probe used only to prove the timeout |
+| Sample validators | 3 quest-facing, plus 2 registered environment probes and one unregistered slow probe used only to prove the timeout |
 | Build budget, the shipped curriculum plus 200 synthetic quests | asserted under 60s; observed under 1s |
 
 ## Known limitations
@@ -86,7 +86,11 @@ here.
 5. **Catalog filtering needs JavaScript.** A static page cannot filter itself. The routes
    that work without it are real pages: regions and tags, linked from every card and quest.
 6. **No coverage reporting** and **no glossary content type** (D1, D2).
-7. **Clean-clone installation is tested one step short of a real clone.** The `clean-export`
+7. **A screenshot is not scanned.** The secret scanner reads text; a token in a picture of a
+   terminal is invisible to it. The `PROOF.md` template asks the participant to confirm the
+   package carries nothing sensitive, and that confirmation is a person's judgment, not a
+   gate.
+8. **Clean-clone installation is tested one step short of a real clone.** The `clean-export`
    CI job runs `make verify-package`, which exports tracked files with `git archive`, then
    installs, validates and builds in a fresh virtual environment on every change. A true
    `git clone` from the remote followed by `make setup` was run by hand in round 4 and
