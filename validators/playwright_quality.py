@@ -30,6 +30,13 @@ ROLE_QUERY = re.compile(
 )
 ASSERTION = re.compile(r"\bexpect\(|\bassert\b")
 
+# What failure evidence looks like on disk. Playwright writes `trace.zip` and
+# `test-failed-1.png` by default, and a participant naming their own files follows the same
+# habit, so the marker is in the name rather than in a path this validator dictates.
+FAILURE_MARKERS = ("fail", "trace", "error")
+RECORD_SUFFIXES = {".json", ".txt", ".log", ".xml", ".md", ".zip"}
+IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
+
 
 def run(workspace: Workspace, output: ValidatorOutput) -> None:
     tests = [
@@ -157,30 +164,71 @@ def _check_waits(workspace: Workspace, sources: dict[Path, str], output: Validat
 
 
 def _check_failure_evidence(workspace: Workspace, output: ValidatorOutput) -> None:
-    artifacts = workspace.iter_files("participant/evidence")
-    has_run_record = any(
-        path.suffix in {".json", ".txt", ".log", ".xml"} or "trace" in path.name.lower()
-        for path in artifacts
-    )
-    if has_run_record:
+    """Whether this attempt's evidence would let a reviewer diagnose a failing run.
+
+    Criterion 9 asks for a trace, a screenshot and a reproduction summary from a failure.
+    The older form accepted any `.json`, `.txt`, `.log` or `.xml` file anywhere under
+    `participant/evidence`, so the successful run's own log satisfied it, and so did a file
+    belonging to an entirely different quest.
+    """
+    artifacts = workspace.attempt_files()
+    if not artifacts:
         output.add(
             Check(
                 id="failure-is-diagnosable",
-                outcome="pass",
-                summary="The evidence includes a run record.",
-                evidence="A reviewer can see what happened without re-running the test.",
+                outcome="warning",
+                severity="low",
+                summary="No run record was found in this attempt's evidence.",
+                evidence="This attempt's evidence package is empty.",
+                suggested_action=(
+                    "Save the tagged run's output, and the trace and screenshot from a failing "
+                    "run, so a reviewer can see what happened without re-running the test."
+                ),
+            )
+        )
+        return
+
+    failure_records = [
+        path for path in artifacts if _names_a_failure(path) and path.suffix in RECORD_SUFFIXES
+    ]
+    failure_images = [
+        path for path in artifacts if _names_a_failure(path) and path.suffix in IMAGE_SUFFIXES
+    ]
+
+    missing = []
+    if not failure_records:
+        missing.append("a trace or log from the failing run")
+    if not failure_images:
+        missing.append("a screenshot of the failure")
+
+    if missing:
+        output.add(
+            Check(
+                id="failure-is-diagnosable",
+                outcome="warning",
+                severity="low",
+                summary="The evidence does not show what a failure of this test looks like.",
+                evidence=f"Missing: {', '.join(missing)}.",
+                suggested_action=(
+                    "Make the test fail once on purpose and keep what it produced. A test whose "
+                    "failure nobody can read is a test nobody will trust."
+                ),
             )
         )
     else:
         output.add(
             Check(
                 id="failure-is-diagnosable",
-                outcome="warning",
-                severity="low",
-                summary="No run record was found in the evidence.",
-                evidence="Only source files are present.",
-                suggested_action=(
-                    "Keep the run output or a trace so a failure can be diagnosed later."
+                outcome="pass",
+                summary="The evidence includes a record of the test failing.",
+                evidence=", ".join(
+                    workspace.relative(path) for path in (failure_records + failure_images)[:4]
                 ),
             )
         )
+
+
+def _names_a_failure(path: Path) -> bool:
+    """Whether a file says in its own name that it came from a failure or a trace."""
+    name = path.name.lower()
+    return any(marker in name for marker in FAILURE_MARKERS)

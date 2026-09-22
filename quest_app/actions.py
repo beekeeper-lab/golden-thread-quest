@@ -273,6 +273,7 @@ class ActionRunner:
                 attempt_id=attempt.attempt_id,
                 run_id=new_run_id(validator_id),
                 parameters=payload.get("parameters"),
+                evidence_path=attempt.evidence_path,
             )
         except ValidatorError as exc:
             raise ValueError(str(exc)) from exc

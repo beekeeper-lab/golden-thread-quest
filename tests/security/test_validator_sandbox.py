@@ -519,3 +519,229 @@ class TestAResultAlwaysLoadsBack:
 
         cleaned, changed = redact_text(check.summary)
         assert changed and leaked not in cleaned and REDACTION_PLACEHOLDER in cleaned
+
+
+class TestAValidatorJudgesTheAttemptItWasGiven:
+    """A check about this attempt's evidence must not be decided by another attempt's files.
+
+    Round 6's checks reached for `participant/evidence` and took whichever file was newest,
+    so a blank `PROOF.md` under an unrelated quest failed a complete one, and any log left
+    behind by any other quest satisfied "failure is diagnosable" here. Records are connected
+    by their identifiers (`CLAUDE.md`), never by modification time.
+    """
+
+    COMPLETE_PROOF = (
+        "# Proof\n"
+        "What was built: the ownership document and the audit log.\n"
+        "Where the artifacts are: the path is participant/context.\n"
+        "How to reproduce: run the documented steps in order.\n"
+        "What was validated: the registered checks ran and passed.\n"
+        "Remaining limitations: does not cover a live connection.\n"
+    )
+
+    def _evidence(self, config: AppConfig, quest_id: str, attempt_id: str) -> Path:
+        directory = config.participant_root / "evidence" / quest_id / attempt_id
+        directory.mkdir(parents=True, exist_ok=True)
+        return directory
+
+    @pytest.mark.slow
+    def test_another_quests_blank_proof_cannot_fail_this_attempt(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        mine = self._evidence(config, "base-camp-repository-safety", "base-attempt-002")
+        (mine / "PROOF.md").write_text(self.COMPLETE_PROOF)
+
+        theirs = self._evidence(config, "ba-ingest-transcript", "attempt-001")
+        stranger = theirs / "PROOF.md"
+        stranger.write_text("# Proof\n")
+        # Newer than mine, which is all the old implementation looked at.
+        import os
+
+        os.utime(stranger, (2_000_000_000, 2_000_000_000))
+
+        result = run_validator(
+            registry.get("validate-repository-foundation"),
+            config,
+            quest_id="base-camp-repository-safety",
+            attempt_id="base-attempt-002",
+            run_id="scoped-run-001",
+        )
+        answers = next(c for c in result.checks if c.id == "proof-answers-reviewer-questions")
+        assert answers.outcome == "pass", answers.evidence
+        assert answers.artifact is not None
+        assert "ba-ingest-transcript" not in answers.artifact
+
+    @pytest.mark.slow
+    def test_a_secret_in_another_attempt_does_not_fail_this_one(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """`submit-for-review` scans the package being submitted, so nothing goes unscanned."""
+        mine = self._evidence(config, "base-camp-repository-safety", "base-attempt-003")
+        (mine / "PROOF.md").write_text(self.COMPLETE_PROOF)
+        theirs = self._evidence(config, "jira-read-assigned-stories", "attempt-001")
+        (theirs / "notes.md").write_text(
+            "ghp_abcdefghijklmnopqrstuvwxyz0123456789\n"  # secret-scan: allow
+        )
+
+        result = run_validator(
+            registry.get("validate-repository-foundation"),
+            config,
+            quest_id="base-camp-repository-safety",
+            attempt_id="base-attempt-003",
+            run_id="scoped-run-002",
+        )
+        secrets = next(c for c in result.checks if c.id == "evidence-carries-no-secrets")
+        assert secrets.outcome == "pass", secrets.evidence
+
+    @pytest.mark.slow
+    def test_a_success_log_is_not_failure_evidence(self, registry, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        """Criterion 9 asks what a failure looks like, not whether any file exists."""
+        tests_dir = config.participant_root / "tests" / "playwright"
+        tests_dir.mkdir(parents=True, exist_ok=True)
+        (tests_dir / "first-independent-test.spec.ts").write_text(
+            "test('a customer can check out', async ({ page }) => {\n"
+            "  await page.getByRole('button', { name: 'Pay' }).click();\n"
+            "  await expect(page.getByText('Thank you')).toBeVisible();\n"
+            "});\n"
+        )
+
+        mine = self._evidence(config, "playwright-first-independent-test", "attempt-001")
+        (mine / "logs").mkdir(exist_ok=True)
+        (mine / "logs" / "test-run.txt").write_text("1 passed\n")
+        stranger = self._evidence(config, "base-camp-repository-safety", "base-attempt-004")
+        (stranger / "second-run.txt").write_text("no duplicates\n")
+
+        result = run_validator(
+            registry.get("validate-playwright-quality"),
+            config,
+            quest_id="playwright-first-independent-test",
+            attempt_id="attempt-001",
+            run_id="scoped-run-003",
+        )
+        diagnosable = next(c for c in result.checks if c.id == "failure-is-diagnosable")
+        assert diagnosable.outcome == "warning", diagnosable.evidence
+
+        (mine / "logs" / "failure-run.txt").write_text("1 failed: expected 'Thank you'\n")
+        (mine / "failure.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+        result = run_validator(
+            registry.get("validate-playwright-quality"),
+            config,
+            quest_id="playwright-first-independent-test",
+            attempt_id="attempt-001",
+            run_id="scoped-run-004",
+        )
+        diagnosable = next(c for c in result.checks if c.id == "failure-is-diagnosable")
+        assert diagnosable.outcome == "pass", diagnosable.evidence
+
+
+class TestTheJiraFixturesTestWhatTheyDescribe:
+    """Each fixture set is a promise about what choosing it demonstrates.
+
+    Two of them did not keep it: `duplicate-comment` described a comment arriving on two
+    pages and carried no comment at all, and `stale-item` described a story that had to be
+    reported rather than dropped and carried no trace of one. A participant who chose either
+    to show criterion 7 or criterion 8 showed neither, and the run passed.
+    """
+
+    def _sync(self, config: AppConfig, document: dict) -> None:  # type: ignore[type-arg]
+        import json
+
+        directory = config.participant_root / "context" / "jira"
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / "assigned.json").write_text(json.dumps(document))
+
+    def _run(self, registry, config: AppConfig, fixture_set: str):  # type: ignore[no-untyped-def]
+        return run_validator(
+            registry.get("validate-jira-read-assigned"),
+            config,
+            quest_id="jira-read-assigned-stories",
+            attempt_id="jira-attempt-001",
+            run_id=f"jira-{fixture_set}",
+            parameters={"fixture_set": fixture_set},
+        )
+
+    def _story(self, key: str, **extra):  # type: ignore[no-untyped-def]
+        record = {
+            "key": key,
+            "summary": f"Fixture story {key}",
+            "status": "To Do",
+            "source_url": f"https://jira.example.invalid/browse/{key}",
+            "retrieved_at": "2026-09-22T00:00:00+00:00",
+        }
+        record.update(extra)
+        return record
+
+    @pytest.mark.slow
+    def test_dropping_a_story_that_disappeared_fails(self, registry, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        self._sync(config, {"stories": [self._story("GTQ-101"), self._story("GTQ-102")]})
+        result = self._run(registry, config, "stale-item")
+        check = next(c for c in result.checks if c.id == "disappearances-reported")
+        assert check.outcome == "fail"
+        assert "GTQ-100" in (check.evidence or "")
+
+    @pytest.mark.slow
+    def test_reporting_it_with_its_last_known_state_passes(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        self._sync(
+            config,
+            {
+                "stories": [self._story("GTQ-101"), self._story("GTQ-102")],
+                "removed": [{"key": "GTQ-100", "last_known_status": "In Progress"}],
+            },
+        )
+        result = self._run(registry, config, "stale-item")
+        check = next(c for c in result.checks if c.id == "disappearances-reported")
+        assert check.outcome == "pass", check.evidence
+
+    @pytest.mark.slow
+    def test_a_comment_recorded_twice_fails(self, registry, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        self._sync(
+            config,
+            {
+                "stories": [
+                    self._story(
+                        "GTQ-101",
+                        comments=[{"id": "9001"}, {"id": "9002"}, {"id": "9001"}],
+                    ),
+                    self._story("GTQ-102", comments=[{"id": "9003"}]),
+                    self._story("GTQ-103", comments=[]),
+                ]
+            },
+        )
+        result = self._run(registry, config, "duplicate-comment")
+        check = next(c for c in result.checks if c.id == "no-duplicate-comments")
+        assert check.outcome == "fail"
+        assert "9001" in (check.evidence or "")
+
+    @pytest.mark.slow
+    def test_reconciling_the_comment_by_its_identifier_passes(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        self._sync(
+            config,
+            {
+                "stories": [
+                    self._story("GTQ-101", comments=[{"id": "9001"}, {"id": "9002"}]),
+                    self._story("GTQ-102", comments=[{"id": "9003"}]),
+                    self._story("GTQ-103", comments=[]),
+                ]
+            },
+        )
+        result = self._run(registry, config, "duplicate-comment")
+        check = next(c for c in result.checks if c.id == "no-duplicate-comments")
+        assert check.outcome == "pass", check.evidence
+
+    @pytest.mark.slow
+    def test_a_fixture_without_the_behaviour_does_not_judge_it(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """The happy path says nothing about either, rather than passing them for free."""
+        self._sync(
+            config,
+            {"stories": [self._story(key) for key in ("GTQ-101", "GTQ-102", "GTQ-103")]},
+        )
+        result = self._run(registry, config, "happy-path")
+        reported = [c.id for c in result.checks]
+        assert "disappearances-reported" not in reported
+        assert "no-duplicate-comments" not in reported

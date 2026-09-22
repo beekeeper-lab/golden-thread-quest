@@ -61,6 +61,9 @@ def main() -> int:
         repo_root=Path(specification["repo_root"]),
         participant_root=Path(specification["participant_root"]),
         parameters=specification["parameters"],
+        evidence_root=(
+            Path(specification["evidence_root"]) if specification.get("evidence_root") else None
+        ),
     )
 
     # The process group is created by the parent's `start_new_session=True`. Calling
