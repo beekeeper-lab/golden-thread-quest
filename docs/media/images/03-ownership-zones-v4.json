@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-22T06:27:25",
+  "provider": "gemini",
+  "model": "gemini-3-pro-image-preview",
+  "prompt": "Goal: Make it immediately obvious which files belong to the participant, and that the\nmachine-owned zone is disposable and safe to delete.\nScene: Three adjacent map regions in one row, not nested and not overlapping. LEFT region:\nfilled solid deep ink-navy, light text, heading is exactly the seven-letter English word\n\"program\" (p-r-o-g-r-a-m), holding two small outlined folder glyphs labeled content and\nquest app. CENTRE region: warm parchment fill with an amber-gold border, visibly taller\nand wider than both neighbours, heading \"yours\", holding two small outlined folder glyphs\nlabeled participant and evidence. RIGHT region: pale grey fill with a dashed border,\nheading \"machine\", holding two small outlined folder glyphs labeled generated and local\ndata. Each region carries exactly one small rounded rectangular chip in its upper-right\ncorner, clear of every other element: the left and centre chips read \"in git\", the right\nchip reads \"not in git\". Every folder label is a plain word with nothing following it and\nclear space to its right.\nStyle: Flat vector field-guide map, thin precise borders, dashed border on the disposable\nzone only, muted palette, generous whitespace, no shadows, no gradients. Folder glyphs are\nthin outlines, never filled color blocks. Chips are outlined, not filled, and never gold.\nAspect ratio: 3:2\nBackground: warm parchment #f7f4ec\nText in image: three headings \"program\", \"yours\", \"machine\"; six folder labels \u2014 content,\nquest app, participant, evidence, generated, local data; three chip labels \u2014 \"in git\",\n\"in git\", \"not in git\". No other text.\nAvoid: the spelling \"programme\"; any dot, bullet, circle or small mark placed after a\nlabel; a separate legend or key anywhere in the frame; nesting one region inside another;\narrows between regions; folder glyphs filled with solid color; gold used on anything but\nthe centre region's border",
+  "output_file": "03-ownership-zones-v4.png",
+  "generation_time_ms": 19926,
+  "usage": {
+    "prompt_tokens": 434,
+    "candidates_tokens": 1529,
+    "total_tokens": 2552
+  }
+}

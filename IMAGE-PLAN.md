@@ -691,6 +691,7 @@ the sparkle collision is judged acceptable.
 | Round 1 actual | **$0.70** (5 images, 9,939 tokens, 89s) |
 | Round 2 actual | **$0.58** (4 images: 3 corrections plus one retake) |
 | Round 3 actual | **~$0.14** (1 image, 2,282 tokens, 17s) — derived at round 1's per-image rate, not separately metered |
+| Round 4 actual | **$0.18** (1 image, 2,552 tokens, 19.9s) — image 15, the fourth ownership-zones take |
 
 ## If a take is wrong
 
@@ -704,9 +705,16 @@ Round 1 (images 1-5) was approved and generated on 2026-09-17.
 Round 2 generated images 7, 9 and 10 (`02-state-authority-v2`,
 `03-ownership-zones-v2` then `-v3`, `05-passport-outcome-v2`) on 2026-09-17.
 Round 3 generated image 14, `01-first-hour-flow-v3`, on 2026-09-17 at 20:17.
+Round 4 generated image 15, `03-ownership-zones-v4`, on 2026-09-22 at 06:27.
 Image 6, `01-first-hour-flow-v2`, was never generated and never will be: the
 division it drew stopped being true before it was worth buying. Image 14
 replaces it.
+
+**Invocation note.** `scripts/generate_images.py` resolves each entry's **File**
+path under `--images-dir`, which defaults to `<project>/images`. Because this
+plan's paths are written from the repository root, the run needs
+`--images-dir .`; without it the output lands at `images/docs/media/images/`
+and has to be moved by hand, which is what happened in round 4.
 
 ## Which take each page ships
 
@@ -718,21 +726,37 @@ round-1 takes until this table existed. It is the record of what the guide actua
 |---|---|---|
 | 3 — The first hour | `01-first-hour-flow-v3.png` | Round 3 take; v1 and v2 superseded. |
 | 4 — The eight states | `02-state-authority-v2.png` | v1 placed `locally validated` in the reviewer column, contradicting the one rule the image exists to state. |
-| 6 — What the application writes | `03-ownership-zones.png` | **v1, deliberately.** See below. |
+| 6 — What the application writes | `03-ownership-zones-v4.png` | Round 4 take; the first one with no misleading text. See below. |
 | 7 — Evidence | `04-evidence-package.png` | Correct in round 1; never superseded. |
 | 11 — Knowing when you are finished | `05-passport-outcome-v2.png` | v1 read `claimed 10601 / verified 10602`, showing verified exceeding claimed, which the application cannot produce. |
 
-### Why section 6 keeps the v1 take
+### Why section 6 ships the v4 take
 
-The ownership-zones image has no correct take. v1 is right in every respect except that it
-labels the left zone "programme"; v3 fixes the word and loses the spacing, printing the
-in-git dots hard against their labels, so "content ●" renders as "content." and "generated ○"
-as "generatedo". A wrong-register word is a smaller fault than a legend a reader misreads as
-punctuation, so v1 ships.
+The ownership-zones image had no correct take for three rounds. v1 was right in every respect
+except that it labelled the left zone "programme". v3 fixed the word and lost the spacing
+between each folder label and the Git dot that followed it, printing "content ●" as "content."
+and "generated ○" as "generatedo" — a legend a reader misreads as punctuation. v1 shipped in
+the meantime because a wrong-register word is a smaller fault than that.
 
-Neither is right, and the fix is a fourth take or a hand-edit of the label. Both need a
-decision from whoever holds the image budget, so this is recorded as open rather than
-resolved quietly.
+v4 stops asking for the thing that broke: Git membership moves off the individual labels and
+onto the zone, as one chip per zone. Both earlier defects are gone — the heading reads
+"program", and every folder label is a plain word with clear space after it.
+
+Two deviations from the entry, both accepted rather than retaken:
+
+- The three zones are drawn the same size. The entry asked for the centre zone to be visibly
+  taller and wider so it anchors the composition. It is not, so the "only the middle zone is
+  yours" emphasis rests on the gold border and on the prose beside the image rather than on
+  scale.
+- The centre chip is gold-outlined. The entry reserved gold for the centre region's border
+  alone.
+
+Neither misleads a reader, which is the bar the previous three takes failed. A v5 for the size
+emphasis would be a new entry and a new approval.
+
+The guide and the HTML build had drifted apart on this image as well: `docs/USER-GUIDE.md`
+referenced v1 while `scripts/build_user_guide_html.py` embedded v3. Both now name v4, and the
+HTML artifact was rebuilt so the embedded diagram matches.
 
 ## Why image 6 was skipped, and what it cost to wait
 
