@@ -174,6 +174,19 @@ class TestGitSafety:
     def test_backup_branch_names_do_not_collide(self) -> None:
         assert backup_branch_name().startswith("backup/pre-update-")
 
+    @pytest.mark.slow
+    def test_the_preflight_names_one_branch(self, config: AppConfig) -> None:
+        """The name is built from the clock, and it was built twice.
+
+        A preflight that straddled a second boundary reported one branch in
+        `backup_branch` and told the participant to create another in `instructions`.
+        """
+        _init_repo(config.repo_root, commit=True)
+        result = preflight(config)
+
+        assert result.backup_branch, "the preflight found no repository to report on"
+        assert result.backup_branch in result.instructions
+
 
 @pytest.mark.slow
 def test_participant_files_survive_an_upstream_style_update(config: AppConfig) -> None:
