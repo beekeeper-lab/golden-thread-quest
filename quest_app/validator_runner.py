@@ -268,10 +268,15 @@ def run_validator(
         if name in os.environ:
             environment[name] = os.environ[name]
 
-    # `forkserver`, not `fork` and not `spawn`. `fork` from the threaded service would
-    # inherit locks held by other threads. `spawn` re-imports the parent's `__main__`,
-    # which fails whenever the parent was not started from an importable file. `forkserver`
-    # forks from a clean, single-threaded helper and inherits nothing of either problem.
+    # A fresh interpreter started as a subprocess, not a `multiprocessing` child of any
+    # start method. `fork` from the threaded service would inherit locks held by other
+    # threads, and `spawn` re-imports the parent's `__main__`, which fails whenever the
+    # parent was not started from an importable file. A plain `-m quest_app.validator_child`
+    # inherits neither problem, and the specification below is everything it is told.
+    #
+    # The comment this replaces described `forkserver` and survived the change to a
+    # subprocess, so a reader checking how a validator is isolated was told the wrong
+    # mechanism by the one comment written to explain it.
     specification = json.dumps(
         {
             "entrypoint": definition.entrypoint,

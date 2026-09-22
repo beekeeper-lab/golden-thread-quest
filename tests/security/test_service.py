@@ -69,7 +69,9 @@ def post(
         return error.code, json.loads(error.read())
 
 
-def post_form(base: str, path: str, fields: dict[str, str]) -> tuple[int, bytes]:
+def post_form(
+    base: str, path: str, fields: dict[str, str], *, headers: dict[str, str] | None = None
+) -> tuple[int, bytes]:
     """The no-JavaScript route, which the JSON helper above never reaches.
 
     Every allowlist and token test here posted to `/api/action`, so the form route carried
@@ -80,13 +82,36 @@ def post_form(base: str, path: str, fields: dict[str, str]) -> tuple[int, bytes]
         f"{base}{path}",
         data=data,
         method="POST",
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        headers={"Content-Type": "application/x-www-form-urlencoded", **(headers or {})},
     )
     try:
         with urllib.request.urlopen(request, timeout=10) as response:  # noqa: S310
             return response.status, response.read()
     except urllib.error.HTTPError as error:
         return error.code, error.read()
+
+
+def raw_get(base: str, path: str) -> int:
+    """GET without letting the client library tidy the path first.
+
+    `urllib` normalises `/../x` away before the request is sent, so all four traversal
+    cases below arrived at the service as ordinary paths and passed even with the
+    containment check removed. Over a socket, `GET /../pyproject.toml` on that same mutant
+    returned 200 and the file. The control was right; the test never reached it.
+    """
+    import socket
+
+    host, port = base.removeprefix("http://").split(":")
+    request = f"GET {path} HTTP/1.1\r\nHost: {host}:{port}\r\nConnection: close\r\n\r\n"
+    with socket.create_connection((host, int(port)), timeout=10) as sock:
+        sock.sendall(request.encode())
+        first = b""
+        while b"\r\n" not in first:
+            chunk = sock.recv(4096)
+            if not chunk:
+                break
+            first += chunk
+    return int(first.split(b" ")[1])
 
 
 def get(base: str, path: str) -> int:
@@ -175,6 +200,25 @@ class TestTheFormRoute:
             base, "/api/action/delete-everything/base-camp-repository-safety", {"token": token}
         )
         assert status == 400
+
+    @pytest.mark.parametrize("header", ["Origin", "Referer"])
+    def test_a_cross_origin_form_post_is_refused(
+        self, service: tuple[str, str], header: str
+    ) -> None:
+        """`TestCrossOrigin` covers `/api/action` only.
+
+        Round 4 found the form route carrying guards nothing asserted, and round 5 found
+        its origin check in the same state: removing it left the whole suite green. The
+        token still stands behind it, so this is depth rather than an open door.
+        """
+        base, token = service
+        status, _ = post_form(
+            base,
+            "/api/action/rebuild/base-camp-repository-safety",
+            {"token": token},
+            headers={header: "https://evil.example"},
+        )
+        assert status == 403
 
     def test_a_wrong_token_is_refused(self, service: tuple[str, str]) -> None:
         base, token = service
@@ -323,6 +367,24 @@ class TestStaticServing:
     ) -> None:
         base, _ = service
         assert get(base, path) in (403, 404)
+        assert raw_get(base, path) in (403, 404), (
+            "the same path unnormalised, which is the only form that reaches the check"
+        )
+
+    def test_traversal_to_a_file_that_exists_outside_is_refused(
+        self, service: tuple[str, str], config: AppConfig
+    ) -> None:
+        """The parametrised cases above reach for files that do not exist in a test tree.
+
+        403 and 404 are both acceptable answers there, so they pass whether the containment
+        check runs or not. This one plants a real file one level above the output and sends
+        the request over a socket, because `urllib` normalises the `..` away before it
+        reaches the service. Removing the check turns this into 200 and the file's contents.
+        """
+        planted = config.repo_root / "planted-secret.txt"
+        planted.write_text("not for the browser\n", encoding="utf-8")
+        base, _ = service
+        assert raw_get(base, "/../planted-secret.txt") == 403
 
     def test_a_symlink_planted_in_the_output_cannot_escape(
         self, service: tuple[str, str], config: AppConfig
@@ -377,3 +439,64 @@ def test_a_service_error_names_no_internal_detail(service: tuple[str, str]) -> N
     base, _ = service
     _, body = post(base, raw=b"not json")
     assert "Traceback" not in json.dumps(body)
+
+
+class TestFindingTheRunningService:
+    """`quest-app action` rebuilds the site, and the pages it writes say whether state can
+    change from them. It asks whether a service is running first — at the configured port,
+    which is 8765 unless something told it otherwise, and nothing told it otherwise.
+
+    `serve --port` is an advertised flag and `action` has no matching one, so round 4's fix
+    for "one CLI action disabled every control on every served page" held only for a service
+    on the default port. On any other port the probe found nothing, concluded the service was
+    down, and published exactly the dead page it existed to prevent.
+    """
+
+    def test_the_probe_asks_at_the_port_the_service_actually_bound(
+        self, service: tuple[str, str], config: AppConfig, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Asserted on the URL the probe requests, not on what answers it.
+
+        Asserting "the service was found" passes for the wrong reason on a machine where
+        anything at all is listening on 8765, which is exactly the default this defect is
+        about. The address asked for is the behaviour.
+        """
+        import urllib.request
+
+        from quest_app.serve import PORT_FILENAME, is_service_running
+
+        base, _ = service
+        bound = int(base.rsplit(":", 1)[1])
+        assert bound != config.service_port, "the fixture must not sit on the default port"
+
+        port_file = config.local_data_root / PORT_FILENAME
+        port_file.parent.mkdir(parents=True, exist_ok=True)
+        port_file.write_text(f"{bound}\n", encoding="utf-8")
+
+        asked: list[str] = []
+        real = urllib.request.urlopen
+
+        def record(url: Any, *args: Any, **kwargs: Any) -> Any:
+            asked.append(url if isinstance(url, str) else url.full_url)
+            return real(url, *args, **kwargs)
+
+        monkeypatch.setattr(urllib.request, "urlopen", record)
+        found = is_service_running(config)
+
+        assert asked == [f"http://{config.service_host}:{bound}/"], (
+            f"the probe asked at {asked}, not at the port the service bound"
+        )
+        assert found, "and the service answers there"
+
+    def test_a_stale_port_file_is_not_believed(self, config: AppConfig) -> None:
+        """The file is a hint. The header is the authority."""
+        from quest_app.serve import PORT_FILENAME, is_service_running, running_service_port
+
+        port_file = config.local_data_root / PORT_FILENAME
+        port_file.parent.mkdir(parents=True, exist_ok=True)
+        port_file.write_text("9\n", encoding="utf-8")
+        assert running_service_port(config) == 9
+        assert not is_service_running(config)
+
+        port_file.write_text("not a port\n", encoding="utf-8")
+        assert running_service_port(config) == config.service_port, "unreadable falls back"

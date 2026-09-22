@@ -367,3 +367,55 @@ than replaces.
 **Rejected:** refusing to act when the lock cannot be taken. A local-first application that
 will not record a participant's own work because of a lock file is worse than the race it
 prevents, and `atomic_write_text` still guarantees the file is never half-written.
+
+## ADR-035 — One build at a time per output directory
+
+**Decision:** `build_site` holds an exclusive POSIX file lock on `generated.lock` for the
+whole build. The lock is advisory and POSIX-only, and a build that cannot lock proceeds.
+
+**Reason:** Every build stages into `generated.building` and publishes by rename. That name
+is fixed, so two builds in one repository share the directory and the second one's first act
+is to delete it. Round 5 reproduced it three times out of three: the crash was the good case,
+because twice both processes exited zero and published 3 and 20 of the site's 53 pages with
+nothing saying the site was incomplete. ADR-034 serialises action against action; nothing
+covered build against build, and `quest-app build`, `make build` and the service's rebuild
+are all builds.
+
+**Rejected:** a staging directory per process. It removes the collision during rendering and
+leaves the publish itself racing over `generated.previous`, which is the step that decides
+what a participant sees.
+
+## ADR-036 — Not being able to lock is never a reason to refuse the work
+
+**Decision:** Where a lock cannot be taken, the work proceeds unlocked. That covers a missing
+`fcntl` module, a lock file that cannot be opened, and `flock` itself failing, which is what
+`ENOLCK` from a filesystem with no lock manager means. A wait for a held lock is announced
+before it blocks.
+
+**Reason:** ADR-034 stated this intent and delivered it only for a missing module. Both other
+cases raised out of the lock, ahead of every guard, and the CLI had no handler for `OSError`
+at all: a `.progress.lock` the participant could not open ended a `quest-app action` in a
+traceback carrying absolute paths, and a home directory on NFS would have stopped every
+mutation on both surfaces. The application worked without a lock before ADR-034 and the
+atomic replace in `atomic_write_text` is what keeps the file readable either way, so the
+degraded path is the application's own previous behaviour rather than a new risk.
+
+**Rejected:** failing loudly so the participant knows the lock is gone. The participant
+cannot act on it, and the failure lands on the surface least able to explain it.
+
+## ADR-037 — The service records the port it actually bound
+
+**Decision:** `run_service` writes its bound port to `local-data/service-port` and removes it
+on shutdown. `is_service_running` probes that port, falling back to the configured one, and
+still requires this application's own response header before believing anything.
+
+**Reason:** An action rebuilds the site, and the pages it writes say whether state can change
+from them, so it must know whether a service is running. It asked at the configured port,
+which is 8765 unless `GTQ_SERVICE_PORT` says otherwise, while `serve --port` is an advertised
+flag and `action` has no matching one. Beside a service on any other port, one CLI action
+published the offline view and disabled every control on every served page, which is the
+defect ADR-033's round set out to fix.
+
+**Rejected:** adding `--port` to `action` and `build`. It fixes the command a participant
+remembers to type correctly and leaves the one they do not, and the port is a fact the
+service already knows.

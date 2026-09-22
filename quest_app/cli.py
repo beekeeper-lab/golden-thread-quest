@@ -18,7 +18,7 @@ from pathlib import Path
 from quest_app.actions import MUTATING_ACTIONS, ActionRunner
 from quest_app.config import APPLICATION_VERSION, AppConfig
 from quest_app.content_loader import SchemaSet
-from quest_app.errors import ProblemReport
+from quest_app.errors import ProblemReport, filesystem_message
 from quest_app.models import Decision
 from quest_app.pipeline import LoadedWorld, load_world
 from quest_app.store import StoreError
@@ -258,6 +258,11 @@ def action_command(args: argparse.Namespace) -> int:
         result = runner.perform(args.name, payload)
     except (StoreError, ValueError) as exc:
         print(str(exc), file=sys.stderr)
+        return EXIT_CONTENT_ERROR
+    except OSError as exc:
+        # The service has said this since it was written. The CLI said it with a traceback
+        # and an absolute path until round 5, which is the surface Cowork participants use.
+        print(filesystem_message(exc), file=sys.stderr)
         return EXIT_CONTENT_ERROR
 
     if args.json:

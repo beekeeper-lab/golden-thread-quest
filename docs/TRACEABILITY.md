@@ -129,6 +129,12 @@ document stays a complete map of what is tested, rather than only of what was sp
 
 ## Criterion coverage
 
+| **CG7** | One build at a time per output directory, so a failed or overlapping build never publishes a partial site: `quest_app/build.py` `_exclusive_output`, ADR-035 | `tests/integration/test_build_concurrency.py` |
+| **PE4** | A lock that cannot be taken never refuses to record the participant's work: `quest_app/store.py` `exclusive`, ADR-036 | `tests/integration/test_lock_failure_modes.py` |
+| **PE5** | An action beside a running service leaves its controls live, whatever port it bound: `quest_app/serve.py` `running_service_port`, ADR-037 | `tests/security/test_service.py::TestFindingTheRunningService` |
+| **FS3** | Traversal out of the generated site, asserted over a raw socket and against a file that exists | `tests/security/test_service.py::TestStaticServing` |
+| **FS2** | The no-JavaScript form route refuses a cross-origin post | `tests/security/test_service.py::TestTheFormRoute::test_a_cross_origin_form_post_is_refused` |
+
 Every row above carries the stable ID of the criterion it maps to, from
 `docs/ACCEPTANCE-CRITERIA.md`. Before the IDs existed a row could only match a criterion by
 prose, which is how this document came to name the wrong test file for a criterion twice in

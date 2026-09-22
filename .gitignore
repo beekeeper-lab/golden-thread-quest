@@ -1,5 +1,7 @@
 # Generated, reproducible output — never a source of truth (ADR-015)
 /generated/
+# The build's cross-process lock, beside the output it protects
+/generated.lock
 # Local runtime data, caches and raw external responses — private, never committed
 /local-data/
 # Python

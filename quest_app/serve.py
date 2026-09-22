@@ -39,7 +39,7 @@ from quest_app.actions import MUTATING_ACTIONS, READ_ACTIONS, ActionRunner
 from quest_app.build import build_site
 from quest_app.config import APPLICATION_VERSION, AppConfig
 from quest_app.content_loader import SchemaSet
-from quest_app.errors import ProblemReport
+from quest_app.errors import ProblemReport, filesystem_message
 from quest_app.git_status import summary_for
 from quest_app.pipeline import load_world
 from quest_app.state_machine import allowed_actions
@@ -115,6 +115,23 @@ def _is_loopback(address: str) -> bool:
 SERVICE_HEADER = "X-Quest-App"
 
 
+PORT_FILENAME = "service-port"
+
+
+def running_service_port(config: AppConfig) -> int:
+    """The port a service of this repository last bound, or the configured one.
+
+    Written by `run_service` and removed when it stops. It is a hint, never an authority:
+    the probe still requires this application's own response header, so a stale file
+    pointing at a port something else now holds is refused like any other stranger.
+    """
+    try:
+        recorded = (config.local_data_root / PORT_FILENAME).read_text(encoding="utf-8")
+        return int(recorded.strip())
+    except (OSError, ValueError):
+        return config.service_port
+
+
 def is_service_running(config: AppConfig) -> bool:
     """Whether a service of this application is answering on the configured address.
 
@@ -125,11 +142,17 @@ def is_service_running(config: AppConfig) -> bool:
 
     The probe asks for a page and looks for this application's own header, because a bare
     TCP connect would call whatever else happened to hold the port a running service.
+
+    It asks at the port the running service actually bound, not the configured default.
+    `serve --port` is an advertised flag and `quest-app action` has no matching one, so
+    round 4's fix held only for a service on 8765: on any other port the probe found
+    nothing, decided the service was down, and published exactly the dead page it existed
+    to prevent.
     """
     import urllib.error
     import urllib.request
 
-    url = f"http://{config.service_host}:{config.service_port}/"
+    url = f"http://{config.service_host}:{running_service_port(config)}/"
     try:
         with urllib.request.urlopen(url, timeout=0.5) as response:
             return bool(response.headers.get(SERVICE_HEADER))
@@ -550,7 +573,17 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
         print(f"refusing to start: {exc}", file=sys.stderr)
         return 2
 
-    address = f"http://{config.service_host}:{server.server_address[1]}/"
+    bound = int(server.server_address[1])
+    port_file = config.local_data_root / PORT_FILENAME
+    try:
+        port_file.parent.mkdir(parents=True, exist_ok=True)
+        port_file.write_text(f"{bound}\n", encoding="utf-8")
+    except OSError:
+        # A CLI action in a second terminal will then assume the default port. Worth a
+        # degraded probe, never worth refusing to serve.
+        port_file = None  # type: ignore[assignment]
+
+    address = f"http://{config.service_host}:{bound}/"
     print(f"Golden Thread Quest is at {address}", file=sys.stderr)
     # Deliberately not printed. The pages this run serves already carry it, substituted as
     # they are served, so nobody needs to read it — and printing it put it into any log a
@@ -566,20 +599,15 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
         print("\nstopped", file=sys.stderr)
     finally:
         server.server_close()
+        if port_file is not None:
+            with contextlib.suppress(OSError):
+                port_file.unlink(missing_ok=True)
     return 0
 
 
 def _filesystem_message(error: OSError) -> str:
-    """What went wrong, named by operation rather than by path.
-
-    `strerror` alone ("Permission denied") does not say what to fix; the filename would put
-    an absolute path in front of a browser. This says both what failed and what to check.
-    """
-    reason = error.strerror or type(error).__name__
-    return (
-        f"The change could not be written to your participant directory: {reason}. "
-        "Check that it exists and that you can write to it."
-    )
+    """Both surfaces say the same thing; the words live in `quest_app.errors`."""
+    return filesystem_message(error)
 
 
 def describe_actions(current: Any) -> list[dict[str, str]]:

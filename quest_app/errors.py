@@ -206,3 +206,21 @@ class ContentLoadError(RuntimeError):
     def __init__(self, report: ProblemReport) -> None:
         super().__init__(f"{len(report.errors)} content error(s)")
         self.report = report
+
+
+def filesystem_message(error: OSError) -> str:
+    """What went wrong, named by operation rather than by path.
+
+    `strerror` alone ("Permission denied") does not say what to fix; the filename would put
+    an absolute path in front of a browser or into a terminal. This says both what failed
+    and what to check.
+
+    It lives here rather than in `serve.py` because both surfaces need it. The service
+    caught `OSError` and said this; the CLI caught `StoreError` and `ValueError` only, so a
+    participant directory it could not write printed a traceback with absolute paths in it.
+    """
+    reason = error.strerror or type(error).__name__
+    return (
+        f"The change could not be written to your participant directory: {reason}. "
+        "Check that it exists and that you can write to it."
+    )
