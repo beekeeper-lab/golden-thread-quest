@@ -160,3 +160,42 @@ def test_a_stored_result_path_is_participant_relative(config: AppConfig, tmp_pat
     stored = store_result(config, EVIDENCE, {"run_id": "r1"})
     assert stored.startswith("participant/")
     assert not Path(stored).is_absolute()
+
+
+@pytest.mark.parametrize(
+    ("outcome", "counts"),
+    [
+        ("pass", True),
+        ("warning", True),
+        ("fail", False),
+        ("inconclusive", False),
+        ("interrupted", False),
+        ("environment_failure", False),
+    ],
+)
+def test_only_a_pass_or_a_warning_counts_towards_local_validation(
+    outcome: str, counts: bool
+) -> None:
+    """`qualifies` is the gate for `locally_validated`, and it survived being widened.
+
+    Adding `inconclusive` and `interrupted` to it passed the whole suite: the one test that
+    touched it computed its expectation from the same property. "We could not tell" is not
+    evidence, and a run that was stopped is not a run.
+    """
+    from quest_app.progress import ValidationResult
+
+    result = ValidationResult(
+        run_id="run-001",
+        validator_id="validate-repository-foundation",
+        validator_version=1,
+        quest_id="base-camp-repository-safety",
+        attempt_id="base-camp-attempt-001",
+        started_at="2026-09-22T00:00:00+00:00",
+        completed_at="2026-09-22T00:00:01+00:00",
+        duration_ms=1000,
+        outcome=outcome,
+        checks=(),
+        redaction_applied=False,
+        source="participant/evidence/x/y/validation/run-001.json",
+    )
+    assert result.qualifies is counts

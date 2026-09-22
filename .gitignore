@@ -2,6 +2,9 @@
 /generated/
 # The build's cross-process lock, beside the output it protects
 /generated.lock
+# Debris from a build that died before its swap; `make clean` removes both
+/generated.building/
+/generated.previous/
 # Local runtime data, caches and raw external responses — private, never committed
 /local-data/
 # Python

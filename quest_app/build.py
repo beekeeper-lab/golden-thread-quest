@@ -42,7 +42,7 @@ from quest_app.progress_calc import (
     totals,
 )
 from quest_app.recommend import recommend
-from quest_app.state_machine import allowed_actions
+from quest_app.state_machine import CONFIRMATIONS, allowed_actions
 from quest_app.view_models import (
     ActionView,
     ActivityEvent,
@@ -278,7 +278,12 @@ def _render_and_publish(
     environment = make_environment(config.templates_root)
 
     staging = config.generated_root.with_suffix(OUTPUT_SUFFIX_NEW)
-    if staging.exists():
+    if staging.is_symlink() or (staging.exists() and not staging.is_dir()):
+        # Debris in the shape of a file, which `rmtree` answers with `NotADirectoryError` —
+        # permanently, for every build, until someone deletes it by hand. `make clean` did
+        # not remove it either, because it was not on the list.
+        staging.unlink()
+    elif staging.exists():
         shutil.rmtree(staging)
     staging.mkdir(parents=True)
 
@@ -727,7 +732,7 @@ def _quest_detail_context(
             enabled=service.available,
             route=routes.action("start-quest", quest.id),
             reason=None if service.available else "Start the local service to record progress.",
-            confirm="Start this quest and create an evidence package in my repository",
+            confirm=CONFIRMATIONS["start-quest"],
         )
     else:
         action = ActionView(
@@ -832,12 +837,7 @@ def _evidence_context(
         for action_id, label, consequential, confirm in (
             ("mark-evidence-ready", "Mark evidence ready", False, None),
             ("mark-locally-validated", "Record local validation", False, None),
-            (
-                "submit-for-review",
-                "Submit for review",
-                True,
-                "Submit this evidence for review. A reviewer will read it",
-            ),
+            ("submit-for-review", "Submit for review", True, CONFIRMATIONS["submit-for-review"]),
             ("reopen-evidence", "Go back to working on it", False, None),
             ("withdraw-submission", "Withdraw the submission", False, None),
             ("resume-quest", "Resume after review", False, None),

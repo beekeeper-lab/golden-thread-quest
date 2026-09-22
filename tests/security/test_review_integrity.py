@@ -300,7 +300,44 @@ class TestWhatApprovalProduces:
             schemas=schemas,
         )
         directory = config.resolve_participant_path(attempt.evidence_path)
-        assert list(directory.glob("review-*.yaml")) or (directory / "review.yaml").exists()
+        first = (directory / "review.yaml").read_text()
+        assert "needs_changes" in first
+
+        # The second decision is the one that supersedes. Until round 7 this test recorded
+        # only one, and asserted `archive or review.yaml exists` — an `or` whose right side
+        # is always true, so deleting the archiving code outright left the suite green.
+        from quest_app.store import transition_attempt
+
+        for action in ("resume-quest", "mark-evidence-ready"):
+            transition_attempt(
+                store, quest_id=QUEST, action=action, schemas=schemas, guard=lambda _action: None
+            )
+        world, attempt = reload_attempt(config)
+        create_submission(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            schemas=schemas,
+        )
+        world, attempt = reload_attempt(config)
+        record_decision(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            decision="approved",
+            reviewer_name="A Reviewer",
+            verification_statement="I read the evidence and it does what it claims.",
+            findings=[],
+            schemas=schemas,
+        )
+        archived = list(directory.glob("review-*.yaml"))
+        assert archived, "the superseded decision was overwritten"
+        assert "needs_changes" in archived[0].read_text()
+        assert "approved" in (directory / "review.yaml").read_text()
 
 
 class TestForgery:

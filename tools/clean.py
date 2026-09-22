@@ -27,6 +27,10 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 # The only paths this script may ever remove, as exact repository-relative paths.
 REMOVABLE: tuple[str, ...] = (
     "generated",
+    # Build debris. A build that died between the rename and the swap leaves one of these,
+    # and a *file* at the staging path failed every later build until it was removed by hand.
+    "generated.building",
+    "generated.previous",
     "local-data/cache",
     ".pytest_cache",
     ".mypy_cache",

@@ -544,3 +544,31 @@ def test_without_source_date_epoch_the_stamp_is_the_clock(
     from quest_app.build import build_stamp
 
     assert "2023-11-14" not in build_stamp()
+
+
+@pytest.mark.slow
+def test_a_file_where_the_staging_directory_goes_does_not_break_every_build(
+    config: AppConfig,
+) -> None:
+    """Debris in the wrong shape used to end every build until someone removed it by hand.
+
+    `rmtree` answers a file with `NotADirectoryError`, which is an `OSError`, so the action
+    layer reported it as an advisory on every change and the build itself exited non-zero —
+    for ever, because nothing in the application or in `make clean` removed the file.
+    """
+    debris = config.generated_root.with_suffix(".building")
+    debris.write_text("left behind by a build that died")
+
+    build(config)
+    assert (config.generated_root / "index.html").exists()
+    assert not debris.exists()
+
+
+def test_make_clean_knows_about_build_debris() -> None:
+    """The list is exact, so a path missing from it is a path nobody can remove."""
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
+    from clean import REMOVABLE
+
+    assert {"generated", "generated.building", "generated.previous"} <= set(REMOVABLE)

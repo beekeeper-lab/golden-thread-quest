@@ -17,7 +17,7 @@ from typing import Any
 
 from quest_app.build import build_site
 from quest_app.errors import ProblemReport
-from quest_app.state_machine import BY_ACTION
+from quest_app.state_machine import BY_ACTION, CONFIRMATIONS
 from quest_app.store import ProgressStore, StoreError, start_attempt, transition_attempt
 from quest_app.view_models import online_service_view
 
@@ -48,6 +48,9 @@ def quest_id_of(payload: dict[str, Any]) -> str:
 # the same allowlist and a second copy is a second thing to drift.
 MUTATING_ACTIONS = frozenset(BY_ACTION) | {"rebuild", "run-validator", "record-review"}
 READ_ACTIONS = frozenset({"health", "git-status", "actions"})
+
+# Re-exported so callers of the action layer need not know where it is defined.
+__all__ = ["CONFIRMATIONS", "MUTATING_ACTIONS", "READ_ACTIONS", "ActionRunner"]
 
 
 class ActionRunner:
@@ -140,15 +143,7 @@ class ActionRunner:
         # the generated site, not about the participant's work, and reporting it as a failed
         # action told them their change had not happened while `progress.yaml` said it had.
         # Generated output is disposable and rebuildable; their record is neither.
-        advisories: list[str] = []
-        try:
-            build_site(self.load(), service=self.service())
-        except OSError as exc:
-            reason = exc.strerror or type(exc).__name__
-            advisories.append(
-                f"Your change was recorded. The site could not be rebuilt ({reason}); "
-                "run `quest-app build` once that is fixed."
-            )
+        advisories = self._rebuild()
         return {
             "ok": True,
             "action": action,
@@ -157,6 +152,29 @@ class ActionRunner:
             "attempt_id": attempt_id,
             "advisories": tuple(advisories),
         }
+
+    def _rebuild(self) -> list[str]:
+        """Rebuild the site after a change that is already on disk, and never fail for it.
+
+        A rebuild that fails afterwards is bad news about the generated site, not about the
+        participant's work, and reporting it as a failed action told them their change had
+        not happened while `progress.yaml` said it had. Generated output is disposable and
+        rebuildable; their record is neither (ADR-038).
+
+        Round 6 put this on the transition path only. Submission, review and validation
+        rebuilt bare, so the same failure told a participant their submission had failed
+        while `submission.yaml` sat on disk, and their next attempt was refused because the
+        attempt was already submitted.
+        """
+        try:
+            build_site(self.load(), service=self.service())
+        except OSError as exc:
+            reason = exc.strerror or type(exc).__name__
+            return [
+                f"Your change was recorded. The site could not be rebuilt ({reason}); "
+                "run `quest-app build` once that is fixed."
+            ]
+        return []
 
     def _submit(self, world: Any, quest: Any, store: ProgressStore) -> dict[str, Any]:
         """Submission is a record, not just a state change.
@@ -182,7 +200,7 @@ class ActionRunner:
         except ReviewError as exc:
             raise StoreError(str(exc)) from exc
 
-        build_site(self.load(), service=self.service())
+        rebuild_advisories = self._rebuild()
         return {
             "ok": True,
             "action": "submit-for-review",
@@ -191,7 +209,7 @@ class ActionRunner:
             "submission_id": record.submission_id,
             # Not blockers, or the submission would have been refused. A participant who is
             # never told a declared check went unrun learns it from a reviewer instead.
-            "advisories": list(record.advisories),
+            "advisories": list(record.advisories) + rebuild_advisories,
             # The application never pushes and never opens a pull request. Those are claims
             # on the participant's behalf that the work is finished.
             "next_steps": submission_instructions(quest.id, attempt.attempt_id, None),
@@ -231,10 +249,11 @@ class ActionRunner:
         except ReviewError as exc:
             raise StoreError(str(exc)) from exc
 
-        build_site(self.load(), service=self.service())
+        advisories = self._rebuild()
         return {
             "ok": True,
             "action": "record-review",
+            "advisories": advisories,
             "quest_id": quest_id,
             "decision": decision.decision,
             "review_id": decision.review_id,
@@ -289,10 +308,11 @@ class ActionRunner:
             )
         except ResultRejectedError as exc:
             raise StoreError(str(exc)) from exc
-        build_site(self.load(), service=self.service())
+        advisories = self._rebuild()
         return {
             "ok": True,
             "action": "run-validator",
+            "advisories": advisories,
             "quest_id": quest_id,
             "validator_id": validator_id,
             "outcome": result.outcome,

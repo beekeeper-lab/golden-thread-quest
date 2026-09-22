@@ -8,6 +8,9 @@ secrets in output, and a passing run trying to become an approval.
 
 from __future__ import annotations
 
+import contextlib
+import os
+import signal
 from pathlib import Path
 
 import pytest
@@ -745,3 +748,57 @@ class TestTheJiraFixturesTestWhatTheyDescribe:
         reported = [c.id for c in result.checks]
         assert "disappearances-reported" not in reported
         assert "no-duplicate-comments" not in reported
+
+
+def _processes_carrying(marker: str) -> set[int]:
+    """Every live process whose command line mentions `marker`."""
+    import subprocess
+
+    listing = subprocess.run(  # fixed argv, no shell
+        ["ps", "-eo", "pid=,args="], capture_output=True, text=True, check=False
+    )
+    found = set()
+    for line in listing.stdout.splitlines():
+        pid, _, args = line.strip().partition(" ")
+        if marker in args and pid.isdigit():
+            found.add(int(pid))
+    return found
+
+
+@pytest.mark.slow
+def test_a_timeout_kills_what_the_validator_spawned(registry, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+    """The whole process group, not just the child.
+
+    `os.killpg` downgraded to `os.kill` passed the entire suite while the grandchild kept
+    running for two minutes: nothing looked for it. A stopped run that keeps working is
+    worse than one that never stopped.
+    """
+    import dataclasses
+    import time
+
+    from validators.slow_probe import GRANDCHILD_MARKER
+
+    before = _processes_carrying(GRANDCHILD_MARKER)
+    impatient = dataclasses.replace(
+        registry.get("validate-repository-foundation"),
+        timeout_seconds=1,
+        entrypoint="validators.slow_probe:run",
+    )
+    result = run_validator(
+        impatient,
+        config,
+        quest_id="base-camp-repository-safety",
+        attempt_id="a-001",
+        run_id="grandchild-run",
+    )
+    assert result.outcome == "interrupted"
+
+    deadline = time.monotonic() + 5
+    survivors = _processes_carrying(GRANDCHILD_MARKER) - before
+    while survivors and time.monotonic() < deadline:
+        time.sleep(0.2)
+        survivors = _processes_carrying(GRANDCHILD_MARKER) - before
+    for pid in survivors:
+        with contextlib.suppress(ProcessLookupError, PermissionError):
+            os.kill(pid, signal.SIGKILL)
+    assert not survivors, f"the validator's grandchild outlived the timeout: {survivors}"

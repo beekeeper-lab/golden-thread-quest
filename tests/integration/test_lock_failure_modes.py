@@ -280,17 +280,22 @@ def test_the_progress_lock_excludes_rather_than_merely_existing(tmp_path: Path) 
     ctx = multiprocessing.get_context("fork")
     out = ctx.Queue()
 
-    first = ctx.Process(target=_hold_then_report, args=(str(participant), 1.5, out))
+    # The hold is long and the margins are wide on purpose. The distinction being asserted
+    # is "waited for the other process" against "did not wait at all", and a tight bound
+    # turns that into a measurement of how loaded the machine is: this test failed once
+    # while a second suite was running beside it.
+    hold = 3.0
+    first = ctx.Process(target=_hold_then_report, args=(str(participant), hold, out))
     first.start()
-    assert out.get(timeout=30) < 1.0, "the first process should not have waited"
+    assert out.get(timeout=60) < hold / 2, "the first process should not have waited"
 
     second = ctx.Process(target=_hold_then_report, args=(str(participant), 0.0, out))
     second.start()
-    waited = out.get(timeout=30)
-    first.join(timeout=30)
-    second.join(timeout=30)
+    waited = out.get(timeout=60)
+    first.join(timeout=60)
+    second.join(timeout=60)
 
-    assert waited > 0.8, f"the second process entered after {waited:.2f}s; the lock is shared"
+    assert waited > 1.0, f"the second process entered after {waited:.2f}s; the lock is shared"
 
 
 def test_a_rebuild_that_fails_does_not_deny_a_change_that_happened(
