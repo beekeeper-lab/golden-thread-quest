@@ -22,6 +22,14 @@ from dataclasses import dataclass
 
 from quest_app.models import AttemptState
 
+# The actions a participant confirms before they happen (C21), and the words they confirm.
+# One definition: the quest page renders it as a required checkbox and the service refuses a
+# submission without it, so the rule the page states is the rule the service keeps (ADR-033).
+CONFIRMATIONS: dict[str, str] = {
+    "start-quest": "Start this quest and create an evidence package in my repository",
+    "submit-for-review": "Submit this evidence for review. A reviewer will read it",
+}
+
 
 @dataclass(frozen=True, slots=True)
 class Transition:

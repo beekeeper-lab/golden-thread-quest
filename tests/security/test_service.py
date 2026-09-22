@@ -13,6 +13,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -20,7 +21,14 @@ from quest_app.build import build_site
 from quest_app.config import AppConfig
 from quest_app.errors import ProblemReport
 from quest_app.pipeline import load_world
-from quest_app.serve import MAX_BODY_BYTES, UnsafeBindError, assert_loopback, create_server
+from quest_app.serve import (
+    MAX_BODY_BYTES,
+    PORTS_DIRNAME,
+    UnsafeBindError,
+    assert_loopback,
+    create_server,
+    is_service_running,
+)
 
 
 @pytest.fixture
@@ -235,8 +243,12 @@ class TestTheFormRoute:
         out Start while both POST routes performed it.
         """
         base, token = service
+        # With the confirmation the form itself sends, so what this asserts is the
+        # prerequisite refusal and not the confirmation one.
         status, body = post_form(
-            base, "/api/action/start-quest/scrum-standup-digest", {"token": token}
+            base,
+            "/api/action/start-quest/scrum-standup-digest",
+            {"token": token, "confirm": "yes"},
         )
 
         # The form route answers a refusal the way a page does: a redirect carrying the
@@ -657,3 +669,286 @@ class TestBindingRefusals:
         assert result.returncode == 2, result.stderr
         assert "Traceback" not in result.stderr, result.stderr
         assert "cannot listen" in result.stderr and "--port" in result.stderr
+
+
+class TestNothingLeavesARequestUnanswered:
+    """Every request ends in a response, whatever went wrong on the way.
+
+    Three failures were caught by type — `StoreError`, `ValueError`, `OSError` — and
+    anything else escaped the handler: no status, no body, a closed connection, and a
+    traceback carrying absolute paths on stderr, with the participant's change already on
+    disk. A broken template is the easiest way to produce one.
+    """
+
+    def _break_the_rebuild(self, config: AppConfig, monkeypatch: pytest.MonkeyPatch) -> None:
+        from quest_app import actions
+
+        def explode(*_args: Any, **_kwargs: Any) -> None:
+            raise RuntimeError("the rebuild blew up")
+
+        monkeypatch.setattr(actions, "build_site", explode)
+
+    def test_an_unexpected_failure_still_answers_the_json_caller(
+        self, service: tuple[str, str], config: AppConfig, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        base, token = service
+        self._break_the_rebuild(config, monkeypatch)
+        status, body = post(
+            base,
+            {"action": "start-quest", "quest_id": "ba-ingest-transcript", "token": token},
+        )
+        assert status == 500
+        assert "RuntimeError" in body["error"]
+        assert str(config.repo_root) not in body["error"]
+
+    def test_an_unexpected_failure_still_answers_the_browser(
+        self, service: tuple[str, str], config: AppConfig, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        base, token = service
+        self._break_the_rebuild(config, monkeypatch)
+        status, _ = post_form(
+            base,
+            "/api/action/start-quest/ba-ingest-transcript",
+            {"token": token, "confirm": "yes"},
+        )
+        assert status == 200  # urllib follows the redirect to the page it came from
+
+
+class TestTheAdvisoryReachesTheBrowser:
+    """The application's one partial success: the change landed, the rebuild did not.
+
+    The form route discarded the action layer's return value, so a participant was told
+    nothing at all while a JSON caller was told everything.
+    """
+
+    def test_a_failed_rebuild_after_a_form_action_is_reported(
+        self, service: tuple[str, str], config: AppConfig, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from quest_app import actions
+
+        def unwritable(*_args: Any, **_kwargs: Any) -> None:
+            raise OSError(20, "Not a directory")
+
+        monkeypatch.setattr(actions, "build_site", unwritable)
+        base, token = service
+        location = self._redirect_of(
+            base,
+            "/api/action/start-quest/ba-ingest-transcript",
+            {"token": token, "confirm": "yes"},
+        )
+        assert "notice=" in location, location
+        assert "rebuilt" in urllib.parse.unquote(location)
+
+        progress = config.participant_root / "progress.yaml"
+        assert "ba-ingest-transcript" in progress.read_text()
+
+    @staticmethod
+    def _redirect_of(base: str, path: str, fields: dict[str, str]) -> str:
+        """The `Location` header, which `urllib` would follow and throw away."""
+        import socket
+
+        host, port = base.removeprefix("http://").split(":")
+        body = urllib.parse.urlencode(fields)
+        request = (
+            f"POST {path} HTTP/1.1\r\nHost: {host}:{port}\r\n"
+            "Content-Type: application/x-www-form-urlencoded\r\n"
+            f"Content-Length: {len(body)}\r\nConnection: close\r\n\r\n{body}"
+        )
+        with socket.create_connection((host, int(port)), timeout=10) as sock:
+            sock.sendall(request.encode())
+            received = b""
+            while b"\r\n\r\n" not in received:
+                chunk = sock.recv(4096)
+                if not chunk:
+                    break
+                received += chunk
+        for line in received.decode("utf-8", "replace").splitlines():
+            if line.lower().startswith("location:"):
+                return line.split(":", 1)[1].strip()
+        raise AssertionError(f"no Location header in {received!r}")
+
+
+class TestTheRequestClaimsThisHost:
+    """A page at a name that resolves to loopback is same-origin to the browser.
+
+    Every page carries the run's request token, so serving one to a request that arrived
+    under someone else's `Host` hands the token to whoever arranged the name.
+    """
+
+    def test_a_foreign_host_header_is_refused(self, service: tuple[str, str]) -> None:
+        base, _ = service
+        request = urllib.request.Request(  # noqa: S310 - fixed loopback URL
+            f"{base}/", headers={"Host": "evil.example.com"}
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=10) as response:  # noqa: S310
+                status = response.status
+        except urllib.error.HTTPError as error:
+            status = error.code
+        assert status == 403
+
+    def test_the_loopback_host_is_accepted(self, service: tuple[str, str]) -> None:
+        assert get(service[0], "/") == 200
+
+    def test_a_get_may_not_carry_a_body(self, service: tuple[str, str]) -> None:
+        """An unread body is the next request on a kept-alive connection."""
+        import socket
+
+        base, _ = service
+        host, port = base.removeprefix("http://").split(":")
+        smuggled = "POST /api/action HTTP/1.1\r\nHost: x\r\nContent-Length: 0\r\n\r\n"
+        request = (
+            f"GET /api/health HTTP/1.1\r\nHost: {host}:{port}\r\n"
+            f"Content-Length: {len(smuggled)}\r\n\r\n{smuggled}"
+        )
+        with socket.create_connection((host, int(port)), timeout=10) as sock:
+            sock.sendall(request.encode())
+            received = b""
+            while True:
+                chunk = sock.recv(4096)
+                if not chunk:
+                    break
+                received += chunk
+        assert received.count(b"HTTP/1.0") + received.count(b"HTTP/1.1") == 1, received
+        assert b"400" in received.split(b"\r\n")[0]
+
+
+class TestTheConfirmationIsNotOnlyInTheBrowser:
+    """C21 is rendered as a required checkbox. `required` is the browser's rule."""
+
+    def test_an_action_without_its_confirmation_is_refused(
+        self, service: tuple[str, str], config: AppConfig
+    ) -> None:
+        base, token = service
+        location = TestTheAdvisoryReachesTheBrowser._redirect_of(
+            base, "/api/action/start-quest/ba-ingest-transcript", {"token": token}
+        )
+        assert "problem=" in location, location
+        assert "confirm" in urllib.parse.unquote(location)
+        assert "ba-ingest-transcript" not in (config.participant_root / "progress.yaml").read_text()
+
+    def test_confirming_it_performs_the_action(
+        self, service: tuple[str, str], config: AppConfig
+    ) -> None:
+        base, token = service
+        post_form(
+            base,
+            "/api/action/start-quest/ba-ingest-transcript",
+            {"token": token, "confirm": "yes"},
+        )
+        assert "ba-ingest-transcript" in (config.participant_root / "progress.yaml").read_text()
+
+
+class TestAHalfWrittenFindingIsNotDropped:
+    """A reviewer who wrote a finding and left one field empty was told they wrote none.
+
+    The form dropped any row missing one of its three fields, and the refusal that followed
+    said needs-changes requires at least one finding — naming the wrong problem to someone
+    who had just written one. The CLI already refuses this with the reason.
+    """
+
+    def test_the_refusal_names_the_missing_field(self, service: tuple[str, str]) -> None:
+        base, token = service
+        location = TestTheAdvisoryReachesTheBrowser._redirect_of(
+            base,
+            "/api/action/record-review/jira-read-assigned-stories",
+            {
+                "token": token,
+                "decision": "needs_changes",
+                "reviewer": "A Reviewer",
+                "finding_severity": "high",
+                "finding_summary": "The reproduction steps do not run",
+                "finding_evidence": "",
+            },
+        )
+        problem = urllib.parse.unquote(location)
+        assert "evidence" in problem, problem
+        assert "at least one finding" not in problem, problem
+
+
+class TestStalePortEntries:
+    """A service killed outright never runs its own cleanup.
+
+    Its entry then names a port nothing answers on, and every later `quest-app action` pays
+    a connection attempt for it before finding the service that is actually running.
+    """
+
+    def _entry(self, config: AppConfig, port: int) -> Path:
+        directory = config.local_data_root / PORTS_DIRNAME
+        directory.mkdir(parents=True, exist_ok=True)
+        entry = directory / str(port)
+        entry.write_text(f"{port}\n")
+        return entry
+
+    @staticmethod
+    def _closed_port() -> int:
+        import socket
+
+        with socket.socket() as probe:
+            probe.bind(("127.0.0.1", 0))
+            return int(probe.getsockname()[1])
+
+    def test_an_entry_for_a_port_nothing_answers_on_is_removed(self, config: AppConfig) -> None:
+        entry = self._entry(config, self._closed_port())
+        assert is_service_running(config) is False
+        assert not entry.exists(), "a refused connection means nobody is there"
+
+    def test_a_live_service_keeps_its_entry(
+        self, service: tuple[str, str], config: AppConfig
+    ) -> None:
+        base, _ = service
+        port = int(base.rsplit(":", 1)[1])
+        entry = self._entry(config, port)
+        assert is_service_running(config) is True
+        assert entry.exists()
+
+
+class TestARebuildThatFailsAfterTheRecordIsWritten:
+    """Every action, not only the ones in the transition table.
+
+    Round 6 made a failed rebuild an advisory on a successful transition. Submission, review
+    and validation still rebuilt bare, so the same failure told a participant their
+    submission had failed while `submission.yaml` sat on disk — and their next attempt was
+    refused, because the attempt was already submitted.
+    """
+
+    @pytest.fixture
+    def failing_rebuild(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from quest_app import actions
+
+        def unwritable(*_args: Any, **_kwargs: Any) -> None:
+            raise OSError(20, "Not a directory")
+
+        monkeypatch.setattr(actions, "build_site", unwritable)
+
+    def test_submission_succeeds_with_an_advisory(
+        self, service: tuple[str, str], failing_rebuild: None, config: AppConfig
+    ) -> None:
+        base, token = service
+        status, body = post(
+            base,
+            {
+                "action": "submit-for-review",
+                "quest_id": "jira-read-assigned-stories",
+                "token": token,
+            },
+        )
+        assert status == 200, body
+        assert any("rebuilt" in advisory for advisory in body["advisories"]), body["advisories"]
+        assert "submitted" in (config.participant_root / "progress.yaml").read_text()
+
+    def test_a_validation_run_succeeds_with_an_advisory(
+        self, service: tuple[str, str], failing_rebuild: None
+    ) -> None:
+        base, token = service
+        status, body = post(
+            base,
+            {
+                "action": "run-validator",
+                "quest_id": "jira-read-assigned-stories",
+                "validator_id": "validate-jira-read-assigned",
+                "token": token,
+            },
+        )
+        assert status == 200, body
+        assert any("rebuilt" in advisory for advisory in body["advisories"]), body["advisories"]

@@ -32,10 +32,11 @@ from dataclasses import dataclass
 from functools import partial
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlparse
 
-from quest_app.actions import MUTATING_ACTIONS, READ_ACTIONS, ActionRunner
+from quest_app.actions import CONFIRMATIONS, MUTATING_ACTIONS, ActionRunner
 from quest_app.build import build_site
 from quest_app.config import APPLICATION_VERSION, AppConfig
 from quest_app.content_loader import SchemaSet
@@ -103,6 +104,20 @@ def assert_loopback(host: str) -> None:
             )
 
 
+def _unexpected_message(error: Exception) -> str:
+    """What to say about a failure this application did not anticipate.
+
+    The type and nothing else. A traceback carries absolute paths, and this text is shown to
+    a participant. The change, if there was one, is already on disk: an unexpected failure
+    in the rebuild that follows is not a reason to say nothing at all, which is what
+    happened before — no status, no body, and a closed connection.
+    """
+    return (
+        f"Something unexpected went wrong ({type(error).__name__}). Any change you made was "
+        "recorded; run `quest-app build` to rebuild the site."
+    )
+
+
 def _is_loopback(address: str) -> bool:
     import ipaddress
 
@@ -134,23 +149,28 @@ def running_service_ports(config: AppConfig) -> list[int]:
     of digits, and a `service-ports` entry symlinked at `/dev/zero` otherwise hangs the
     reader forever.
     """
-    ports: list[int] = []
+    return [port for port, _ in _port_entries(config)]
+
+
+def _port_entries(config: AppConfig) -> list[tuple[int, Path | None]]:
+    """Each claimed port and the file that claims it; the default port claims nothing."""
+    entries: list[tuple[int, Path | None]] = []
     directory = config.local_data_root / PORTS_DIRNAME
     try:
-        entries = sorted(directory.iterdir())
+        listing = sorted(directory.iterdir())
     except OSError:
-        entries = []
-    for entry in entries:
+        listing = []
+    for entry in listing:
         try:
             with entry.open("r", encoding="utf-8") as handle:
                 port = int(handle.read(PORT_FILE_MAX_BYTES).strip())
         except (OSError, ValueError):
             continue
         if 1 <= port <= 65535:
-            ports.append(port)
-    if config.service_port not in ports:
-        ports.append(config.service_port)
-    return ports
+            entries.append((port, entry))
+    if config.service_port not in [port for port, _ in entries]:
+        entries.append((config.service_port, None))
+    return entries
 
 
 def running_service_port(config: AppConfig) -> int:
@@ -178,7 +198,7 @@ def is_service_running(config: AppConfig) -> bool:
     import urllib.error
     import urllib.request
 
-    for port in running_service_ports(config):
+    for port, entry in _port_entries(config):
         url = f"http://{config.service_host}:{port}/"
         try:
             with urllib.request.urlopen(url, timeout=0.5) as response:
@@ -187,7 +207,17 @@ def is_service_running(config: AppConfig) -> bool:
         except urllib.error.HTTPError as error:
             if error.headers.get(SERVICE_HEADER):
                 return True
-        except OSError:
+        except OSError as error:
+            # Nothing is listening there. A service killed outright never ran its own
+            # cleanup, and its entry otherwise stayed forever, costing every later probe a
+            # timeout. Only a refusal prunes: a timeout might be a slow service.
+            # `urlopen` wraps the refusal in a `URLError`, so the cause is what to read.
+            refused = isinstance(error, ConnectionRefusedError) or isinstance(
+                getattr(error, "reason", None), ConnectionRefusedError
+            )
+            if entry is not None and refused:
+                with contextlib.suppress(OSError):
+                    entry.unlink(missing_ok=True)
             continue
     return False
 
@@ -258,6 +288,42 @@ class ActionHandler(BaseHTTPRequestHandler):
 
     # ---------------------------------------------------------------- checks
 
+    def _host_is_acceptable(self) -> bool:
+        """Reject a request that reached this port under someone else's name.
+
+        Every page this service serves carries the run's request token, and until round 7
+        any request reaching the port was served one, whatever `Host` it claimed. A page at
+        a name that resolves to 127.0.0.1 — DNS rebinding — is same-origin to the browser,
+        so it could read a page here and take the token out of it. The token is what
+        authorizes every change, so handing it to a stranger is the whole game.
+        """
+        host = (self.headers.get("Host") or "").strip()
+        if not host:
+            # HTTP/1.0 clients and raw sockets send none. The token still gates every change.
+            return True
+        name = host.rsplit(":", 1)[0] if host.count(":") == 1 else host
+        name = name.strip("[]").lower()
+        if name in {"localhost", "127.0.0.1", "::1", self.state.config.service_host.lower()}:
+            return True
+        return _is_loopback(name)
+
+    def _body_is_absent(self) -> bool:
+        """Whether this request declared no body. A GET that declares one is refused.
+
+        An unread body is read as the next request on a kept-alive connection, with every
+        header chosen by the sender. Round 6 closed that on refusals by ending the
+        connection; a GET carrying a declared body walked straight through it.
+        """
+        declared = self.headers.get("Content-Length")
+        if self.headers.get("Transfer-Encoding"):
+            return False
+        if declared is None:
+            return True
+        try:
+            return int(declared) == 0
+        except ValueError:
+            return False
+
     def _origin_is_acceptable(self) -> bool:
         """Reject a cross-origin state-changing request.
 
@@ -310,6 +376,12 @@ class ActionHandler(BaseHTTPRequestHandler):
     # ---------------------------------------------------------------- routes
 
     def do_GET(self) -> None:
+        if not self._host_is_acceptable():
+            self._refuse(HTTPStatus.FORBIDDEN, "This service answers on the loopback name only.")
+            return
+        if not self._body_is_absent():
+            self._refuse(HTTPStatus.BAD_REQUEST, "A GET request may not carry a body.")
+            return
         path = urlparse(self.path).path
         if path == "/api/health":
             self._send(HTTPStatus.OK, self._health())
@@ -322,6 +394,9 @@ class ActionHandler(BaseHTTPRequestHandler):
         self._serve_static(path)
 
     def do_POST(self) -> None:
+        if not self._host_is_acceptable():
+            self._refuse(HTTPStatus.FORBIDDEN, "This service answers on the loopback name only.")
+            return
         path = urlparse(self.path).path
         if path.startswith("/api/action/"):
             self._handle_form_action(path)
@@ -356,6 +431,8 @@ class ActionHandler(BaseHTTPRequestHandler):
                 self._refuse(HTTPStatus.BAD_REQUEST, str(exc))
             except OSError as exc:
                 self._refuse(HTTPStatus.INTERNAL_SERVER_ERROR, _filesystem_message(exc))
+            except Exception as exc:  # the last line before no response at all
+                self._refuse(HTTPStatus.INTERNAL_SERVER_ERROR, _unexpected_message(exc))
 
     def _handle_form_action(self, path: str) -> None:
         """An ordinary HTML form submission, so the UI works with no JavaScript.
@@ -391,11 +468,23 @@ class ActionHandler(BaseHTTPRequestHandler):
         payload: dict[str, Any] = {"action": action, "quest_id": quest_id}
         if len(parts) == 3:
             payload["validator_id"] = parts[2]
-        payload.update(self._review_fields(fields))
+        try:
+            payload.update(self._review_fields(fields))
+        except ValueError as exc:
+            # Reading the form is part of the request, so a refusal here is a refusal, not
+            # an unanswered connection.
+            self._redirect_back(str(exc))
+            return
+
+        if action in CONFIRMATIONS and not fields.get("confirm", [""])[0]:
+            # C21 is rendered as a required checkbox, which is the browser's rule and not
+            # this service's. A rule the page enforces is enforced here too (ADR-033).
+            self._redirect_back(f"{CONFIRMATIONS[action]} — confirm it, then try again.")
+            return
 
         with self.state.lock:
             try:
-                self._perform(action, payload)
+                result = self._perform(action, payload)
             except (StoreError, ValueError) as exc:
                 self._redirect_back(str(exc))
                 return
@@ -405,7 +494,17 @@ class ActionHandler(BaseHTTPRequestHandler):
                 # absolute paths went to stderr.
                 self._redirect_back(_filesystem_message(exc))
                 return
-        self._redirect_back(None)
+            except Exception as exc:  # the last line before no response at all
+                # Anything else — a broken template, a malformed validator payload — used to
+                # escape the handler: no status, no body, a traceback carrying absolute
+                # paths on stderr, and the participant's change already on disk.
+                self._redirect_back(_unexpected_message(exc))
+                return
+        # The one place this application reports a partial success. The form surface
+        # discarded it, so a rebuild that failed after a change landed was invisible to
+        # everyone not reading JSON.
+        advisories = [str(item) for item in (result.get("advisories") or ())]
+        self._redirect_back(None, notice=" ".join(advisories) or None)
 
     @staticmethod
     def _review_fields(fields: dict[str, list[str]]) -> dict[str, Any]:
@@ -413,18 +512,38 @@ class ActionHandler(BaseHTTPRequestHandler):
         severities = fields.get("finding_severity", [])
         summaries = fields.get("finding_summary", [])
         evidence = fields.get("finding_evidence", [])
-        findings = [
-            {
-                "id": f"finding-{index + 1}",
-                "severity": severity,
-                "summary": summary,
-                "evidence": observed,
-            }
-            for index, (severity, summary, observed) in enumerate(
-                zip(severities, summaries, evidence, strict=False)
+        findings = []
+        for index, (severity, summary, observed) in enumerate(
+            zip(severities, summaries, evidence, strict=False)
+        ):
+            if not (severity or summary or observed):
+                # An untouched row of the form. Nothing was meant by it.
+                continue
+            if not (severity and summary and observed):
+                # A half-filled one was dropped silently, and the refusal that followed said
+                # "needs changes requires at least one finding" — which named the wrong
+                # problem to a reviewer who had just written one. The CLI already says this.
+                missing = [
+                    name
+                    for name, value in (
+                        ("a severity", severity),
+                        ("a summary", summary),
+                        ("evidence", observed),
+                    )
+                    if not value
+                ]
+                raise ValueError(
+                    f"Finding {index + 1} is missing {' and '.join(missing)}. "
+                    "A finding a participant cannot act on is not a finding."
+                )
+            findings.append(
+                {
+                    "id": f"finding-{index + 1}",
+                    "severity": severity,
+                    "summary": summary,
+                    "evidence": observed,
+                }
             )
-            if severity and summary and observed
-        ]
         extra: dict[str, Any] = {}
         if "decision" in fields:
             extra["decision"] = fields["decision"][0]
@@ -466,16 +585,27 @@ class ActionHandler(BaseHTTPRequestHandler):
         del path
         query = parse_qs(urlparse(self.path).query)
         message = (query.get("problem") or [""])[0].strip()
-        if not message:
-            return ""
-        return (
-            '<div class="alert alert-error" role="status">'
-            f"<p><strong>That did not happen.</strong> {escape(message[:400])}</p>"
-            "</div>"
-        )
+        if message:
+            return (
+                '<div class="alert alert-error" role="status">'
+                f"<p><strong>That did not happen.</strong> {escape(message[:400])}</p>"
+                "</div>"
+            )
+        notice = (query.get("notice") or [""])[0].strip()
+        if notice:
+            return (
+                '<div class="alert alert-warning" role="status">'
+                f"<p><strong>Recorded, with something to know.</strong> {escape(notice[:400])}</p>"
+                "</div>"
+            )
+        return ""
 
-    def _redirect_back(self, message: str | None) -> None:
-        """Return the browser to the page it came from, which the rebuild has refreshed."""
+    def _redirect_back(self, message: str | None, notice: str | None = None) -> None:
+        """Return the browser to the page it came from, which the rebuild has refreshed.
+
+        `message` is a refusal: nothing happened. `notice` is an advisory: the change
+        happened and there is something to know about it.
+        """
         target = self.headers.get("Referer") or "/"
         parsed = urlparse(target)
         location = parsed.path or "/"
@@ -489,6 +619,10 @@ class ActionHandler(BaseHTTPRequestHandler):
             from urllib.parse import quote
 
             location = f"{location}?problem={quote(message[:300])}"
+        elif notice:
+            from urllib.parse import quote
+
+            location = f"{location}?notice={quote(notice[:300])}"
         self.send_response(HTTPStatus.SEE_OTHER)
         self.send_header("Location", location)
         self.send_header("Content-Length", "0")
@@ -525,7 +659,11 @@ class ActionHandler(BaseHTTPRequestHandler):
             "errors": len(report.errors),
             "warnings": len(report.warnings),
             "participant_state": world is not None and world.participant is not None,
-            "actions": sorted(MUTATING_ACTIONS | READ_ACTIONS),
+            # The actions this service performs, and the two paths it answers a GET on.
+            # `READ_ACTIONS` was reported here as though `actions` were an endpoint of its
+            # own, which it has never been.
+            "actions": sorted(MUTATING_ACTIONS),
+            "read_endpoints": ["/api/git-status", "/api/health"],
         }
 
     # ---------------------------------------------------------------- static

@@ -66,11 +66,11 @@ address. Open it.
 
 | | |
 |---|---|
-| Tests | 597 — 555 under `make check`, 42 driving a real browser. The line `make check` prints counts skips too, so it can read one or two higher where an optional dependency is missing. |
+| Tests | 640 — 598 under `make check`, 42 driving a real browser. The line `make check` prints counts skips too, so it can read one or two higher where an optional dependency is missing. |
 | Screens | 13 page templates, 10 reusable components |
 | Schemas | 10, validating content, progress, reviews, validation results and the validator registry |
 | Sample curriculum | 8 regions, 8 quests, 4 badges, 1 track |
-| Sample validators | 3, plus a probe used only to prove the timeout kills a process group |
+| Sample validators | 3 quest-facing, plus 2 registered probes and one unregistered slow probe used only by the tests |
 | Build time | the shipped curriculum plus 200 synthetic quests, in under a second |
 
 ## The rules it holds itself to

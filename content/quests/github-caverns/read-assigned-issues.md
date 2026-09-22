@@ -1,6 +1,6 @@
 ---
 id: github-read-assigned-issues
-version: 1
+version: 2
 title: Synchronize My Assigned GitHub Issues
 summary: Retrieve every issue assigned to the authenticated user across repositories and preserve it as traceable local Markdown that separates issues from pull requests.
 region: github-caverns
@@ -49,6 +49,10 @@ proof:
       type: command-record
       description: Save the redacted output of two consecutive synchronization runs, including the pagination summary.
       path: participant/evidence/github-read-assigned-issues/attempt-001/logs/second-run.txt
+    - id: disappearance-record
+      type: command-record
+      description: Save the redacted record of a run in which an issue was closed, transferred, or became unreadable between synchronizations, showing it reported with its last known state rather than deleted.
+      path: participant/evidence/github-read-assigned-issues/attempt-001/logs/disappearance.txt
   optional:
     - id: delivery-links
       type: file
@@ -87,7 +91,7 @@ You are assigned work in several repositories. You want an agent to answer "what
 
 ## Required evidence
 
-Provide the skill, the assigned index, the per-issue records, and the two-run command record. Write a `PROOF.md` that explains how identity is resolved, how pull requests were excluded, how pagination was proved complete, and what the second run changed. Refer to the acceptance criteria by number so a reviewer can check your claims against them.
+Provide the skill, the assigned index, the per-issue records, the two-run command record, and the record of an issue that closed, moved, or became unreadable between runs. Write a `PROOF.md` that explains how identity is resolved, how pull requests were excluded, how pagination was proved complete, and what the second run changed. Refer to the acceptance criteria by number so a reviewer can check your claims against them.
 
 Submit the attempt for review once the evidence is in place. Only a reviewer's approval completes this quest.
 

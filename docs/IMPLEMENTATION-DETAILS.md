@@ -30,6 +30,7 @@ quest_app/           the application
 ├── review.py            submissions and reviewer decisions
 ├── validator_registry.py the complete set of programs that may run
 ├── validator_runner.py  running one, under every registered constraint
+├── validator_child.py   the subprocess a validator runs in, and nothing else
 ├── git_status.py        read-only repository inspection
 ├── update.py            upstream preflight; runs no merge
 ├── migrations.py        participant-state migrations
@@ -145,3 +146,5 @@ is atomic, validated before it lands, and recorded in `participant/ACTIVITY.md`.
    architecture permits adding one without changing quest content.
 5. Coverage reporting is not configured (D2).
 6. There is no glossary content type (D1).
+7. Two builds of the same content are byte-identical only when `SOURCE_DATE_EPOCH` is
+   set; otherwise every page footer carries the time it was built.

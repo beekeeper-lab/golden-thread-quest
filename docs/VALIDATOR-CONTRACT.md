@@ -46,6 +46,9 @@ The exact registry storage format is an implementation decision. The policy is n
 - No request supplies a shell command string.
 - Working directory is explicit.
 - Read and write roots are explicit.
+- The attempt under validation is explicit. A validator receives the evidence package of
+  that attempt and judges it by identifier, never by picking the newest file under
+  `participant/evidence` (round 7, `Workspace.attempt_files`).
 - Resolved symbolic links cannot escape roots.
 - Environment is constructed from an allowlist.
 - Time and output limits are mandatory.

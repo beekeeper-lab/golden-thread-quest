@@ -15,7 +15,7 @@ is itself the finding.
 | **CG3** A maintainer can add a quest without editing code | `build.py`, generic templates | `integration/test_build.py::TestAddingContentNeedsNoCodeChange::test_no_ui_file_was_touched` |
 | **CG4** A valid new quest appears in region, catalog, filters, search, prerequisite graph | `build.py` indexes | `TestAddingContentNeedsNoCodeChange` (five assertions) |
 | **CG5** Invalid content prevents publication with an actionable error | `errors.ContentProblem` | `semantic/test_invalid_content.py` (20 rules) |
-| Generated output is deterministic | sorted traversal, sorted JSON | `integration/test_build.py::test_two_builds_of_the_same_inputs_are_identical` |
+| **CG6** Generated output is deterministic for equivalent inputs | sorted traversal, sorted JSON, `build.build_stamp` | `integration/test_build.py::test_two_builds_of_the_same_inputs_are_identical` |
 | **CG7** A failed build preserves the last valid output | `build._swap` | `test_a_build_that_fails_midway_leaves_the_previous_site_intact` |
 
 ## Participant experience
@@ -143,9 +143,22 @@ saying which. Each row names the criterion it adds evidence to and why.
 | **FS2** — local actions cannot write outside approved roots | The no-JavaScript form route is guarded like the JSON one, and a refusal ends the connection rather than answering the unread body as a second request | `tests/security/test_service.py::TestTheFormRoute`, `::TestRefusalsEndTheConnection` |
 | **FS3** — symbolic-link and traversal tests pass | The same traversal cases sent over a raw socket, which is the only form that reaches the containment check, and one against a file that exists | `tests/security/test_service.py::TestStaticServing` |
 
+### Round 7 mechanisms
+
+The same rule: each row is additional evidence for a criterion that already has a row above.
+
+| Criterion | Additional evidence, and what it adds | Tests |
+|---|---|---|
+| **CG6** — generated output is deterministic for equivalent inputs | `SOURCE_DATE_EPOCH` makes the one varying field fixed, so the claim can be checked the way a reader would check it, ADR-040 | `tests/integration/test_build.py::test_source_date_epoch_makes_two_builds_byte_identical` |
+| **CG7** — a failed build preserves the last known valid output | Debris in the wrong shape at the staging path no longer ends every later build | `tests/integration/test_build.py::test_a_file_where_the_staging_directory_goes_does_not_break_every_build` |
+| **VS6** — validation results use the published result schema | A result says what it says about the attempt it was run for: the workspace carries that attempt's evidence package, so a check cannot judge another attempt's files, ADR-039 | `tests/security/test_validator_sandbox.py::TestAValidatorJudgesTheAttemptItWasGiven` |
+| **FS2** — local actions cannot write outside approved roots | The service refuses a request that claims a foreign `Host`, refuses a `GET` carrying a body, and answers every request even when something unexpected fails, ADR-041 | `tests/security/test_service.py::TestTheRequestClaimsThisHost`, `::TestNothingLeavesARequestUnanswered` |
+| **PE4** — starting a quest persists state outside browser storage | The confirmation the page requires is required by the service too, ADR-033 as amended | `tests/security/test_service.py::TestTheConfirmationIsNotOnlyInTheBrowser` |
+| **RE4** — a reviewer can approve, request changes, or reject with findings | A half-written finding is refused by name instead of dropped, and a superseded decision is provably archived | `tests/security/test_service.py::TestAHalfWrittenFindingIsNotDropped`, `tests/security/test_review_integrity.py::TestWhatApprovalProduces::test_a_superseded_review_is_archived_rather_than_overwritten` |
+
 Every row above carries the stable ID of the criterion it maps to, from
 `docs/ACCEPTANCE-CRITERIA.md`. Before the IDs existed a row could only match a criterion by
 prose, which is how this document came to name the wrong test file for a criterion twice in
 a row without anyone noticing.
 
-**Criteria with no row here: CG6.** Each one is either covered by a row whose wording differs, or genuinely unmapped; treat an ID appearing in neither place as unverified.
+**Criteria with no row here: none.** Round 6 left this note naming CG6, whose row was present but unlabelled, so the document's own audit trail contradicted its own table. Treat an ID appearing in neither place as unverified.

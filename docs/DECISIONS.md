@@ -350,6 +350,13 @@ The defect was invisible while the browser was the only caller, because the view
 enforcement. A second caller made it a hole. The same reasoning covers the secret-scan gate,
 the validator guard and the review guards, which were already there.
 
+**Amended 2026-09-22 (round 7):** the C21 confirmation was the remaining rule the browser
+enforced alone — a `required` checkbox, which is the browser's rule and not the service's, so
+a form post without it performed the action. The actions that carry a confirmation and the
+words they confirm now live in `state_machine.CONFIRMATIONS`; the page renders them from
+there and the service refuses a form submission without one, so the page and the service
+cannot disagree about which actions need confirming.
+
 ## ADR-034 — One mutation at a time, across processes
 
 **Decision:** `ProgressStore.exclusive()` takes an exclusive POSIX file lock on
@@ -459,3 +466,59 @@ share a failure mode.
 
 **Rejected:** rolling the state change back so the report is true. It throws away the one
 thing in the transaction that cannot be regenerated.
+
+**Amended 2026-09-22 (round 7):** this was implemented on the transition path only.
+Submission, review and validation rebuilt without the guard, so the same failure told a
+participant their submission had failed while `submission.yaml` sat on disk, and their retry
+was refused because the attempt was already submitted. Every path that rebuilds after a
+record is written now goes through one `ActionRunner._rebuild`, and the form route carries
+the advisory into the page instead of discarding it.
+
+## ADR-039 — A validator judges the attempt it was given
+
+**Decision:** The validator workspace carries the evidence package of the attempt under
+validation, and a check about that attempt's evidence reads `workspace.attempt_files`.
+`iter_files` over `participant/evidence` is for questions about the whole tree, not for
+questions about one attempt.
+
+**Reason:** Nothing in the contract named the quest or the attempt, so checks reached for
+`participant/evidence` and took whichever file was newest. A blank `PROOF.md` under an
+unrelated quest failed a complete attempt and was reported as that attempt's failing
+artifact, and a log from any other quest satisfied "failure is diagnosable" here. Records are
+connected by their identifiers, never by modification time.
+
+**Rejected:** passing the quest and attempt IDs and letting each validator build the path.
+The path is the application's to construct; a validator that builds its own would be one
+rename away from reading nothing at all.
+
+## ADR-040 — The build timestamp is the only thing a rebuild may change
+
+**Decision:** The build honours `SOURCE_DATE_EPOCH`. Set it and two builds of the same
+content are byte-identical; leave it and every page carries the time it was built.
+
+**Reason:** "Two builds of the same inputs are byte-identical" was written in the release
+notes without qualification and was false for the command a reader runs: the footer carries
+the clock. The test behind the criterion pinned the timestamp itself, so nothing ever ran the
+claim the way a reader would. Honouring the reproducible-builds convention makes the claim
+true on demand, and the documents now say what is true without it.
+
+**Rejected:** removing the timestamp from the page. A reader of a generated page needs to
+know how old it is more often than they need it to hash the same.
+
+## ADR-041 — The service answers only to a loopback name, and every request gets a response
+
+**Decision:** A request whose `Host` is not a loopback name is refused before anything is
+rendered; a `GET` carrying a declared body is refused; and both handlers end in a catch-all
+that answers with the exception's type and nothing else.
+
+**Reason:** Every page carries the run's request token, and the service served pages to any
+request that reached the port, whatever name it claimed — so a page at a name that resolves
+to 127.0.0.1 is same-origin to the browser and can read the token out of a page. An
+undeclared body on a kept-alive connection is parsed as a second request with every header
+chosen by the sender, which is the hole round 6 closed on refusals and left open on `GET`.
+And three exception types were caught by name while anything else escaped the handler: no
+status, no body, a traceback carrying absolute paths, and the participant's change already
+on disk.
+
+**Rejected:** binding to a name rather than an address. The address is right; what was
+missing was checking the name the request arrived under.

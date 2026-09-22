@@ -508,3 +508,67 @@ def test_built_pages_show_no_internal_placeholder(built: AppConfig) -> None:
         "internal placeholder is in text position and will render to the reader: "
         + ", ".join(sorted(set(offenders)))
     )
+
+
+@pytest.mark.slow
+def test_source_date_epoch_makes_two_builds_byte_identical(
+    config: AppConfig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The documented reproducibility claim, run the way a reader runs it.
+
+    `test_two_builds_of_the_same_inputs_are_identical` pins `built_at` itself, so it passed
+    while two consecutive `make build` runs differed on every page: the footer carries the
+    real clock. A reader following the release notes could not reproduce what they said.
+    """
+    monkeypatch.setenv("SOURCE_DATE_EPOCH", "1700000000")
+
+    report = ProblemReport()
+    world = load_world(config, report)
+    assert world is not None, report.to_text()
+
+    build_site(world)
+    first = tree_digest(config.generated_root)
+    build_site(world)
+    assert tree_digest(config.generated_root) == first
+
+    page = (config.generated_root / "index.html").read_text()
+    assert "2023-11-14" in page, "the stamp should come from SOURCE_DATE_EPOCH, not the clock"
+
+
+@pytest.mark.slow
+def test_without_source_date_epoch_the_stamp_is_the_clock(
+    config: AppConfig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The override is an override, not a new default."""
+    monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
+    from quest_app.build import build_stamp
+
+    assert "2023-11-14" not in build_stamp()
+
+
+@pytest.mark.slow
+def test_a_file_where_the_staging_directory_goes_does_not_break_every_build(
+    config: AppConfig,
+) -> None:
+    """Debris in the wrong shape used to end every build until someone removed it by hand.
+
+    `rmtree` answers a file with `NotADirectoryError`, which is an `OSError`, so the action
+    layer reported it as an advisory on every change and the build itself exited non-zero —
+    for ever, because nothing in the application or in `make clean` removed the file.
+    """
+    debris = config.generated_root.with_suffix(".building")
+    debris.write_text("left behind by a build that died")
+
+    build(config)
+    assert (config.generated_root / "index.html").exists()
+    assert not debris.exists()
+
+
+def test_make_clean_knows_about_build_debris() -> None:
+    """The list is exact, so a path missing from it is a path nobody can remove."""
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
+    from clean import REMOVABLE
+
+    assert {"generated", "generated.building", "generated.previous"} <= set(REMOVABLE)

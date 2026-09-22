@@ -1,20 +1,29 @@
 {
-  "description": "A comment appears on two pages, so a naive append duplicates it.",
+  "description": "Comment 9001 is returned on both pages of GTQ-101, so a run that appends what it reads records it twice.",
   "stories": [
     {
       "key": "GTQ-101",
       "status": "To Do",
-      "summary": "Fixture story GTQ-101"
+      "summary": "Fixture story GTQ-101",
+      "comments": [
+        {"id": "9001", "author": "fixture.user", "body": "First page copy of the comment."},
+        {"id": "9002", "author": "fixture.user", "body": "A second, distinct comment."},
+        {"id": "9001", "author": "fixture.user", "body": "Second page copy of the same comment."}
+      ]
     },
     {
       "key": "GTQ-102",
       "status": "To Do",
-      "summary": "Fixture story GTQ-102"
+      "summary": "Fixture story GTQ-102",
+      "comments": [
+        {"id": "9003", "author": "fixture.user", "body": "Only comment on this story."}
+      ]
     },
     {
       "key": "GTQ-103",
       "status": "To Do",
-      "summary": "Fixture story GTQ-103"
+      "summary": "Fixture story GTQ-103",
+      "comments": []
     }
   ]
 }

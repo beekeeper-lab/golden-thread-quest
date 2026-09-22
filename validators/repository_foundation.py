@@ -98,14 +98,17 @@ def _check_ignore_rules(workspace: Workspace, output: ValidatorOutput) -> None:
 
 
 def _check_evidence_package(workspace: Workspace, output: ValidatorOutput) -> None:
-    proofs = workspace.iter_files("participant/evidence", "PROOF.md")
+    # The attempt being validated, not whichever PROOF.md in the participant tree was
+    # written most recently. The older form judged another quest's blank template and
+    # reported its path as this attempt's failing artifact.
+    proofs = workspace.attempt_files("PROOF.md")
     if not proofs:
         output.add(
             Check(
                 id="evidence-package-exists",
                 outcome="inconclusive",
                 summary="No evidence package was found to evaluate.",
-                evidence="participant/evidence contains no PROOF.md.",
+                evidence="This attempt's evidence package contains no PROOF.md.",
                 suggested_action="Start the quest to create an evidence package.",
             )
         )
@@ -169,7 +172,10 @@ def _check_no_secrets_in_evidence(workspace: Workspace, output: ValidatorOutput)
     from quest_app.secret_patterns import scan_text
 
     findings: list[str] = []
-    for path in workspace.iter_files("participant/evidence"):
+    # This attempt's evidence. A secret in another attempt's package is that attempt's
+    # failure: `submit-for-review` scans whichever package is being submitted, so nothing
+    # goes unscanned, and no attempt is blocked by a file it does not own.
+    for path in workspace.attempt_files():
         if path.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf"}:
             continue
         for match in scan_text(workspace.read_text(str(path), limit=200_000)):

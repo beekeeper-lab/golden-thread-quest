@@ -98,6 +98,15 @@ class Workspace:
     repo_root: Path
     participant_root: Path
     parameters: dict[str, Any]
+    evidence_root: Path | None = None
+    """The evidence package of the attempt being validated, when there is one.
+
+    Without it a validator has no way to tell one attempt's evidence from another's, and
+    round 6's checks reached for `participant/evidence` and judged whichever file was
+    newest: a blank `PROOF.md` under an unrelated quest failed a complete one, and a log
+    left behind by any other quest satisfied "failure is diagnosable" for this one. Records
+    are connected by their identifiers, never by modification time.
+    """
 
     def _contained(self, path: Path, roots: tuple[Path, ...], what: str) -> Path:
         candidate = Path(path)
@@ -130,6 +139,24 @@ class Workspace:
 
     def iter_files(self, path: str, pattern: str = "*") -> list[Path]:
         root = self._contained(Path(path), self.read_roots, "reading")
+        if not root.is_dir():
+            return []
+        return sorted(
+            item for item in root.rglob(pattern) if item.is_file() and self._is_readable(item)
+        )
+
+    def attempt_files(self, pattern: str = "*") -> list[Path]:
+        """Every readable file inside the evidence package of the attempt under validation.
+
+        A check about this attempt's evidence uses this rather than `iter_files`, so its
+        verdict cannot be decided by a file belonging to another quest or another attempt.
+        """
+        if self.evidence_root is None:
+            return []
+        try:
+            root = self._contained(self.evidence_root, self.read_roots, "reading")
+        except WorkspaceError:
+            return []
         if not root.is_dir():
             return []
         return sorted(
@@ -244,18 +271,27 @@ def run_validator(
     attempt_id: str,
     run_id: str,
     parameters: dict[str, Any] | None = None,
+    evidence_path: str | None = None,
 ) -> RunResult:
     """Run one registered validator under every registered constraint."""
     if not definition.may_run_for(quest_id):
         raise ValidatorError(f"{definition.id!r} is not registered to run for {quest_id!r}.")
 
     bound = definition.bind_parameters(parameters)
+    # The attempt's own evidence package. The caller passes the path the attempt recorded;
+    # the default is the one `store.start_attempt` builds from the same two identifiers.
+    declared_evidence = evidence_path or f"participant/evidence/{quest_id}/{attempt_id}"
+    try:
+        evidence_root: Path | None = config.resolve_participant_path(declared_evidence)
+    except ValueError:
+        evidence_root = None
     workspace = Workspace(
         read_roots=definition.resolved_read_roots(config),
         write_roots=definition.resolved_write_roots(config),
         repo_root=config.repo_root,
         participant_root=config.participant_root,
         parameters=bound,
+        evidence_root=evidence_root,
     )
 
     started = datetime.now(timezone.utc)
@@ -284,6 +320,7 @@ def run_validator(
             "write_roots": [str(path) for path in workspace.write_roots],
             "repo_root": str(workspace.repo_root),
             "participant_root": str(workspace.participant_root),
+            "evidence_root": str(evidence_root) if evidence_root is not None else None,
             "parameters": bound,
         }
     )

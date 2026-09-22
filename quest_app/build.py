@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import os
 import shutil
 import sys
 from collections.abc import Iterator
@@ -41,7 +42,7 @@ from quest_app.progress_calc import (
     totals,
 )
 from quest_app.recommend import recommend
-from quest_app.state_machine import allowed_actions
+from quest_app.state_machine import CONFIRMATIONS, allowed_actions
 from quest_app.view_models import (
     ActionView,
     ActivityEvent,
@@ -73,6 +74,27 @@ class BuildResult:
     output_root: Path
     page_count: int
     manifest: dict[str, Any]
+
+
+def build_stamp() -> str:
+    """The build timestamp, honouring `SOURCE_DATE_EPOCH`.
+
+    Everything else about a build is a function of its inputs, so this stamp is the only
+    thing that changes between two builds of the same content — which made the documented
+    claim that two builds are byte-identical false for the command a reader actually runs.
+    Setting `SOURCE_DATE_EPOCH` to a fixed value now makes it true, by the same convention
+    the rest of the reproducible-builds world uses.
+    """
+    raw = os.environ.get("SOURCE_DATE_EPOCH")
+    if raw:
+        try:
+            moment = datetime.fromtimestamp(int(raw.strip()), tz=timezone.utc)
+        except (ValueError, OverflowError, OSError):
+            # An unusable value is not worth failing a build over, and silently ignoring it
+            # is better than pretending the output is reproducible when it is not.
+            return datetime.now(timezone.utc).isoformat(timespec="seconds")
+        return moment.isoformat(timespec="seconds")
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 def render_error_page(config: AppConfig, report: ProblemReport) -> Path:
@@ -116,7 +138,7 @@ def render_error_page(config: AppConfig, report: ProblemReport) -> Path:
         build=BuildView(
             application_version=APPLICATION_VERSION,
             content_version="unpublished",
-            built_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            built_at=build_stamp(),
             deterministic=False,
         ),
         flash=(),
@@ -248,7 +270,7 @@ def _render_and_publish(
         bundle, states, regions, participant.progress if participant else None
     )
 
-    stamp = built_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
+    stamp = built_at or build_stamp()
     build_view = default_build_view(bundle, stamp)
     # A build from the CLI produces pages that say state cannot change; a build from the
     # running service produces pages whose actions work. Same templates, different truth.
@@ -256,7 +278,12 @@ def _render_and_publish(
     environment = make_environment(config.templates_root)
 
     staging = config.generated_root.with_suffix(OUTPUT_SUFFIX_NEW)
-    if staging.exists():
+    if staging.is_symlink() or (staging.exists() and not staging.is_dir()):
+        # Debris in the shape of a file, which `rmtree` answers with `NotADirectoryError` —
+        # permanently, for every build, until someone deletes it by hand. `make clean` did
+        # not remove it either, because it was not on the list.
+        staging.unlink()
+    elif staging.exists():
         shutil.rmtree(staging)
     staging.mkdir(parents=True)
 
@@ -705,7 +732,7 @@ def _quest_detail_context(
             enabled=service.available,
             route=routes.action("start-quest", quest.id),
             reason=None if service.available else "Start the local service to record progress.",
-            confirm="Start this quest and create an evidence package in my repository",
+            confirm=CONFIRMATIONS["start-quest"],
         )
     else:
         action = ActionView(
@@ -810,12 +837,7 @@ def _evidence_context(
         for action_id, label, consequential, confirm in (
             ("mark-evidence-ready", "Mark evidence ready", False, None),
             ("mark-locally-validated", "Record local validation", False, None),
-            (
-                "submit-for-review",
-                "Submit for review",
-                True,
-                "Submit this evidence for review. A reviewer will read it",
-            ),
+            ("submit-for-review", "Submit for review", True, CONFIRMATIONS["submit-for-review"]),
             ("reopen-evidence", "Go back to working on it", False, None),
             ("withdraw-submission", "Withdraw the submission", False, None),
             ("resume-quest", "Resume after review", False, None),
