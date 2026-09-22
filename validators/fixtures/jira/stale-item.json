@@ -1,5 +1,5 @@
 {
-  "description": "One story was reassigned away and must be reported, not silently dropped.",
+  "description": "GTQ-100 was assigned on the previous run and is gone from this one. It must be reported with its last known state, not silently dropped.",
   "stories": [
     {
       "key": "GTQ-101",
@@ -10,6 +10,13 @@
       "key": "GTQ-102",
       "status": "To Do",
       "summary": "Fixture story GTQ-102"
+    }
+  ],
+  "previously_assigned": [
+    {
+      "key": "GTQ-100",
+      "status": "In Progress",
+      "summary": "Fixture story GTQ-100, reassigned away between runs"
     }
   ]
 }

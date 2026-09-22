@@ -1,6 +1,6 @@
 ---
 id: context-canonical-work-item
-version: 1
+version: 2
 title: Define a Canonical Cross-System Work-Item Model
 summary: Design and apply one local work-item model that represents Jira, Trello, and GitHub work without erasing what makes each system different.
 region: context-library
@@ -50,6 +50,10 @@ proof:
       type: command-record
       description: Save the redacted record of re-running normalization after a source item was renamed and moved, showing the identity held.
       path: participant/evidence/context-canonical-work-item/attempt-001/logs/identity-check.txt
+    - id: unmappable-record
+      type: command-record
+      description: Save the redacted record of normalizing an item the model cannot represent, showing the reason reported and that no partial record was written.
+      path: participant/evidence/context-canonical-work-item/attempt-001/logs/unmappable.txt
   optional:
     - id: model-review
       type: review
@@ -90,7 +94,7 @@ prerequisite, because either of the other two satisfies the second system. Someo
 
 ## Required evidence
 
-Provide the model definition, the per-system mapping documents, the worked examples, and the identity demonstration record. Write a `PROOF.md` explaining the hardest mapping decision you made, what it costs, and which acceptance criteria your evidence covers, by number.
+Provide the model definition, the per-system mapping documents, the worked examples, the identity demonstration record, and the record of an item the model could not represent. Write a `PROOF.md` explaining the hardest mapping decision you made, what it costs, and which acceptance criteria your evidence covers, by number.
 
 Submit the attempt for review when the evidence is complete. A reviewer decides whether the model holds.
 

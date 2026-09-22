@@ -7,7 +7,7 @@ schema_version: 1
 
 validators:
   - id: validate-repository-foundation
-    version: 1
+    version: 2
     display_name: Repository foundation
     description: >-
       Checks that the participant's repository has the ownership boundaries, ignore rules and
@@ -28,7 +28,7 @@ validators:
       - base-camp-repository-safety
 
   - id: validate-jira-read-assigned
-    version: 1
+    version: 2
     display_name: Jira assigned-story synchronization
     description: >-
       Checks that synchronized Jira stories are normalized, traceable to their source, and
@@ -54,7 +54,7 @@ validators:
       - jira-read-assigned-stories
 
   - id: validate-playwright-quality
-    version: 1
+    version: 2
     display_name: Playwright test quality
     description: >-
       Checks that the submitted test targets behavior rather than markup, has no arbitrary

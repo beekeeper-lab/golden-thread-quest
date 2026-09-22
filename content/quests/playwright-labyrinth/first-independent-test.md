@@ -1,6 +1,6 @@
 ---
 id: playwright-first-independent-test
-version: 1
+version: 2
 title: Build an Independent, Maintainable Playwright Test
 summary: Automate one valuable business behavior with centralized page objects, stable locators, meaningful assertions, and reproducible evidence.
 region: playwright-labyrinth
@@ -44,6 +44,14 @@ proof:
       type: command-record
       description: Save the redacted execution summary for the tagged test run.
       path: participant/evidence/playwright-first-independent-test/attempt-001/logs/test-run.txt
+    - id: failure-record
+      type: command-record
+      description: Save the redacted output and trace of a deliberately failing run of the same test, with a two-line summary of how to reproduce it.
+      path: participant/evidence/playwright-first-independent-test/attempt-001/logs/failure-run.txt
+    - id: failure-screenshot
+      type: screenshot
+      description: Capture the application state at the point the deliberately failing run failed.
+      path: participant/evidence/playwright-first-independent-test/attempt-001/screenshots/failure-state.png
   optional:
     - id: meaningful-success-screenshot
       type: screenshot
@@ -83,7 +91,7 @@ A passing browser script is not automatically a valuable test. This quest asks y
 
 ## Required evidence
 
-Provide the test, page model, tagged execution record, validator result, and a `PROOF.md` explaining the business risk and why the assertion proves the intended behavior.
+Provide the test, page model, tagged execution record, validator result, and the evidence of one deliberately failing run: its output and trace, a screenshot of the failure, and a two-line reproduction summary. Write a `PROOF.md` explaining the business risk, why the assertion proves the intended behavior, and what the failing run's evidence would tell a reviewer who had not seen the test.
 
 ## Safety constraints
 

@@ -27,20 +27,28 @@ def run(workspace: Workspace, output: ValidatorOutput) -> None:
         return
 
     expected = json.loads(workspace.read_text(fixture_path))
-    produced = _load_participant_output(workspace, output)
-    if produced is None:
+    loaded = _load_participant_output(workspace, output)
+    if loaded is None:
         return
+    document, produced = loaded
 
     _check_all_items_present(expected, produced, output)
     _check_normalized_fields(produced, output)
     _check_traceability(produced, output)
     _check_no_duplicates(produced, output)
+    _check_disappearances_reported(expected, document, produced, output)
+    _check_comments_not_duplicated(expected, produced, output)
     _check_raw_responses_not_committed(workspace, output)
 
 
 def _load_participant_output(
     workspace: Workspace, output: ValidatorOutput
-) -> list[dict[str, Any]] | None:
+) -> tuple[dict[str, Any], list[dict[str, Any]]] | None:
+    """The participant's synchronized output: the whole document, and its story records.
+
+    The document matters as well as the list, because a story that disappeared between runs
+    is reported outside the list of stories that are still assigned.
+    """
     candidates = workspace.iter_files("participant/context/jira", "*.json")
     if not candidates:
         output.add(
@@ -79,7 +87,8 @@ def _load_participant_output(
             )
         )
         return None
-    return [item for item in items if isinstance(item, dict)]
+    records = [item for item in items if isinstance(item, dict)]
+    return (data if isinstance(data, dict) else {}), records
 
 
 def _check_all_items_present(
@@ -132,8 +141,11 @@ def _check_normalized_fields(produced: list[dict[str, Any]], output: ValidatorOu
             Check(
                 id="records-are-normalized",
                 outcome="pass",
-                summary="Every record carries the normalized fields.",
-                evidence=f"{len(produced)} record(s) checked.",
+                summary="Every record carries the fields this check requires.",
+                evidence=(
+                    f"{len(produced)} record(s) carry {', '.join(REQUIRED_FIELDS)}. The "
+                    "optional fields criterion 4 names are for the reviewer to judge."
+                ),
             )
         )
 
@@ -192,6 +204,119 @@ def _check_no_duplicates(produced: list[dict[str, Any]], output: ValidatorOutput
                 outcome="pass",
                 summary="Each story appears exactly once.",
                 evidence="Re-running should update in place rather than append.",
+            )
+        )
+
+
+def _check_disappearances_reported(
+    expected: dict[str, Any],
+    document: dict[str, Any],
+    produced: list[dict[str, Any]],
+    output: ValidatorOutput,
+) -> None:
+    """Criterion 8: an item that was assigned before and is gone now is reported, not dropped.
+
+    Only the fixtures that carry `previously_assigned` exercise this. Until round 7 the
+    `stale-item` fixture described a reassigned story and contained no trace of one, so a
+    participant who chose it to demonstrate this behaviour demonstrated nothing: the only
+    check that ran asked whether the two remaining stories were present.
+    """
+    gone = [str(item["key"]) for item in expected.get("previously_assigned", [])]
+    if not gone:
+        return
+
+    reported_elsewhere = {
+        str(entry.get("key") if isinstance(entry, dict) else entry)
+        for field in ("removed", "reported_removed", "no_longer_assigned", "disappeared")
+        for entry in (document.get(field) or [])
+    }
+    produced_keys = {str(item.get("key")) for item in produced}
+    unreported = sorted(key for key in gone if key not in produced_keys | reported_elsewhere)
+
+    if unreported:
+        output.add(
+            Check(
+                id="disappearances-reported",
+                outcome="fail",
+                severity="high",
+                summary="A story that was assigned on the previous run vanished without a word.",
+                evidence=f"not reported: {', '.join(unreported[:8])}",
+                suggested_action=(
+                    "Keep the record with its last known state and say it is no longer assigned. "
+                    "Deleting it silently is how a thread goes cold."
+                ),
+            )
+        )
+    else:
+        output.add(
+            Check(
+                id="disappearances-reported",
+                outcome="pass",
+                summary="Every story that disappeared between runs is still reported.",
+                evidence=f"{len(gone)} disappearance(s) accounted for.",
+            )
+        )
+
+
+def _check_comments_not_duplicated(
+    expected: dict[str, Any], produced: list[dict[str, Any]], output: ValidatorOutput
+) -> None:
+    """Criterion 7: a comment delivered twice is recorded once.
+
+    Only the fixtures whose stories carry comments exercise this. The `duplicate-comment`
+    fixture named the behaviour in its description and carried no comment at all, and the
+    only duplicate check in this validator reconciles stories by key, which cannot see a
+    comment at all.
+    """
+    if not any(story.get("comments") for story in expected.get("stories", [])):
+        return
+
+    offenders: list[str] = []
+    counted = 0
+    for item in produced:
+        comments = item.get("comments")
+        if not isinstance(comments, list):
+            continue
+        seen: dict[str, int] = {}
+        for comment in comments:
+            identifier = str(comment.get("id") if isinstance(comment, dict) else comment)
+            seen[identifier] = seen.get(identifier, 0) + 1
+            counted += 1
+        repeated = sorted(identifier for identifier, count in seen.items() if count > 1)
+        if repeated:
+            offenders.append(f"{item.get('key')}: {', '.join(repeated[:3])}")
+
+    if offenders:
+        output.add(
+            Check(
+                id="no-duplicate-comments",
+                outcome="fail",
+                severity="medium",
+                summary="The same comment is recorded more than once.",
+                evidence="; ".join(offenders[:5]),
+                suggested_action=(
+                    "Reconcile comments by their own identifier. Appending what each page "
+                    "returns duplicates whatever both pages return."
+                ),
+            )
+        )
+    elif counted:
+        output.add(
+            Check(
+                id="no-duplicate-comments",
+                outcome="pass",
+                summary="Each comment is recorded exactly once.",
+                evidence=f"{counted} comment(s) checked by identifier.",
+            )
+        )
+    else:
+        output.add(
+            Check(
+                id="no-duplicate-comments",
+                outcome="inconclusive",
+                summary="No comments were recorded, so duplication could not be judged.",
+                evidence="This fixture delivers the same comment on two pages.",
+                suggested_action="Record each story's comments, then run this again.",
             )
         )
 
