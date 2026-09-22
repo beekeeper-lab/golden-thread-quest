@@ -129,7 +129,8 @@ not finished learning.
 | `make test-ui` | pass — 42 passed |
 | `make validate-content` | pass — 8 quests, 8 regions, 4 badges, 1 track, 0 warnings |
 | Clean clone from `origin` at `31a74cb` | pass, run by the documentation lens against the commit under audit |
-| Clean clone at this branch's head | **not run.** The lens's clone covers the tree this round started from; the fixes in this round are covered by the local gates only |
+| CI at this branch's head | pass — `check` on 3.10, 3.12 and 3.13, `browser`, and `clean-export`, all green on run 35782449473. The first run of this repository's CI that reached its checks at all (CI-1) |
+| Clean clone at this branch's head, run by hand | not run. The `clean-export` job covers it: it exports tracked files only with `git archive`, then installs, validates and builds in a fresh environment |
 | Each fix reverted one at a time | 14 of 17 code fixes caught by a test. The three not covered this way are content: the required evidence added to four quests and the two rewritten Jira fixtures, which `make validate-content` and the rendered pages verify instead |
 
 The suite grew from 555 to 598.
