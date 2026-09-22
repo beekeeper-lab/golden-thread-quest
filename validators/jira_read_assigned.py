@@ -208,6 +208,45 @@ def _check_no_duplicates(produced: list[dict[str, Any]], output: ValidatorOutput
         )
 
 
+REMOVAL_FIELDS = ("removed", "reported_removed", "no_longer_assigned", "disappeared")
+"""Top-level lists in which a participant may report the items that went away."""
+
+REMOVAL_FLAGS = ("removed", "unassigned", "disappeared", "no_longer_assigned", "gone")
+REMOVAL_WORDS = (
+    "removed",
+    "unassigned",
+    "no longer assigned",
+    "not assigned",
+    "gone",
+    "deleted",
+    "inaccessible",
+)
+
+
+def _says_no_longer_assigned(record: dict[str, Any] | None) -> bool:
+    """Whether a record kept in the list says the item is no longer assigned.
+
+    Criterion 8 is about reporting a disappearance, not about the record surviving. Keeping
+    the story in the list exactly as it was is what a synchronization that never noticed
+    produces, so presence alone cannot be the evidence that it was noticed.
+    """
+    if not record:
+        return False
+    for key in ("assigned", "still_assigned", "is_assigned", "active"):
+        value = record.get(key)
+        if isinstance(value, bool) and not value:
+            return True
+    for key in REMOVAL_FLAGS:
+        value = record.get(key)
+        if value not in (None, False, "", [], {}):
+            return True
+    for key in ("status", "state", "sync_status", "assignment", "note", "notes"):
+        value = record.get(key)
+        if isinstance(value, str) and any(word in value.lower() for word in REMOVAL_WORDS):
+            return True
+    return False
+
+
 def _check_disappearances_reported(
     expected: dict[str, Any],
     document: dict[str, Any],
@@ -227,11 +266,15 @@ def _check_disappearances_reported(
 
     reported_elsewhere = {
         str(entry.get("key") if isinstance(entry, dict) else entry)
-        for field in ("removed", "reported_removed", "no_longer_assigned", "disappeared")
+        for field in REMOVAL_FIELDS
         for entry in (document.get(field) or [])
     }
-    produced_keys = {str(item.get("key")) for item in produced}
-    unreported = sorted(key for key in gone if key not in produced_keys | reported_elsewhere)
+    kept = {str(item.get("key")): item for item in produced}
+    unreported = sorted(
+        key
+        for key in gone
+        if key not in reported_elsewhere and not _says_no_longer_assigned(kept.get(key))
+    )
 
     if unreported:
         output.add(
@@ -242,7 +285,9 @@ def _check_disappearances_reported(
                 summary="A story that was assigned on the previous run vanished without a word.",
                 evidence=f"not reported: {', '.join(unreported[:8])}",
                 suggested_action=(
-                    "Keep the record with its last known state and say it is no longer assigned. "
+                    "Keep the record with its last known state and say it is no longer assigned: "
+                    "mark the record itself (`assigned: false`, a removal timestamp, or a status "
+                    f"naming it removed), or list it under one of {', '.join(REMOVAL_FIELDS)}. "
                     "Deleting it silently is how a thread goes cold."
                 ),
             )
