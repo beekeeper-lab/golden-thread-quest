@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -463,13 +464,13 @@ class TestFindingTheRunningService:
         """
         import urllib.request
 
-        from quest_app.serve import PORT_FILENAME, is_service_running
+        from quest_app.serve import PORTS_DIRNAME, is_service_running
 
         base, _ = service
         bound = int(base.rsplit(":", 1)[1])
         assert bound != config.service_port, "the fixture must not sit on the default port"
 
-        port_file = config.local_data_root / PORT_FILENAME
+        port_file = config.local_data_root / PORTS_DIRNAME / "recorded"
         port_file.parent.mkdir(parents=True, exist_ok=True)
         port_file.write_text(f"{bound}\n", encoding="utf-8")
 
@@ -490,9 +491,9 @@ class TestFindingTheRunningService:
 
     def test_a_stale_port_file_is_not_believed(self, config: AppConfig) -> None:
         """The file is a hint. The header is the authority."""
-        from quest_app.serve import PORT_FILENAME, is_service_running, running_service_port
+        from quest_app.serve import PORTS_DIRNAME, is_service_running, running_service_port
 
-        port_file = config.local_data_root / PORT_FILENAME
+        port_file = config.local_data_root / PORTS_DIRNAME / "recorded"
         port_file.parent.mkdir(parents=True, exist_ok=True)
         port_file.write_text("9\n", encoding="utf-8")
         assert running_service_port(config) == 9
@@ -500,3 +501,159 @@ class TestFindingTheRunningService:
 
         port_file.write_text("not a port\n", encoding="utf-8")
         assert running_service_port(config) == config.service_port, "unreadable falls back"
+
+
+class TestThePortFileLifecycle:
+    """One file per bound port, written by the service that bound it and removed by it.
+
+    Round 5 kept a single `service-port` file. A repository can host two services, which
+    `serve --port` exists to allow: the second overwrote the first's entry, and whichever
+    stopped first deleted it for both. Stopping the second one left the first serving pages
+    while every CLI action went back to probing 8765, decided nothing was running, and
+    republished every page with its controls dead.
+    """
+
+    def test_a_second_service_does_not_erase_the_first(self, config: AppConfig) -> None:
+        from quest_app.serve import PORTS_DIRNAME, running_service_ports
+
+        directory = config.local_data_root / PORTS_DIRNAME
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / "9101").write_text("9101\n", encoding="utf-8")
+        (directory / "9102").write_text("9102\n", encoding="utf-8")
+
+        assert 9101 in running_service_ports(config)
+        assert 9102 in running_service_ports(config)
+
+        (directory / "9102").unlink()
+        remaining = running_service_ports(config)
+        assert 9101 in remaining, "stopping one service must not hide the other"
+
+    def test_an_unreadable_entry_is_skipped_rather_than_read_forever(
+        self, config: AppConfig
+    ) -> None:
+        """The only valid content is a handful of digits.
+
+        An entry symlinked at `/dev/zero` hung the reader until it was killed, and the read
+        is bounded now. A large junk file stands in for that here, because a test that opens
+        `/dev/zero` on a broken implementation never finishes.
+        """
+        from quest_app.serve import PORTS_DIRNAME, running_service_ports
+
+        directory = config.local_data_root / PORTS_DIRNAME
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / "junk").write_text("9" * 500_000, encoding="utf-8")
+        (directory / "9103").write_text("9103\n", encoding="utf-8")
+
+        ports = running_service_ports(config)
+        assert 9103 in ports
+        assert all(port < 65536 for port in ports), "an entry was read past its bound"
+
+    def test_the_service_removes_its_own_entry_when_it_stops(self, config: AppConfig) -> None:
+        """Nothing in the suite failed when shutdown stopped removing the file at all."""
+        import signal
+        import subprocess
+        import sys
+
+        from quest_app.serve import PORTS_DIRNAME
+
+        service = subprocess.Popen(
+            [
+                sys.executable,
+                "-m",
+                "quest_app.cli",
+                "serve",
+                "--repo-root",
+                str(config.repo_root),
+                "--port",
+                "0",
+            ],
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        directory = config.local_data_root / PORTS_DIRNAME
+        try:
+            deadline = time.monotonic() + 60
+            while time.monotonic() < deadline:
+                if directory.exists() and any(directory.iterdir()):
+                    break
+                assert service.poll() is None, "the service exited before it bound"
+                time.sleep(0.1)
+            entries = sorted(p.name for p in directory.iterdir())
+            assert entries, "a running service records the port it bound"
+        finally:
+            service.send_signal(signal.SIGINT)
+            service.wait(timeout=60)
+
+        assert sorted(p.name for p in directory.iterdir()) == [], "the entry outlived it"
+
+
+class TestRefusalsEndTheConnection:
+    """A refusal that leaves the declared body unread hands the sender the next request.
+
+    Every early refusal — wrong content type, an unreadable `Content-Length`, a cross-origin
+    header, a wrong token — returns before the body is consumed, and HTTP/1.1 keeps the
+    connection open, so the leftover bytes were parsed as a second request with every header
+    chosen by whoever sent the first. The token still gates every mutation, so this was a way
+    around the origin check rather than an open door, and the origin check is a defence layer
+    that is supposed to hold on its own.
+    """
+
+    def test_a_refused_post_does_not_answer_the_body_as_a_second_request(
+        self, service: tuple[str, str]
+    ) -> None:
+        import socket
+
+        base, _ = service
+        host, port = base.removeprefix("http://").split(":")
+        smuggled = b"GET /api/health HTTP/1.1\r\nHost: x\r\n\r\n"
+        head = (
+            b"POST /api/action HTTP/1.1\r\n"
+            + f"Host: {host}:{port}\r\n".encode()
+            + b"Content-Type: text/plain\r\n"
+            + f"Content-Length: {len(smuggled)}\r\n\r\n".encode()
+        )
+        with socket.create_connection((host, int(port)), timeout=10) as sock:
+            sock.sendall(head + smuggled)
+            received = b""
+            while True:
+                chunk = sock.recv(4096)
+                if not chunk:
+                    break
+                received += chunk
+
+        assert received.count(b"HTTP/1.1") == 1, (
+            f"the refused body was answered as a second request: {received[:400]!r}"
+        )
+
+
+class TestBindingRefusals:
+    def test_a_port_already_in_use_is_reported_rather_than_traced(
+        self, service: tuple[str, str], config: AppConfig
+    ) -> None:
+        """`serve --port` exists so two services can run; typing a taken port printed a
+        socketserver traceback."""
+        import subprocess
+        import sys
+
+        base, _ = service
+        taken = base.rsplit(":", 1)[1]
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "quest_app.cli",
+                "serve",
+                "--repo-root",
+                str(config.repo_root),
+                "--port",
+                taken,
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=120,
+        )
+
+        assert result.returncode == 2, result.stderr
+        assert "Traceback" not in result.stderr, result.stderr
+        assert "cannot listen" in result.stderr and "--port" in result.stderr

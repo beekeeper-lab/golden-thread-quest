@@ -1,6 +1,6 @@
 ---
 id: base-camp-repository-safety
-version: 1
+version: 2
 title: Establish a Safe Local Quest Repository
 summary: Create the ownership, secret-handling, audit, and recovery foundations needed for trustworthy agentic work.
 region: base-camp
@@ -39,6 +39,10 @@ proof:
       type: validator
       description: Run the registered repository-foundation validator successfully.
       validator: validate-repository-foundation
+    - id: rerun-record
+      type: command-record
+      description: Save the redacted output of running the demonstrated workflow twice, showing that the second run created no duplicate of the simulated external item.
+      path: participant/evidence/base-camp-repository-safety/attempt-001/logs/second-run.txt
   optional:
     - id: recovery-demonstration
       type: demonstration
@@ -71,7 +75,7 @@ You are preparing to build skills that connect to Jira, Trello, GitHub, meeting 
 
 ## Required evidence
 
-Document the structure and safety rules, add representative audit entries, and run the registered validator. In your `PROOF.md`, explain how you tested interruption and rerun behavior.
+Document the structure and safety rules, add representative audit entries, save the output of two consecutive runs of the demonstrated workflow, and run the registered validator. In your `PROOF.md`, explain how you tested interruption and rerun behavior.
 
 ## Safety constraints
 

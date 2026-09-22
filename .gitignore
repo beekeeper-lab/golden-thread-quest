@@ -50,4 +50,4 @@ dist/
 uv.lock
 
 # Held only while a change is in flight; never data.
-participant/.progress.lock
+.progress.lock

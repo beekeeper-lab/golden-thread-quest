@@ -115,21 +115,47 @@ def _is_loopback(address: str) -> bool:
 SERVICE_HEADER = "X-Quest-App"
 
 
-PORT_FILENAME = "service-port"
+PORTS_DIRNAME = "service-ports"
+PORT_FILE_MAX_BYTES = 16
+
+
+def running_service_ports(config: AppConfig) -> list[int]:
+    """Every port a service of this repository is currently claiming, then the default.
+
+    One file per bound port, named by the port, written when a service binds and removed
+    when it stops. Round 5 kept a single `service-port` file, which a repository hosting two
+    services overwrote and either service's shutdown deleted for both: stopping the second
+    one left the first serving pages while the CLI went back to probing 8765 and republished
+    every page with its controls dead, which is the defect the file was added to fix.
+
+    Each file is a hint, never an authority: the probe still requires this application's own
+    response header, so a stale entry pointing at a port something else now holds is refused
+    like any other stranger. The read is bounded because the only valid content is a handful
+    of digits, and a `service-ports` entry symlinked at `/dev/zero` otherwise hangs the
+    reader forever.
+    """
+    ports: list[int] = []
+    directory = config.local_data_root / PORTS_DIRNAME
+    try:
+        entries = sorted(directory.iterdir())
+    except OSError:
+        entries = []
+    for entry in entries:
+        try:
+            with entry.open("r", encoding="utf-8") as handle:
+                port = int(handle.read(PORT_FILE_MAX_BYTES).strip())
+        except (OSError, ValueError):
+            continue
+        if 1 <= port <= 65535:
+            ports.append(port)
+    if config.service_port not in ports:
+        ports.append(config.service_port)
+    return ports
 
 
 def running_service_port(config: AppConfig) -> int:
-    """The port a service of this repository last bound, or the configured one.
-
-    Written by `run_service` and removed when it stops. It is a hint, never an authority:
-    the probe still requires this application's own response header, so a stale file
-    pointing at a port something else now holds is refused like any other stranger.
-    """
-    try:
-        recorded = (config.local_data_root / PORT_FILENAME).read_text(encoding="utf-8")
-        return int(recorded.strip())
-    except (OSError, ValueError):
-        return config.service_port
+    """The first port worth asking at. Kept for callers that want one number."""
+    return running_service_ports(config)[0]
 
 
 def is_service_running(config: AppConfig) -> bool:
@@ -152,14 +178,18 @@ def is_service_running(config: AppConfig) -> bool:
     import urllib.error
     import urllib.request
 
-    url = f"http://{config.service_host}:{running_service_port(config)}/"
-    try:
-        with urllib.request.urlopen(url, timeout=0.5) as response:
-            return bool(response.headers.get(SERVICE_HEADER))
-    except urllib.error.HTTPError as error:
-        return bool(error.headers.get(SERVICE_HEADER))
-    except OSError:
-        return False
+    for port in running_service_ports(config):
+        url = f"http://{config.service_host}:{port}/"
+        try:
+            with urllib.request.urlopen(url, timeout=0.5) as response:
+                if response.headers.get(SERVICE_HEADER):
+                    return True
+        except urllib.error.HTTPError as error:
+            if error.headers.get(SERVICE_HEADER):
+                return True
+        except OSError:
+            continue
+    return False
 
 
 def _token_matches(supplied: str, expected: str) -> bool:
@@ -218,6 +248,12 @@ class ActionHandler(BaseHTTPRequestHandler):
         )
 
     def _refuse(self, status: HTTPStatus, reason: str) -> None:
+        # Refusals happen before the declared body is read — wrong content type, bad length,
+        # a cross-origin header, a wrong token — and HTTP/1.1 keeps the connection open, so
+        # the unread bytes were parsed as the next request, with every header chosen by the
+        # sender. That is a way past the origin check for anyone who can get one ordinary
+        # POST through. The connection ends with the refusal instead.
+        self.close_connection = True
         self._send(status, {"ok": False, "error": reason})
 
     # ---------------------------------------------------------------- checks
@@ -572,9 +608,19 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
     except UnsafeBindError as exc:
         print(f"refusing to start: {exc}", file=sys.stderr)
         return 2
+    except OSError as exc:
+        # `serve --port` exists so two people can run two services, and typing a port that
+        # is already taken printed a socketserver traceback.
+        reason = exc.strerror or type(exc).__name__
+        print(
+            f"cannot listen on {config.service_host}:{config.service_port}: {reason}. "
+            "Choose another port with --port.",
+            file=sys.stderr,
+        )
+        return 2
 
     bound = int(server.server_address[1])
-    port_file = config.local_data_root / PORT_FILENAME
+    port_file = config.local_data_root / PORTS_DIRNAME / str(bound)
     try:
         port_file.parent.mkdir(parents=True, exist_ok=True)
         port_file.write_text(f"{bound}\n", encoding="utf-8")

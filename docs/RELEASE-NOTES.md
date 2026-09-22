@@ -52,7 +52,7 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 546 under `make check`, plus 42 browser-driven under `make test-ui` |
+| Tests | 555 under `make check`, plus 42 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3, plus a probe used only to prove the timeout |

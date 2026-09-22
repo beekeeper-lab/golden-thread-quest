@@ -10,8 +10,8 @@ session_capacity_minutes: 90
 attempts:
   - attempt_id: base-camp-attempt-001
     quest_id: base-camp-repository-safety
-    quest_version: 1
-    content_hash: sha256:e60ba99bcf2e21284db1843fcfda247cdcf30de15fe055de528f3602a39eec00
+    quest_version: 2
+    content_hash: sha256:961a703db315b6da63e2a0e8f9cd3bc8db210f269a6451505236a78d84d250b3
     state: verified
     started_at: "2026-09-10T13:00:00Z"
     updated_at: "2026-09-11T18:15:00Z"

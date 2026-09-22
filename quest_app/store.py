@@ -108,10 +108,13 @@ class ProgressStore:
             yield
             return
 
-        # A refused action must leave nothing behind. The lock is taken before any guard
-        # runs, so without this a locked quest refused for a participant who has never run
-        # anything still created their directory and a lock file inside it.
-        created_root = not self.config.participant_root.exists()
+        # Round 5 deleted this file and the directory around it when an action was refused
+        # before writing anything, so that a refusal left no trace. Round 6 showed what that
+        # costs: a second process holding `flock` on that inode keeps a lock on an orphan,
+        # the next process creates a fresh file and enters immediately, and two writers are
+        # in the critical section at once — the lost update this lock exists to prevent.
+        # A refused first action now leaves one hidden, ignored file in a directory the
+        # participant owns. That is the cheaper of the two.
         try:
             self.lock_path.parent.mkdir(parents=True, exist_ok=True)
             handle = self.lock_path.open("a+", encoding="utf-8")
@@ -144,17 +147,6 @@ class ProgressStore:
                     fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
         finally:
             handle.close()
-            self._discard_lock_if_nothing_was_written(created_root)
-
-    def _discard_lock_if_nothing_was_written(self, created_root: bool) -> None:
-        """Leave no trace when the change was refused before it wrote anything."""
-        if not created_root or self.path.exists():
-            return
-        try:
-            self.lock_path.unlink(missing_ok=True)
-            self.config.participant_root.rmdir()
-        except OSError:  # pragma: no cover - a non-empty or vanished directory
-            pass
 
     def read(self) -> dict[str, Any]:
         if not self.path.exists():

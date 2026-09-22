@@ -1,6 +1,6 @@
 ---
 id: ba-ingest-transcript
-version: 1
+version: 2
 title: Ingest a Meeting Transcript Without Losing Its Source
 summary: Turn a raw meeting transcript into a faithful, attributed local record that keeps speakers, timestamps, and provenance intact and treats the text as untrusted.
 region: ba-ruins
@@ -45,6 +45,10 @@ proof:
       type: command-record
       description: Save the redacted record of ingesting a transcript that contains an embedded instruction, showing it was recorded and not obeyed.
       path: participant/evidence/ba-ingest-transcript/attempt-001/logs/untrusted-input.txt
+    - id: rerun-record
+      type: command-record
+      description: Save the redacted output of ingesting the same transcript twice, showing that the second run produced an identical source record and duplicated no utterance.
+      path: participant/evidence/ba-ingest-transcript/attempt-001/logs/second-run.txt
   optional:
     - id: redaction-notes
       type: file
@@ -83,7 +87,7 @@ A recorded refinement session produced a transcript. Later quests will extract d
 
 ## Required evidence
 
-Provide the ingestion skill, the redacted source record, the provenance file, and the untrusted-input record. Write a `PROOF.md` that explains your utterance identifier scheme, what you redacted, and exactly what your run did with the embedded instruction. Cite the acceptance criteria by number.
+Provide the ingestion skill, the redacted source record, the provenance file, the untrusted-input record, and the output of ingesting the same transcript twice. Write a `PROOF.md` that explains your utterance identifier scheme, what you redacted, and exactly what your run did with the embedded instruction. Cite the acceptance criteria by number.
 
 Submit the attempt for review when the evidence is in place. A reviewer decides whether the ingestion is faithful.
 

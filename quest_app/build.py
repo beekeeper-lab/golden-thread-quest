@@ -14,8 +14,10 @@ while a build fails keeps reading the page that was there.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import shutil
+import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -175,9 +177,12 @@ def _exclusive_output(config: AppConfig) -> Iterator[None]:
     against action. Nothing covered build against build: `quest-app build` and `make build`
     take no lock at all, and the service rebuilds on every action.
 
-    The lock is advisory and POSIX-only, and on a platform without `fcntl` the build still
-    runs. A local-first application must not refuse to publish because it cannot lock, and a
-    single build is unaffected either way.
+    The lock is advisory and POSIX-only, and **not being able to lock is never a reason to
+    refuse to publish**. Round 5 wrote that sentence here, gave this function the store's
+    shape, and gave it only the store's `ImportError` branch: an unwritable `generated.lock`
+    or a filesystem answering `ENOLCK` crashed every publisher with a traceback carrying
+    absolute paths, on exactly the filesystem the fall-through was written for. Round 6 found
+    it twice, from two lenses. The parity the ADR claims is now in the code.
     """
     try:
         import fcntl
@@ -186,13 +191,35 @@ def _exclusive_output(config: AppConfig) -> Iterator[None]:
         return
 
     lock_path = config.generated_root.with_suffix(OUTPUT_SUFFIX_LOCK)
-    lock_path.parent.mkdir(parents=True, exist_ok=True)
-    with lock_path.open("a+", encoding="utf-8") as handle:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+    try:
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        handle = lock_path.open("a+", encoding="utf-8")
+    except OSError:
+        yield
+        return
+
+    try:
+        try:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            # A build queued behind a service rebuild that is itself inside a 120-second
+            # validator looks hung. The store says this for the same reason.
+            print("Another build is in progress; waiting for it to finish.", file=sys.stderr)
+            try:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+            except OSError:
+                yield
+                return
+        except OSError:
+            yield
+            return
         try:
             yield
         finally:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+            with contextlib.suppress(OSError):  # unlocking a lock we hold
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    finally:
+        handle.close()
 
 
 def build_site(

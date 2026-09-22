@@ -129,11 +129,19 @@ document stays a complete map of what is tested, rather than only of what was sp
 
 ## Criterion coverage
 
-| **CG7** | One build at a time per output directory, so a failed or overlapping build never publishes a partial site: `quest_app/build.py` `_exclusive_output`, ADR-035 | `tests/integration/test_build_concurrency.py` |
-| **PE4** | A lock that cannot be taken never refuses to record the participant's work: `quest_app/store.py` `exclusive`, ADR-036 | `tests/integration/test_lock_failure_modes.py` |
-| **PE5** | An action beside a running service leaves its controls live, whatever port it bound: `quest_app/serve.py` `running_service_port`, ADR-037 | `tests/security/test_service.py::TestFindingTheRunningService` |
-| **FS3** | Traversal out of the generated site, asserted over a raw socket and against a file that exists | `tests/security/test_service.py::TestStaticServing` |
-| **FS2** | The no-JavaScript form route refuses a cross-origin post | `tests/security/test_service.py::TestTheFormRoute::test_a_cross_origin_form_post_is_refused` |
+### Round 5 and 6 mechanisms
+
+These rows are additional evidence for criteria that already have a row above, not a second
+reading of them: round 6's documentation lens found five IDs appearing twice with no note
+saying which. Each row names the criterion it adds evidence to and why.
+
+| Criterion | Additional evidence, and what it adds | Tests |
+|---|---|---|
+| **CG7** — a failed build preserves the last known valid output | One build at a time per output directory, so an overlapping build cannot publish a fragment either: `quest_app/build.py` `_exclusive_output`, ADR-035 | `tests/integration/test_build_concurrency.py`, `tests/integration/test_lock_failure_modes.py::test_a_build_whose_lock_cannot_be_opened_still_publishes` |
+| **PE4** — starting a quest persists state outside browser storage | The lock that guards that write never refuses it: where the lock cannot be taken the change still happens, ADR-036 | `tests/integration/test_lock_failure_modes.py` |
+| **PE5** — restarting the application restores the same state | A CLI action beside a running service leaves its controls live, whatever port it bound, so a restart is not needed to recover them: ADR-037 | `tests/security/test_service.py::TestFindingTheRunningService`, `::TestThePortFileLifecycle` |
+| **FS2** — local actions cannot write outside approved roots | The no-JavaScript form route is guarded like the JSON one, and a refusal ends the connection rather than answering the unread body as a second request | `tests/security/test_service.py::TestTheFormRoute`, `::TestRefusalsEndTheConnection` |
+| **FS3** — symbolic-link and traversal tests pass | The same traversal cases sent over a raw socket, which is the only form that reaches the containment check, and one against a file that exists | `tests/security/test_service.py::TestStaticServing` |
 
 Every row above carries the stable ID of the criterion it maps to, from
 `docs/ACCEPTANCE-CRITERIA.md`. Before the IDs existed a row could only match a criterion by
