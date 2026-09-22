@@ -69,17 +69,17 @@ A passing browser script is not automatically a valuable test. This quest asks y
 
 ## Acceptance criteria
 
-- The test title describes user behavior and expected outcome.
-- The test can run alone and in any suite order.
-- Selectors and reusable page behavior are centralized in a page or component model.
-- Stable roles, labels, text, or agreed test IDs are preferred over generated IDs and brittle DOM paths.
-- The test contains no arbitrary fixed sleep.
-- Assertions validate the business outcome rather than only URL, visibility, or HTTP success when those are insufficient.
-- Test data and preconditions are explicit.
-- The test carries tags for feature, risk, read-only/write behavior, and expected duration.
-- Failure evidence includes trace, screenshot, and a concise reproduction summary.
-- Success evidence is captured at the meaningful validation point rather than on every step.
-- Rerunning the test does not change application data.
+1. The test title describes user behavior and expected outcome.
+2. The test can run alone and in any suite order.
+3. Selectors and reusable page behavior are centralized in a page or component model.
+4. Stable roles, labels, text, or agreed test IDs are preferred over generated IDs and brittle DOM paths.
+5. The test contains no arbitrary fixed sleep.
+6. Assertions validate the business outcome rather than only URL, visibility, or HTTP success when those are insufficient.
+7. Test data and preconditions are explicit.
+8. The test carries tags for feature, risk, read-only/write behavior, and expected duration.
+9. Failure evidence includes trace, screenshot, and a concise reproduction summary.
+10. Success evidence is captured at the meaningful validation point rather than on every step.
+11. Rerunning the test does not change application data.
 
 ## Required evidence
 

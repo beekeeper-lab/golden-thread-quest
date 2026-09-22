@@ -109,13 +109,15 @@ application code. A test fails if one does.
 ## Status
 
 Stages 0 to 9 of `docs/IMPLEMENTATION-PLAN.md` are complete. The Stage 10 release decision is
-open. Three release audits have run, each returned `do-not-release`, and every finding from
-all three is fixed. An external reviewer then audited the result: the engine is a release
-candidate, the participant journey is not, because three quests across eight regions is a
-demonstration rather than a journey. `docs/audits/final-audit.md` holds the gate.
+open. Three release audits and one external review have run, each found something, and every
+finding is fixed. The external review left the engine a release candidate and the participant
+journey short: three quests across eight regions was a demonstration rather than a journey.
+Since then every region has a quest — eight quests, one per region — and round 4 has audited
+that work in `docs/audits/round-04-independent-audit.md`.
 
 The application works end to end today. What is not signed off is putting it in front of a
-cohort, and the blocker is curriculum depth rather than engine quality.
+cohort. Curriculum depth is no longer zero anywhere, but one quest per region is a first
+pass, not a full journey; `docs/CURRICULUM-BACKLOG.md` holds the rest.
 
 ## The planning package
 

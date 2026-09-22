@@ -4,7 +4,7 @@
 
 | Requirement | Version | Why |
 |---|---|---|
-| Python | 3.12 or newer | ADR-019 |
+| Python | 3.10 or newer | ADR-019, as amended in round 4. Newer is fine; 3.10 is the floor because that is what the Cowork sandbox ships. |
 | uv | any recent | Creates the environment and installs dependencies |
 | Git | 2.30 or newer | The application reports repository status and the participant's work lives in Git |
 | A modern browser | — | The generated site is ordinary HTML opened from disk or from the local service |

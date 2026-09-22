@@ -11,7 +11,7 @@ attempts:
   - attempt_id: base-camp-attempt-001
     quest_id: base-camp-repository-safety
     quest_version: 1
-    content_hash: sha256:5fa4972284af941e28c034d0cdb5da62bfe395ff2a6f6cd80222d8445d57633e
+    content_hash: sha256:e60ba99bcf2e21284db1843fcfda247cdcf30de15fe055de528f3602a39eec00
     state: verified
     started_at: "2026-09-10T13:00:00Z"
     updated_at: "2026-09-11T18:15:00Z"
@@ -23,7 +23,7 @@ attempts:
   - attempt_id: jira-attempt-001
     quest_id: jira-read-assigned-stories
     quest_version: 1
-    content_hash: sha256:6e263c1e35fa4339a83e85b506933c026883f1b16a6c460f81de8bbd6221d73d
+    content_hash: sha256:0cf65be4184ec46a2e0aa05e834aa60785c6bcadba7d40514df4408782bc7f71
     state: evidence_ready
     started_at: "2026-09-12T13:30:00Z"
     updated_at: "2026-09-16T14:05:00Z"

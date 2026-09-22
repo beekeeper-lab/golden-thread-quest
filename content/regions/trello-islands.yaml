@@ -8,6 +8,6 @@ accent: teal
 icon: trello
 outcomes:
   - Normalize Trello work without erasing Trello-specific structure.
-  - Create and update cards through previewed, idempotent workflows.
+  - Read a board into local context without changing a single card.
   - Reconcile local context with board and list movement.
 tags: [trello, integration, work-management]

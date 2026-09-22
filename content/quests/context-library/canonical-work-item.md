@@ -68,7 +68,10 @@ Build a canonical work-item model that is genuinely shared, records what it deli
 
 ## Scenario
 
-You have synchronized work from at least one system already. Someone now asks the agent which of their open work is blocked, across every system. Answering that requires agreeing what "open", "blocked", and "assigned to me" mean when three systems disagree — and writing that agreement down where a reviewer can argue with it.
+You have synchronized work from at least one system already. Criterion 9 asks for two, from
+different systems, so finish either *Read a Trello board into local context* or *Read your
+assigned GitHub Issues* before you claim this quest. Only the Jira quest is a hard
+prerequisite, because either of the other two satisfies the second system. Someone now asks the agent which of their open work is blocked, across every system. Answering that requires agreeing what "open", "blocked", and "assigned to me" mean when three systems disagree — and writing that agreement down where a reviewer can argue with it.
 
 ## Acceptance criteria
 

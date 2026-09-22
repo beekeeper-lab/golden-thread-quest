@@ -317,14 +317,15 @@ def test_the_commands_the_guides_name_are_actually_installed() -> None:
     named it thirteen times, including the whole browserless flow the Cowork surface
     depends on. A participant following the guide would find the command did not exist.
     """
-    import tomllib
+    try:
+        import tomllib
+    except ModuleNotFoundError:  # Python 3.10, the declared floor, has no tomllib.
+        import tomli as tomllib  # type: ignore[no-redef]
 
     named = set()
     for document in ("docs/USER-GUIDE.md", "docs/guides/REVIEWER.md"):
         # A command, not a placeholder: `quest-app action …` counts, `<quest-id>` does not.
-        named |= set(
-            re.findall(r"(?<![<\w-])(quest-[a-z]+)(?=\s)", (ROOT / document).read_text())
-        )
+        named |= set(re.findall(r"(?<![<\w-])(quest-[a-z]+)(?=\s)", (ROOT / document).read_text()))
 
     registered = set(tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["scripts"])
     assert named <= registered, f"the guides name commands nothing installs: {named - registered}"

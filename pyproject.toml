@@ -22,10 +22,14 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0,<9",
-    "ruff>=0.6,<1",
+    # Pinned to one minor. `make check` runs the formatter as a gate, and a formatter that
+    # may change its mind between installs makes that gate report on the install rather than
+    # on the code: round 4 found `make check` failing on a clean clone of an untouched commit.
+    "ruff>=0.16,<0.17",
     "mypy>=1.11,<2",
     "types-PyYAML>=6.0",
     "types-jsonschema>=4.21",
+    "tomli>=2,<3; python_version < '3.11'",
 ]
 ui = [
     "pytest-playwright>=0.5",

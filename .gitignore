@@ -43,3 +43,6 @@ service-account*.json
 *.swp
 .claude/settings.local.json
 dist/
+
+# ADR: dependency resolution floats within the ranges in pyproject.toml (docs/SETUP.md).
+uv.lock

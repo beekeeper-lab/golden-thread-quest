@@ -66,16 +66,16 @@ Your agent will eventually answer “What should I work on next?” from local c
 
 ## Acceptance criteria
 
-- The authenticated user is resolved from Jira rather than a hardcoded email or display name.
-- The query and included work-item types are documented.
-- Pagination is handled until Jira reports no remaining results.
-- Each story records its stable Jira key, source URL, title, status, priority, assignee, labels, description, acceptance criteria, timestamps, parent relationship, and last synchronization time when available.
-- Platform-specific fields are preserved without polluting the canonical field names.
-- Existing participant-authored notes remain intact on a second synchronization.
-- Comments or history entries are not duplicated.
-- Removed or inaccessible items are reported rather than silently deleted.
-- Secrets and raw private responses are not committed.
-- A fixture or sandbox demonstration proves safe rerun behavior.
+1. The authenticated user is resolved from Jira rather than a hardcoded email or display name.
+2. The query and included work-item types are documented.
+3. Pagination is handled until Jira reports no remaining results.
+4. Each story records its stable Jira key, source URL, title, status, priority, assignee, labels, description, acceptance criteria, timestamps, parent relationship, and last synchronization time when available.
+5. Platform-specific fields are preserved without polluting the canonical field names.
+6. Existing participant-authored notes remain intact on a second synchronization.
+7. Comments or history entries are not duplicated.
+8. Removed or inaccessible items are reported rather than silently deleted.
+9. Secrets and raw private responses are not committed.
+10. A fixture or sandbox demonstration proves safe rerun behavior.
 
 ## Required evidence
 

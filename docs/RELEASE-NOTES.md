@@ -77,8 +77,11 @@ here.
 5. **Catalog filtering needs JavaScript.** A static page cannot filter itself. The routes
    that work without it are real pages: regions and tags, linked from every card and quest.
 6. **No coverage reporting** and **no glossary content type** (D1, D2).
-7. **Clean-clone installation is not tested automatically.** It needs a fresh checkout and a
-   network install, which the suite deliberately does not do.
+7. **Clean-clone installation is tested one step short of a real clone.** The `clean-export`
+   CI job runs `make verify-package`, which exports tracked files with `git archive`, then
+   installs, validates and builds in a fresh virtual environment on every change. A true
+   `git clone` from the remote followed by `make setup` was run by hand in round 4 and
+   recorded in `docs/audits/round-04-independent-audit.md`; nothing runs it on a schedule.
 
 ## For the pilot cohort
 

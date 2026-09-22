@@ -2,11 +2,13 @@
 
 ## Current readiness
 
-**Status (2026-09-17):** Implemented. Stages 0 to 9 are complete and audited; the Stage 10
-release decision is *not ready for participant release*: three release audits and one
-external review have run, the engine is a release candidate, and the open blocker is that the
-curriculum is still three quests across eight regions. See `docs/RELEASE-NOTES.md` for what works and
-the known limitations, and `docs/audits/` for every audit including the ones that failed.
+**Status (2026-09-21):** Implemented. Stages 0 to 9 are complete and audited. The Stage 10
+release decision is still open: three release audits and one external review have run, and a
+fourth round is recorded in `docs/audits/round-04-independent-audit.md`. The blocker the
+external review named — three quests across eight regions — is addressed: every region now
+has a quest, eight in total, and `docs/CURRICULUM-BACKLOG.md` holds the quests that would
+turn one-per-region into a journey. See `docs/RELEASE-NOTES.md` for what works and the known
+limitations, and `docs/audits/` for every audit including the ones that failed.
 
 The original planning status follows, preserved because it is the specification the
 implementation was held to.

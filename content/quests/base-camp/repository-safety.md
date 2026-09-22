@@ -61,13 +61,13 @@ You are preparing to build skills that connect to Jira, Trello, GitHub, meeting 
 
 ## Acceptance criteria
 
-- The repository documents program-owned, participant-owned, and generated areas.
-- Credentials come from environment variables, an authenticated CLI, or an approved credential store.
-- Generated output and private runtime responses are ignored by Git.
-- External writes are previewed and require explicit human confirmation.
-- The audit log identifies time, action, target, initiating actor, outcome, and whether a write was confirmed.
-- Rerunning the demonstrated workflow does not duplicate the simulated external item.
-- Another person can understand the structure without asking the AI to explain it.
+1. The repository documents program-owned, participant-owned, and generated areas.
+2. Credentials come from environment variables, an authenticated CLI, or an approved credential store.
+3. Generated output and private runtime responses are ignored by Git.
+4. External writes are previewed and require explicit human confirmation.
+5. The audit log identifies time, action, target, initiating actor, outcome, and whether a write was confirmed.
+6. Rerunning the demonstrated workflow does not duplicate the simulated external item.
+7. Another person can understand the structure without asking the AI to explain it.
 
 ## Required evidence
 

@@ -9,5 +9,5 @@ icon: compass
 outcomes:
   - Extract traceable work from meetings and source material.
   - Surface ambiguity, contradiction, risk, and missing decisions.
-  - Create well-scoped work only after human approval.
+  - Draft well-scoped work for a human to approve before anything is created.
 tags: [business-analysis, requirements, intent]

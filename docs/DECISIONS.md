@@ -144,6 +144,13 @@ configuration that moves, not the contract.
 **Reason:** `PLANNING-STATUS.md` requires 3.12 or newer. No 3.13-or-later-only syntax is used, so the
 floor stays where the plan put it.
 
+**Amended 2026-09-21 (round 4):** the floor is `>=3.10`, not `>=3.12`. The Cowork sandbox a
+participant may be handed ships 3.10, and an application that will not install there is not
+local-first in any sense that matters. Nothing in the codebase needed 3.12: the compatibility
+shims live in `quest_app/compat.py` and are covered by tests. Development and CI still run the
+newest stable release, and CI additionally runs the 3.10 floor so the claim is asserted rather
+than assumed. The planning requirement is superseded here rather than quietly ignored.
+
 ## ADR-020 — `jsonschema` against the published schemas, frozen dataclasses internally
 
 **Decision:** Authored and participant documents are validated with `jsonschema` (Draft 2020-12)

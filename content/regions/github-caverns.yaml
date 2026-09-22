@@ -7,7 +7,7 @@ order: 40
 accent: violet
 icon: github
 outcomes:
-  - Synchronize and safely manage GitHub Issues.
+  - Read assigned Issues into local context using the narrowest token scope that answers the question.
   - Connect requested work to implementation and validation evidence.
   - Preserve repository conventions and human review authority.
 tags: [github, integration, traceability]
