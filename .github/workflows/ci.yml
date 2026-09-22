@@ -19,7 +19,9 @@ jobs:
       fail-fast: false
       matrix:
         # The floor from ADR-019 and the newest stable release, so neither drifts unnoticed.
-        python-version: ["3.12", "3.13"]
+        # 3.10 is the declared floor since round 4; without it here, `requires-python` and the
+        # shims in quest_app/compat.py are a claim nothing tests.
+        python-version: ["3.10", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
         with:

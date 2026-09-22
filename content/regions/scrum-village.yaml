@@ -7,7 +7,7 @@ order: 70
 accent: green
 icon: village
 outcomes:
-  - Produce evidence-based team and sprint summaries.
-  - Detect blockers, aging work, scope change, and missing decisions.
-  - Convert retrospectives into owned, traceable experiments.
+  - Produce team summaries from local canonical context alone, citing the work item and retrieval time behind every statement.
+  - Identify blocked work, aging work, and scope change from recorded fields rather than from the language of a title.
+  - Separate observed fact from inference, and report missing or stale context as a gap instead of filling it in.
 tags: [scrum, organization, reporting]

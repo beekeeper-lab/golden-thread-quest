@@ -130,7 +130,7 @@ Repeat the Jira concepts through Trello's model rather than mechanically transla
 
 | Proposed ID | Quest | Level |
 |---|---|---|
-| `scrum-standup-digest` | Produce an evidence-based stand-up digest | Explorer |
+| `scrum-standup-digest` | Produce an evidence-based stand-up digest | Builder |
 | `scrum-sprint-health` | Report progress, aging work, blockers, WIP, and dependency risk | Builder |
 | `scrum-scope-change` | Detect work added, removed, or materially changed after sprint start | Builder |
 | `scrum-refinement-agenda` | Prioritize ambiguous, risky, dependent, or oversized work | Explorer |

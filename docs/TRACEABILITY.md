@@ -68,7 +68,7 @@ is itself the finding.
 
 | ID and criterion | Implementation | Test |
 |---|---|---|
-| **UI1** All required screens implemented | twelve page templates | `integration/test_build.py::test_a_clean_build_produces_every_page` |
+| **UI1** All required screens implemented | thirteen page templates | `integration/test_build.py::test_a_clean_build_produces_every_page` |
 | **UI2** Primary navigation works with keyboard only | semantic links | `ui/test_browser_flows.py::TestKeyboardAndFocus` |
 | **UI3** Visible focus and skip navigation | `:focus-visible`, skip link | `test_focus_is_always_visible`, `test_the_skip_link_moves_focus_to_the_main_landmark` |
 | **UI4** Status is not expressed by color alone | label plus `::before` glyph | `test_status_is_never_communicated_by_colour_alone` |
@@ -81,7 +81,7 @@ is itself the finding.
 
 | ID and criterion | Implementation | Test |
 |---|---|---|
-| **DH1** Setup works from a clean clone | `docs/SETUP.md`, `make setup` | **no test** — open, Stage 9 |
+| **DH1** Setup works from a clean clone | `docs/SETUP.md`, `make setup`, `make verify-package` | `clean-export` job in `.github/workflows/ci.yml`, plus a by-hand clone-and-install recorded in round 4 |
 | **DH2** Content-authoring instructions with a full example | `docs/CONTENT-AUTHORING-GUIDE.md` | — |
 | **DH3** Validator-authoring instructions describe the safety boundary | `docs/VALIDATOR-CONTRACT.md`, `docs/guides/VALIDATOR-AUTHORING.md` | — |
 | **DH4** Update and migration behavior documented | `docs/guides/UPDATING.md` | `integration/test_update_and_migration.py` |
@@ -100,10 +100,12 @@ traceability document is only worth having if it is audited like anything else.
 
 ## Open rows
 
-One criterion has no test and is therefore not traceable: **setup works from a clean clone**.
-It needs a fresh checkout and a network install, which the test suite deliberately does not
-do. It is listed rather than quietly ticked, because a traceability document whose rows are
-aspirations is worse than none.
+None. The one row that was open here — **setup works from a clean clone** — closed in round
+4. The `clean-export` CI job asserts the install on every change from an exported tree, and
+round 4 additionally ran `git clone` from the remote followed by `make setup`,
+`make validate-content` and `make build` on a machine holding no build artefacts. That run
+also found the formatting gate failing at `207a7b3`, which is the kind of thing only a clean
+clone finds; it is recorded in `docs/audits/round-04-independent-audit.md`.
 
 The three accessibility rows that were open at the first writing are now closed: contrast is
 computed from the tokens and checked again by axe in a browser, the responsive and zoom
@@ -111,7 +113,27 @@ conditions are exercised at all four named viewports, and axe runs over eleven p
 serious and critical impacts failing the build.
 
 
+## Capability added after the criteria were written
+
+These rows carry no criterion ID because no criterion asked for them. They are listed so the
+document stays a complete map of what is tested, rather than only of what was specified.
+
+| Capability | Implementation | Test |
+|---|---|---|
+| Every state transition is available without a browser, through one allowlist shared with the service | `actions.py`, `cli.py` | `integration/test_cli_actions.py::test_the_cli_and_the_service_share_one_allowlist`, `::test_listing_actions_names_every_transition` |
+| The CLI cannot reach `verified`, exactly as the HTTP surface cannot | `actions.py`, `state_machine.TRANSITIONS` | `::test_no_cli_action_can_produce_verified` |
+| A reviewer can approve, request changes or reject without a browser, on the same vocabulary and the same guards | `cli.py`, `review.record_decision` | `::test_a_reviewer_can_approve_without_a_browser`, `::test_approval_without_a_statement_is_refused`, `::test_a_malformed_finding_is_refused_rather_than_dropped`, `::test_approving_changed_evidence_needs_the_acknowledgement` |
+| A quest that declares no validators still reaches `submitted`, and one that declares them is still refused without a qualifying run | `actions.py` `_require_qualifying_validation` | `::test_a_quest_declaring_no_validators_can_still_reach_submitted`, `::test_a_quest_declaring_a_validator_is_refused_without_a_qualifying_run` |
+| The commands the guides tell a participant to type are installed and run | `pyproject.toml` entry points | `::test_the_commands_the_guides_name_are_actually_installed`, `::test_the_installed_command_runs` |
+| Python 3.10, the declared floor, runs the suite | `quest_app/compat.py` | the `3.10` leg of the `check` matrix in `.github/workflows/ci.yml` |
+
 ## Criterion coverage
+
+| **CG7** | One build at a time per output directory, so a failed or overlapping build never publishes a partial site: `quest_app/build.py` `_exclusive_output`, ADR-035 | `tests/integration/test_build_concurrency.py` |
+| **PE4** | A lock that cannot be taken never refuses to record the participant's work: `quest_app/store.py` `exclusive`, ADR-036 | `tests/integration/test_lock_failure_modes.py` |
+| **PE5** | An action beside a running service leaves its controls live, whatever port it bound: `quest_app/serve.py` `running_service_port`, ADR-037 | `tests/security/test_service.py::TestFindingTheRunningService` |
+| **FS3** | Traversal out of the generated site, asserted over a raw socket and against a file that exists | `tests/security/test_service.py::TestStaticServing` |
+| **FS2** | The no-JavaScript form route refuses a cross-origin post | `tests/security/test_service.py::TestTheFormRoute::test_a_cross_origin_form_post_is_refused` |
 
 Every row above carries the stable ID of the criterion it maps to, from
 `docs/ACCEPTANCE-CRITERIA.md`. Before the IDs existed a row could only match a criterion by

@@ -34,10 +34,12 @@ quest_app/           the application
 ├── update.py            upstream preflight; runs no merge
 ├── migrations.py        participant-state migrations
 ├── serve.py             the loopback action service
-└── cli.py               validate, build, serve, update
+├── actions.py           the one action allowlist, shared by the service and the CLI
+├── compat.py            the shims that keep the Python 3.10 floor honest (ADR-019, amended)
+└── cli.py               validate, build, serve, action, update
 
 validators/          registry.yaml plus three sample validators and their fixtures
-templates/           layouts, ten component macros, twelve page templates
+templates/           layouts, ten component macros, thirteen page templates
 assets/              design tokens, application stylesheet, enhancement script
 tools/               secret scan, YAML-safety check, cleanup
 ```

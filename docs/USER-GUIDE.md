@@ -205,7 +205,7 @@ recovered more work than any backup.
 
 ## 6. What the application writes, and what it never does
 
-![Three ownership zones side by side: program-owned content and application code, your own work and evidence, and machine-owned generated output that is disposable. Only the middle zone is yours.](media/images/03-ownership-zones.png)
+![Three ownership zones side by side: program-owned content and application code, your own work and evidence, and machine-owned generated output that is disposable. Only the middle zone is yours, and nothing the application does replaces it.](media/images/03-ownership-zones-v4.png)
 
 **Inside `participant/`, only these, only through documented actions:**
 

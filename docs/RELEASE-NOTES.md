@@ -26,6 +26,11 @@ them. It does not own them.
   writes the errors as their own page.
 - **Eleven screens**, generated deterministically. Two builds of the same inputs are
   byte-identical. The site works served and opened from disk.
+- **Every state change without a browser.** The CLI action layer performs the same actions
+  through the same allowlist and the same guards, which is the only path on a Cowork sandbox
+  with no terminal and no reachable loopback port. A rule the quest page enforces is enforced
+  here too (ADR-033), and two processes cannot interleave one participant's progress
+  (ADR-034).
 - **A loopback-only service** for the things a static page cannot safely do, with a per-run
   token, origin checks, a body-size cap, and an action allowlist that no path or command
   crosses.
@@ -47,11 +52,11 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 517 under `make check`, plus 42 browser-driven under `make test-ui` |
+| Tests | 546 under `make check`, plus 42 browser-driven under `make test-ui` |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3, plus a probe used only to prove the timeout |
-| Build budget, 203 quests | asserted under 60s; observed under 1s |
+| Build budget, the shipped curriculum plus 200 synthetic quests | asserted under 60s; observed under 1s |
 
 ## Known limitations
 
@@ -77,8 +82,11 @@ here.
 5. **Catalog filtering needs JavaScript.** A static page cannot filter itself. The routes
    that work without it are real pages: regions and tags, linked from every card and quest.
 6. **No coverage reporting** and **no glossary content type** (D1, D2).
-7. **Clean-clone installation is not tested automatically.** It needs a fresh checkout and a
-   network install, which the suite deliberately does not do.
+7. **Clean-clone installation is tested one step short of a real clone.** The `clean-export`
+   CI job runs `make verify-package`, which exports tracked files with `git archive`, then
+   installs, validates and builds in a fresh virtual environment on every change. A true
+   `git clone` from the remote followed by `make setup` was run by hand in round 4 and
+   recorded in `docs/audits/round-04-independent-audit.md`; nothing runs it on a schedule.
 
 ## For the pilot cohort
 

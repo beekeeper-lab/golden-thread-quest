@@ -80,18 +80,27 @@ def test_warnings_go_to_stdout_so_a_pipeline_can_separate_them(
 
 
 def test_json_output_is_machine_readable_and_sorted(
-    repo_root: Path, fixture_participant_root: Path, capsys: pytest.CaptureFixture[str]
+    content_repo: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    main(
-        [
-            "validate",
-            "--repo-root",
-            str(repo_root),
-            "--participant-root",
-            str(fixture_participant_root),
-            "--json",
-        ]
+    """The warning is manufactured here for the same reason as the one above.
+
+    This test used to read the shipped curriculum and assert it carried at least one
+    warning, which made a green suite depend on the content staying imperfect: numbering
+    the acceptance criteria in three quests, which is exactly what the validator asks for,
+    turned this assertion red.
+    """
+    (content_repo / "content" / "regions" / "unwritten-frontier.yaml").write_text(
+        "id: unwritten-frontier\n"
+        "version: 1\n"
+        "title: Unwritten Frontier\n"
+        "summary: A region whose quests have not been authored yet.\n"
+        "order: 900\n"
+        "accent: slate\n"
+        "outcomes:\n"
+        "  - Nothing yet, because no quest names this region.\n"
     )
+
+    main(["validate", "--repo-root", str(content_repo), "--json"])
     payload = json.loads(capsys.readouterr().out)
 
     assert payload["ok"] is True

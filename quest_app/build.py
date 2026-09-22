@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import json
 import shutil
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -61,6 +63,7 @@ from quest_app.view_models import (
 
 OUTPUT_SUFFIX_NEW = ".building"
 OUTPUT_SUFFIX_OLD = ".previous"
+OUTPUT_SUFFIX_LOCK = ".lock"
 
 
 @dataclass(frozen=True, slots=True)
@@ -157,10 +160,55 @@ def url_for(current_route: str) -> Any:
     return url
 
 
+@contextmanager
+def _exclusive_output(config: AppConfig) -> Iterator[None]:
+    """Hold an exclusive lock on the output directory for the whole build.
+
+    Every build stages into one directory and publishes it by rename. Two builds in the same
+    repository therefore share one staging directory, and the second one's first act is to
+    delete it: `shutil.rmtree` on a tree the first build is still writing. Round 5 reproduced
+    it three times out of three and the crash was the good case. Twice, both processes exited
+    zero and published a site holding 3 and 20 pages out of 53, because the loser's rename
+    landed on a staging directory the winner had already half-removed.
+
+    Round 4 put the same kind of lock on `participant/progress.yaml`, which serialises action
+    against action. Nothing covered build against build: `quest-app build` and `make build`
+    take no lock at all, and the service rebuilds on every action.
+
+    The lock is advisory and POSIX-only, and on a platform without `fcntl` the build still
+    runs. A local-first application must not refuse to publish because it cannot lock, and a
+    single build is unaffected either way.
+    """
+    try:
+        import fcntl
+    except ImportError:  # pragma: no cover - POSIX everywhere this is tested
+        yield
+        return
+
+    lock_path = config.generated_root.with_suffix(OUTPUT_SUFFIX_LOCK)
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+", encoding="utf-8") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
 def build_site(
     world: LoadedWorld, *, built_at: str | None = None, service: ServiceView | None = None
 ) -> BuildResult:
-    """Render every page and swap the result into place atomically."""
+    """Render every page and swap the result into place atomically.
+
+    One build at a time per output directory. See `_exclusive_output`.
+    """
+    with _exclusive_output(world.config):
+        return _render_and_publish(world, built_at=built_at, service=service)
+
+
+def _render_and_publish(
+    world: LoadedWorld, *, built_at: str | None = None, service: ServiceView | None = None
+) -> BuildResult:
     config = world.config
     bundle = world.content
     participant = world.participant
@@ -823,6 +871,9 @@ def _review_context(
         "quest_version": attempt.quest_version,
         "submission_id": submission.get("submission_id"),
         "submitted_at": submission.get("submitted_at"),
+        # What the participant was told did not block submission. A reviewer could otherwise
+        # only infer an unrun check from an empty result list, which reads as "none declared".
+        "advisories": tuple(submission.get("advisories") or ()),
         "secret_scan_clean": not scan_evidence(config, attempt.evidence_path),
         "evidence_hash": submission.get("evidence_hash"),
         "evidence_changed": evidence_changed(config, attempt),

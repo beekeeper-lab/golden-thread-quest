@@ -13,10 +13,13 @@ Everything here writes inside `participant/` and nowhere else. Three properties 
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
+import sys
 import tempfile
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -30,6 +33,8 @@ from quest_app.state_machine import TransitionError, check
 from quest_app.yaml_loader import strict_safe_load
 
 PROGRESS_FILENAME = "progress.yaml"
+# Never read as data and safe to delete; it exists only while a change is in flight.
+LOCK_FILENAME = ".progress.lock"
 AUDIT_FILENAME = "ACTIVITY.md"
 EVIDENCE_TEMPLATE_DIRECTORIES = ("validation", "screenshots", "logs")
 
@@ -72,6 +77,84 @@ class ProgressStore:
     @property
     def path(self) -> Path:
         return self.config.participant_root / PROGRESS_FILENAME
+
+    @property
+    def lock_path(self) -> Path:
+        return self.config.participant_root / LOCK_FILENAME
+
+    @contextmanager
+    def exclusive(self) -> Iterator[None]:
+        """Hold an exclusive lock on this participant's progress for the whole change.
+
+        Every mutation here is a read, a decision, and a write. The service held a lock
+        across that sequence, but only within its own process, and since the CLI action
+        layer landed a second process can do the same sequence at the same time. Four
+        concurrent `quest-app action start-quest` calls each read the same file, each
+        decided they were first, and three attempts and four activity lines survived.
+
+        The lock is advisory and POSIX-only, and **not being able to lock is never a reason
+        to refuse the work**. Round 4 wrote that intent in this docstring and delivered it
+        only for a missing `fcntl` module. Round 5 found the two cases that actually happen:
+        a `.progress.lock` the participant cannot open, and a filesystem that answers
+        `ENOLCK` because it has no lock manager, which is what an NFS or 9p home directory
+        does. Both raised out of here, ahead of every guard, and the CLI printed a traceback
+        carrying absolute paths. Both now fall through to an unlocked change, which is
+        exactly what this application did before the lock existed. If the directory is
+        genuinely unwritable, the write says so in its own words.
+        """
+        try:
+            import fcntl
+        except ImportError:  # pragma: no cover - POSIX everywhere this is tested
+            yield
+            return
+
+        # A refused action must leave nothing behind. The lock is taken before any guard
+        # runs, so without this a locked quest refused for a participant who has never run
+        # anything still created their directory and a lock file inside it.
+        created_root = not self.config.participant_root.exists()
+        try:
+            self.lock_path.parent.mkdir(parents=True, exist_ok=True)
+            handle = self.lock_path.open("a+", encoding="utf-8")
+        except OSError:
+            yield
+            return
+
+        try:
+            try:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                # Correct but indistinguishable from a hang: `run-validator` holds this
+                # across a validator subprocess, which registry.yaml allows 120 seconds.
+                print(
+                    "Another change is in progress; waiting for it to finish.",
+                    file=sys.stderr,
+                )
+                try:
+                    fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+                except OSError:
+                    yield
+                    return
+            except OSError:
+                yield
+                return
+            try:
+                yield
+            finally:
+                with contextlib.suppress(OSError):  # unlocking a lock we hold
+                    fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        finally:
+            handle.close()
+            self._discard_lock_if_nothing_was_written(created_root)
+
+    def _discard_lock_if_nothing_was_written(self, created_root: bool) -> None:
+        """Leave no trace when the change was refused before it wrote anything."""
+        if not created_root or self.path.exists():
+            return
+        try:
+            self.lock_path.unlink(missing_ok=True)
+            self.config.participant_root.rmdir()
+        except OSError:  # pragma: no cover - a non-empty or vanished directory
+            pass
 
     def read(self) -> dict[str, Any]:
         if not self.path.exists():

@@ -18,11 +18,11 @@ from pathlib import Path
 from quest_app.actions import MUTATING_ACTIONS, ActionRunner
 from quest_app.config import APPLICATION_VERSION, AppConfig
 from quest_app.content_loader import SchemaSet
-from quest_app.errors import ProblemReport
+from quest_app.errors import ProblemReport, filesystem_message
 from quest_app.models import Decision
 from quest_app.pipeline import LoadedWorld, load_world
 from quest_app.store import StoreError
-from quest_app.view_models import offline_service_view
+from quest_app.view_models import offline_service_view, online_service_view
 
 EXIT_OK = 0
 EXIT_CONTENT_ERROR = 1
@@ -109,7 +109,13 @@ def build_command(args: argparse.Namespace) -> int:
             )
             print(f"the same errors as a page: {config.relative(page)}", file=sys.stderr)
         return EXIT_CONTENT_ERROR
-    result = build_site(world)
+    # `make build` while a service is running had the same effect as an action did: the
+    # served pages were replaced with copies saying nothing could change state.
+    from quest_app.serve import is_service_running
+
+    result = build_site(
+        world, service=online_service_view() if is_service_running(config) else None
+    )
     if not args.json:
         print(
             f"built {result.page_count} page(s) into {config.relative(config.generated_root)}",
@@ -240,13 +246,23 @@ def action_command(args: argparse.Namespace) -> int:
             )
         ]
 
-    runner = ActionRunner(
-        config, SchemaSet(config.schemas_root), load, service=offline_service_view
-    )
+    # An action rebuilds the site, and the page it writes says whether state can be changed
+    # from it. Assuming "offline" here meant one CLI action from a second terminal disabled
+    # every control on the pages a running service was serving, with no way back but a
+    # restart. Ask, rather than assume.
+    from quest_app.serve import is_service_running
+
+    service_view = online_service_view if is_service_running(config) else offline_service_view
+    runner = ActionRunner(config, SchemaSet(config.schemas_root), load, service=service_view)
     try:
         result = runner.perform(args.name, payload)
     except (StoreError, ValueError) as exc:
         print(str(exc), file=sys.stderr)
+        return EXIT_CONTENT_ERROR
+    except OSError as exc:
+        # The service has said this since it was written. The CLI said it with a traceback
+        # and an absolute path until round 5, which is the surface Cowork participants use.
+        print(filesystem_message(exc), file=sys.stderr)
         return EXIT_CONTENT_ERROR
 
     if args.json:
@@ -254,6 +270,10 @@ def action_command(args: argparse.Namespace) -> int:
     else:
         state = result.get("state")
         print(f"{args.name}: ok" + (f" — now {state}" if state else ""))
+        for advisory in result.get("advisories") or ():
+            # Printed, not raised: it did not stop the submission and must not read as if
+            # it had. Saying nothing is what left the participant to hear it from a reviewer.
+            print(f"advisory: {advisory}")
         if result.get("next"):
             print(f"next: {result['next']}")
     return EXIT_OK

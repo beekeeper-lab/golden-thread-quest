@@ -7,7 +7,7 @@ order: 50
 accent: amber
 icon: library
 outcomes:
-  - Maintain stable local representations of work, decisions, and evidence.
-  - Detect stale, conflicting, missing, and duplicated context.
-  - Recommend next work with cited, inspectable reasons.
+  - Define a canonical work-item model with required fields, optional fields, and explicit non-goals.
+  - Map each source system onto that model without losing source-specific structure, and report what cannot be mapped rather than writing a partial record that looks complete.
+  - Give every item an identity that survives renames, moves, and resynchronization, and keep participant analysis separate from synchronized data.
 tags: [context, markdown, prioritization]

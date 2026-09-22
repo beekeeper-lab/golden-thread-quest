@@ -9,17 +9,18 @@ Do not reinterpret this as a generic learning-management system or a hosted SaaS
 ## Mandatory working rules
 
 1. **Never implement directly on `main`.** Create a descriptive feature branch before modifying production files.
-2. Treat this repository as a planning package until the Stage 0 audit passes.
-3. Follow `docs/IMPLEMENTATION-PLAN.md` in order.
-4. Work on only one stage at a time.
-5. Update the checkboxes and stage log as work is completed.
-6. At the end of every stage, perform the required audit using a fresh review context or review subagent when available.
-7. Record audit findings in `docs/audits/stage-NN-*.md`.
-8. Fix every blocking and high-severity finding before starting the next stage.
-9. Rerun the audit after fixes and record the result.
-10. Do not mark an item complete merely because code exists; its acceptance criteria and tests must pass.
-11. Preserve user-authored files and unrelated repository changes.
-12. Never weaken validation, tests, or security controls to make a stage pass.
+2. **Land your own work.** Commit, push, open the pull request, and merge it to `main` when the stage's audit passes. On this repository the merge is yours to make and does not need to be asked for. Merging an unfinished round is still wrong, but that is a question of readiness, not of permission.
+3. Treat this repository as a planning package until the Stage 0 audit passes.
+4. Follow `docs/IMPLEMENTATION-PLAN.md` in order.
+5. Work on only one stage at a time.
+6. Update the checkboxes and stage log as work is completed.
+7. At the end of every stage, perform the required audit using a fresh review context or review subagent when available.
+8. Record audit findings in `docs/audits/stage-NN-*.md`.
+9. Fix every blocking and high-severity finding before starting the next stage.
+10. Rerun the audit after fixes and record the result.
+11. Do not mark an item complete merely because code exists; its acceptance criteria and tests must pass.
+12. Preserve user-authored files and unrelated repository changes.
+13. Never weaken validation, tests, or security controls to make a stage pass.
 
 ## Required reading order
 
@@ -32,9 +33,9 @@ Do not reinterpret this as a generic learning-management system or a hosted SaaS
 7. `docs/ui/SCREEN-SPECS.md`
 8. `docs/ui/COMPONENT-CATALOG.md`
 9. `docs/SECURITY-AND-PRIVACY.md`
-10. `docs/ACCESSIBILITY-AND-DESIGN.md`
-11. `docs/ACCEPTANCE-CRITERIA.md`
-12. `docs/IMPLEMENTATION-PLAN.md`
+11. `docs/ACCESSIBILITY-AND-DESIGN.md`
+12. `docs/ACCEPTANCE-CRITERIA.md`
+13. `docs/IMPLEMENTATION-PLAN.md`
 
 Then inspect the schemas, sample content, fixtures, and prototype.
 
@@ -73,14 +74,14 @@ Reasonable visual improvements are allowed if they are documented and do not cha
 For every stage:
 
 1. Review the stage goal and acceptance criteria.
-2. Inspect all changed files and the Git diff.
-3. Run the relevant automated tests and validators.
-4. Test the stage's primary user flows.
-5. Review accessibility, security, failure behavior, and documentation impact.
-6. List findings with severity, evidence, and recommended correction.
-7. Fix findings.
-8. Rerun affected tests and the audit.
-9. Check off the stage only after the audit passes.
+3. Inspect all changed files and the Git diff.
+4. Run the relevant automated tests and validators.
+5. Test the stage's primary user flows.
+6. Review accessibility, security, failure behavior, and documentation impact.
+7. List findings with severity, evidence, and recommended correction.
+8. Fix findings.
+9. Rerun affected tests and the audit.
+10. Check off the stage only after the audit passes.
 
 Use the following severities:
 

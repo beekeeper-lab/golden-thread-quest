@@ -476,6 +476,57 @@ v2 entry below assigns each item to its position by name, leaving nothing to inf
     windows, screenshots, any line or arrow touching the verified marker, arrows with heavy
     heads, any sentence-length text, human figures
 
+### Image 15: 03-ownership-zones-v4
+
+- **File**: docs/media/images/03-ownership-zones-v4.png
+- **Fixes**: neither earlier take is shippable. v1 is right in every respect except that it
+  labels the left zone "programme". v3 fixes the word and loses the spacing between each
+  folder label and the small Git dot that follows it, so "content ●" renders as "content."
+  and "generated ○" as "generatedo" — a legend a reader misreads as punctuation. Rounds 2
+  and 3 both failed on the same thing: a tiny glyph set immediately after a word is the one
+  element this model will not keep apart from the word. v4 stops asking for it. Git
+  membership moves out of the labels and onto the zone, as one small chip in each zone's
+  upper-right corner, which is also truer to the model — membership is a property of the
+  zone, not of the individual folder.
+- **Page**: User guide, Section 6 — What the application writes
+- **Alt text**: "Three ownership zones side by side: program-owned content and application
+  code, your own work and evidence, and machine-owned generated output that is disposable.
+  Only the middle zone is yours, and nothing the application does replaces it."
+- **Description**: Three adjacent rectangular regions in a single row on a field map, not
+  nested and not overlapping. The left region is filled solid deep ink-navy with light text
+  and is headed with the single word "program". The centre region is warm parchment with an
+  amber-gold border, drawn noticeably taller and wider than both neighbours so it anchors the
+  composition, headed "yours". The right region is pale grey with a dashed border, headed
+  "machine". Each region holds two small outlined folder glyphs with short lowercase labels
+  beside them. Each region carries one small rounded chip in its upper-right corner reading
+  "in git" or "not in git". No dots, anywhere.
+- **Prompt**:
+  Goal: Make it immediately obvious which files belong to the participant, and that the
+    machine-owned zone is disposable and safe to delete.
+  Scene: Three adjacent map regions in one row, not nested and not overlapping. LEFT region:
+    filled solid deep ink-navy, light text, heading is exactly the seven-letter English word
+    "program" (p-r-o-g-r-a-m), holding two small outlined folder glyphs labeled content and
+    quest app. CENTRE region: warm parchment fill with an amber-gold border, visibly taller
+    and wider than both neighbours, heading "yours", holding two small outlined folder glyphs
+    labeled participant and evidence. RIGHT region: pale grey fill with a dashed border,
+    heading "machine", holding two small outlined folder glyphs labeled generated and local
+    data. Each region carries exactly one small rounded rectangular chip in its upper-right
+    corner, clear of every other element: the left and centre chips read "in git", the right
+    chip reads "not in git". Every folder label is a plain word with nothing following it and
+    clear space to its right.
+  Style: Flat vector field-guide map, thin precise borders, dashed border on the disposable
+    zone only, muted palette, generous whitespace, no shadows, no gradients. Folder glyphs are
+    thin outlines, never filled color blocks. Chips are outlined, not filled, and never gold.
+  Aspect ratio: 3:2
+  Background: warm parchment #f7f4ec
+  Text in image: three headings "program", "yours", "machine"; six folder labels — content,
+    quest app, participant, evidence, generated, local data; three chip labels — "in git",
+    "in git", "not in git". No other text.
+  Avoid: the spelling "programme"; any dot, bullet, circle or small mark placed after a
+    label; a separate legend or key anywhere in the frame; nesting one region inside another;
+    arrows between regions; folder glyphs filled with solid color; gold used on anything but
+    the centre region's border
+
 ---
 
 ## Brand marks
@@ -640,6 +691,7 @@ the sparkle collision is judged acceptable.
 | Round 1 actual | **$0.70** (5 images, 9,939 tokens, 89s) |
 | Round 2 actual | **$0.58** (4 images: 3 corrections plus one retake) |
 | Round 3 actual | **~$0.14** (1 image, 2,282 tokens, 17s) — derived at round 1's per-image rate, not separately metered |
+| Round 4 actual | **$0.18** (1 image, 2,552 tokens, 19.9s) — image 15, the fourth ownership-zones take |
 
 ## If a take is wrong
 
@@ -653,9 +705,20 @@ Round 1 (images 1-5) was approved and generated on 2026-09-17.
 Round 2 generated images 7, 9 and 10 (`02-state-authority-v2`,
 `03-ownership-zones-v2` then `-v3`, `05-passport-outcome-v2`) on 2026-09-17.
 Round 3 generated image 14, `01-first-hour-flow-v3`, on 2026-09-17 at 20:17.
+Round 4 generated image 15, `03-ownership-zones-v4`, on 2026-09-22 at 06:27.
 Image 6, `01-first-hour-flow-v2`, was never generated and never will be: the
 division it drew stopped being true before it was worth buying. Image 14
 replaces it.
+
+**Invocation note.** Rebuilding the guide after a new image needs the `docs` extra,
+`uv pip install -e '.[docs]'`, because `scripts/build_user_guide_html.py` re-encodes each
+diagram as a WebP data URI and nothing the application ships imports Pillow.
+
+`scripts/generate_images.py` resolves each entry's **File**
+path under `--images-dir`, which defaults to `<project>/images`. Because this
+plan's paths are written from the repository root, the run needs
+`--images-dir .`; without it the output lands at `images/docs/media/images/`
+and has to be moved by hand, which is what happened in round 4.
 
 ## Which take each page ships
 
@@ -667,21 +730,37 @@ round-1 takes until this table existed. It is the record of what the guide actua
 |---|---|---|
 | 3 — The first hour | `01-first-hour-flow-v3.png` | Round 3 take; v1 and v2 superseded. |
 | 4 — The eight states | `02-state-authority-v2.png` | v1 placed `locally validated` in the reviewer column, contradicting the one rule the image exists to state. |
-| 6 — What the application writes | `03-ownership-zones.png` | **v1, deliberately.** See below. |
+| 6 — What the application writes | `03-ownership-zones-v4.png` | Round 4 take; the first one with no misleading text. See below. |
 | 7 — Evidence | `04-evidence-package.png` | Correct in round 1; never superseded. |
 | 11 — Knowing when you are finished | `05-passport-outcome-v2.png` | v1 read `claimed 10601 / verified 10602`, showing verified exceeding claimed, which the application cannot produce. |
 
-### Why section 6 keeps the v1 take
+### Why section 6 ships the v4 take
 
-The ownership-zones image has no correct take. v1 is right in every respect except that it
-labels the left zone "programme"; v3 fixes the word and loses the spacing, printing the
-in-git dots hard against their labels, so "content ●" renders as "content." and "generated ○"
-as "generatedo". A wrong-register word is a smaller fault than a legend a reader misreads as
-punctuation, so v1 ships.
+The ownership-zones image had no correct take for three rounds. v1 was right in every respect
+except that it labelled the left zone "programme". v3 fixed the word and lost the spacing
+between each folder label and the Git dot that followed it, printing "content ●" as "content."
+and "generated ○" as "generatedo" — a legend a reader misreads as punctuation. v1 shipped in
+the meantime because a wrong-register word is a smaller fault than that.
 
-Neither is right, and the fix is a fourth take or a hand-edit of the label. Both need a
-decision from whoever holds the image budget, so this is recorded as open rather than
-resolved quietly.
+v4 stops asking for the thing that broke: Git membership moves off the individual labels and
+onto the zone, as one chip per zone. Both earlier defects are gone — the heading reads
+"program", and every folder label is a plain word with clear space after it.
+
+Two deviations from the entry, both accepted rather than retaken:
+
+- The three zones are drawn the same size. The entry asked for the centre zone to be visibly
+  taller and wider so it anchors the composition. It is not, so the "only the middle zone is
+  yours" emphasis rests on the gold border and on the prose beside the image rather than on
+  scale.
+- The centre chip is gold-outlined. The entry reserved gold for the centre region's border
+  alone.
+
+Neither misleads a reader, which is the bar the previous three takes failed. A v5 for the size
+emphasis would be a new entry and a new approval.
+
+The guide and the HTML build had drifted apart on this image as well: `docs/USER-GUIDE.md`
+referenced v1 while `scripts/build_user_guide_html.py` embedded v3. Both now name v4, and the
+HTML artifact was rebuilt so the embedded diagram matches.
 
 ## Why image 6 was skipped, and what it cost to wait
 

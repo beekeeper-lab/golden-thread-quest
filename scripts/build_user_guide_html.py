@@ -25,7 +25,7 @@ IMAGES = ROOT / "docs/media/images"
 DIAGRAMS = [
     "01-first-hour-flow-v3",
     "02-state-authority-v2",
-    "03-ownership-zones-v3",
+    "03-ownership-zones-v4",
     "04-evidence-package",
     "05-passport-outcome-v2",
 ]
