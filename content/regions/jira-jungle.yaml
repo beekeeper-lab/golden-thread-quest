@@ -7,7 +7,7 @@ order: 20
 accent: blue
 icon: jira
 outcomes:
-  - Synchronize assigned and queried Jira work into traceable local Markdown.
+  - Synchronize the work assigned to you into traceable local Markdown, without hardcoding who you are.
   - Read without writing, so nothing in Jira changes and the synchronization records that it did not.
   - Follow pagination to the end, and resynchronize without duplicating comments or overwriting participant notes.
 tags: [jira, integration, work-management]

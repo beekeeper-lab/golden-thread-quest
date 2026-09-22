@@ -8,6 +8,7 @@ attempt could claim approval it does not have gets its own test here (ADR-011).
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -199,7 +200,12 @@ class TestRecordIntegrity:
         is not.
         """
         quest = config.repo_root / "content" / "quests" / "base-camp" / "repository-safety.md"
-        quest.write_text(quest.read_text().replace("version: 1", "version: 2", 1))
+        # Bumped from whatever the quest is on now. Written against the literal `version: 1`,
+        # this test stopped mutating anything the day the quest reached version 2 and passed
+        # by asserting warnings the fixture already carried.
+        source = quest.read_text()
+        current = int(re.search(r"(?m)^version: (\d+)$", source).group(1))
+        quest.write_text(re.sub(r"(?m)^version: \d+$", f"version: {current + 1}", source, count=1))
 
         world = load_world(config, report)
 

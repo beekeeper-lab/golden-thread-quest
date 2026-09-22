@@ -1,7 +1,7 @@
 schema_version: 1
 review_id: base-camp-review-001
 quest_id: base-camp-repository-safety
-quest_version: 1
+quest_version: 2
 attempt_id: base-camp-attempt-001
 evidence_hash: sha256:63ecd70389b2af15696d4911bc4c4cf2a69459a7b76b9573c6aa1a4a0075d967
 reviewer:
