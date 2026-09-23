@@ -61,7 +61,7 @@ No database, no Docker, no account, and no network connection after install.
    > Run `make setup`, then `make check`, and tell me if anything failed.
 
    `make check` runs formatting, linting, type checking, a YAML-safety rule, a secret scan and
-   the full non-browser test suite. It takes about a minute and works entirely offline. If it
+   the full non-browser test suite. It takes a few minutes and works entirely offline. If it
    passes, your installation is sound. If it does not, go to [Section 9](#9-when-something-goes-wrong).
 
 ### How you read and do things
@@ -311,6 +311,10 @@ your repository with your uncommitted work in it is not a decision an applicatio
 A dirty working tree is a hard stop, not a warning. The printed sequence creates a backup
 branch first, so there is always one command that puts everything back.
 
+If the shape of `participant/progress.yaml` changes, `make update-check` says so before you
+merge. After merging with your work committed, run `make migrate` to bring your file forward;
+it validates before and after, and refuses to drop an attempt or a field.
+
 **Your in-progress attempts stay on the quest version you started.** If a quest moves from
 version 2 to 3 while you are working, you keep working against version 2 and the page tells
 you a newer one exists. **Verified work stays verified** — a new version does not revoke an
@@ -350,8 +354,10 @@ reasons, is in `docs/RELEASE-NOTES.md`.
    program-owned and reviewed like code; it is not sandboxed against a hostile author.
 6. **Catalog filtering needs JavaScript.** Region and tag pages work without it.
 7. **The secret scanner is a safety net**, not a guarantee. It will not catch every shape.
-8. **Clean-clone installation is not automatically tested.** It is the one acceptance
-   criterion without a test, and it is named as such in `docs/TRACEABILITY.md`.
+8. **Clean-clone installation is tested one step short of a real clone.** The `clean-export`
+   CI job runs `make verify-package`, which exports tracked files with `git archive`, then
+   installs, validates, and builds in a fresh virtual environment on every change. See DH1 in
+   `docs/TRACEABILITY.md`.
 
 ---
 
