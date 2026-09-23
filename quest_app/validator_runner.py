@@ -48,6 +48,17 @@ BASE_ENVIRONMENT = {"PATH": "/usr/bin:/bin", "LC_ALL": "C.UTF-8", "LANG": "C.UTF
 
 OUTCOMES = ("pass", "fail", "warning", "environment_failure", "inconclusive", "interrupted")
 
+# `output_excerpt` is capped at this in `schemas/validation-result.schema.json`, and a result
+# that breaks the schema is refused whole — so a chatty validator that passed had its entire
+# run thrown away with a message about a rejected document. The registry let an author
+# declare five times this and nothing reconciled the two numbers.
+# `tests/unit/test_validator_limits.py` fails if the schema and this constant drift apart.
+EXCERPT_LIMIT = 20000
+
+# Nothing bounded the list. Twenty thousand checks produced a 9.7 MB result document that
+# every later page render read back in full.
+MAX_CHECKS = 200
+
 
 class WorkspaceError(RuntimeError):
     """A path a validator asked for that is outside the roots it was registered with."""
@@ -408,7 +419,21 @@ def run_validator(
     if not output.checks:
         output.checks.append(_explaining_check(outcome, definition, environment_failure))
 
-    excerpt, truncated = _bounded("\n".join(output.notes), definition.max_output_bytes)
+    if len(output.checks) > MAX_CHECKS:
+        dropped = len(output.checks) - MAX_CHECKS
+        output.checks = output.checks[:MAX_CHECKS]
+        output.checks.append(
+            Check(
+                id="checks-truncated",
+                outcome="warning",
+                summary=f"{dropped} further check(s) were dropped; this run reported too many.",
+                severity="medium",
+                suggested_action="A validator that reports this much detail should summarize it.",
+            )
+        )
+    excerpt, truncated = _bounded(
+        "\n".join(output.notes), min(definition.max_output_bytes, EXCERPT_LIMIT)
+    )
     redacted, redaction_applied = redact_text(excerpt)
 
     # Every free-text field a check carries, not only the captured output. The docstring at
@@ -479,12 +504,21 @@ def _redact_stderr(text: str) -> str:
     return f"The validator wrote {len(lines)} line(s) to standard error."
 
 
+TRUNCATION_SUFFIX = "\n… output truncated …"
+
+
 def _bounded(text: str, limit: int) -> tuple[str, bool]:
-    """Cap captured output, and say so rather than quietly losing the end of it."""
+    """Cap captured output, and say so rather than quietly losing the end of it.
+
+    The notice is counted inside the budget. It used to be appended after truncating to
+    the limit, so a validator registered at exactly the schema's cap produced an excerpt
+    over it by the length of the notice, and the result was refused for being too long.
+    """
     encoded = text.encode("utf-8")
     if len(encoded) <= limit:
         return text, False
-    return encoded[:limit].decode("utf-8", errors="ignore") + "\n… output truncated …", True
+    room = max(limit - len(TRUNCATION_SUFFIX.encode("utf-8")), 0)
+    return encoded[:room].decode("utf-8", errors="ignore") + TRUNCATION_SUFFIX, True
 
 
 def _terminate_tree(process: subprocess.Popen[str]) -> None:

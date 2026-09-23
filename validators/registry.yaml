@@ -15,7 +15,7 @@ validators:
     entrypoint: validators.repository_foundation:run
     working_directory: participant
     timeout_seconds: 30
-    max_output_bytes: 200000
+    max_output_bytes: 20000
     environment_allowlist: []
     read_roots:
       - participant
@@ -36,7 +36,7 @@ validators:
     entrypoint: validators.jira_read_assigned:run
     working_directory: participant
     timeout_seconds: 60
-    max_output_bytes: 200000
+    max_output_bytes: 20000
     parameters:
       fixture_set:
         type: enum
@@ -62,7 +62,7 @@ validators:
     entrypoint: validators.playwright_quality:run
     working_directory: participant
     timeout_seconds: 120
-    max_output_bytes: 500000
+    max_output_bytes: 20000
     environment_allowlist: []
     read_roots:
       - participant

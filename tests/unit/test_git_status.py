@@ -115,6 +115,25 @@ class TestWhatItReports:
         assert summary["evidence_committed"] is False
         assert "commit" in str(summary["advice"]).lower()
 
+    def test_it_advises_when_evidence_is_edited_and_never_staged(self, repository: Path) -> None:
+        """The commonest case: edit a file, do not `git add`, open the evidence workspace.
+
+        Porcelain writes `" M path"` for it. The parser split on the first space, so the
+        status letter stayed on the front of the path, no prefix ever matched, and the page
+        printed "yes" under "evidence committed" for evidence that was not committed.
+        """
+        evidence = repository / "participant" / "evidence" / "q" / "a-001"
+        evidence.mkdir(parents=True)
+        (evidence / "PROOF.md").write_text("# Proof\n")
+        _git(repository, "add", "-A")
+        _git(repository, "commit", "-m", "evidence")
+        (evidence / "PROOF.md").write_text("# Proof, edited and never staged\n")
+
+        summary = summary_for(repository, "participant/evidence/q/a-001")
+
+        assert summary["evidence_committed"] is False, summary
+        assert "commit" in str(summary["advice"]).lower()
+
     def test_it_says_nothing_about_evidence_when_not_asked(self, repository: Path) -> None:
         assert summary_for(repository, None)["evidence_committed"] is None
 

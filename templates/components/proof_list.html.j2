@@ -9,7 +9,7 @@
     <li id="proof-{{ item.id }}">
       <div class="card-header">
         <strong>{{ item.description }}</strong>
-        <span class="state state-{{ 'verified' if item.status in ('validated', 'reviewer_confirmed') else ('needs_changes' if item.status == 'warning' else ('available' if item.status == 'detected' else 'locked')) }}">{{ item.status_label }}</span>
+        <span class="state state-{{ item.state_class }}">{{ item.status_label }}</span>
       </div>
       <p class="authority">
         {{ item.type | replace('-', ' ') | capitalize }}{% if item.path %} · <code>{{ item.path }}</code>{% endif %}{% if item.validator %} · validated by {{ item.validator }}{% endif %}

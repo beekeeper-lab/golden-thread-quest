@@ -51,7 +51,7 @@ class GitStatus:
         return any(path.startswith(prefix) for path in self.changed_paths)
 
 
-def _run(repo_root: Path, arguments: tuple[str, ...]) -> str | None:
+def _run(repo_root: Path, arguments: tuple[str, ...], *, raw: bool = False) -> str | None:
     if arguments not in READ_ONLY_COMMANDS:
         raise ValueError(f"git command not on the read-only list: {arguments!r}")
     try:
@@ -64,7 +64,12 @@ def _run(repo_root: Path, arguments: tuple[str, ...]) -> str | None:
         )
     except (OSError, subprocess.SubprocessError):
         return None
-    return result.stdout.strip() if result.returncode == 0 else None
+    if result.returncode != 0:
+        return None
+    # `raw` for porcelain: its status field is two columns wide and the first one is often
+    # a space, so stripping the output ate the first line's status and shifted its path by
+    # a character. Every other command here returns one token that wants stripping.
+    return result.stdout if raw else result.stdout.strip()
 
 
 def inspect(repo_root: Path) -> GitStatus:
@@ -80,19 +85,29 @@ def inspect(repo_root: Path) -> GitStatus:
             reason="Git is not available here, or this directory is not a repository.",
         )
 
-    porcelain = _run(repo_root, ("status", "--porcelain=v1", "--untracked-files=normal")) or ""
+    porcelain = (
+        _run(repo_root, ("status", "--porcelain=v1", "--untracked-files=normal"), raw=True) or ""
+    )
     changed: list[str] = []
     untracked = 0
     for line in porcelain.splitlines():
         if not line:
             continue
-        code, _, name = line.partition(" ")
+        # Porcelain v1 is a fixed two-character status field, a space, then the path.
+        # Splitting on the first space lost the path of every unstaged change: a tracked
+        # file edited but not staged is `" M path"`, whose first space is at index 0, so
+        # the status letter stayed on the front of the name and `contains_uncommitted`
+        # could never match it. The evidence workspace then told a participant their
+        # evidence was committed when it was not, which is worse than not saying.
+        name = line[3:] if len(line) > 3 else ""
+        # A rename is `R  old -> new`. What is uncommitted is where the file is now.
+        if " -> " in name:
+            name = name.split(" -> ", 1)[1]
         path = name.strip().strip('"')
         if line.startswith("??"):
             untracked += 1
-        else:
+        elif path:
             changed.append(path)
-        del code
 
     return GitStatus(
         available=True,

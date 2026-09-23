@@ -163,6 +163,21 @@ class TestCrossReferences:
         found = problem(report, "content.duplicate_id")
         assert "base-camp" in str(found.suggestion)  # type: ignore[attr-defined]
 
+    def test_two_headings_that_collide_on_one_key_are_rejected(
+        self, config: AppConfig, report: ProblemReport
+    ) -> None:
+        """`## Mission` and `## MISSION` are one key, and the second overwrote the first.
+
+        The guard compared exact title strings while `parse_sections` keys on the casefolded
+        title, so the build succeeded, said nothing, and the quest page showed the second
+        block where the author's Mission should have been.
+        """
+        path = config.repo_root / QUEST
+        path.write_text(path.read_text() + "\n\n## MISSION\n\nA second block.\n")
+        load(config, report)
+        found = problem(report, "content.quest.duplicate_heading")
+        assert "MISSION" in str(found.received)  # type: ignore[attr-defined]
+
     def test_self_prerequisite_is_rejected(self, config: AppConfig, report: ProblemReport) -> None:
         edit_front_matter(config.repo_root, QUEST, prerequisites=["base-camp-repository-safety"])
         load(config, report)

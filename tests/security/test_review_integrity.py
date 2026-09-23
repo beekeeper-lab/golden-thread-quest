@@ -502,3 +502,47 @@ def test_the_transition_guard_cannot_be_omitted() -> None:
 
     guard = inspect.signature(transition_attempt).parameters["guard"]
     assert guard.default is inspect.Parameter.empty, "the guard must be required"
+
+
+class TestTheParticipantIsToldWhy:
+    """A decision the participant cannot read is not a decision they can act on."""
+
+    def test_needs_changes_findings_reach_the_participant_s_own_pages(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """The reason lived in `review.yaml` and on the reviewer's page, nowhere else.
+
+        The participant was told "a reviewer asked for corrections" and had to open a YAML
+        file in their own repository to find out what the corrections were.
+        """
+        from quest_app.build import build_site
+
+        submit(setup, config)
+        world, attempt = reload_attempt(config)
+        _, schemas, store, quest, _ = setup
+        record_decision(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            decision="needs_changes",
+            reviewer_name="A Reviewer",
+            verification_statement=None,
+            findings=[FINDING],
+            schemas=schemas,
+        )
+
+        report = ProblemReport()
+        rebuilt = load_world(config, report)
+        assert rebuilt is not None, report.to_text()
+        build_site(rebuilt, built_at="2026-09-16T00:00:00+00:00")
+
+        for relative in (
+            f"quests/{QUEST}/index.html",
+            f"evidence/{QUEST}/index.html",
+        ):
+            page = (config.generated_root / relative).read_text()
+            assert FINDING["summary"] in page, f"{relative} does not say what is wrong"
+            assert FINDING["evidence"] in page, f"{relative} does not say what was observed"
+            assert FINDING["severity"] in page, f"{relative} does not say how serious it is"

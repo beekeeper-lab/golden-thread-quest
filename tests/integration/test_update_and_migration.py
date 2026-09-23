@@ -181,7 +181,7 @@ class TestGitSafety:
         """The name is built from the clock, and it was built twice.
 
         A preflight that straddled a second boundary reported one branch in
-        `backup_branch` and told the participant to create another in `instructions`.
+        `proposed_backup_branch` and told the participant to create another in `instructions`.
         Forcing a different name per call turns that once-a-second race into an assertion.
         """
         from quest_app import update as update_module
@@ -191,8 +191,8 @@ class TestGitSafety:
         _init_repo(config.repo_root, commit=True)
         result = preflight(config)
 
-        assert result.backup_branch, "the preflight found no repository to report on"
-        assert result.backup_branch in result.instructions
+        assert result.proposed_backup_branch, "the preflight found no repository to report on"
+        assert result.proposed_backup_branch in result.instructions
 
 
 @pytest.mark.slow

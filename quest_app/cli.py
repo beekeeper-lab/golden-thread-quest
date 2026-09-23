@@ -270,6 +270,11 @@ def action_command(args: argparse.Namespace) -> int:
         # and an absolute path until round 5, which is the surface Cowork participants use.
         print(filesystem_message(exc), file=sys.stderr)
         return EXIT_CONTENT_ERROR
+    except Exception as exc:  # the CLI is a surface, not a stack trace
+        # Both write paths in the service answer every failure. This one answered three
+        # kinds and let the rest out as a traceback with absolute paths in it.
+        print(f"{args.name} failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return EXIT_CONTENT_ERROR
 
     if args.json:
         print(json.dumps(result, indent=2, sort_keys=True))

@@ -57,7 +57,7 @@
           "$ref": "#/$defs/relativePath"
         },
         "timeout_seconds": { "type": "integer", "minimum": 1, "maximum": 600 },
-        "max_output_bytes": { "type": "integer", "minimum": 1024, "maximum": 2000000 },
+        "max_output_bytes": { "type": "integer", "minimum": 1024, "maximum": 20000 },
         "parameters": {
           "description": "Typed, allowlisted inputs. A value outside its allowed set is refused before the validator is loaded.",
           "type": "object",

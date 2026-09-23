@@ -41,7 +41,7 @@ from quest_app.actions import CONFIRMATIONS, MUTATING_ACTIONS, ActionRunner
 from quest_app.build import OUTPUT_SUFFIX_NEW, OUTPUT_SUFFIX_OLD, build_site
 from quest_app.config import APPLICATION_VERSION, AppConfig
 from quest_app.content_loader import SchemaSet
-from quest_app.errors import ProblemReport, filesystem_message
+from quest_app.errors import ProblemReport, filesystem_message, read_failure_message
 from quest_app.git_status import summary_for
 from quest_app.pipeline import load_world
 from quest_app.state_machine import allowed_actions
@@ -151,6 +151,12 @@ def _is_loopback(address: str) -> bool:
 
 
 SERVICE_HEADER = "X-Quest-App"
+# Which repository the answering service serves. The probe used to accept any service of
+# this application on the port, so a second clone on one machine — two participants, or a
+# reviewer with the curriculum checked out twice — made `quest-app build` publish pages
+# saying the service was running, with live-looking controls, for a repository that had no
+# service. It also made `make check` fail on any machine already running `make serve`.
+REPO_HEADER = "X-Quest-Repo"
 
 
 PORTS_DIRNAME = "service-ports"
@@ -201,6 +207,18 @@ def running_service_port(config: AppConfig) -> int:
     return running_service_ports(config)[0]
 
 
+def repo_signature(config: AppConfig) -> str:
+    """A short, stable name for the repository and participant tree a service is serving.
+
+    A hash rather than the paths themselves: this goes out in a response header, and the
+    paths are the participant's home directory.
+    """
+    import hashlib
+
+    material = f"{config.repo_root.resolve()}\0{config.participant_root.resolve()}"
+    return hashlib.sha256(material.encode("utf-8")).hexdigest()[:16]
+
+
 def is_service_running(config: AppConfig) -> bool:
     """Whether a service of this application is answering on the configured address.
 
@@ -226,10 +244,10 @@ def is_service_running(config: AppConfig) -> bool:
         try:
             # A loopback URL this function built, from a port this application wrote.
             with urllib.request.urlopen(url, timeout=0.5) as response:  # noqa: S310
-                if response.headers.get(SERVICE_HEADER):
+                if _is_this_repositorys_service(response.headers, config):
                     return True
         except urllib.error.HTTPError as error:
-            if error.headers.get(SERVICE_HEADER):
+            if _is_this_repositorys_service(error.headers, config):
                 return True
         except OSError as error:
             # Nothing is listening there. A service killed outright never ran its own
@@ -244,6 +262,17 @@ def is_service_running(config: AppConfig) -> bool:
                     entry.unlink(missing_ok=True)
             continue
     return False
+
+
+def _is_this_repositorys_service(headers: Any, config: AppConfig) -> bool:
+    """Not just a service of this application: the one serving this repository.
+
+    A service that predates the repository header answers without one, and is treated as
+    somebody else's — which is the safe reading, and the only one available.
+    """
+    if not headers.get(SERVICE_HEADER):
+        return False
+    return bool(headers.get(REPO_HEADER) == repo_signature(config))
 
 
 def _token_matches(supplied: str, expected: str) -> bool:
@@ -292,6 +321,7 @@ class ActionHandler(BaseHTTPRequestHandler):
         # Also the signature `is_service_running` probes for. A bare TCP connect would call
         # anything holding the port this application.
         self.send_header(SERVICE_HEADER, APPLICATION_VERSION)
+        self.send_header(REPO_HEADER, repo_signature(self.state.config))
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("Cache-Control", "no-store")
@@ -329,6 +359,22 @@ class ActionHandler(BaseHTTPRequestHandler):
         if name in {"localhost", "127.0.0.1", "::1", self.state.config.service_host.lower()}:
             return True
         return _is_loopback(name)
+
+    def _declared_length(self) -> int | None:
+        """The body length, or `None` when the request does not declare exactly one.
+
+        `get` returns the first of a repeated header. The GET path refuses a duplicate
+        `Content-Length` for exactly this reason — the unread remainder becomes the next
+        request on a kept-alive connection, with every header chosen by the sender — and
+        both POST readers read the first one and walked past the second.
+        """
+        declared_all = self.headers.get_all("Content-Length") or []
+        if len(declared_all) != 1 or self.headers.get("Transfer-Encoding"):
+            return None
+        try:
+            return int(declared_all[0])
+        except ValueError:
+            return None
 
     def _body_is_absent(self) -> bool:
         """Whether this request declared no body. A GET that declares one is refused.
@@ -382,9 +428,8 @@ class ActionHandler(BaseHTTPRequestHandler):
         if content_type != JSON_CONTENT_TYPE:
             self._refuse(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "Send application/json.")
             return None
-        try:
-            length = int(self.headers.get("Content-Length") or "0")
-        except ValueError:
+        length = self._declared_length()
+        if length is None:
             self._refuse(HTTPStatus.BAD_REQUEST, "A valid Content-Length is required.")
             return None
         if length <= 0:
@@ -420,7 +465,10 @@ class ActionHandler(BaseHTTPRequestHandler):
             # The reader went away. There is nobody left to answer.
             self.close_connection = True
         except OSError as exc:
-            self._answer_failure(_filesystem_message(exc))
+            # A read that failed is not a write that failed. This said "the change could
+            # not be written to your participant directory" for a page it could not open,
+            # and sent the participant to look at a tree that was never involved.
+            self._answer_failure(_read_message(exc))
         except Exception as exc:  # the last line before no response at all
             self._answer_failure(_unexpected_message(exc))
 
@@ -450,6 +498,23 @@ class ActionHandler(BaseHTTPRequestHandler):
         self._serve_static(path)
 
     def do_POST(self) -> None:
+        """The write path's outer answer, matching `do_GET`.
+
+        `do_GET` has carried this since round 7; this one carried nothing. Its inner
+        catch-all answers by writing to the socket, and when the socket is what failed —
+        a participant who submits and then closes the tab — that write raised again, past
+        every handler, and put a traceback with absolute paths on the terminal.
+        """
+        try:
+            self._post()
+        except (BrokenPipeError, ConnectionResetError):
+            self.close_connection = True
+        except OSError as exc:
+            self._answer_failure(_filesystem_message(exc))
+        except Exception as exc:  # the last line before no response at all
+            self._answer_failure(_unexpected_message(exc))
+
+    def _post(self) -> None:
         if not self._host_is_acceptable():
             self._refuse(HTTPStatus.FORBIDDEN, "This service answers on the loopback name only.")
             return
@@ -617,9 +682,8 @@ class ActionHandler(BaseHTTPRequestHandler):
         if content_type != FORM_CONTENT_TYPE:
             self._refuse(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "Send a form submission.")
             return None
-        try:
-            length = int(self.headers.get("Content-Length") or "0")
-        except ValueError:
+        length = self._declared_length()
+        if length is None:
             self._refuse(HTTPStatus.BAD_REQUEST, "A valid Content-Length is required.")
             return None
         if not 0 < length <= MAX_BODY_BYTES:
@@ -645,8 +709,12 @@ class ActionHandler(BaseHTTPRequestHandler):
         query = parse_qs(urlparse(self.path).query)
         message = (query.get("problem") or [""])[0].strip()
         if message:
+            # `role="alert"` and not `role="status"`: this banner is the whole answer to an
+            # action the participant just took, and the spec reserves assertive announcement
+            # for urgent failure. Polite meant a screen-reader user could submit a reviewer
+            # decision, be refused, and hear nothing until they next moved the cursor.
             return (
-                '<div class="alert alert-error" role="status">'
+                '<div class="alert alert-error" role="alert">'
                 f"<p><strong>That did not happen.</strong> {escape(message[:400])}</p>"
                 "</div>"
             )
@@ -829,12 +897,16 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
     """Build once, then serve until interrupted."""
     from quest_app.config import AppConfig as Config
 
-    if host or port:
+    # `is not None`, not truthiness: `--port 0` asks the operating system for a free port,
+    # and zero is falsy. Both tests of it discarded the flag, so `serve --port 0` rebuilt no
+    # configuration and then bound the default port — and on a machine already serving there
+    # it refused with "choose another port with --port", which is what had just been typed.
+    if host is not None or port is not None:
         config = Config.for_repo(
             config.repo_root,
             participant_root=config.participant_root,
-            service_host=host or config.service_host,
-            service_port=port or config.service_port,
+            service_host=host if host is not None else config.service_host,
+            service_port=port if port is not None else config.service_port,
         )
 
     report = ProblemReport()
@@ -897,6 +969,11 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
 def _filesystem_message(error: OSError) -> str:
     """Both surfaces say the same thing; the words live in `quest_app.errors`."""
     return filesystem_message(error)
+
+
+def _read_message(error: OSError) -> str:
+    """A read failure names the generated site, not the participant directory."""
+    return read_failure_message(error)
 
 
 def describe_actions(current: Any) -> list[dict[str, str]]:

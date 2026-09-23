@@ -397,7 +397,10 @@ def build_quest(document: ParsedDocument, report: ProblemReport) -> Quest | None
             ContentProblem.build(
                 code="content.quest.duplicate_heading",
                 severity=Severity.ERROR,
-                public_message="A heading appears more than once, so one copy would be discarded.",
+                public_message=(
+                    "Two headings would be stored under the same name, so one copy would "
+                    "be discarded."
+                ),
                 source=document.relative,
                 entity_id=quest_id,
                 field_path="body",
@@ -855,20 +858,37 @@ def parse_sections(body: str) -> dict[str, tuple[str, str]]:
     """
     sections: dict[str, tuple[str, str]] = {}
     for index, section in enumerate(split_sections(body)):
-        key = SECTION_KEYS.get(section.title.casefold())
-        if key is None:
-            slug = re.sub(r"[^a-z0-9]+", "-", section.title.casefold()).strip("-")
-            key = f"custom-{slug or index}"
-        sections[key] = (section.title, section.markdown)
+        sections[section_key(section.title, index)] = (section.title, section.markdown)
     return sections
 
 
+def section_key(title: str, index: int) -> str:
+    """The key a heading is stored under. The guard below has to use this same function."""
+    key = SECTION_KEYS.get(title.casefold())
+    if key is None:
+        slug = re.sub(r"[^a-z0-9]+", "-", title.casefold()).strip("-")
+        key = f"custom-{slug or index}"
+    return key
+
+
 def duplicate_section_titles(body: str) -> list[str]:
-    """Headings that appear more than once, which would silently overwrite each other."""
-    seen: dict[str, int] = {}
-    for section in split_sections(body):
-        seen[section.title] = seen.get(section.title, 0) + 1
-    return sorted(title for title, count in seen.items() if count > 1)
+    """Headings that would be stored under the same key, overwriting each other.
+
+    It used to count exact title strings, which is not what `parse_sections` keys on: keys
+    are casefolded and slugged, so `## Mission` beside `## MISSION`, or `## Rollback plan`
+    beside `## Rollback (plan)`, passed the guard and then overwrote each other. The build
+    succeeded, said nothing, and the quest page showed the second block where the author's
+    first one should have been.
+    """
+    seen: dict[str, list[str]] = {}
+    for index, section in enumerate(split_sections(body)):
+        seen.setdefault(section_key(section.title, index), []).append(section.title)
+    collisions = []
+    for titles in seen.values():
+        if len(titles) > 1:
+            unique = sorted(set(titles))
+            collisions.append(unique[0] if len(unique) == 1 else " / ".join(unique))
+    return sorted(collisions)
 
 
 def parse_acceptance_criteria(markdown: str) -> tuple[list[AcceptanceCriterion], bool, bool]:

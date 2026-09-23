@@ -6,6 +6,7 @@ these is a real attack surface and not a formality.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import threading
 import time
@@ -454,6 +455,23 @@ def test_a_service_error_names_no_internal_detail(service: tuple[str, str]) -> N
     assert "Traceback" not in json.dumps(body)
 
 
+def deaf_default(config: AppConfig) -> AppConfig:
+    """The same configuration, with a default service port nothing can be answering on.
+
+    `is_service_running` always probes the configured port as well as the recorded ones,
+    which is the behaviour these tests rely on elsewhere. It also means a developer running
+    `make serve` in one terminal and `make check` in another failed three tests here, for a
+    service that was working exactly as intended. The port a test calls dead has to be dead.
+    """
+    import dataclasses
+    import socket
+
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        closed = int(probe.getsockname()[1])
+    return dataclasses.replace(config, service_port=closed)
+
+
 class TestFindingTheRunningService:
     """`quest-app action` rebuilds the site, and the pages it writes say whether state can
     change from them. It asks whether a service is running first — at the configured port,
@@ -504,6 +522,8 @@ class TestFindingTheRunningService:
     def test_a_stale_port_file_is_not_believed(self, config: AppConfig) -> None:
         """The file is a hint. The header is the authority."""
         from quest_app.serve import PORTS_DIRNAME, is_service_running, running_service_port
+
+        config = deaf_default(config)
 
         port_file = config.local_data_root / PORTS_DIRNAME / "recorded"
         port_file.parent.mkdir(parents=True, exist_ok=True)
@@ -592,6 +612,14 @@ class TestThePortFileLifecycle:
                 time.sleep(0.1)
             entries = sorted(p.name for p in directory.iterdir())
             assert entries, "a running service records the port it bound"
+            # `--port 0` asks for any free port. Zero is falsy, and `run_service` tested the
+            # flag for truth, so it bound the default instead — which this test could not
+            # see, because on a machine with 8765 free the default binds and everything
+            # looks right. It only showed up as three unrelated failures on a machine
+            # already running `make serve`.
+            assert str(config.service_port) not in entries, (
+                "--port 0 asked for any free port and the service took the default one"
+            )
         finally:
             service.send_signal(signal.SIGINT)
             service.wait(timeout=60)
@@ -702,9 +730,18 @@ class TestNothingLeavesARequestUnanswered:
                 "confirm": True,
             },
         )
-        assert status == 500
-        assert "RuntimeError" in body["error"]
-        assert str(config.repo_root) not in body["error"]
+        # Round 7 asserted a 500 here, because `_rebuild` caught `OSError` and let every
+        # other failure escape. Both are the same event: the transition is on disk and the
+        # site is stale. A 500 tells the caller their request failed when it did not, and
+        # their retry is then refused because the attempt really did move. So the contract
+        # is the one the other rebuild failure already had — a complete answer that says
+        # what was recorded and what was not.
+        assert status == 200, body
+        advisories = " ".join(body.get("advisories") or ())
+        assert "could not be rebuilt" in advisories, body
+        assert "RuntimeError" in advisories, body
+        assert str(config.repo_root) not in json.dumps(body)
+        assert body.get("state"), "the change the advisory describes must be reported too"
 
     def test_an_unexpected_failure_still_answers_the_browser(
         self, service: tuple[str, str], config: AppConfig, monkeypatch: pytest.MonkeyPatch
@@ -894,6 +931,7 @@ class TestStalePortEntries:
             return int(probe.getsockname()[1])
 
     def test_an_entry_for_a_port_nothing_answers_on_is_removed(self, config: AppConfig) -> None:
+        config = deaf_default(config)
         entry = self._entry(config, self._closed_port())
         assert is_service_running(config) is False
         assert not entry.exists(), "a refused connection means nobody is there"
@@ -1180,3 +1218,114 @@ class TestAPublishInFlightIsNotAMissingPage:
                 previous.rename(generated)
 
         assert status == 200, "a rebuild in flight was reported as a page that does not exist"
+
+
+class TestTheWritePathAnswersItsOwnFailures:
+    """`do_GET` has answered every failure since round 7. `do_POST` answered none.
+
+    Its inner catch-all answers by writing to the socket, so when the socket is what
+    failed — a participant who submits and then closes the tab — that write raised again,
+    past every handler, onto the terminal the participant is watching.
+    """
+
+    def test_an_unexpected_failure_in_the_write_path_is_answered(
+        self, service: tuple[str, str], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from quest_app.serve import ActionHandler
+
+        def explode(self: ActionHandler) -> None:
+            raise RuntimeError("something no one anticipated")
+
+        monkeypatch.setattr(ActionHandler, "_post", explode)
+        base, token = service
+        status, body = post(base, {"token": token, "action": "start-quest"})
+
+        assert status == 500
+        assert "Something unexpected went wrong" in str(body)
+        assert "RuntimeError" in str(body)
+
+    def test_a_reader_who_goes_away_mid_write_is_not_a_traceback(
+        self,
+        service: tuple[str, str],
+        monkeypatch: pytest.MonkeyPatch,
+        capfd: pytest.CaptureFixture[str],
+    ) -> None:
+        from quest_app.serve import ActionHandler
+
+        def gone(self: ActionHandler) -> None:
+            raise BrokenPipeError(32, "Broken pipe")
+
+        monkeypatch.setattr(ActionHandler, "_post", gone)
+        base, token = service
+        capfd.readouterr()
+        with contextlib.suppress(Exception):
+            post(base, {"token": token, "action": "start-quest"})
+        time.sleep(0.3)
+
+        captured = capfd.readouterr()
+        assert "Traceback" not in captured.err, captured.err
+
+
+def test_a_read_failure_is_not_reported_as_a_failed_write(
+    service: tuple[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A page the service cannot open has nothing to do with the participant directory.
+
+    The read path reported its failures with the write path's sentence, so a reader was
+    told their change could not be written — when nothing was being changed — and sent to
+    check a tree that was never involved.
+    """
+    import errno
+
+    from quest_app.serve import ActionHandler
+
+    def unreadable(self: ActionHandler) -> None:
+        raise OSError(errno.EACCES, "Permission denied")
+
+    monkeypatch.setattr(ActionHandler, "_get", unreadable)
+    base, _ = service
+    request = urllib.request.Request(f"{base}/passport/")  # noqa: S310
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:  # noqa: S310
+            body = response.read().decode()
+    except urllib.error.HTTPError as error:
+        body = error.read().decode()
+
+    assert "generated site" in body, body
+    assert "participant directory" not in body, body
+    assert "quest-app build" in body
+
+
+class TestTheProbeAsksAboutThisRepository:
+    """A service of this application is not the same thing as this repository's service.
+
+    The probe accepted any answer carrying the application header, so a second clone on one
+    machine — two participants, or a reviewer with the curriculum checked out twice — made
+    `quest-app build` publish pages saying the service was running, with live-looking
+    controls, for a repository that had no service at all.
+    """
+
+    def test_a_service_for_another_repository_is_not_this_one(
+        self, service: tuple[str, str], config: AppConfig, tmp_path: Path
+    ) -> None:
+        import dataclasses
+
+        from quest_app.serve import PORTS_DIRNAME, is_service_running
+
+        base, _ = service
+        port = int(base.rsplit(":", 1)[1])
+
+        mine = dataclasses.replace(config, service_port=port)
+        directory = mine.local_data_root / PORTS_DIRNAME
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / str(port)).write_text(f"{port}\n")
+        assert is_service_running(mine), "its own service answers for it"
+
+        elsewhere = dataclasses.replace(
+            mine,
+            repo_root=tmp_path / "another-clone",
+            participant_root=tmp_path / "another-clone" / "participant",
+        )
+        assert not is_service_running(elsewhere), (
+            "a different clone's service answered on the port and was believed"
+        )

@@ -517,3 +517,48 @@ def test_an_approval_without_the_confirmation_records_nothing(participant: Path)
     assert result.returncode != 0
     assert "confirm it" in result.stderr
     assert state_of(participant, REVIEWED) != "verified"
+
+
+def test_a_broken_template_after_the_change_is_an_advisory_not_a_traceback(
+    config,  # type: ignore[no-untyped-def]
+) -> None:
+    """The rebuild runs after the state is written, so its failure cannot undo anything.
+
+    `_rebuild` caught `OSError`. A broken template raises `TemplateSyntaxError`, which went
+    through the CLI as a traceback carrying absolute paths — after the transition had
+    landed. The participant read a crash and their retry was refused, because the attempt
+    had in fact moved.
+    """
+    template = config.repo_root / "templates" / "pages" / "evidence.html.j2"
+    template.write_text(template.read_text() + "\n{% for x in %}\n")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "quest_app.cli",
+            "action",
+            "start-quest",
+            "--quest",
+            "trello-read-board",
+            "--confirm",
+            "--repo-root",
+            str(config.repo_root),
+            "--participant-root",
+            str(config.participant_root),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert "Traceback" not in result.stderr, result.stderr
+    assert str(config.repo_root) not in result.stdout + result.stderr, "an absolute path leaked"
+    assert result.returncode == 0, result.stderr
+    assert "advisory:" in result.stdout, result.stdout
+    assert "could not be rebuilt" in result.stdout, result.stdout
+
+    progress = yaml.safe_load((config.participant_root / "progress.yaml").read_text())
+    started = [a for a in progress["attempts"] if a["quest_id"] == "trello-read-board"]
+    assert started, "the change the advisory says was recorded must actually be recorded"
