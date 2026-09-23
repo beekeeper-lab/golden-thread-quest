@@ -376,8 +376,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    from quest_app.content_loader import SchemaFileError
+
     args = build_parser().parse_args(argv)
-    result: int = args.func(args)
+    try:
+        result: int = args.func(args)
+    except SchemaFileError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_CONTENT_ERROR
     return result
 
 

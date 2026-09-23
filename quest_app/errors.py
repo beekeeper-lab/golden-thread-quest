@@ -71,8 +71,16 @@ class ContentProblem:
 
     @classmethod
     def build(cls, *, received: object = None, **kwargs: Any) -> Self:
-        """Preferred constructor: summarizes and redacts `received` before it is stored."""
-        return cls(received=summarize_received(received), **kwargs)
+        """Preferred constructor: summarizes and redacts `received` before it is stored.
+
+        An absolute path an author typed is replaced here rather than refused later: the
+        guard in `__post_init__` turned `path: /etc/passwd` in a quest into a traceback
+        instead of the schema error that says what to write instead.
+        """
+        summary = summarize_received(received)
+        if summary is not None and _looks_absolute(summary):
+            summary = re.sub(r"(?:/[^\s'\"]*|[A-Za-z]:\\[^\s'\"]*)", "<absolute path>", summary)
+        return cls(received=summary, **kwargs)
 
     @property
     def location(self) -> str:

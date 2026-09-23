@@ -21,6 +21,7 @@ from typing import Any, Protocol
 
 import yaml
 from jsonschema import Draft202012Validator, FormatChecker
+from jsonschema.exceptions import SchemaError
 
 from quest_app.config import SUPPORTED_SCHEMA_VERSION, AppConfig
 from quest_app.errors import ContentProblem, ProblemReport, Severity
@@ -248,6 +249,10 @@ def split_front_matter(
     )
 
 
+class SchemaFileError(RuntimeError):
+    """A published schema that is not valid JSON Schema. The application cannot validate."""
+
+
 class SchemaSet:
     """The published schemas, compiled once.
 
@@ -258,8 +263,17 @@ class SchemaSet:
     def __init__(self, schemas_root: Path) -> None:
         self._validators: dict[str, Draft202012Validator] = {}
         for path in sorted(schemas_root.glob("*.schema.json")):
-            schema = json.loads(path.read_text(encoding="utf-8"))
-            Draft202012Validator.check_schema(schema)
+            try:
+                schema = json.loads(path.read_text(encoding="utf-8"))
+                Draft202012Validator.check_schema(schema)
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError, SchemaError) as exc:
+                # A program file, not authored content, so it stops everything; but with a
+                # sentence naming the file rather than a traceback through the JSON decoder.
+                where = f" at line {exc.lineno}" if isinstance(exc, json.JSONDecodeError) else ""
+                raise SchemaFileError(
+                    f"schemas/{path.name} is not a valid JSON Schema{where}. It ships with the "
+                    "application: restore it with `git checkout -- schemas/`."
+                ) from None
             # Without a format checker, `format: date-time` is documentation rather than a
             # rule: `started_at: "banana"` produced no error, and every downstream
             # comparison then fell back to string ordering of garbage (Stage 2 audit H6).
@@ -676,15 +690,40 @@ def build_site(document: ParsedDocument) -> SiteConfig:
 # --------------------------------------------------------------------------------------
 
 
-def discover(root: Path, pattern: str) -> list[Path]:
+def discover(root: Path, pattern: str, config: AppConfig, report: ProblemReport) -> list[Path]:
     """Content files in a stable order.
 
     Sorted by POSIX relative path so the build does not depend on the filesystem's ordering,
     which differs between machines and is the classic source of non-reproducible output.
+
+    Only regular files inside the content tree are read. A symlink to `/dev/zero` was read
+    until the process ran out of memory, a FIFO hung `validate` indefinitely, and a symlink
+    to a file outside `content/` was loaded as curriculum without a word.
     """
     if not root.exists():
         return []
-    return sorted(root.rglob(pattern), key=lambda p: p.relative_to(root).as_posix())
+    inside = config.content_root.resolve()
+    found: list[Path] = []
+    for path in sorted(root.rglob(pattern), key=lambda p: p.relative_to(root).as_posix()):
+        resolved = path.resolve()
+        if resolved.is_file() and resolved.is_relative_to(inside):
+            found.append(path)
+            continue
+        if path.is_dir():
+            continue
+        report.add(
+            ContentProblem(
+                code="content.not_a_regular_file",
+                severity=Severity.ERROR,
+                public_message=(
+                    "This is not an ordinary file inside content/, so it was not read."
+                ),
+                source=config.relative(path),
+                expected="a regular file inside content/",
+                suggestion="Replace the link or special file with the file itself.",
+            )
+        )
+    return found
 
 
 def load_content(config: AppConfig, report: ProblemReport) -> ContentBundle | None:
@@ -738,25 +777,25 @@ def load_content(config: AppConfig, report: ProblemReport) -> ContentBundle | No
     # One loop per entity type rather than a table of heterogeneous dictionaries: the three
     # builders return three different models, and a shared loop can only express that by
     # discarding the types that make the rest of the pipeline safe.
-    for path in discover(config.content_root / "regions", "*.yaml"):
+    for path in discover(config.content_root / "regions", "*.yaml", config, report):
         if (document := _yaml_document(path, config, schemas, "region", report)) is not None:
             region = build_region(document)
             _register(regions, region.id, region, document.relative, "region", report)
             hashes.append(hash_mapping(document.data))
 
-    for path in discover(config.content_root / "badges", "*.yaml"):
+    for path in discover(config.content_root / "badges", "*.yaml", config, report):
         if (document := _yaml_document(path, config, schemas, "badge", report)) is not None:
             badge = build_badge(document)
             _register(badges, badge.id, badge, document.relative, "badge", report)
             hashes.append(hash_mapping(document.data))
 
-    for path in discover(config.content_root / "tracks", "*.yaml"):
+    for path in discover(config.content_root / "tracks", "*.yaml", config, report):
         if (document := _yaml_document(path, config, schemas, "track", report)) is not None:
             track = build_track(document)
             _register(tracks, track.id, track, document.relative, "track", report)
             hashes.append(hash_mapping(document.data))
 
-    for path in discover(config.content_root / "quests", "*.md"):
+    for path in discover(config.content_root / "quests", "*.md", config, report):
         parsed = split_front_matter(path, config, report)
         if parsed is None:
             continue

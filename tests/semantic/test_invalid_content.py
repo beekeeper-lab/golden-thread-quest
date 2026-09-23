@@ -319,3 +319,52 @@ class TestValidatorReferences:
         (content_repo / "validators" / "registry.yaml").write_bytes(raw)
         assert load(config, report) is None
         assert any(p.source == "validators/registry.yaml" for p in report.errors), codes(report)
+
+
+class TestContentThatUsedToEndInATraceback:
+    def test_an_absolute_proof_path_is_a_schema_error_with_the_path_withheld(
+        self, content_repo: Path, config: AppConfig, report: ProblemReport
+    ) -> None:
+        path = content_repo / OTHER_QUEST
+        path.write_text(
+            path.read_text().replace(
+                "path: participant/skills/jira-read-assigned/SKILL.md", "path: /etc/passwd", 1
+            )
+        )
+        assert load(config, report) is None
+        assert report.errors
+        assert all("/etc/passwd" not in str(p.received) for p in report.problems)
+
+    @pytest.mark.parametrize("kind", ["fifo", "device", "outside"])
+    def test_a_file_that_is_not_ordinary_content_is_reported_not_read(
+        self,
+        content_repo: Path,
+        config: AppConfig,
+        report: ProblemReport,
+        tmp_path: Path,
+        kind: str,
+    ) -> None:
+        import os
+
+        target = content_repo / "content" / "quests" / "base-camp" / "extra.md"
+        if kind == "fifo":
+            os.mkfifo(target)
+        elif kind == "device":
+            target.symlink_to("/dev/zero")
+        else:
+            outside = tmp_path / "elsewhere.md"
+            outside.write_text((content_repo / QUEST).read_text())
+            target.symlink_to(outside)
+        assert load(config, report) is None
+        assert problem(report, "content.not_a_regular_file")
+
+    def test_a_broken_schema_file_is_one_sentence_not_a_traceback(
+        self, content_repo: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        from quest_app.cli import main
+
+        (content_repo / "schemas" / "quest.schema.json").write_text("{bad")
+        assert main(["validate", "--repo-root", str(content_repo)]) != 0
+        err = capsys.readouterr().err
+        assert "schemas/quest.schema.json is not a valid JSON Schema" in err
+        assert "Traceback" not in err
