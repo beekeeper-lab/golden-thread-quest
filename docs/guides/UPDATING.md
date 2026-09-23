@@ -72,6 +72,20 @@ something you want.
 ## Migrations
 
 If the shape of `participant/progress.yaml` changes, `make update-check` says what a
-migration would do before anything runs. Migrations validate before and after, refuse to drop
-an attempt or a field, and carry unknown fields forward rather than deleting data written by
-a newer version you might go back to.
+migration would do before anything runs. After the merge, with your work committed, apply it:
+
+```bash
+make migrate
+```
+
+Until you do, the application refuses to load the older file and says so, rather than reading
+it in a shape it no longer describes. A file written by a newer version of the application is
+refused the same way, so an older checkout cannot rewrite it in the old shape.
+
+Migrations validate before and after, refuse to drop an attempt or a field, and carry unknown
+fields forward rather than deleting data written by a newer version you might go back to. If
+your state does not load after migrating, the original file is put back.
+
+If `make update-check` says a merge is in progress, finish it or undo it before anything else:
+resolve each conflict and `git commit`, or `git merge --abort`. Committing everything at that
+point would commit the conflict markers.

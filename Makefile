@@ -4,7 +4,7 @@ PYTHON ?= python3
 VENV := .venv
 BIN := $(VENV)/bin
 
-.PHONY: help setup setup-ui format format-check lint typecheck secret-scan yaml-safe test test-ui build serve validate-content update-check clean check
+.PHONY: help setup setup-ui format format-check lint typecheck secret-scan yaml-safe test test-ui build serve validate-content update-check migrate clean check
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-16s %s\n", $$1, $$2}'
@@ -54,6 +54,9 @@ serve: ## Build, then serve on 127.0.0.1 with the local action service
 
 update-check: ## Check whether it is safe to take upstream curriculum changes
 	$(BIN)/python -m quest_app.cli update
+
+migrate: ## Move participant/progress.yaml to the current schema, validating before and after
+	$(BIN)/python -m quest_app.cli update --migrate
 
 package: ## Export a participant-facing archive of tracked files only
 	@rm -rf dist

@@ -10,7 +10,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from quest_app.config import AppConfig
+from quest_app.config import SUPPORTED_SCHEMA_VERSION, AppConfig
 from quest_app.migrations import (
     MIGRATIONS,
     Migration,
@@ -249,3 +249,96 @@ def _init_repo(root: Path, *, commit: bool = False) -> None:
             capture_output=True,
             env=_git_env(),
         )
+
+
+class TestSchemaVersionAtLoad:
+    """`config.SUPPORTED_SCHEMA_VERSION` said a newer file is refused. It was loaded, and the
+    next action rewrote it in the old shape. No command applied a migration at all."""
+
+    @staticmethod
+    def _declare(config: AppConfig, version: int) -> None:
+        import yaml
+
+        path = config.participant_root / "progress.yaml"
+        data = yaml.safe_load(path.read_text())
+        data["schema_version"] = version
+        path.write_text(yaml.safe_dump(data, sort_keys=False))
+
+    def test_a_file_from_a_newer_application_is_refused(self, config: AppConfig) -> None:
+        from quest_app.errors import ProblemReport
+        from quest_app.pipeline import load_world
+
+        self._declare(config, 7)
+        report = ProblemReport()
+        assert load_world(config, report) is None
+        assert "progress.newer_schema" in {p.code for p in report.errors}
+
+    def test_an_older_file_is_refused_until_migrated_and_then_loads(
+        self, config: AppConfig
+    ) -> None:
+        import yaml
+        from quest_app.errors import ProblemReport
+        from quest_app.pipeline import load_world
+        from quest_app.update import apply_migrations
+
+        self._declare(config, 0)
+        report = ProblemReport()
+        assert load_world(config, report) is None
+        assert "progress.needs_migration" in {p.code for p in report.errors}
+
+        applied, problems = apply_migrations(config)
+        assert problems == []
+        assert applied and applied[0].startswith("0 → 1")
+        assert (
+            yaml.safe_load((config.participant_root / "progress.yaml").read_text())[
+                "schema_version"
+            ]
+            == SUPPORTED_SCHEMA_VERSION
+        )
+        assert load_world(config, ProblemReport()) is not None
+
+    def test_a_migration_that_leaves_state_unloadable_is_rolled_back(
+        self, config: AppConfig
+    ) -> None:
+        from quest_app.update import apply_migrations
+
+        self._declare(config, 0)
+        path = config.participant_root / "progress.yaml"
+        before = path.read_text()
+        # Valid against the schema, but the attempt now points at a quest that does not exist.
+        broken = before.replace("quest_id: jira-read-assigned-stories", "quest_id: no-such-quest")
+        path.write_text(broken)
+        applied, problems = apply_migrations(config)
+        assert applied == []
+        assert "restored" in problems[0]
+        assert path.read_text() == broken
+
+
+def test_a_merge_in_progress_is_named_and_committing_everything_is_not_advised(
+    config: AppConfig,
+) -> None:
+    root = config.repo_root
+    _init_repo(root, commit=True)
+    git = ["git", "-C", str(root)]
+    target = root / "content" / "README-conflict.txt"
+    target.write_text("base\n")
+    subprocess.run([*git, "add", "-A"], check=True, capture_output=True)
+    subprocess.run([*git, "commit", "-qm", "base"], check=True, capture_output=True, env=_git_env())
+    subprocess.run([*git, "switch", "-qc", "upstream-side"], check=True, capture_output=True)
+    target.write_text("theirs\n")
+    subprocess.run(
+        [*git, "commit", "-qam", "theirs"], check=True, capture_output=True, env=_git_env()
+    )
+    subprocess.run([*git, "switch", "-q", "main"], check=True, capture_output=True)
+    target.write_text("ours\n")
+    subprocess.run(
+        [*git, "commit", "-qam", "ours"], check=True, capture_output=True, env=_git_env()
+    )
+    merged = subprocess.run([*git, "merge", "upstream-side"], capture_output=True, env=_git_env())
+    assert merged.returncode != 0, "the fixture needs a real conflict"
+
+    result = preflight(config)
+    merge = next(f for f in result.findings if f.id == "merge-in-progress")
+    assert merge.blocks
+    assert "git merge --abort" in (merge.remediation or "")
+    assert not any("git add -A" in (f.remediation or "") for f in result.findings)

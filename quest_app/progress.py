@@ -184,6 +184,10 @@ def load_participant_state(
     data = read_yaml(progress_path, config, report)
     if data is None:
         return None
+    # The version first: the schema describes the current shape, so an older or newer file
+    # would otherwise be reported field by field instead of as the one problem it is.
+    if not _schema_version_supported(data, relative, report):
+        return None
     if not schemas.validate("progress", data, relative, report):
         return None
 
@@ -287,6 +291,44 @@ def load_participant_state(
             for k, v in validations.items()
         },
     )
+
+
+def _schema_version_supported(data: dict[str, Any], relative: str, report: ProblemReport) -> bool:
+    """Refuse a progress file this build cannot read faithfully.
+
+    A newer file was loaded and then rewritten as the old shape by the next action, which is
+    the downgrade `config.SUPPORTED_SCHEMA_VERSION` says is refused. An older one is read only
+    after `make migrate` has moved it forward with validation on both sides.
+    """
+    from quest_app.config import SUPPORTED_SCHEMA_VERSION
+
+    try:
+        declared = int(data.get("schema_version", 0))
+    except (TypeError, ValueError):
+        return True  # Not a number: the schema check that follows says so precisely.
+    if declared == SUPPORTED_SCHEMA_VERSION:
+        return True
+    newer = declared > SUPPORTED_SCHEMA_VERSION
+    report.add(
+        ContentProblem.build(
+            code="progress.newer_schema" if newer else "progress.needs_migration",
+            severity=Severity.ERROR,
+            public_message=(
+                f"Your progress file is schema version {declared}; this version of the "
+                f"application reads version {SUPPORTED_SCHEMA_VERSION}."
+            ),
+            source=relative,
+            field_path="schema_version",
+            expected=str(SUPPORTED_SCHEMA_VERSION),
+            received=declared,
+            suggestion=(
+                "Update the application rather than downgrading your work."
+                if newer
+                else "Run `make migrate`, which validates before and after."
+            ),
+        )
+    )
+    return False
 
 
 def _build_progress(data: dict[str, Any], relative: str) -> ParticipantProgress:

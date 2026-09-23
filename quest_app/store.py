@@ -27,7 +27,7 @@ from typing import Any
 
 import yaml
 
-from quest_app.config import AppConfig
+from quest_app.config import SUPPORTED_SCHEMA_VERSION, AppConfig
 from quest_app.models import AttemptState
 from quest_app.state_machine import TransitionError, check
 from quest_app.yaml_loader import strict_safe_load
@@ -177,7 +177,7 @@ class ProgressStore:
             return
         self.write(
             {
-                "schema_version": 1,
+                "schema_version": SUPPORTED_SCHEMA_VERSION,
                 "participant": {"id": participant_id, "display_name": display_name},
                 "selected_track": track_id,
                 "attempts": [],

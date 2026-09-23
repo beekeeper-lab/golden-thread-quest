@@ -165,16 +165,6 @@ def load_registry(config: AppConfig, report: ProblemReport) -> ValidatorRegistry
     data = read_yaml(path, config, report)
     if data is None:
         return None
-    if not isinstance(data, dict):
-        report.add(
-            ContentProblem(
-                code="validator.registry_invalid",
-                severity=Severity.ERROR,
-                public_message="The validator registry is not a mapping of fields.",
-                source=relative,
-            )
-        )
-        return None
 
     schemas = SchemaSet(config.schemas_root)
     if "validator-registry" not in schemas.names():
