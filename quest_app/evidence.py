@@ -138,13 +138,19 @@ def scan_evidence(config: AppConfig, evidence_path: str) -> list[SecretFinding]:
     for path in sorted(root.rglob("*")):
         if not path.is_file() or path.suffix.lower() in SKIP_SUFFIXES or path.is_symlink():
             continue
+        relative = f"{evidence_path}/{path.relative_to(root).as_posix()}"
         try:
-            text = path.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
+            raw = path.read_bytes()
+        except OSError:
+            # A file the scan cannot read is a file it cannot vouch for, so it blocks.
+            findings.append(SecretFinding(relative, 1, "could not be read to check it"))
             continue
+        # Decoded with replacement, not skipped: one byte that is not UTF-8 used to hide an
+        # entire file, credentials included, from the scan.
+        text = raw.decode("utf-8", errors="replace")
         findings.extend(
             SecretFinding(
-                path=f"{evidence_path}/{path.relative_to(root).as_posix()}",
+                path=relative,
                 line=match.line,
                 description=match.description,
             )
@@ -176,8 +182,14 @@ def evidence_hash(config: AppConfig, evidence_path: str) -> str | None:
 
 
 def new_run_id(validator_id: str) -> str:
-    """A run identifier that sorts by time and cannot collide."""
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+    """A run identifier that sorts by time and cannot collide.
+
+    Microseconds, because results are ordered by `(completed_at, run_id)` and `completed_at`
+    has one-second resolution: with a seconds-only stamp, two runs in the same second were
+    ordered by the random suffix, and an earlier pass could stand as the latest result over
+    the fail that followed it.
+    """
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")
     return f"{validator_id}-{stamp}-{secrets.token_hex(3)}"
 
 

@@ -1,8 +1,8 @@
 """The process a validator actually runs in.
 
-Invoked as `python -m quest_app.validator_child` with a JSON specification on stdin, it
-imports the registered entrypoint, runs it against a `Workspace`, and writes the result as
-JSON on stdout.
+Started by `validator_runner.CHILD_BOOTSTRAP`, which runs it as `__main__` with a JSON
+specification on stdin. It imports the registered entrypoint, runs it against a
+`Workspace`, and writes the result as JSON on stdout.
 
 A separate process invoked by `subprocess` rather than `multiprocessing`, for two reasons
 that both turned out to matter:
@@ -69,6 +69,15 @@ def main() -> int:
     # The process group is created by the parent's `start_new_session=True`. Calling
     # `os.setsid()` here as well raises PermissionError, because this process is already the
     # session leader — which is exactly how the first version of this failed.
+    # The result travels on the original stdout; everything the validator itself writes there,
+    # by `print()` or from a process it starts, is moved to stderr. A stray print used to be
+    # spliced into the JSON and turned a finished run into "could not be read".
+    import os
+
+    result_channel = os.fdopen(os.dup(1), "w", encoding="utf-8")
+    sys.stdout.flush()
+    os.dup2(2, 1)
+
     output = ValidatorOutput()
     try:
         _import_entrypoint(specification["entrypoint"])(workspace, output)
@@ -84,7 +93,9 @@ def main() -> int:
         "notes": output.notes,
         "environment_failure": output.environment_failure,
     }
-    sys.stdout.write(json.dumps(payload))
+    sys.stdout.flush()
+    result_channel.write(json.dumps(payload))
+    result_channel.close()
     return 0
 
 

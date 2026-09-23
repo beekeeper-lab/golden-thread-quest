@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -137,6 +138,26 @@ class TestSecretScanning:
         target = config.resolve_participant_path(EVIDENCE) / "notes.md"
         target.write_text(f"token={LEAKED}  # secret-scan: allow\n")
         assert scan_evidence(config, EVIDENCE), "evidence scanning must ignore the pragma"
+
+    def test_a_byte_that_is_not_utf8_does_not_hide_the_file(self, config: AppConfig) -> None:
+        """One Latin-1 byte made the whole file undecodable, and the scan skipped it."""
+        target = config.resolve_participant_path(EVIDENCE) / "logs" / "run.log"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(b"Caf\xe9 opened\n" + f"token={LEAKED}\n".encode())
+        findings = scan_evidence(config, EVIDENCE)
+        assert [finding.path.rsplit("/", 1)[-1] for finding in findings] == ["run.log"]
+
+    def test_a_file_that_cannot_be_read_blocks_rather_than_passing(self, config: AppConfig) -> None:
+        if os.geteuid() == 0:
+            pytest.skip("root can read a file whatever its mode")
+        target = config.resolve_participant_path(EVIDENCE) / "unreadable.md"
+        target.write_text("anything\n")
+        target.chmod(0)
+        try:
+            findings = scan_evidence(config, EVIDENCE)
+        finally:
+            target.chmod(0o600)
+        assert [finding.description for finding in findings] == ["could not be read to check it"]
 
     def test_a_traversing_evidence_path_scans_nothing(self, config: AppConfig) -> None:
         assert scan_evidence(config, "participant/evidence/../../etc") == []
