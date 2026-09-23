@@ -192,6 +192,25 @@ def test_claimed_and_verified_are_never_presented_as_one_total(built: AppConfig)
     assert not re.search(r"<dt>\s*(Total|XP)\s*</dt>", passport), "one total for two facts"
 
 
+@pytest.mark.slow
+def test_an_automated_pass_never_wears_the_reviewer_badge(built: AppConfig) -> None:
+    """A machine's check and a person's approval may not carry the same badge.
+
+    The proof row said "Validated" and wore `state-verified`, the gold tick this
+    application uses nowhere else but for a reviewer's approval. The word differed; the
+    colour and the tick did not, and the badge is what a reader scans.
+    """
+    badges: list[tuple[str, str, str]] = []
+    for page in sorted(built.generated_root.rglob("*.html")):
+        for state, label in re.findall(r'class="state state-(\w+)">([^<]*)<', page.read_text()):
+            badges.append((page.name, state, label.strip()))
+
+    validated = [b for b in badges if b[2] == "Validated"]
+    assert validated, "no page shows a locally validated proof, so this test proves nothing"
+    assert all(b[1] == "locally_validated" for b in validated), validated
+    assert all(b[2] != "Validated" for b in badges if b[1] == "verified"), badges
+
+
 class TestAddingContentNeedsNoCodeChange:
     """The product's central claim, asserted rather than trusted.
 

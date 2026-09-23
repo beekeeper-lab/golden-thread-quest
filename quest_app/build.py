@@ -676,6 +676,26 @@ def _results_for(entry: QuestProgress, world: LoadedWorld) -> tuple[Any, ...]:
     return world.participant.results_for(entry.attempt)
 
 
+def _reviewer_findings(entry: QuestProgress) -> dict[str, Any] | None:
+    """What a reviewer said when they did not approve, shaped for the participant's pages.
+
+    The findings were stored faithfully and rendered only on the reviewer's own page, so a
+    participant was told "a reviewer asked for corrections" and never what the corrections
+    were. The one place the reason existed was `review.yaml` in their own repository, which
+    is not a user interface. Shown here for every decision that is not an approval, and not
+    after a later approval supersedes it, because the attempt then names the approval.
+    """
+    review = entry.review
+    if review is None or review.is_approval or not review.findings:
+        return None
+    return {
+        "decision": review.decision.replace("_", " "),
+        "reviewer_display_name": review.reviewer_display_name,
+        "reviewed_at": review.reviewed_at,
+        "findings": review.findings,
+    }
+
+
 def _quest_detail_context(
     entry: QuestProgress,
     bundle: Any,
@@ -786,6 +806,7 @@ def _quest_detail_context(
             else None
         ),
         "attempt_version": entry.attempt.quest_version if entry.attempt else None,
+        "reviewer_findings": _reviewer_findings(entry),
     }
 
 
@@ -870,6 +891,7 @@ def _evidence_context(
         if entry.attempt
         else (),
         "git_summary": git_summary_for(world, evidence_path),
+        "reviewer_findings": _reviewer_findings(entry),
     }
 
 

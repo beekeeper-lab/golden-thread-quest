@@ -180,6 +180,7 @@ class ProofView:
     validator: str | None
     status: str
     status_label: str
+    state_class: str
     detail: str | None = None
 
 
@@ -396,6 +397,21 @@ PROOF_STATUS_LABELS = {
     "stale": "Changed since review",
 }
 
+# The badge a proof row wears. `validated` and `reviewer_confirmed` are different claims —
+# a machine checked it against a person confirmed it — and the template used to give both
+# the `verified` badge, which is the gold tick this application uses nowhere else but for a
+# reviewer's approval. The label differed; the colour and the tick did not, and the badge is
+# what a reader scans. UI-SPECIFICATION.md says not to shorten `locally_validated` to
+# "verified", and a badge says it in a way words do not.
+PROOF_STATE_CLASSES = {
+    "missing": "locked",
+    "detected": "available",
+    "warning": "needs_changes",
+    "validated": "locally_validated",
+    "reviewer_confirmed": "verified",
+    "stale": "needs_changes",
+}
+
 OUTCOME_LABELS = {
     "pass": "Passed",
     "fail": "Failed",
@@ -522,6 +538,7 @@ def build_proof_views(
             validator=item.validator,
             status=status,
             status_label=PROOF_STATUS_LABELS.get(status, status),
+            state_class=PROOF_STATE_CLASSES.get(status, "locked"),
         )
 
     return (

@@ -6,6 +6,7 @@
 {% extends "layouts/base.html.j2" %}
 {% from "components/state_badge.html.j2" import state_badge %}
 {% from "components/proof_list.html.j2" import proof_list %}
+{% from "components/reviewer_findings.html.j2" import reviewer_findings_panel %}
 {% from "components/action.html.j2" import action_button %}
 {% from "components/quest_card.html.j2" import quest_card %}
 
@@ -29,6 +30,8 @@
   <p>{{ version_notice }}</p>
 </div>
 {% endif %}
+
+{{ reviewer_findings_panel(reviewer_findings) }}
 
 {% if risk_notice %}
 <div class="alert alert-warning">

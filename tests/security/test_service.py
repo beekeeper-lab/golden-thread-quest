@@ -454,6 +454,23 @@ def test_a_service_error_names_no_internal_detail(service: tuple[str, str]) -> N
     assert "Traceback" not in json.dumps(body)
 
 
+def deaf_default(config: AppConfig) -> AppConfig:
+    """The same configuration, with a default service port nothing can be answering on.
+
+    `is_service_running` always probes the configured port as well as the recorded ones,
+    which is the behaviour these tests rely on elsewhere. It also means a developer running
+    `make serve` in one terminal and `make check` in another failed three tests here, for a
+    service that was working exactly as intended. The port a test calls dead has to be dead.
+    """
+    import dataclasses
+    import socket
+
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        closed = int(probe.getsockname()[1])
+    return dataclasses.replace(config, service_port=closed)
+
+
 class TestFindingTheRunningService:
     """`quest-app action` rebuilds the site, and the pages it writes say whether state can
     change from them. It asks whether a service is running first — at the configured port,
@@ -504,6 +521,8 @@ class TestFindingTheRunningService:
     def test_a_stale_port_file_is_not_believed(self, config: AppConfig) -> None:
         """The file is a hint. The header is the authority."""
         from quest_app.serve import PORTS_DIRNAME, is_service_running, running_service_port
+
+        config = deaf_default(config)
 
         port_file = config.local_data_root / PORTS_DIRNAME / "recorded"
         port_file.parent.mkdir(parents=True, exist_ok=True)
@@ -592,6 +611,14 @@ class TestThePortFileLifecycle:
                 time.sleep(0.1)
             entries = sorted(p.name for p in directory.iterdir())
             assert entries, "a running service records the port it bound"
+            # `--port 0` asks for any free port. Zero is falsy, and `run_service` tested the
+            # flag for truth, so it bound the default instead — which this test could not
+            # see, because on a machine with 8765 free the default binds and everything
+            # looks right. It only showed up as three unrelated failures on a machine
+            # already running `make serve`.
+            assert str(config.service_port) not in entries, (
+                "--port 0 asked for any free port and the service took the default one"
+            )
         finally:
             service.send_signal(signal.SIGINT)
             service.wait(timeout=60)
@@ -894,6 +921,7 @@ class TestStalePortEntries:
             return int(probe.getsockname()[1])
 
     def test_an_entry_for_a_port_nothing_answers_on_is_removed(self, config: AppConfig) -> None:
+        config = deaf_default(config)
         entry = self._entry(config, self._closed_port())
         assert is_service_running(config) is False
         assert not entry.exists(), "a refused connection means nobody is there"

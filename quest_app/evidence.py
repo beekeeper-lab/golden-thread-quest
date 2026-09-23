@@ -90,12 +90,38 @@ def _detect_one(
     # A file may also live inside the attempt's own evidence package.
     if evidence_path:
         try:
-            inside = config.resolve_participant_path(evidence_path) / Path(item.path).name
+            package = config.resolve_participant_path(evidence_path)
         except ValueError:
             return "missing"
-        if inside.is_file():
-            return "detected"
+        for candidate in _inside_the_package(item.path, evidence_path, package):
+            if candidate.is_file():
+                return "detected"
     return "missing"
+
+
+def _inside_the_package(item_path: str, evidence_path: str, package: Path) -> list[Path]:
+    """Where an authored proof path can land inside the attempt the participant really has.
+
+    An authored path names an attempt directory the author had to invent — every quest
+    writes `attempt-001` — while `_next_attempt_id` produces `<prefix>-attempt-001`, so the
+    literal path never exists. The fallback then looked only for the bare filename directly
+    under the package, and every such path in the curriculum points into `logs/` or
+    `screenshots/`: the very subdirectories `_create_evidence_package` creates and the
+    quests tell participants to use. A participant who followed the instructions saw
+    "Not detected" for a file that was sitting where they were told to put it.
+
+    So the authored path is re-read against the real package: the part after the author's
+    attempt directory is kept whole, which preserves the subdirectory the quest asked for
+    rather than accepting the file anywhere.
+    """
+    candidates = [package / Path(item_path).name]
+    quest_area = str(Path(evidence_path).parent).replace("\\", "/") + "/"
+    normalized = item_path.replace("\\", "/")
+    if normalized.startswith(quest_area):
+        remainder = Path(normalized[len(quest_area) :]).parts
+        if len(remainder) > 1:
+            candidates.insert(0, package.joinpath(*remainder[1:]))
+    return candidates
 
 
 def scan_evidence(config: AppConfig, evidence_path: str) -> list[SecretFinding]:

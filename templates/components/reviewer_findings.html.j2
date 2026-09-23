@@ -1,0 +1,26 @@
+{# What a reviewer said when they did not approve. The participant's copy of it: the
+   reviewer's own page shows the same findings, and this is the only place the person who
+   has to act on them can read them. #}
+{% macro reviewer_findings_panel(review) -%}
+{% if review %}
+<section class="alert alert-warning" role="status" aria-labelledby="reviewer-findings-heading">
+  <h2 id="reviewer-findings-heading">What the reviewer asked for</h2>
+  <p class="authority">
+    {{ review.reviewer_display_name }} recorded “{{ review.decision }}” on
+    <time datetime="{{ review.reviewed_at }}" data-format>{{ review.reviewed_at }}</time>.
+  </p>
+  <ul class="checklist">
+    {% for finding in review.findings %}
+    <li>
+      <div class="card-header">
+        <strong>{{ finding.summary }}</strong>
+        <span class="state state-needs_changes">{{ finding.severity }}</span>
+      </div>
+      {% if finding.evidence %}<p>{{ finding.evidence }}</p>{% endif %}
+      {% if finding.required_change %}<p><strong>Required change.</strong> {{ finding.required_change }}</p>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{%- endmacro %}

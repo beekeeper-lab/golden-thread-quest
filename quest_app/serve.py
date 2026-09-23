@@ -645,8 +645,12 @@ class ActionHandler(BaseHTTPRequestHandler):
         query = parse_qs(urlparse(self.path).query)
         message = (query.get("problem") or [""])[0].strip()
         if message:
+            # `role="alert"` and not `role="status"`: this banner is the whole answer to an
+            # action the participant just took, and the spec reserves assertive announcement
+            # for urgent failure. Polite meant a screen-reader user could submit a reviewer
+            # decision, be refused, and hear nothing until they next moved the cursor.
             return (
-                '<div class="alert alert-error" role="status">'
+                '<div class="alert alert-error" role="alert">'
                 f"<p><strong>That did not happen.</strong> {escape(message[:400])}</p>"
                 "</div>"
             )
@@ -829,12 +833,16 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
     """Build once, then serve until interrupted."""
     from quest_app.config import AppConfig as Config
 
-    if host or port:
+    # `is not None`, not truthiness: `--port 0` asks the operating system for a free port,
+    # and zero is falsy. Both tests of it discarded the flag, so `serve --port 0` rebuilt no
+    # configuration and then bound the default port — and on a machine already serving there
+    # it refused with "choose another port with --port", which is what had just been typed.
+    if host is not None or port is not None:
         config = Config.for_repo(
             config.repo_root,
             participant_root=config.participant_root,
-            service_host=host or config.service_host,
-            service_port=port or config.service_port,
+            service_host=host if host is not None else config.service_host,
+            service_port=port if port is not None else config.service_port,
         )
 
     report = ProblemReport()

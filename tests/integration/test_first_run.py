@@ -254,6 +254,10 @@ def test_a_refused_action_says_so_on_the_page(
     landed = response.read().decode()
 
     assert "That did not happen" in landed, "the refusal was not shown to the participant"
+    assert '<div class="alert alert-error" role="alert">' in landed, (
+        "the spec reserves assertive announcement for urgent failure, and a refused action "
+        "is one: announced politely, a screen-reader user hears nothing until they move"
+    )
     assert "secret-like" in landed
     assert "found nothing secret-like" not in landed, (
         "the page still reassured the participant while a token sat in their evidence"

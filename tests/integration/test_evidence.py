@@ -62,6 +62,45 @@ class TestProofDetection:
                 if item.type in ("demonstration", "review"):
                     assert states[item.id] == "missing"
 
+    def test_evidence_saved_where_the_quest_says_to_save_it_is_detected(
+        self, world, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """The quest names `attempt-001/logs/…`; the real package is `<prefix>-attempt-001`.
+
+        Every file-proof path in the curriculum points into `logs/` or `screenshots/`, the
+        subdirectories the evidence package is created with, and the authored attempt
+        directory is one no attempt ever has. Detection looked for the bare filename at the
+        top of the package, so following the instructions produced "Not detected".
+        """
+        quest = world.content.quests["base-camp-repository-safety"]
+        attempt = world.participant.progress.attempt_for(quest.id)
+        item = next(i for i in quest.proof if i.type == "command-record")
+        assert "/attempt-001/logs/" in item.path, "this test is about that shape of path"
+
+        package = config.resolve_participant_path(attempt.evidence_path)
+        saved = package / "logs" / Path(item.path).name
+        saved.parent.mkdir(parents=True, exist_ok=True)
+        saved.write_text("second run created no duplicate\n")
+
+        states = detect_proof(quest, config, attempt.evidence_path, ())
+        assert states[item.id] == "detected"
+
+    def test_the_package_fallback_keeps_the_subdirectory_the_quest_asked_for(
+        self, world, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Accepting the file anywhere under the package would be a weaker rule, not a fix."""
+        quest = world.content.quests["base-camp-repository-safety"]
+        attempt = world.participant.progress.attempt_for(quest.id)
+        item = next(i for i in quest.proof if i.type == "command-record")
+
+        package = config.resolve_participant_path(attempt.evidence_path)
+        wrong = package / "screenshots" / Path(item.path).name
+        wrong.parent.mkdir(parents=True, exist_ok=True)
+        wrong.write_text("saved in the wrong place\n")
+
+        states = detect_proof(quest, config, attempt.evidence_path, ())
+        assert states[item.id] == "missing"
+
     def test_a_traversing_proof_path_is_never_detected(self, world, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
         import dataclasses
 
