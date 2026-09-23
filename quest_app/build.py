@@ -42,7 +42,7 @@ from quest_app.progress_calc import (
     totals,
 )
 from quest_app.recommend import recommend
-from quest_app.state_machine import CONFIRMATIONS, allowed_actions
+from quest_app.state_machine import CONFIRMATIONS, DECISION_CONFIRMATIONS, allowed_actions
 from quest_app.view_models import (
     ActionView,
     ActivityEvent,
@@ -981,6 +981,8 @@ def _review_context(
         "decision_route": routes.action("record-review", entry.quest.id),
         # One definition of what the reviewer confirms, shared with the service (ADR-033).
         "confirm": CONFIRMATIONS["record-review"],
+        # Each decision's own wording, which the script swaps in when one is chosen.
+        "decision_confirmations": DECISION_CONFIRMATIONS,
     }
 
 

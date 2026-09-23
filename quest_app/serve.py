@@ -44,7 +44,7 @@ from quest_app.content_loader import SchemaSet
 from quest_app.errors import ProblemReport, filesystem_message, read_failure_message
 from quest_app.git_status import summary_for
 from quest_app.pipeline import load_world
-from quest_app.state_machine import allowed_actions
+from quest_app.state_machine import allowed_actions, confirmation_for
 from quest_app.store import StoreError
 from quest_app.view_models import online_service_view
 
@@ -626,7 +626,9 @@ class ActionHandler(BaseHTTPRequestHandler):
             # this service's. The action layer refuses it too (ADR-033); this branch exists
             # so the refusal reaches the participant as a message on the page they came
             # from rather than as a JSON error body.
-            self._redirect_back(f"{CONFIRMATIONS[action]} — confirm it, then try again.")
+            self._redirect_back(
+                f"{confirmation_for(action, payload)} — confirm it, then try again."
+            )
             return
 
         with self.state.lock:

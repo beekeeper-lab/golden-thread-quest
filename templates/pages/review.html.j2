@@ -180,9 +180,9 @@
       <label for="decision">Decision</label>
       <select id="decision" name="decision" required>
         <option value="">Choose</option>
-        <option value="approved">Approve</option>
-        <option value="needs_changes">Needs changes</option>
-        <option value="rejected">Reject</option>
+        <option value="approved" data-confirm="{{ decision_confirmations['approved'] }}?">Approve</option>
+        <option value="needs_changes" data-confirm="{{ decision_confirmations['needs_changes'] }}?">Needs changes</option>
+        <option value="rejected" data-confirm="{{ decision_confirmations['rejected'] }}?">Reject</option>
       </select>
     </div>
     <div class="field">
@@ -237,7 +237,7 @@
     <div class="field">
       <label for="confirm-decision">
         <input type="checkbox" id="confirm-decision" name="confirm" value="yes" required>
-        {{ confirm }}
+        <span data-confirm-label>{{ confirm }}</span>
       </label>
       <p class="hint">This is recorded in the repository and the participant will see it.</p>
     </div>
