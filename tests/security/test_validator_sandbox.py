@@ -678,9 +678,9 @@ class TestTheJiraFixturesTestWhatTheyDescribe:
     def _sync(self, config: AppConfig, document: dict) -> None:  # type: ignore[type-arg]
         import json
 
-        directory = config.participant_root / "context" / "jira"
+        directory = config.participant_root / "context" / "jira" / "assigned"
         directory.mkdir(parents=True, exist_ok=True)
-        (directory / "assigned.json").write_text(json.dumps(document))
+        (directory / "stories.json").write_text(json.dumps(document))
 
     def _run(self, registry, config: AppConfig, fixture_set: str):  # type: ignore[no-untyped-def]
         return run_validator(
@@ -702,6 +702,33 @@ class TestTheJiraFixturesTestWhatTheyDescribe:
         }
         record.update(extra)
         return record
+
+    def test_the_file_it_checks_is_the_one_the_quest_requires(self, config: AppConfig) -> None:
+        """The validator took the first JSON file it found, which the quest never mentioned,
+        so a participant who followed the quest could only ever get `inconclusive`."""
+        from quest_app.pipeline import load_world
+        from validators.jira_read_assigned import STORIES_PATH
+
+        world = load_world(config, ProblemReport())
+        assert world is not None
+        quest = world.content.quests["jira-read-assigned-stories"]
+        assert STORIES_PATH in {item.path for item in quest.required_proof}
+        assert STORIES_PATH in (config.repo_root / quest.source).read_text()
+
+    @pytest.mark.slow
+    def test_another_json_file_beside_it_is_not_checked_instead(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        import json
+
+        self._sync(
+            config,
+            {"stories": [self._story(key) for key in ("GTQ-101", "GTQ-102", "GTQ-103")]},
+        )
+        summary = config.participant_root / "context" / "jira" / "assigned" / "a-summary.json"
+        summary.write_text(json.dumps({"reconciled": 3}))
+        result = self._run(registry, config, "happy-path")
+        assert result.outcome == "pass", [(c.id, c.outcome, c.evidence) for c in result.checks]
 
     @pytest.mark.slow
     def test_dropping_a_story_that_disappeared_fails(self, registry, config: AppConfig) -> None:  # type: ignore[no-untyped-def]

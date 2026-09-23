@@ -558,9 +558,13 @@ def test_an_attempt_started_before_a_version_bump_can_still_be_approved(
     load the participant's state at all.
     """
     quest_file = content_repo / "content" / "quests" / "jira-jungle" / "read-assigned-stories.md"
+    import re
+
     text = quest_file.read_text()
-    assert "\nversion: 1\n" in text
-    quest_file.write_text(text.replace("\nversion: 1\n", "\nversion: 2\n", 1))
+    started_on = int(re.search(r"\nversion: (\d+)\n", text).group(1))  # type: ignore[union-attr]
+    quest_file.write_text(
+        text.replace(f"\nversion: {started_on}\n", f"\nversion: {started_on + 1}\n", 1)
+    )
 
     report = ProblemReport()
     world = load_world(config, report)
@@ -569,10 +573,10 @@ def test_an_attempt_started_before_a_version_bump_can_still_be_approved(
     store = ProgressStore(config)
     quest = world.content.quests[QUEST]
     attempt = world.participant.progress.attempt_for(QUEST)
-    assert (quest.version, attempt.quest_version) == (2, 1)
+    assert (quest.version, attempt.quest_version) == (started_on + 1, started_on)
 
     record = submit((world, schemas, store, quest, attempt), config)
-    assert record.quest_version == 1
+    assert record.quest_version == started_on
     world, attempt = reload_attempt(config)
     decision = record_decision(
         config,
@@ -586,7 +590,7 @@ def test_an_attempt_started_before_a_version_bump_can_still_be_approved(
         findings=[],
         schemas=schemas,
     )
-    assert decision.quest_version == 1
+    assert decision.quest_version == started_on
 
     _, after = reload_attempt(config)
     assert after.recorded_state is AttemptState.VERIFIED

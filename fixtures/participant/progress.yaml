@@ -22,8 +22,8 @@ attempts:
     review_id: base-camp-review-001
   - attempt_id: jira-attempt-001
     quest_id: jira-read-assigned-stories
-    quest_version: 1
-    content_hash: sha256:0cf65be4184ec46a2e0aa05e834aa60785c6bcadba7d40514df4408782bc7f71
+    quest_version: 2
+    content_hash: sha256:54c890c039425b6be67cd927a63bd2866886d516f03e000abb0381c128b41981
     state: evidence_ready
     started_at: "2026-09-12T13:30:00Z"
     updated_at: "2026-09-16T14:05:00Z"

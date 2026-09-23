@@ -8,6 +8,7 @@ I created a project-local skill that resolves the authenticated Jira user, retri
 
 - Skill: `participant/skills/jira-read-assigned/SKILL.md`
 - Sanitized story index: `participant/context/jira/assigned/index.md`
+- Normalized stories: `participant/context/jira/assigned/stories.json`
 - Reconciliation report: `participant/context/jira/assigned/reconciliation.md`
 - Latest validation: `validation/jira-read-assigned-run-001.json`
 
