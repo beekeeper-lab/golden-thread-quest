@@ -100,7 +100,9 @@ def test_a_submission_through_a_link_out_of_the_package_is_refused(config: AppCo
     quest = world.content.quests[QUEST]
     attempt = world.participant.progress.attempt_for(QUEST)
     problems = blocking(readiness_problems(quest, attempt, world.participant, config))
-    assert any("PROOF.md" in problem for problem in problems), problems
+    assert any("PROOF.md is a link that leads outside" in problem for problem in problems), problems
+    # Not reported as a secret, which would send the participant hunting for one.
+    assert not any("secret-like" in problem for problem in problems), problems
 
 
 def test_the_loader_reports_a_link_out_of_the_package(config: AppConfig, tmp_path: Path) -> None:

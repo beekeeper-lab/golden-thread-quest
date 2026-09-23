@@ -29,6 +29,7 @@ import yaml
 
 from quest_app.config import AppConfig
 from quest_app.evidence import (
+    OUTSIDE_LINK_DESCRIPTION,
     changed_proof_files,
     evidence_hash,
     proof_file_digests,
@@ -111,6 +112,14 @@ def readiness_problems(
         )
 
     findings = scan_evidence(config, attempt.evidence_path)
+    links = [f for f in findings if f.description == OUTSIDE_LINK_DESCRIPTION]
+    findings = [f for f in findings if f.description != OUTSIDE_LINK_DESCRIPTION]
+    if links:
+        # Not a secret, and saying "secret-like" would send the participant hunting for one.
+        problems.append(
+            f"{links[0].path} is a link that leads outside the evidence package, so it cannot "
+            "be checked or shown. Replace it with a copy of the file."
+        )
     if findings:
         problems.append(
             f"Something secret-like is in the evidence ({findings[0].path}:{findings[0].line})."
