@@ -857,7 +857,16 @@ class TestTheRequestClaimsThisHost:
 
 
 class TestTheConfirmationIsNotOnlyInTheBrowser:
-    """C21 is rendered as a required checkbox. `required` is the browser's rule."""
+    """C21 is rendered as a required checkbox. `required` is the browser's rule.
+
+    `serve.py` also refuses an unconfirmed request before it ever reaches the shared action
+    layer, as a friendlier redirect instead of a raised error (see the comment at its
+    `CONFIRMATIONS` check). That means the first two tests below, on their own, would still
+    pass with the real gate in `quest_app.actions.ActionRunner.perform` deleted — they never
+    reach it. The third test calls that layer directly, the same way `quest-app action` does,
+    to prove ADR-033's claim that the guard is shared rather than reimplemented once for the
+    browser and left out of every other caller.
+    """
 
     def test_an_action_without_its_confirmation_is_refused(
         self, service: tuple[str, str], config: AppConfig
@@ -880,6 +889,25 @@ class TestTheConfirmationIsNotOnlyInTheBrowser:
             {"token": token, "confirm": "yes"},
         )
         assert "ba-ingest-transcript" in (config.participant_root / "progress.yaml").read_text()
+
+    def test_the_shared_action_layer_refuses_it_independently_of_serve_py(
+        self, config: AppConfig
+    ) -> None:
+        """No HTTP server in this test — `ActionRunner.perform` is called exactly as the
+        CLI calls it, so `serve.py`'s early redirect cannot be the thing making this pass.
+        """
+        from quest_app.actions import CONFIRMATIONS, ActionRunner
+        from quest_app.content_loader import SchemaSet
+
+        def load() -> Any:
+            world = load_world(config, ProblemReport())
+            assert world is not None
+            return world
+
+        runner = ActionRunner(config, SchemaSet(config.schemas_root), load)
+        with pytest.raises(ValueError, match=re.escape(CONFIRMATIONS["start-quest"])):
+            runner.perform("start-quest", {"quest_id": "ba-ingest-transcript"})
+        assert "ba-ingest-transcript" not in (config.participant_root / "progress.yaml").read_text()
 
 
 class TestAHalfWrittenFindingIsNotDropped:
