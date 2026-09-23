@@ -93,6 +93,7 @@ than the status code it replaced.
 | `make validate-content` | pass — 8 quests, 8 regions, 4 badges, 1 track, 0 warnings |
 | `make verify-package` | pass — the exported archive installs, validates and builds on its own |
 | Clean clone from `origin` at this branch's head | pass — `git clone --branch chore/round-09-audit`, then `make setup`, `make check` (641 passed, 3 skipped), `validate`, `build` and `make verify-package` |
+| CI at this branch's head | pass — `check` on 3.10, 3.12 and 3.13, `browser`, and `clean-export`, all green (run 35856709329) |
 | `make check` beside a running `make serve` | pass — the condition that failed three tests at the start of this round |
 | Each fix reverted one at a time | every code fix is caught by a test. The badge mapping, the evidence path resolution, the reviewer findings panel, the assertive refusal, the porcelain parser, the broad rebuild catch, the excerpt bound, the section key, the POST wrapper, the read message, the repository signature, the participant-path re-check and the `--port 0` flag were each reverted and the test that covers them failed |
 
