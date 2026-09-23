@@ -58,11 +58,34 @@ A validator with more to say than that should summarize it in its checks.
   `participant/evidence` (round 7, `Workspace.attempt_files`).
 - Resolved symbolic links cannot escape roots.
 - Environment is constructed from an allowlist.
-- Time and output limits are mandatory.
-- Interrupted validators produce an interrupted or inconclusive result.
-- Process trees are terminated on timeout.
+- Time and output limits are mandatory. Output is read as it arrives and a run that
+  writes more than 1 MiB on either stream is stopped, so the limit applies before the
+  output is held in memory, not after.
+- Interrupted validators produce an interrupted or inconclusive result. A run whose checks
+  were all `skipped` is `inconclusive`: nothing was checked.
+- The process group is terminated when the validator exits and on timeout, so nothing it
+  started outlives the run.
+- The child's import path starts at the repository, never at its working directory, so a
+  file in `participant/` cannot stand in for a registered validator or a standard module.
 - Results are written atomically.
 - Output is redacted before persistence or display.
+
+## What these controls are not
+
+Validators are program-owned code, reviewed like the rest of the application. The controls
+above bound what a validator does through the `Workspace` it is handed and the process it
+runs in. They are not an operating-system sandbox:
+
+- `network: denied` is a declaration, recorded in every result. Nothing blocks a socket.
+  Every shipped validator is written to make no connection, and review is what holds that.
+- Read and write roots are enforced by `Workspace`. A validator that calls `open()`
+  directly is not stopped.
+- A process that leaves the validator's process group by starting a session of its own is
+  not killed with it.
+
+Enforcing any of these would need an isolation layer (namespaces, a container, seccomp)
+that release one does not have. A validator taken from anywhere but this repository is
+outside what this contract covers.
 
 ## Result semantics
 
