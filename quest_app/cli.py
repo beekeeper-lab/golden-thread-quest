@@ -139,6 +139,9 @@ def update_command(args: argparse.Namespace) -> int:
     if args.migrate:
         from quest_app.update import apply_migrations
 
+        if not (config.participant_root / "progress.yaml").exists():
+            print("No participant progress file exists yet, so there is nothing to migrate.")
+            return EXIT_OK
         applied, problems = apply_migrations(config)
         for problem in problems:
             print(problem, file=sys.stderr)
