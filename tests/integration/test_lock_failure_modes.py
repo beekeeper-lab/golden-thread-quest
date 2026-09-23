@@ -29,6 +29,7 @@ from typing import Any
 
 import pytest
 import yaml
+from quest_app.actions import CONFIRMATIONS
 from quest_app.config import AppConfig
 from quest_app.store import ProgressStore
 
@@ -38,6 +39,10 @@ LOCKED_QUEST = "scrum-standup-digest"
 
 
 def action(participant: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    # An action that carries a confirmation is refused without one, on every surface
+    # (ADR-033). A test about something else says it means it, exactly as the browser form
+    # does; the gate itself is tested in tests/integration/test_confirmations.py.
+    confirm = ["--confirm"] if args and args[0] in CONFIRMATIONS and "--confirm" not in args else []
     return subprocess.run(
         [
             sys.executable,
@@ -45,6 +50,7 @@ def action(participant: Path, *args: str) -> subprocess.CompletedProcess[str]:
             "quest_app.cli",
             "action",
             *args,
+            *confirm,
             "--participant-root",
             str(participant),
         ],
@@ -163,7 +169,7 @@ def _start_quest(barrier: Any, participant: str) -> int:
     runner = ActionRunner(config, SchemaSet(config.schemas_root), load)
     barrier.wait(timeout=60)
     try:
-        runner.perform("start-quest", {"quest_id": QUEST})
+        runner.perform("start-quest", {"quest_id": QUEST, "confirm": True})
     except Exception:
         return 1
     return 0
@@ -320,6 +326,7 @@ def test_a_rebuild_that_fails_does_not_deny_a_change_that_happened(
                 "quest_app.cli",
                 "action",
                 "start-quest",
+                "--confirm",
                 "--quest",
                 QUEST,
                 "--repo-root",

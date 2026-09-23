@@ -128,7 +128,9 @@ def test_the_very_first_action_through_the_service_succeeds(
     base, token, config = first_run_service
     request = urllib.request.Request(  # noqa: S310 - fixed loopback URL
         f"{base}/api/action",
-        data=json.dumps({"action": "start-quest", "quest_id": QUEST, "token": token}).encode(),
+        data=json.dumps(
+            {"action": "start-quest", "quest_id": QUEST, "token": token, "confirm": True}
+        ).encode(),
         method="POST",
         headers={"Content-Type": "application/json"},
     )
@@ -222,7 +224,9 @@ def test_a_refused_action_says_so_on_the_page(
     urllib.request.urlopen(  # noqa: S310
         urllib.request.Request(  # noqa: S310 - a fixed loopback URL built in this test
             f"{base}/api/action",
-            data=json.dumps({"action": "start-quest", "quest_id": QUEST, "token": token}).encode(),
+            data=json.dumps(
+                {"action": "start-quest", "quest_id": QUEST, "token": token, "confirm": True}
+            ).encode(),
             method="POST",
             headers={"Content-Type": "application/json"},
         ),
@@ -274,7 +278,9 @@ def test_an_unwritable_participant_directory_returns_a_real_response(
     try:
         request = urllib.request.Request(  # noqa: S310
             f"{base}/api/action",
-            data=json.dumps({"action": "start-quest", "quest_id": QUEST, "token": token}).encode(),
+            data=json.dumps(
+                {"action": "start-quest", "quest_id": QUEST, "token": token, "confirm": True}
+            ).encode(),
             method="POST",
             headers={"Content-Type": "application/json"},
         )

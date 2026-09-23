@@ -28,6 +28,7 @@ import secrets
 import socket
 import sys
 import threading
+import time
 from dataclasses import dataclass
 from functools import partial
 from http import HTTPStatus
@@ -37,7 +38,7 @@ from typing import Any
 from urllib.parse import unquote, urlparse
 
 from quest_app.actions import CONFIRMATIONS, MUTATING_ACTIONS, ActionRunner
-from quest_app.build import build_site
+from quest_app.build import OUTPUT_SUFFIX_NEW, OUTPUT_SUFFIX_OLD, build_site
 from quest_app.config import APPLICATION_VERSION, AppConfig
 from quest_app.content_loader import SchemaSet
 from quest_app.errors import ProblemReport, filesystem_message
@@ -116,6 +117,28 @@ def _unexpected_message(error: Exception) -> str:
         f"Something unexpected went wrong ({type(error).__name__}). Any change you made was "
         "recorded; run `quest-app build` to rebuild the site."
     )
+
+
+def _hostname_of(authority: str) -> str:
+    """The name out of an authority, with an IPv6 literal's brackets removed.
+
+    A browser writes an IPv6 address as `[::1]:8765`. Splitting that on the last colon
+    leaves `[::1]`, which is not an address any check recognises, so a service bound to
+    `::1` — a host this application accepts, advertises and prints — refused every request
+    a browser made to it.
+    """
+    value = authority.strip()
+    if value.startswith("["):
+        closing = value.find("]")
+        return (value[1:closing] if closing != -1 else value.lstrip("[")).lower()
+    if value.count(":") == 1:
+        return value.rsplit(":", 1)[0].lower()
+    return value.lower()
+
+
+def _service_url(host: str, port: int) -> str:
+    """The address to print. An IPv6 literal needs its brackets to be a usable URL."""
+    return f"http://[{host}]:{port}/" if ":" in host else f"http://{host}:{port}/"
 
 
 def _is_loopback(address: str) -> bool:
@@ -199,9 +222,10 @@ def is_service_running(config: AppConfig) -> bool:
     import urllib.request
 
     for port, entry in _port_entries(config):
-        url = f"http://{config.service_host}:{port}/"
+        url = _service_url(config.service_host, port)
         try:
-            with urllib.request.urlopen(url, timeout=0.5) as response:
+            # A loopback URL this function built, from a port this application wrote.
+            with urllib.request.urlopen(url, timeout=0.5) as response:  # noqa: S310
                 if response.headers.get(SERVICE_HEADER):
                     return True
         except urllib.error.HTTPError as error:
@@ -301,8 +325,7 @@ class ActionHandler(BaseHTTPRequestHandler):
         if not host:
             # HTTP/1.0 clients and raw sockets send none. The token still gates every change.
             return True
-        name = host.rsplit(":", 1)[0] if host.count(":") == 1 else host
-        name = name.strip("[]").lower()
+        name = _hostname_of(host)
         if name in {"localhost", "127.0.0.1", "::1", self.state.config.service_host.lower()}:
             return True
         return _is_loopback(name)
@@ -314,9 +337,15 @@ class ActionHandler(BaseHTTPRequestHandler):
         header chosen by the sender. Round 6 closed that on refusals by ending the
         connection; a GET carrying a declared body walked straight through it.
         """
-        declared = self.headers.get("Content-Length")
+        declared_all = self.headers.get_all("Content-Length") or []
         if self.headers.get("Transfer-Encoding"):
             return False
+        if len(declared_all) > 1:
+            # `get` returns the first. Sending `0` and then a real length made the request
+            # look bodyless while the bytes stayed in the socket, to be read as the next
+            # request on a kept-alive connection with every header chosen by the sender.
+            return False
+        declared = declared_all[0] if declared_all else None
         if declared is None:
             return True
         try:
@@ -332,17 +361,19 @@ class ActionHandler(BaseHTTPRequestHandler):
         neither, and the token is what actually authorizes the request.
         """
         port = self.state.bound_port or self.state.config.service_port
-        expected = {
-            f"http://{self.state.config.service_host}:{port}",
-            f"http://127.0.0.1:{port}",
-            f"http://localhost:{port}",
-        }
+        names = {self.state.config.service_host.lower(), "127.0.0.1", "localhost"}
         for header in ("Origin", "Referer"):
             value = self.headers.get(header)
             if not value:
                 continue
             parsed = urlparse(value)
-            if f"{parsed.scheme}://{parsed.netloc}" not in expected:
+            try:
+                # `hostname` and `port` unbracket an IPv6 literal; comparing the raw netloc
+                # refused every same-origin request when the service is bound to `::1`.
+                same = (parsed.hostname or "").lower() in names and parsed.port == port
+            except ValueError:
+                return False
+            if parsed.scheme != "http" or not same:
                 return False
         return True
 
@@ -376,6 +407,31 @@ class ActionHandler(BaseHTTPRequestHandler):
     # ---------------------------------------------------------------- routes
 
     def do_GET(self) -> None:
+        """Every failure on the read path is answered, or the connection is simply closed.
+
+        Both write handlers have carried a catch-all since round 7, and this one carried
+        nothing: an unreadable page or a reader clicking away mid-response left the
+        connection closed with no status and no body, and put a traceback carrying absolute
+        paths on the terminal the participant is watching.
+        """
+        try:
+            self._get()
+        except (BrokenPipeError, ConnectionResetError):
+            # The reader went away. There is nobody left to answer.
+            self.close_connection = True
+        except OSError as exc:
+            self._answer_failure(_filesystem_message(exc))
+        except Exception as exc:  # the last line before no response at all
+            self._answer_failure(_unexpected_message(exc))
+
+    def _answer_failure(self, message: str) -> None:
+        """Answer a failure that escaped the read path, if the socket still allows it."""
+        try:
+            self._refuse(HTTPStatus.INTERNAL_SERVER_ERROR, message)
+        except OSError:
+            self.close_connection = True
+
+    def _get(self) -> None:
         if not self._host_is_acceptable():
             self._refuse(HTTPStatus.FORBIDDEN, "This service answers on the loopback name only.")
             return
@@ -476,9 +532,12 @@ class ActionHandler(BaseHTTPRequestHandler):
             self._redirect_back(str(exc))
             return
 
-        if action in CONFIRMATIONS and not fields.get("confirm", [""])[0]:
+        payload["confirm"] = fields.get("confirm", [""])[0]
+        if action in CONFIRMATIONS and not payload["confirm"]:
             # C21 is rendered as a required checkbox, which is the browser's rule and not
-            # this service's. A rule the page enforces is enforced here too (ADR-033).
+            # this service's. The action layer refuses it too (ADR-033); this branch exists
+            # so the refusal reaches the participant as a message on the page they came
+            # from rather than as a JSON error body.
             self._redirect_back(f"{CONFIRMATIONS[action]} — confirm it, then try again.")
             return
 
@@ -609,6 +668,12 @@ class ActionHandler(BaseHTTPRequestHandler):
         target = self.headers.get("Referer") or "/"
         parsed = urlparse(target)
         location = parsed.path or "/"
+        if not location.startswith("/") or location.startswith("//"):
+            # A path beginning `//` is a protocol-relative URL: `Location: //elsewhere/x`
+            # sends the browser off this machine, carrying the refusal text — which quotes
+            # values the participant supplied — with it. The origin check does not catch it,
+            # because it compares the Referer's origin and never its path.
+            location = "/"
         if message:
             # Rebuild before redirecting, so the page the participant lands on describes the
             # state as it actually is. Without this a refused evidence-ready still showed the
@@ -668,6 +733,27 @@ class ActionHandler(BaseHTTPRequestHandler):
 
     # ---------------------------------------------------------------- static
 
+    def _publishing(self) -> bool:
+        """Whether a build is between its two renames right now."""
+        root = self.state.config.generated_root
+        return root.with_suffix(OUTPUT_SUFFIX_OLD).exists() or (
+            root.with_suffix(OUTPUT_SUFFIX_NEW).exists()
+        )
+
+    def _await_publish(self, candidate: Path, *, attempts: int = 20) -> Path:
+        """Wait out a publish in flight, then look again. Bounded, and never for a real 404."""
+        for _ in range(attempts):
+            time.sleep(0.01)
+            if candidate.is_dir():
+                # The directory arrives with the swap, so the index inside it is only
+                # findable once it is back.
+                candidate = candidate / "index.html"
+            if candidate.is_file():
+                return candidate
+            if not self._publishing():
+                break
+        return candidate
+
     def _serve_static(self, path: str) -> None:
         """Serve the generated site, and nothing outside it.
 
@@ -686,6 +772,11 @@ class ActionHandler(BaseHTTPRequestHandler):
             return
         if candidate.is_dir():
             candidate = candidate / "index.html"
+        if not candidate.is_file() and self._publishing():
+            # The publish is two renames, and between them the site is briefly not there.
+            # The service rebuilds after every action while it is still serving, so a
+            # participant who clicked at that instant was told their page does not exist.
+            candidate = self._await_publish(candidate)
         if not candidate.is_file():
             self._refuse(HTTPStatus.NOT_FOUND, "No such page. Run a build if you expected one.")
             return
@@ -705,6 +796,19 @@ class ActionHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
 
+class _IPv6Server(ThreadingHTTPServer):
+    """The same server on an IPv6 socket.
+
+    `ThreadingHTTPServer` binds AF_INET. `--host ::1` is accepted by `assert_loopback`,
+    offered in the CLI help and named in `.env.example`, and every attempt to use it failed
+    at the bind with "Address family for hostname not supported".
+    """
+
+    import socket as _socket
+
+    address_family = _socket.AF_INET6
+
+
 def create_server(config: AppConfig) -> tuple[ThreadingHTTPServer, ServiceState]:
     """Bind the service, or refuse. The token is minted here and never persisted."""
     assert_loopback(config.service_host)
@@ -715,7 +819,8 @@ def create_server(config: AppConfig) -> tuple[ThreadingHTTPServer, ServiceState]
         lock=threading.Lock(),
     )
     handler = partial(ActionHandler, state=state)
-    server = ThreadingHTTPServer((config.service_host, config.service_port), handler)
+    server_class = _IPv6Server if ":" in config.service_host else ThreadingHTTPServer
+    server = server_class((config.service_host, config.service_port), handler)
     state.bound_port = int(server.server_address[1])
     return server, state
 
@@ -767,7 +872,7 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
         # degraded probe, never worth refusing to serve.
         port_file = None  # type: ignore[assignment]
 
-    address = f"http://{config.service_host}:{bound}/"
+    address = _service_url(config.service_host, bound)
     print(f"Golden Thread Quest is at {address}", file=sys.stderr)
     # Deliberately not printed. The pages this run serves already carry it, substituted as
     # they are served, so nobody needs to read it — and printing it put it into any log a

@@ -695,7 +695,12 @@ class TestNothingLeavesARequestUnanswered:
         self._break_the_rebuild(config, monkeypatch)
         status, body = post(
             base,
-            {"action": "start-quest", "quest_id": "ba-ingest-transcript", "token": token},
+            {
+                "action": "start-quest",
+                "quest_id": "ba-ingest-transcript",
+                "token": token,
+                "confirm": True,
+            },
         )
         assert status == 500
         assert "RuntimeError" in body["error"]
@@ -931,6 +936,7 @@ class TestARebuildThatFailsAfterTheRecordIsWritten:
                 "action": "submit-for-review",
                 "quest_id": "jira-read-assigned-stories",
                 "token": token,
+                "confirm": True,
             },
         )
         assert status == 200, body
@@ -952,3 +958,225 @@ class TestARebuildThatFailsAfterTheRecordIsWritten:
         )
         assert status == 200, body
         assert any("rebuilt" in advisory for advisory in body["advisories"]), body["advisories"]
+
+
+class TestEveryCallerMeetsTheConfirmation:
+    """C21 belongs to the action layer, so every caller meets it (ADR-033).
+
+    Until round 8 it was checked in the form handler and nowhere else: the JSON endpoint
+    and `quest-app action` performed the same actions unconfirmed, and `record-review` —
+    the one action that produces verified completion and verified XP — was not in the list
+    at all, so even the form route confirmed it only in a `window.confirm` dialog.
+    """
+
+    def test_a_json_action_without_the_confirmation_is_refused(
+        self, service: tuple[str, str], config: AppConfig
+    ) -> None:
+        base, token = service
+        status, body = post(
+            base,
+            {"action": "start-quest", "quest_id": "ba-ingest-transcript", "token": token},
+        )
+        assert status == 400, body
+        assert "confirm it" in body["error"]
+        progress = config.participant_root / "progress.yaml"
+        assert "ba-ingest-transcript" not in progress.read_text()
+
+    def test_an_approval_posted_without_the_checkbox_records_nothing(
+        self, service: tuple[str, str], config: AppConfig
+    ) -> None:
+        """The no-JavaScript route, where `window.confirm` never runs."""
+        base, token = service
+        before = (config.participant_root / "progress.yaml").read_text()
+        location = TestTheAdvisoryReachesTheBrowser._redirect_of(
+            base,
+            "/api/action/record-review/jira-read-assigned-stories",
+            {
+                "token": token,
+                "decision": "approved",
+                "reviewer_name": "A Reviewer",
+                "verification_statement": "I read every numbered criterion against the evidence.",
+            },
+        )
+        assert "problem=" in location, location
+        assert "confirm it" in urllib.parse.unquote(location)
+        assert (config.participant_root / "progress.yaml").read_text() == before
+
+
+def _raw_exchange(base: str, request_lines: str) -> list[str]:
+    """Send bytes exactly as written and return the status lines that came back.
+
+    `urllib` normalises what this needs to send malformed on purpose: two lengths, a
+    smuggled second request, a Referer the library would rewrite.
+    """
+    import socket
+
+    host, port = base.removeprefix("http://").rsplit(":", 1)
+    with socket.create_connection((host.strip("[]"), int(port)), timeout=10) as sock:
+        sock.sendall(request_lines.encode())
+        received = b""
+        sock.settimeout(2)
+        try:
+            while True:
+                chunk = sock.recv(4096)
+                if not chunk:
+                    break
+                received += chunk
+        except TimeoutError:
+            pass
+    return [line for line in received.decode("latin-1").splitlines() if line.startswith("HTTP/")]
+
+
+class TestTheReadPathAnswersItsOwnFailures:
+    """Both write handlers catch everything; this one caught nothing until round 8."""
+
+    def test_an_unreadable_page_is_answered_rather_than_dropped(
+        self, service: tuple[str, str], config: AppConfig
+    ) -> None:
+        import os
+
+        if os.geteuid() == 0:
+            pytest.skip("root reads a mode-000 file, so there is no failure to answer")
+        page = config.generated_root / "map" / "index.html"
+        mode = page.stat().st_mode
+        page.chmod(0o000)
+        try:
+            statuses = _raw_exchange(
+                service[0],
+                f"GET /map/ HTTP/1.1\r\nHost: 127.0.0.1:{service[0].rsplit(':', 1)[1]}\r\n"
+                "Connection: close\r\n\r\n",
+            )
+        finally:
+            page.chmod(mode)
+
+        assert statuses, "the connection closed with no status and no body"
+        assert statuses[0].startswith("HTTP/1.1 500")
+
+
+class TestASecondContentLengthIsNotAWayIn:
+    """`get` returns the first header; the body hides behind the second."""
+
+    def test_two_lengths_on_a_get_are_refused(self, service: tuple[str, str]) -> None:
+        base = service[0]
+        port = base.rsplit(":", 1)[1]
+        smuggled = "GET /api/health HTTP/1.1\r\nHost: 127.0.0.1:" + port + "\r\n\r\n"
+        statuses = _raw_exchange(
+            base,
+            f"GET / HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\n"
+            "Content-Length: 0\r\n"
+            f"Content-Length: {len(smuggled)}\r\n\r\n{smuggled}",
+        )
+
+        assert statuses, "no answer at all"
+        assert statuses[0].startswith("HTTP/1.1 400"), statuses
+        assert len(statuses) == 1, f"the smuggled request was answered too: {statuses}"
+
+
+class TestTheRefusalStaysOnThisMachine:
+    """`Location` is built from the Referer's path, which the origin check never reads."""
+
+    def test_a_protocol_relative_referer_cannot_redirect_off_site(
+        self, service: tuple[str, str]
+    ) -> None:
+        base, token = service
+        port = base.rsplit(":", 1)[1]
+        body = urllib.parse.urlencode({"token": token, "confirm": "yes"})
+        request = (
+            f"POST /api/action/mark-evidence-ready/does-not-exist/ HTTP/1.1\r\n"
+            f"Host: 127.0.0.1:{port}\r\n"
+            f"Referer: http://127.0.0.1:{port}//evil.example/x\r\n"
+            "Content-Type: application/x-www-form-urlencoded\r\n"
+            f"Content-Length: {len(body)}\r\nConnection: close\r\n\r\n{body}"
+        )
+        import socket
+
+        with socket.create_connection(("127.0.0.1", int(port)), timeout=10) as sock:
+            sock.sendall(request.encode())
+            received = b""
+            while b"\r\n\r\n" not in received:
+                chunk = sock.recv(4096)
+                if not chunk:
+                    break
+                received += chunk
+        headers = received.decode("latin-1")
+        location = next(
+            line.split(":", 1)[1].strip()
+            for line in headers.splitlines()
+            if line.lower().startswith("location:")
+        )
+
+        assert not location.startswith("//"), location
+        assert location.startswith("/"), location
+        assert "evil.example" not in location
+
+
+class TestAnIPv6LoopbackBindIsUsable:
+    """`::1` is accepted at bind time, advertised in `--host`, and printed on start."""
+
+    @pytest.fixture
+    def ipv6_service(self, config: AppConfig) -> Iterator[tuple[str, str]]:
+        import socket
+
+        if not socket.has_ipv6:
+            pytest.skip("no IPv6 on this machine")
+        bound = AppConfig.for_repo(
+            config.repo_root,
+            participant_root=config.participant_root,
+            service_port=0,
+            service_host="::1",
+        )
+        report = ProblemReport()
+        world = load_world(bound, report)
+        assert world is not None, report.to_text()
+        build_site(world)
+        try:
+            server, state = create_server(bound)
+        except OSError:  # pragma: no cover - a machine with IPv6 compiled in but disabled
+            pytest.skip("this machine cannot bind ::1")
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            yield f"http://[::1]:{port}", state.token
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+
+    def test_the_name_a_browser_sends_is_accepted(self, ipv6_service: tuple[str, str]) -> None:
+        base, _ = ipv6_service
+        port = base.rsplit(":", 1)[1]
+        statuses = _raw_exchange(
+            base, f"GET /api/health HTTP/1.1\r\nHost: [::1]:{port}\r\nConnection: close\r\n\r\n"
+        )
+
+        assert statuses and statuses[0].startswith("HTTP/1.1 200"), statuses
+
+
+class TestAPublishInFlightIsNotAMissingPage:
+    """The publish is two renames, and the service serves through both of them."""
+
+    def test_a_request_during_the_swap_gets_the_page(
+        self, service: tuple[str, str], config: AppConfig
+    ) -> None:
+        base, _ = service
+        generated = config.generated_root
+        previous = generated.with_suffix(".previous")
+        generated.rename(previous)
+
+        def finish_the_swap() -> None:
+            time.sleep(0.05)
+            previous.rename(generated)
+
+        thread = threading.Thread(target=finish_the_swap)
+        thread.start()
+        try:
+            request = urllib.request.Request(f"{base}/map/")  # noqa: S310 - loopback
+            with urllib.request.urlopen(request, timeout=10) as response:  # noqa: S310
+                status = response.status
+        finally:
+            thread.join(timeout=5)
+            if previous.exists() and not generated.exists():
+                previous.rename(generated)
+
+        assert status == 200, "a rebuild in flight was reported as a page that does not exist"

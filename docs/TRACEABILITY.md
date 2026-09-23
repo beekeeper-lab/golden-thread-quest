@@ -3,7 +3,7 @@
 Every release acceptance criterion from `docs/ACCEPTANCE-CRITERIA.md`, mapped to the code
 that implements it and the test that holds it. An unchecked row is unmet and says why.
 
-A row with no test is not traceable. Where that is the case it is marked **no test**, which
+A row with no test is not traceable. Where that is the case the test column reads `—`, which
 is itself the finding.
 
 ## Content and generation
@@ -14,7 +14,7 @@ is itself the finding.
 | **CG2** Cross-document validation detects duplicate IDs, broken references, cycles | `semantics.py` | `semantic/test_invalid_content.py::TestCrossReferences` |
 | **CG3** A maintainer can add a quest without editing code | `build.py`, generic templates | `integration/test_build.py::TestAddingContentNeedsNoCodeChange::test_no_ui_file_was_touched` |
 | **CG4** A valid new quest appears in region, catalog, filters, search, prerequisite graph | `build.py` indexes | `TestAddingContentNeedsNoCodeChange` (five assertions) |
-| **CG5** Invalid content prevents publication with an actionable error | `errors.ContentProblem` | `semantic/test_invalid_content.py` (20 rules) |
+| **CG5** Invalid content prevents publication with an actionable error | `errors.ContentProblem` | `semantic/test_invalid_content.py` (25 rules) |
 | **CG6** Generated output is deterministic for equivalent inputs | sorted traversal, sorted JSON, `build.build_stamp` | `integration/test_build.py::test_two_builds_of_the_same_inputs_are_identical` |
 | **CG7** A failed build preserves the last valid output | `build._swap` | `test_a_build_that_fails_midway_leaves_the_previous_site_intact` |
 
@@ -151,9 +151,10 @@ The same rule: each row is additional evidence for a criterion that already has 
 |---|---|---|
 | **CG6** — generated output is deterministic for equivalent inputs | `SOURCE_DATE_EPOCH` makes the one varying field fixed, so the claim can be checked the way a reader would check it, ADR-040 | `tests/integration/test_build.py::test_source_date_epoch_makes_two_builds_byte_identical` |
 | **CG7** — a failed build preserves the last known valid output | Debris in the wrong shape at the staging path no longer ends every later build | `tests/integration/test_build.py::test_a_file_where_the_staging_directory_goes_does_not_break_every_build` |
+| **VS2** — validator arguments are typed and allowlisted | The registry entry's `working_directory` — the one constraint the schema requires and nothing applied — is where the child now starts | `tests/security/test_validator_sandbox.py::TestEnvironmentIsolation::test_the_child_starts_in_the_declared_working_directory` |
 | **VS6** — validation results use the published result schema | A result says what it says about the attempt it was run for: the workspace carries that attempt's evidence package, so a check cannot judge another attempt's files, ADR-039 | `tests/security/test_validator_sandbox.py::TestAValidatorJudgesTheAttemptItWasGiven` |
-| **FS2** — local actions cannot write outside approved roots | The service refuses a request that claims a foreign `Host`, refuses a `GET` carrying a body, and answers every request even when something unexpected fails, ADR-041 | `tests/security/test_service.py::TestTheRequestClaimsThisHost`, `::TestNothingLeavesARequestUnanswered` |
-| **PE4** — starting a quest persists state outside browser storage | The confirmation the page requires is required by the service too, ADR-033 as amended | `tests/security/test_service.py::TestTheConfirmationIsNotOnlyInTheBrowser` |
+| **FS2** — local actions cannot write outside approved roots | The service refuses a request that claims a foreign `Host`, refuses a `GET` carrying a body or a second `Content-Length`, answers every request — including on the read path — when something unexpected fails, and never redirects off this machine, ADR-041 | `tests/security/test_service.py::TestTheRequestClaimsThisHost`, `::TestNothingLeavesARequestUnanswered`, `::TestTheReadPathAnswersItsOwnFailures`, `::TestASecondContentLengthIsNotAWayIn`, `::TestTheRefusalStaysOnThisMachine` |
+| **PE4** — starting a quest persists state outside browser storage | The confirmation the page requires is required by the action layer both callers go through, so the JSON endpoint and the CLI meet it too, ADR-033 as amended twice | `tests/security/test_service.py::TestTheConfirmationIsNotOnlyInTheBrowser`, `::TestEveryCallerMeetsTheConfirmation`, `tests/integration/test_cli_actions.py::test_a_confirmed_action_is_refused_without_the_confirmation` |
 | **RE4** — a reviewer can approve, request changes, or reject with findings | A half-written finding is refused by name instead of dropped, and a superseded decision is provably archived | `tests/security/test_service.py::TestAHalfWrittenFindingIsNotDropped`, `tests/security/test_review_integrity.py::TestWhatApprovalProduces::test_a_superseded_review_is_archived_rather_than_overwritten` |
 
 Every row above carries the stable ID of the criterion it maps to, from

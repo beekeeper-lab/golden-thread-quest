@@ -360,6 +360,23 @@ class TestEnvironmentIsolation:
         assert self._seen(result)["JIRA_BASE_URL"] == "<ABSENT>"
 
     @pytest.mark.slow
+    def test_the_child_starts_in_the_declared_working_directory(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """`working_directory` is required by the schema, set on every entry, documented in
+        the contract — and applied nowhere. The child started in the repository root, so a
+        validator resolving a relative path as the contract describes read the wrong tree."""
+        result = run_validator(
+            registry.get("probe-environment-empty"),
+            config,
+            quest_id="base-camp-repository-safety",
+            attempt_id="a-001",
+            run_id="env-cwd",
+        )
+        where = next(check for check in result.checks if check.id == "working-directory")
+        assert Path(where.evidence or "") == config.participant_root.resolve()
+
+    @pytest.mark.slow
     def test_an_allowed_variable_reaches_the_child(
         self, registry, config: AppConfig, monkeypatch: pytest.MonkeyPatch
     ) -> None:  # type: ignore[no-untyped-def]

@@ -27,6 +27,7 @@ quest_app/           the application
 ├── state_machine.py     the transitions a participant may make
 ├── store.py             atomic writes to participant-owned files
 ├── evidence.py          proof detection, secret scanning, evidence hashing
+├── secret_patterns.py   the patterns behind every scan and every redaction
 ├── review.py            submissions and reviewer decisions
 ├── validator_registry.py the complete set of programs that may run
 ├── validator_runner.py  running one, under every registered constraint
@@ -39,7 +40,9 @@ quest_app/           the application
 ├── compat.py            the shims that keep the Python 3.10 floor honest (ADR-019, amended)
 └── cli.py               validate, build, serve, action, update
 
-validators/          registry.yaml plus three sample validators and their fixtures
+validators/          registry.yaml, three quest-facing validators, two registered
+                     environment probes, one unregistered slow probe used only by the
+                     timeout test, and the Jira fixtures
 templates/           layouts, ten component macros, thirteen page templates
 assets/              design tokens, application stylesheet, enhancement script
 tools/               secret scan, YAML-safety check, cleanup
@@ -100,14 +103,19 @@ followed. The service resolves static paths the same way. Participant paths keep
 contract prefix and follow a configured root (ADR-018).
 
 **No credential reaches a validator by accident.** The child environment is constructed from
-the registry's allowlist plus a minimal `PATH`. `os.environ` is not inherited.
+the registry's allowlist plus a minimal `PATH` and the repository's own import path.
+`os.environ` is not inherited, and the child starts in the `working_directory` its registry
+entry declares.
 
 **A stopped validator is stopped.** The run happens in a child process in its own process
 group, and a timeout kills the group. `validators/slow_probe.py` spawns a child of its own so
 the test proves it.
 
 **Verified means a reviewer said so.** Loading re-derives `verified` from the review record
-and refuses six distinct forms of claim without one.
+and refuses six distinct forms of claim without one. Recording the decision that produces it
+is itself confirmed: `record-review` is in `state_machine.CONFIRMATIONS`, the page renders
+that text as a required checkbox, and `ActionRunner.perform` refuses the action without it —
+so the browser, the JSON endpoint and `quest-app action --confirm` all meet the same gate.
 
 **Participant files survive.** `tools/clean.py` removes an exact allowlist and refuses
 anything reached through a symlink. The update helper runs no merge. Every participant write
@@ -138,6 +146,9 @@ is atomic, validated before it lands, and recorded in `participant/ACTIVITY.md`.
 `make check` runs everything except the browser layer; `make test-ui` runs that.
 
 ## Known limitations
+
+`docs/RELEASE-NOTES.md` carries the full list for a reader deciding whether to run
+this. These are the same limitations seen from the implementation side.
 
 1. Reviewer provenance is conventional, not cryptographic (ADR-030).
 2. Environment Health reports build-time facts, not live ones (D7).

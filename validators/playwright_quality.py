@@ -17,9 +17,16 @@ if TYPE_CHECKING:
 from quest_app.validator_runner import Check
 
 # Selectors coupled to markup. A test built on these fails when someone renames a class.
+#
+# A bare class or id — `page.locator(".btn-primary")` — is the commonest form of exactly
+# that coupling, so it is matched on its own rather than only when a combinator follows it,
+# and a structural tag name is matched whether or not anything follows. Attribute and
+# engine-prefixed selectors (`[data-testid=…]`, `text=…`) are not markup structure and are
+# left alone.
 BRITTLE_SELECTORS = re.compile(
-    r"""(?:page|frame)\.(?:locator|query_selector|querySelector)\(\s*['"]"""
-    r"""(?:\s*(?:div|span|table|tbody|tr|td)[\s>+~.#\[]|[.#][\w-]+\s*>)""",
+    r"""(?:page|frame)\.(?:locator|query_selector|querySelector"""
+    r"""|query_selector_all|querySelectorAll)\(\s*['"]\s*"""
+    r"""(?:[.#][\w-]+|(?:div|span|table|tbody|thead|tr|td|th|ul|ol|li|nav|section)\b)""",
     re.IGNORECASE,
 )
 ARBITRARY_WAIT = re.compile(

@@ -15,7 +15,7 @@ import json
 import sys
 from pathlib import Path
 
-from quest_app.actions import MUTATING_ACTIONS, ActionRunner
+from quest_app.actions import CONFIRMATIONS, MUTATING_ACTIONS, ActionRunner
 from quest_app.config import APPLICATION_VERSION, AppConfig
 from quest_app.content_loader import SchemaSet
 from quest_app.errors import ProblemReport, filesystem_message
@@ -216,7 +216,13 @@ def action_command(args: argparse.Namespace) -> int:
             raise ValueError("Content did not validate, so nothing was changed.")
         return world
 
-    payload: dict[str, object] = {"action": args.name, "quest_id": args.quest}
+    payload: dict[str, object] = {
+        "action": args.name,
+        "quest_id": args.quest,
+        # The same confirmation the browser form carries. `ActionRunner` refuses the
+        # actions that need one, so this surface cannot be the quiet way around the gate.
+        "confirm": bool(args.confirm),
+    }
     if args.validator:
         payload["validator_id"] = args.validator
     if args.decision:
@@ -324,6 +330,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Approve although the evidence changed after submission; the browser form has "
         "the same checkbox and approval is refused without it",
+    )
+    action.add_argument(
+        "--confirm",
+        action="store_true",
+        help="Say you mean it. Required for the actions the browser form confirms: "
+        + ", ".join(sorted(CONFIRMATIONS)),
     )
     action.set_defaults(func=action_command)
 

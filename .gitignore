@@ -47,6 +47,8 @@ service-account*.json
 .vscode/
 *.swp
 .claude/settings.local.json
+# Throwaway worktrees a review agent checks out inside the repository
+.claude/worktrees/
 dist/
 
 # ADR: dependency resolution floats within the ranges in pyproject.toml (docs/SETUP.md).

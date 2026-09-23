@@ -774,7 +774,14 @@ def _quest_detail_context(
         ),
         "risk_notice": (
             quest.risk.notes
-            or "Every external write is previewed and confirmed immediately before it happens."
+            # What the application can promise is what it does. It performs no external
+            # write and has no mechanism for one, so a page saying every external write is
+            # previewed and confirmed would be describing something that does not exist.
+            or (
+                "This quest writes to a system outside your machine. That write is yours to "
+                "make: preview it, confirm it, and record what happened. Nothing in this "
+                "application performs one for you."
+            )
             if quest.risk.external_write
             else None
         ),
@@ -941,6 +948,8 @@ def _review_context(
             else f"This attempt is {entry.state.label.lower()}, not awaiting a decision."
         ),
         "decision_route": routes.action("record-review", entry.quest.id),
+        # One definition of what the reviewer confirms, shared with the service (ADR-033).
+        "confirm": CONFIRMATIONS["record-review"],
     }
 
 

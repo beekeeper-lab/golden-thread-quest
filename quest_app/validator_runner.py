@@ -303,6 +303,10 @@ def run_validator(
     for name in definition.environment_allowlist:
         if name in os.environ:
             environment[name] = os.environ[name]
+    # The child runs in the validator's declared working directory, so the repository is no
+    # longer on the import path by virtue of being the current directory. Naming it here
+    # keeps `-m quest_app.validator_child` working without putting anything else on the path.
+    environment["PYTHONPATH"] = str(config.repo_root)
 
     # A fresh interpreter started as a subprocess, not a `multiprocessing` child of any
     # start method. `fork` from the threaded service would inherit locks held by other
@@ -332,12 +336,22 @@ def run_validator(
 
     # `start_new_session` puts the child in its own process group, so a timeout kills
     # anything it spawned rather than only the child itself.
+    # `working_directory` is required by the registry schema, set on every entry, and
+    # published in the validator contract — and until round 8 nothing applied it: the child
+    # started in the repository root, so a validator following the contract resolved its
+    # relative paths against the wrong tree.
+    working_directory = definition.resolved_working_directory(config)
+    if not working_directory.is_dir():
+        # A participant who has run nothing yet has no participant directory. Creating it
+        # is what the first action does in any case, and refusing to start the check is a
+        # worse answer than starting it in an empty directory.
+        working_directory.mkdir(parents=True, exist_ok=True)
     process = subprocess.Popen(
         [sys.executable, "-m", "quest_app.validator_child"],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        cwd=str(config.repo_root),
+        cwd=str(working_directory),
         env=environment,
         text=True,
         start_new_session=True,

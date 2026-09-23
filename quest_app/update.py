@@ -159,10 +159,13 @@ def preflight(config: AppConfig) -> Preflight:
             )
         )
 
+    # One name, used twice. Two calls a second apart produced a `Preflight` whose
+    # `backup_branch` named a different branch from the one its own instructions create.
+    backup = backup_branch_name()
     return Preflight(
         findings=tuple(findings),
-        backup_branch=backup_branch_name(),
-        instructions=update_instructions(backup_branch_name(), status.branch or "main"),
+        backup_branch=backup,
+        instructions=update_instructions(backup, status.branch or "main"),
         notes=(
             "Nothing under participant/ is replaced by an update. The merge may still produce "
             "a conflict there if you and upstream changed the same file.",

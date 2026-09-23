@@ -66,9 +66,21 @@ Validators should run with the least available privileges. The architecture shou
 - A secret scanner runs before submission preparation.
 - Logs redact configured keys and token-like values.
 - Raw external-system responses are stored only under Gitignored `local-data/` and are opt-in.
-- Screenshots require a redaction confirmation.
+- Screenshots are the one kind of evidence the scanner cannot read: it scans text, and a
+  token in a picture of a terminal is invisible to it. The `PROOF.md` template every
+  attempt is given ends with a **Sensitive values** section asking the participant to
+  confirm the package carries no secret, customer name or private ticket content, and
+  redacting an image before it goes in is their judgment. There is no automated gate
+  here, and release one does not claim one.
 
 ## External-system writes
+
+**Release one performs none.** Every quest declares `risk.external_write: false`, every
+validator is registered `network: denied`, and the application makes no outbound request of
+its own. The requirements below are the conditions a write-capable quest must meet before it
+is added — not a description of a mechanism running today. `tests/test_release_facts.py`
+asserts the invariant while it holds, so the day a quest declares a write, the test that
+fails says this section now has to be built.
 
 Any quest that creates or modifies Jira, Trello, GitHub, or another service must require:
 
@@ -108,4 +120,5 @@ Opening a page, running a build, or viewing a quest must never perform an extern
 - secret-like values in logs and evidence
 - forged verified state without approval
 - modified evidence after approval
-- external-write action without preview or confirmation
+- external-write action without preview or confirmation — not yet reachable: no quest
+  declares an external write, so the assertion that stands today is that none does

@@ -40,13 +40,32 @@ def run(workspace: Workspace, output: ValidatorOutput) -> None:
     _check_no_secrets_in_evidence(workspace, output)
 
 
+def _ignore_patterns(text: str) -> list[str]:
+    """The lines of a .gitignore that actually ignore something.
+
+    A comment is not a rule. Read as a bag of words, a file whose only mention of
+    credentials is a note to the reader covers every category and ignores nothing, and the
+    check cannot tell that file from one that works. A negation un-ignores, so it is not
+    coverage either.
+    """
+    patterns = []
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith(("#", "!")):
+            continue
+        patterns.append(line.lower())
+    return patterns
+
+
 def _check_ignore_rules(workspace: Workspace, output: ValidatorOutput) -> None:
     candidates = [".gitignore"]
-    contents = ""
+    present = False
+    patterns: list[str] = []
     for candidate in candidates:
         if workspace.exists(candidate):
-            contents += workspace.read_text(candidate).lower()
-    if not contents:
+            present = True
+            patterns.extend(_ignore_patterns(workspace.read_text(candidate)))
+    if not patterns:
         output.add(
             Check(
                 id="ignore-rules-present",
@@ -54,7 +73,11 @@ def _check_ignore_rules(workspace: Workspace, output: ValidatorOutput) -> None:
                 severity="high",
                 summary="No ignore rules were found.",
                 evidence=(
-                    "Neither the participant directory nor the repository root has a .gitignore."
+                    "A .gitignore is present, but every line in it is blank, a comment or a "
+                    "negation, so it ignores nothing."
+                    if present
+                    else "Neither the participant directory nor the repository root has a "
+                    ".gitignore."
                 ),
                 suggested_action=(
                     "Add a .gitignore covering generated output, local data, environment files and "
@@ -67,7 +90,7 @@ def _check_ignore_rules(workspace: Workspace, output: ValidatorOutput) -> None:
     missing = [
         category
         for category, markers in sorted(IGNORE_CATEGORIES.items())
-        if not any(marker in contents for marker in markers)
+        if not any(marker in pattern for pattern in patterns for marker in markers)
     ]
     if missing:
         output.add(

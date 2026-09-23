@@ -137,3 +137,23 @@ def test_the_readme_says_the_project_is_not_released() -> None:
     head = (ROOT / "README.md").read_text().split("## ", 1)[0].lower()
     assert "work in progress" in head
     assert "not released" in head
+
+
+def test_release_one_ships_no_external_write() -> None:
+    """`docs/SECURITY-AND-PRIVACY.md` describes controls for a write nothing performs.
+
+    The requirements in that section are conditions on a quest that does not exist yet, and
+    the "required security tests" list names an external-write test that cannot be written
+    until one does. What can be asserted is the invariant the section rests on, so the day a
+    quest declares a write, this is the test that says those controls now have to be built.
+    """
+    import yaml
+
+    for quest in sorted((ROOT / "content" / "quests").rglob("*.md")):
+        front = quest.read_text().split("---", 2)[1]
+        risk = (yaml.safe_load(front) or {}).get("risk") or {}
+        assert risk.get("external_write") is False, f"{quest.name} declares an external write"
+
+    registry = yaml.safe_load((ROOT / "validators" / "registry.yaml").read_text())
+    for entry in registry["validators"]:
+        assert entry["network"] == "denied", f"{entry['id']} is registered with network access"

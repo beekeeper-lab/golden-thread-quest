@@ -18,7 +18,7 @@
 {% if queue %}
 <section class="stack" aria-labelledby="queue-heading">
   <h2 id="queue-heading">Waiting for review</h2>
-  <div class="table-scroll" tabindex="0" role="region" aria-label="Table">
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Attempts waiting for review">
     <table>
       <thead><tr><th scope="col">Quest</th><th scope="col">Attempt</th><th scope="col">Submitted</th></tr></thead>
       <tbody>
@@ -113,7 +113,7 @@
 {% if results %}
 <section class="stack" aria-labelledby="results-heading">
   <h2 id="results-heading">Automated validation</h2>
-  <div class="table-scroll" tabindex="0" role="region" aria-label="Table">
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Automated validation results">
     <table>
       <thead><tr><th scope="col">Validator</th><th scope="col">Outcome</th><th scope="col">When</th></tr></thead>
       <tbody>
@@ -161,7 +161,7 @@
   </div>
   {% else %}
   <form method="post" action="{{ url(decision_route) }}"
-        data-confirm="Record this decision? Approval produces verified completion and verified XP.">
+        data-confirm="{{ confirm }}?">
     <input type="hidden" name="token" value="__GTQ_REQUEST_TOKEN__">
     <div class="field">
       <label for="reviewer_name">Your name</label>
@@ -226,6 +226,16 @@
         The evidence changed since submission and I have re-read it
       </label>
       <p class="hint">Only needed when the banner above says the evidence changed.</p>
+    </div>
+    {# C21 for the one action that produces verified completion. The script's dialog is an
+       additional prompt, not the only one: with scripting off this checkbox is what the
+       browser requires, and the action layer refuses a decision that arrives without it. #}
+    <div class="field">
+      <label for="confirm-decision">
+        <input type="checkbox" id="confirm-decision" name="confirm" value="yes" required>
+        {{ confirm }}
+      </label>
+      <p class="hint">This is recorded in the repository and the participant will see it.</p>
     </div>
     <div class="button-row">
       <button type="submit" class="button button-consequential">Record decision</button>
