@@ -7,8 +7,9 @@ and a backup, and it performs no Git operation that rewrites anything.
 
 It deliberately does **not** run the merge. `git merge` on someone else's repository, with
 their uncommitted work in it, is not a decision an application should make. The module
-reports what it found, creates a recoverable backup branch, prints the exact commands, and
-stops.
+reports what it found, names a backup branch for the participant to create, prints the
+exact commands, and stops. It creates nothing: every Git command it is permitted to run is
+read-only, which is the point.
 """
 
 from __future__ import annotations
@@ -50,7 +51,9 @@ class Finding:
 @dataclass(frozen=True, slots=True)
 class Preflight:
     findings: tuple[Finding, ...]
-    backup_branch: str | None = None
+    # Named, not created. A field called `backup_branch` on a result object reads as a
+    # branch that exists, and nothing here makes one: `PERMITTED_COMMANDS` is read-only.
+    proposed_backup_branch: str | None = None
     instructions: str = ""
     notes: tuple[str, ...] = field(default_factory=tuple)
 
@@ -164,7 +167,7 @@ def preflight(config: AppConfig) -> Preflight:
     backup = backup_branch_name()
     return Preflight(
         findings=tuple(findings),
-        backup_branch=backup,
+        proposed_backup_branch=backup,
         instructions=update_instructions(backup, status.branch or "main"),
         notes=(
             "Nothing under participant/ is replaced by an update. The merge may still produce "

@@ -41,7 +41,7 @@ from quest_app.actions import CONFIRMATIONS, MUTATING_ACTIONS, ActionRunner
 from quest_app.build import OUTPUT_SUFFIX_NEW, OUTPUT_SUFFIX_OLD, build_site
 from quest_app.config import APPLICATION_VERSION, AppConfig
 from quest_app.content_loader import SchemaSet
-from quest_app.errors import ProblemReport, filesystem_message
+from quest_app.errors import ProblemReport, filesystem_message, read_failure_message
 from quest_app.git_status import summary_for
 from quest_app.pipeline import load_world
 from quest_app.state_machine import allowed_actions
@@ -330,6 +330,22 @@ class ActionHandler(BaseHTTPRequestHandler):
             return True
         return _is_loopback(name)
 
+    def _declared_length(self) -> int | None:
+        """The body length, or `None` when the request does not declare exactly one.
+
+        `get` returns the first of a repeated header. The GET path refuses a duplicate
+        `Content-Length` for exactly this reason — the unread remainder becomes the next
+        request on a kept-alive connection, with every header chosen by the sender — and
+        both POST readers read the first one and walked past the second.
+        """
+        declared_all = self.headers.get_all("Content-Length") or []
+        if len(declared_all) != 1 or self.headers.get("Transfer-Encoding"):
+            return None
+        try:
+            return int(declared_all[0])
+        except ValueError:
+            return None
+
     def _body_is_absent(self) -> bool:
         """Whether this request declared no body. A GET that declares one is refused.
 
@@ -382,9 +398,8 @@ class ActionHandler(BaseHTTPRequestHandler):
         if content_type != JSON_CONTENT_TYPE:
             self._refuse(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "Send application/json.")
             return None
-        try:
-            length = int(self.headers.get("Content-Length") or "0")
-        except ValueError:
+        length = self._declared_length()
+        if length is None:
             self._refuse(HTTPStatus.BAD_REQUEST, "A valid Content-Length is required.")
             return None
         if length <= 0:
@@ -420,7 +435,10 @@ class ActionHandler(BaseHTTPRequestHandler):
             # The reader went away. There is nobody left to answer.
             self.close_connection = True
         except OSError as exc:
-            self._answer_failure(_filesystem_message(exc))
+            # A read that failed is not a write that failed. This said "the change could
+            # not be written to your participant directory" for a page it could not open,
+            # and sent the participant to look at a tree that was never involved.
+            self._answer_failure(_read_message(exc))
         except Exception as exc:  # the last line before no response at all
             self._answer_failure(_unexpected_message(exc))
 
@@ -450,6 +468,23 @@ class ActionHandler(BaseHTTPRequestHandler):
         self._serve_static(path)
 
     def do_POST(self) -> None:
+        """The write path's outer answer, matching `do_GET`.
+
+        `do_GET` has carried this since round 7; this one carried nothing. Its inner
+        catch-all answers by writing to the socket, and when the socket is what failed —
+        a participant who submits and then closes the tab — that write raised again, past
+        every handler, and put a traceback with absolute paths on the terminal.
+        """
+        try:
+            self._post()
+        except (BrokenPipeError, ConnectionResetError):
+            self.close_connection = True
+        except OSError as exc:
+            self._answer_failure(_filesystem_message(exc))
+        except Exception as exc:  # the last line before no response at all
+            self._answer_failure(_unexpected_message(exc))
+
+    def _post(self) -> None:
         if not self._host_is_acceptable():
             self._refuse(HTTPStatus.FORBIDDEN, "This service answers on the loopback name only.")
             return
@@ -617,9 +652,8 @@ class ActionHandler(BaseHTTPRequestHandler):
         if content_type != FORM_CONTENT_TYPE:
             self._refuse(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "Send a form submission.")
             return None
-        try:
-            length = int(self.headers.get("Content-Length") or "0")
-        except ValueError:
+        length = self._declared_length()
+        if length is None:
             self._refuse(HTTPStatus.BAD_REQUEST, "A valid Content-Length is required.")
             return None
         if not 0 < length <= MAX_BODY_BYTES:
@@ -905,6 +939,11 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
 def _filesystem_message(error: OSError) -> str:
     """Both surfaces say the same thing; the words live in `quest_app.errors`."""
     return filesystem_message(error)
+
+
+def _read_message(error: OSError) -> str:
+    """A read failure names the generated site, not the participant directory."""
+    return read_failure_message(error)
 
 
 def describe_actions(current: Any) -> list[dict[str, str]]:

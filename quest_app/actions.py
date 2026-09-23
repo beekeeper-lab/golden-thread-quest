@@ -190,8 +190,13 @@ class ActionRunner:
         """
         try:
             build_site(self.load(), service=self.service())
-        except OSError as exc:
-            reason = exc.strerror or type(exc).__name__
+        except Exception as exc:  # the state change has already landed
+            # Not `OSError`: a broken template raises `TemplateSyntaxError`, and that went
+            # straight through to the CLI as a traceback carrying absolute paths, after the
+            # submission had been written. The participant then read a crash, and their
+            # retry was refused because the attempt was already submitted. Whatever the
+            # rebuild fails on, the change is recorded and the advisory is the answer.
+            reason = getattr(exc, "strerror", None) or type(exc).__name__
             return [
                 f"Your change was recorded. The site could not be rebuilt ({reason}); "
                 "run `quest-app build` once that is fixed."

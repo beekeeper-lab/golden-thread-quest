@@ -18,7 +18,7 @@ runner: python
 entrypoint: validators.jira_read_assigned:run
 working_directory: participant
 timeout_seconds: 60
-max_output_bytes: 200000
+max_output_bytes: 20000
 parameters:
   fixture_set:
     type: enum
@@ -37,6 +37,13 @@ result_schema: schemas/validation-result.schema.json
 ```
 
 The exact registry storage format is an implementation decision. The policy is not.
+
+`max_output_bytes` is capped at 20000, which is what `output_excerpt` holds in
+`schemas/validation-result.schema.json`. A larger number could be declared and never
+honoured: the excerpt was written at the declared size and the whole result — a
+passing run included — was then refused for breaking its own schema. Output past the
+cap is replaced by a truncation notice, and the notice is counted inside the budget.
+A validator with more to say than that should summarize it in its checks.
 
 ## Required controls
 

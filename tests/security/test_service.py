@@ -6,6 +6,7 @@ these is a real attack surface and not a formality.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import threading
 import time
@@ -729,9 +730,18 @@ class TestNothingLeavesARequestUnanswered:
                 "confirm": True,
             },
         )
-        assert status == 500
-        assert "RuntimeError" in body["error"]
-        assert str(config.repo_root) not in body["error"]
+        # Round 7 asserted a 500 here, because `_rebuild` caught `OSError` and let every
+        # other failure escape. Both are the same event: the transition is on disk and the
+        # site is stale. A 500 tells the caller their request failed when it did not, and
+        # their retry is then refused because the attempt really did move. So the contract
+        # is the one the other rebuild failure already had — a complete answer that says
+        # what was recorded and what was not.
+        assert status == 200, body
+        advisories = " ".join(body.get("advisories") or ())
+        assert "could not be rebuilt" in advisories, body
+        assert "RuntimeError" in advisories, body
+        assert str(config.repo_root) not in json.dumps(body)
+        assert body.get("state"), "the change the advisory describes must be reported too"
 
     def test_an_unexpected_failure_still_answers_the_browser(
         self, service: tuple[str, str], config: AppConfig, monkeypatch: pytest.MonkeyPatch
@@ -1208,3 +1218,79 @@ class TestAPublishInFlightIsNotAMissingPage:
                 previous.rename(generated)
 
         assert status == 200, "a rebuild in flight was reported as a page that does not exist"
+
+
+class TestTheWritePathAnswersItsOwnFailures:
+    """`do_GET` has answered every failure since round 7. `do_POST` answered none.
+
+    Its inner catch-all answers by writing to the socket, so when the socket is what
+    failed — a participant who submits and then closes the tab — that write raised again,
+    past every handler, onto the terminal the participant is watching.
+    """
+
+    def test_an_unexpected_failure_in_the_write_path_is_answered(
+        self, service: tuple[str, str], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from quest_app.serve import ActionHandler
+
+        def explode(self: ActionHandler) -> None:
+            raise RuntimeError("something no one anticipated")
+
+        monkeypatch.setattr(ActionHandler, "_post", explode)
+        base, token = service
+        status, body = post(base, {"token": token, "action": "start-quest"})
+
+        assert status == 500
+        assert "Something unexpected went wrong" in str(body)
+        assert "RuntimeError" in str(body)
+
+    def test_a_reader_who_goes_away_mid_write_is_not_a_traceback(
+        self,
+        service: tuple[str, str],
+        monkeypatch: pytest.MonkeyPatch,
+        capfd: pytest.CaptureFixture[str],
+    ) -> None:
+        from quest_app.serve import ActionHandler
+
+        def gone(self: ActionHandler) -> None:
+            raise BrokenPipeError(32, "Broken pipe")
+
+        monkeypatch.setattr(ActionHandler, "_post", gone)
+        base, token = service
+        capfd.readouterr()
+        with contextlib.suppress(Exception):
+            post(base, {"token": token, "action": "start-quest"})
+        time.sleep(0.3)
+
+        captured = capfd.readouterr()
+        assert "Traceback" not in captured.err, captured.err
+
+
+def test_a_read_failure_is_not_reported_as_a_failed_write(
+    service: tuple[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A page the service cannot open has nothing to do with the participant directory.
+
+    The read path reported its failures with the write path's sentence, so a reader was
+    told their change could not be written — when nothing was being changed — and sent to
+    check a tree that was never involved.
+    """
+    import errno
+
+    from quest_app.serve import ActionHandler
+
+    def unreadable(self: ActionHandler) -> None:
+        raise OSError(errno.EACCES, "Permission denied")
+
+    monkeypatch.setattr(ActionHandler, "_get", unreadable)
+    base, _ = service
+    request = urllib.request.Request(f"{base}/passport/")  # noqa: S310
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:  # noqa: S310
+            body = response.read().decode()
+    except urllib.error.HTTPError as error:
+        body = error.read().decode()
+
+    assert "generated site" in body, body
+    assert "participant directory" not in body, body
+    assert "quest-app build" in body

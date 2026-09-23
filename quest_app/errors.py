@@ -224,3 +224,18 @@ def filesystem_message(error: OSError) -> str:
         f"The change could not be written to your participant directory: {reason}. "
         "Check that it exists and that you can write to it."
     )
+
+
+def read_failure_message(error: OSError) -> str:
+    """The same courtesy for a read, which is a different thing to go and look at.
+
+    The read path reported its failures with the sentence above, so a page the service
+    could not open told the participant their change could not be written — when nothing
+    was being changed and the participant directory was not involved. They were sent to
+    inspect the wrong tree.
+    """
+    reason = error.strerror or type(error).__name__
+    return (
+        f"That page could not be read from the generated site: {reason}. "
+        "Run `quest-app build` to regenerate it."
+    )

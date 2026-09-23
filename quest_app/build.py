@@ -934,7 +934,10 @@ def _review_context(
     from quest_app.review import evidence_changed, read_submission, review_history
 
     attempt = entry.attempt
-    assert attempt is not None
+    if attempt is None:
+        # `assert` is removed under `python -O`, and the next line would then raise an
+        # AttributeError from inside a page render. Every other invariant here is explicit.
+        raise ValueError(f"{entry.quest.id} has no attempt, so it has no reviewer page")
     config = world.config
     results = _results_for(entry, world)
     submission = read_submission(config, attempt) or {}
