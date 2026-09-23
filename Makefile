@@ -1,4 +1,6 @@
-# Local commands. CI runs exactly these targets, so a green `make check` means a green CI.
+# Local commands. `make check` is exactly CI's `check` job, run target for target, so a green
+# `make check` means a green `check` job. CI also runs a `browser` job (`make test-ui`) and a
+# `clean-export` job (`make verify-package`), which `make check` does not cover.
 .DEFAULT_GOAL := help
 PYTHON ?= python3
 VENV := .venv
@@ -81,4 +83,4 @@ verify-package: package ## Prove the exported archive installs and builds on its
 clean: ## Remove generated output and caches (never participant files)
 	$(BIN)/python tools/clean.py --apply
 
-check: format-check lint typecheck yaml-safe secret-scan test ## Everything CI runs
+check: format-check lint typecheck yaml-safe secret-scan test ## Everything CI's `check` job runs (see `test-ui`, `verify-package` for the other two jobs)

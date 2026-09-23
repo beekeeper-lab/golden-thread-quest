@@ -28,14 +28,20 @@ make setup-ui
 make test-ui
 ```
 
+Optional: `pre-commit install` runs the fast half of `make check` (format, lint, YAML safety,
+secret scan) on every commit. Every hook in `.pre-commit-config.yaml` is also a Makefile target
+you can run yourself, so nothing it does is hidden.
+
 ## Commands
 
-Run `make` with no arguments to list them. CI runs the same targets, separately, so a green
-`make check` locally means a green CI.
+Run `make` with no arguments to list them. `make check` is exactly CI's `check` job, target for
+target, so a green `make check` locally means a green `check` job. CI also runs a `browser` job
+(`make test-ui`) and a `clean-export` job (`make verify-package`), which `make check` does not
+cover.
 
 | Command | What it does |
 |---|---|
-| `make check` | Everything CI runs |
+| `make check` | Everything CI's `check` job runs |
 | `make format` | Rewrite code to the project style |
 | `make lint` | Static lint |
 | `make typecheck` | `mypy --strict` |
