@@ -17,11 +17,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from quest_app.config import AppConfig
-from quest_app.hashing import hash_directory
+from quest_app.hashing import hash_directory, resolves_inside
 from quest_app.models import ProofRequirement, Quest
 from quest_app.progress import ValidationResult
 from quest_app.secret_patterns import scan_text
 from quest_app.store import write_json_atomic
+
+OUTSIDE_LINK_DESCRIPTION = "is a link that leads outside the evidence package"
 
 SKIP_SUFFIXES = frozenset({".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf", ".zip"})
 
@@ -136,9 +138,15 @@ def scan_evidence(config: AppConfig, evidence_path: str) -> list[SecretFinding]:
         return []
     findings: list[SecretFinding] = []
     for path in sorted(root.rglob("*")):
-        if not path.is_file() or path.suffix.lower() in SKIP_SUFFIXES or path.is_symlink():
-            continue
         relative = f"{evidence_path}/{path.relative_to(root).as_posix()}"
+        # A link out of the package was skipped, so the scan vouched for a file it never
+        # read while the build rendered whatever the link led to. It is now a finding: the
+        # scan cannot clear what it may not read, and nothing renders through it.
+        if not resolves_inside(path, root):
+            findings.append(SecretFinding(relative, 1, OUTSIDE_LINK_DESCRIPTION))
+            continue
+        if not path.is_file() or path.suffix.lower() in SKIP_SUFFIXES:
+            continue
         try:
             raw = path.read_bytes()
         except OSError:
@@ -157,6 +165,38 @@ def scan_evidence(config: AppConfig, evidence_path: str) -> list[SecretFinding]:
             for match in scan_text(text)
         )
     return findings
+
+
+def links_outside_package(config: AppConfig, evidence_path: str) -> list[str]:
+    """Every entry in the package that, once links are followed, lands outside it.
+
+    The package is the approved root for evidence. Render, hash and scan all refuse to read
+    through such an entry, and the loader reports it, so none of the three can disagree
+    about what the evidence contains.
+    """
+    try:
+        root = config.resolve_participant_path(evidence_path)
+    except ValueError:
+        return []
+    if not root.is_dir():
+        return []
+    return [
+        f"{evidence_path}/{path.relative_to(root).as_posix()}"
+        for path in sorted(root.rglob("*"))
+        if not resolves_inside(path, root)
+    ]
+
+
+def package_file(config: AppConfig, evidence_path: str, name: str) -> Path | None:
+    """A file in the package by name, or None when it is absent or leads outside it."""
+    try:
+        root = config.resolve_participant_path(evidence_path)
+    except ValueError:
+        return None
+    path = root / name
+    if not resolves_inside(path, root) or not path.is_file():
+        return None
+    return path
 
 
 def evidence_hash(config: AppConfig, evidence_path: str) -> str | None:

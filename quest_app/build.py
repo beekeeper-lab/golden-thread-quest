@@ -903,14 +903,16 @@ def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None
     """
     if not evidence_path:
         return None
-    try:
-        path = world.config.resolve_participant_path(evidence_path) / "PROOF.md"
-    except ValueError:
-        return None
-    if not path.is_file():
-        return None
+    from quest_app.evidence import package_file
     from quest_app.markdown_render import render_markdown
     from quest_app.secret_patterns import redact_text
+
+    # Only the directory used to be resolved, so a PROOF.md that was a link to any file the
+    # build could read was rendered into the site. A link out of the package is refused
+    # here, reported by the loader, and blocks submission through the secret scan.
+    path = package_file(world.config, evidence_path, "PROOF.md")
+    if path is None:
+        return None
 
     # Redacted before rendering. It is the participant's own file and they can already read
     # it, but the guarantee "generated output contains no secrets" has to hold for the

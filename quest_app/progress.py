@@ -236,6 +236,8 @@ def load_participant_state(
             )
             continue
 
+        _check_links_out_of_package(attempt, config, report)
+
         review_path = evidence_dir / REVIEW_FILENAME
         if review_path.exists():
             review = _load_review(review_path, config, schemas, report)
@@ -479,6 +481,33 @@ def _load_validation(
         output_truncated=bool(data.get("output_truncated", False)),
         result_path=data.get("result_path"),
     )
+
+
+def _check_links_out_of_package(attempt: Attempt, config: AppConfig, report: ProblemReport) -> None:
+    """Report every evidence entry that leads outside its package once links are followed.
+
+    Such an entry is not rendered, not hashed by content and not cleared by the secret scan,
+    so the participant has to be told why it seems to have vanished — and a reviewer has to
+    be told that the package points somewhere the application will not read.
+    """
+    from quest_app.evidence import links_outside_package
+
+    for entry in links_outside_package(config, attempt.evidence_path):
+        report.add(
+            ContentProblem.build(
+                code="evidence.link_outside_package",
+                severity=Severity.WARNING,
+                public_message=(
+                    f"An evidence file in attempt {attempt.attempt_id!r} is a link that leads "
+                    "outside its evidence package, so it is not shown, hashed or scanned."
+                ),
+                source=entry,
+                entity_id=attempt.attempt_id,
+                field_path="attempts[].evidence_path",
+                expected="a real file inside the evidence package",
+                suggestion="Replace the link with a copy of the file.",
+            )
+        )
 
 
 def _check_stale_approval(
