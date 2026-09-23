@@ -21,7 +21,7 @@ request and a running validator.
   entrypoint: validators.something:run
   working_directory: participant
   timeout_seconds: 60
-  max_output_bytes: 200000
+  max_output_bytes: 20000
   parameters:
     fixture_set:
       type: enum
