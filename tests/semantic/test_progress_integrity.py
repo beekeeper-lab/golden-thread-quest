@@ -295,3 +295,25 @@ class TestLocallyValidatedTellsTheTruth:
             if state is QuestState.LOCALLY_VALIDATED:
                 continue
             assert StateView.of(state, has_validators=False).authority is STATE_AUTHORITY[state]
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["submission.yaml", "review-20260910000000-abcdef.yaml"],
+)
+@pytest.mark.parametrize("content", ["a: [unclosed\n", "<<<<<<< HEAD\nx: 1\n=======\n"])
+def test_a_broken_record_beside_the_review_is_reported_not_a_traceback(
+    config: AppConfig, name: str, content: str
+) -> None:
+    """`validate` passed these and `build` then crashed on them while rendering the reviewer
+    page, with a traceback naming absolute paths. A merge conflict leaves exactly this."""
+    from quest_app.errors import ProblemReport
+    from quest_app.pipeline import load_world
+
+    directory = config.participant_root / "evidence" / "base-camp-repository-safety"
+    target = directory / "base-camp-attempt-001" / name
+    target.write_text(content)
+
+    report = ProblemReport()
+    assert load_world(config, report) is None
+    assert any(problem.source.endswith(name) for problem in report.errors), report.to_text()

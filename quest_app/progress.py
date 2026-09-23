@@ -237,6 +237,16 @@ def load_participant_state(
             review = _load_review(review_path, config, schemas, report)
             if review is not None:
                 reviews[review.review_id] = review
+        # The submission and the superseded reviews are read by the reviewer's page and the
+        # participant's history, so they are checked here too. Otherwise a file left broken by
+        # a merge conflict passed `validate` and then stopped `build` with a traceback.
+        records = [(evidence_dir / "submission.yaml", "submission")]
+        records += [(path, "review") for path in sorted(evidence_dir.glob("review-*.yaml"))]
+        for record_path, schema_name in records:
+            if record_path.exists():
+                data = read_yaml(record_path, config, report)
+                if data is not None:
+                    schemas.validate(schema_name, data, config.relative(record_path), report)
 
         for result_path in sorted((evidence_dir / "validation").glob("*.json")):
             result = _load_validation(result_path, config, schemas, report)
