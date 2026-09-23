@@ -1173,7 +1173,7 @@ class TestRequestsThatFailBeforeAnyAction:
         assert "did not happen" not in text
 
     def test_deep_nesting_is_refused_as_bad_json(self, service: tuple[str, str]) -> None:
-        base, token = service
+        base, _ = service
         status, body = post(base, raw=b"[" * 60000)
         assert status == 400, body
         assert "recorded" not in json.dumps(body)
