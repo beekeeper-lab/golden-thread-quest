@@ -26,6 +26,7 @@ import contextlib
 import importlib
 import json
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -402,8 +403,13 @@ def run_validator(
         notes.append(_redact_stderr(stderr))
         if environment_failure:
             # On a failure the first line of stderr is usually the cause, and it is far
-            # more useful than the line count. Redacted like any other captured output.
-            notes.append(f"Its last message was: {stderr.strip().splitlines()[-1][:300]}")
+            # more useful than the line count. `_redact_stderr` never reproduces stderr at
+            # all, precisely because it may carry absolute paths — quoting this one line
+            # verbatim would have been the exemption that rule was written to prevent, so
+            # it gets the same path redaction `validator_child._safe_reason` applies to an
+            # exception's message.
+            last_line = stderr.strip().splitlines()[-1]
+            notes.append(f"Its last message was: {_redact_paths(last_line)[:300]}")
 
     completed = datetime.now(timezone.utc)
     duration_ms = int((time.monotonic() - start_monotonic) * 1000)
@@ -513,6 +519,16 @@ def _redact_stderr(text: str) -> str:
     """A child's stderr, summarized. Never reproduced: it may carry absolute paths."""
     lines = [line for line in text.strip().splitlines() if line.strip()]
     return f"The validator wrote {len(lines)} line(s) to standard error."
+
+
+_PATH_LIKE = re.compile(r"(?:/[^/\s'\"]+){2,}/?")
+
+
+def _redact_paths(text: str) -> str:
+    """Replace anything path-shaped, the same rule `validator_child._safe_reason` applies
+    to an exception's message before it is written into a document a reviewer reads.
+    """
+    return _PATH_LIKE.sub("<path>", text)
 
 
 TRUNCATION_SUFFIX = "\n… output truncated …"

@@ -1158,3 +1158,30 @@ class TestHostileChildren:
         assert not survivors, (
             f"a SIGTERM-ignoring grandchild outlived the overflow stop: {survivors}"
         )
+
+    @pytest.mark.slow
+    def test_a_leaked_path_in_the_last_stderr_line_is_redacted(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """`_redact_stderr` never reproduces stderr, because it may carry absolute paths.
+
+        The "Its last message was" note added on an environment failure quoted that one
+        line verbatim, which was exactly the exemption `_redact_stderr` was written to
+        prevent: a path a participant's own tree does not need shown to a reviewer.
+        """
+        secret_root = str(config.participant_root)
+        result = self._run(
+            registry,
+            config,
+            f"""
+            import subprocess
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                subprocess.run(["git", "-C", {secret_root!r} + "/nope", "status"])
+                output.fail_environment("git was not usable")
+            """,
+        )
+        assert result.outcome == "environment_failure"
+        assert secret_root not in result.output_excerpt
+        assert "<path>" in result.output_excerpt
