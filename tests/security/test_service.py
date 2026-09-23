@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import contextlib
 import json
-import threading
 import re
+import threading
 import time
 import urllib.error
 import urllib.parse
