@@ -130,6 +130,15 @@ participant state, which ADR-011 denies it, and would discard the `evidence_read
 participant deliberately made. `SCREEN-SPECS.md` U06 requires that a validator failure never become
 "quest failed".
 
+**Amended (round 11):** the guard protected the transition, not the file. A `locally_validated`
+state written into `progress.yaml` by hand loaded and was shown under the validator's authority.
+The loader now refuses it (`progress.unvalidated_locally_validated_state`, an error, as a forged
+`verified` is) when a quest declares validators and any of them has no qualifying result for the
+attempt. It asks for *a* qualifying result per validator, not that the latest one qualifies,
+because a failing re-run after local validation leaves the attempt where it was under this ADR
+and must not take the site down. No other state is checked, because submission is allowed
+straight from `evidence_ready`.
+
 ## ADR-018 — Participant paths are contract-fixed, the participant root is configuration
 
 **Decision:** `evidence_path` and `result_path` keep the literal `participant/` prefix the schemas
