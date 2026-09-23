@@ -757,3 +757,33 @@ class TestProofOutsideThePackage:
         link.symlink_to(outside)
         digests = proof_file_digests(config, [self.SKILL, "participant/../escape"])
         assert {item["digest"] for item in digests} == {"unresolvable"}
+
+
+def test_the_review_page_says_when_a_newer_quest_version_is_published(
+    content_repo, config: AppConfig
+) -> None:  # type: ignore[no-untyped-def]
+    """The stale-version warning reached only CLI output; the reviewer's page said nothing."""
+    import re
+
+    from quest_app.build import build_site
+    from quest_app.view_models import offline_service_view
+
+    def review_page() -> str:
+        report = ProblemReport()
+        world = load_world(config, report)
+        assert world is not None, report.to_text()
+        build_site(world, service=offline_service_view())
+        return (config.generated_root / "review" / QUEST / "index.html").read_text()
+
+    assert "older version of the quest" not in review_page()
+
+    quest_file = content_repo / "content" / "quests" / "jira-jungle" / "read-assigned-stories.md"
+    text = quest_file.read_text()
+    started_on = int(re.search(r"\nversion: (\d+)\n", text).group(1))  # type: ignore[union-attr]
+    quest_file.write_text(
+        text.replace(f"\nversion: {started_on}\n", f"\nversion: {started_on + 1}\n", 1)
+    )
+
+    page = review_page()
+    assert "This attempt is on an older version of the quest" in page
+    assert f"{started_on} (version {started_on + 1} is now published)" in page

@@ -46,7 +46,8 @@
   <dl class="definition-list">
     <dt>Participant</dt><dd>{{ participant.display_name if participant else 'unknown' }}</dd>
     <dt>Quest</dt><dd><a href="{{ url(quest.route) }}">{{ quest.title }}</a></dd>
-    <dt>Quest version</dt><dd>{{ quest_version }}</dd>
+    <dt>Quest version</dt>
+    <dd>{{ quest_version }}{% if published_version and published_version > quest_version %} (version {{ published_version }} is now published){% endif %}</dd>
     <dt>Attempt</dt><dd><code>{{ attempt_id }}</code></dd>
     {% if submission_id %}<dt>Submission</dt><dd><code>{{ submission_id }}</code></dd>{% endif %}
     {% if submitted_at %}
@@ -56,6 +57,13 @@
     {% if evidence_hash %}<dt>Evidence hash</dt><dd><code>{{ evidence_hash }}</code></dd>{% endif %}
   </dl>
 </section>
+
+{% if published_version and published_version > quest_version %}
+<div class="alert alert-information" role="status">
+  <h2>This attempt is on an older version of the quest</h2>
+  <p>The participant worked against version {{ quest_version }}. Version {{ published_version }} is published now, and the outcomes and acceptance criteria on this page are version {{ published_version }}'s. The application does not keep the text of earlier versions, so if the criteria changed, check the quest's history in Git before you decide.</p>
+</div>
+{% endif %}
 
 {# Required by SCREEN-SPECS U10: a reviewer must not have to guess whether the evidence was
    scanned before it reached them. #}

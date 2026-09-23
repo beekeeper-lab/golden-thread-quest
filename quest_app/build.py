@@ -953,6 +953,9 @@ def _review_context(
         "quest": summary,
         "attempt_id": attempt.attempt_id,
         "quest_version": attempt.quest_version,
+        # Said on the page, not only in CLI output: a reviewer judging an attempt on an older
+        # version is reading the published version's criteria, which may differ.
+        "published_version": entry.quest.version,
         "submission_id": submission.get("submission_id"),
         "submitted_at": submission.get("submitted_at"),
         # What the participant was told did not block submission. A reviewer could otherwise
@@ -1027,6 +1030,7 @@ def _review_queue_context(
         "submitted_at": None,
         "secret_scan_clean": None,
         "quest_version": 1,
+        "published_version": None,
         "evidence_hash": None,
         "evidence_changed": False,
         "changed_since_submission": (),
