@@ -546,3 +546,47 @@ class TestTheParticipantIsToldWhy:
             assert FINDING["summary"] in page, f"{relative} does not say what is wrong"
             assert FINDING["evidence"] in page, f"{relative} does not say what was observed"
             assert FINDING["severity"] in page, f"{relative} does not say how serious it is"
+
+
+def test_an_attempt_started_before_a_version_bump_can_still_be_approved(
+    content_repo, config: AppConfig
+) -> None:  # type: ignore[no-untyped-def]
+    """An update that bumps a quest leaves in-progress attempts on the version they started.
+
+    Submission and review recorded the current content version rather than the attempt's,
+    so the integrity check then read the reviewer's own approval as a forgery and refused to
+    load the participant's state at all.
+    """
+    quest_file = content_repo / "content" / "quests" / "jira-jungle" / "read-assigned-stories.md"
+    text = quest_file.read_text()
+    assert "\nversion: 1\n" in text
+    quest_file.write_text(text.replace("\nversion: 1\n", "\nversion: 2\n", 1))
+
+    report = ProblemReport()
+    world = load_world(config, report)
+    assert world is not None, report.to_text()
+    schemas = SchemaSet(config.schemas_root)
+    store = ProgressStore(config)
+    quest = world.content.quests[QUEST]
+    attempt = world.participant.progress.attempt_for(QUEST)
+    assert (quest.version, attempt.quest_version) == (2, 1)
+
+    record = submit((world, schemas, store, quest, attempt), config)
+    assert record.quest_version == 1
+    world, attempt = reload_attempt(config)
+    decision = record_decision(
+        config,
+        store,
+        quest=world.content.quests[QUEST],
+        attempt=attempt,
+        participant=world.participant,
+        decision="approved",
+        reviewer_name="A Reviewer",
+        verification_statement=STATEMENT,
+        findings=[],
+        schemas=schemas,
+    )
+    assert decision.quest_version == 1
+
+    _, after = reload_attempt(config)
+    assert after.recorded_state is AttemptState.VERIFIED
