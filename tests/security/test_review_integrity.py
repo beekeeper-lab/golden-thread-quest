@@ -600,3 +600,160 @@ def test_an_attempt_started_before_a_version_bump_can_still_be_approved(
 
     _, after = reload_attempt(config)
     assert after.recorded_state is AttemptState.VERIFIED
+
+
+class TestProofOutsideThePackage:
+    """Declared proof that lives outside the evidence package is covered too.
+
+    Every quest's required proof names files outside the attempt's package — this one a
+    skill in `participant/skills/` and an index in `participant/context/` — and the evidence
+    hash covered only the package. Rewriting any of them after submission or after approval
+    changed nothing the reviewer was told about.
+    """
+
+    SKILL = "participant/skills/jira-read-assigned/SKILL.md"
+    OUTSIDE = (
+        "participant/context/jira/assigned/index.md",
+        "participant/context/jira/assigned/stories.json",
+        SKILL,
+    )
+
+    def write_proof(self, config: AppConfig) -> None:
+        for path in self.OUTSIDE:
+            target = config.resolve_participant_path(path)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(f"as submitted: {path}\n")
+
+    def edit_skill(self, config: AppConfig) -> None:
+        config.resolve_participant_path(self.SKILL).write_text("rewritten after the fact\n")
+
+    def approve(self, config: AppConfig, **extra):  # type: ignore[no-untyped-def]
+        world, attempt = reload_attempt(config)
+        return record_decision(
+            config,
+            ProgressStore(config),
+            quest=world.content.quests[QUEST],
+            attempt=attempt,
+            participant=world.participant,
+            decision="approved",
+            reviewer_name="A Reviewer",
+            verification_statement=STATEMENT,
+            findings=[],
+            schemas=SchemaSet(config.schemas_root),
+            **extra,
+        )
+
+    def strip_proof_files(self, config: AppConfig, name: str) -> None:
+        _, attempt = reload_attempt(config)
+        path = config.resolve_participant_path(attempt.evidence_path) / name
+        data = yaml.safe_load(path.read_text())
+        del data["proof_files"]
+        path.write_text(yaml.safe_dump(data, sort_keys=False))
+
+    def test_the_submission_records_every_declared_path_outside_the_package(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        self.write_proof(config)
+        record = submit(setup, config)
+        assert record.proof_files is not None
+        # The screenshot is authored under the quest's own evidence area, which is the
+        # package, so the evidence hash already covers it.
+        assert tuple(item["path"] for item in record.proof_files) == self.OUTSIDE
+        assert all(item["digest"].startswith("sha256:") for item in record.proof_files)
+
+    def test_editing_proof_outside_the_package_after_submission_needs_acknowledgement(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        self.write_proof(config)
+        submit(setup, config)
+        self.edit_skill(config)
+
+        _, attempt = reload_attempt(config)
+        assert evidence_changed(config, attempt)
+        with pytest.raises(ReviewError, match="changed since it was submitted") as raised:
+            self.approve(config)
+        assert self.SKILL in str(raised.value), "the reviewer is told what to re-read"
+        assert self.approve(config, acknowledge_changed_evidence=True).is_approval
+
+    def test_a_proof_file_created_after_submission_is_a_change(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        submit(setup, config)
+        self.write_proof(config)
+        _, attempt = reload_attempt(config)
+        assert evidence_changed(config, attempt)
+
+    def test_the_review_page_names_the_changed_proof(self, setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        from quest_app.build import build_site
+        from quest_app.view_models import offline_service_view
+
+        self.write_proof(config)
+        submit(setup, config)
+        self.edit_skill(config)
+        world, _ = reload_attempt(config)
+        build_site(world, service=offline_service_view())
+        page = (config.generated_root / "review" / QUEST / "index.html").read_text()
+        assert "changed since it was submitted" in page
+        assert self.SKILL in page
+
+    def test_editing_proof_outside_the_package_after_approval_is_surfaced(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        self.write_proof(config)
+        submit(setup, config)
+        decision = self.approve(config)
+        assert decision.proof_files is not None and len(decision.proof_files) == 3
+
+        report = ProblemReport()
+        assert load_world(config, report) is not None
+        assert "progress.proof_changed_since_approval" not in {p.code for p in report.problems}
+
+        self.edit_skill(config)
+        report = ProblemReport()
+        world = load_world(config, report)
+        assert world is not None, report.to_text()
+        stale = [p for p in report.warnings if p.code == "progress.proof_changed_since_approval"]
+        assert len(stale) == 1 and self.SKILL in stale[0].public_message
+        _, after = reload_attempt(config)
+        assert after.recorded_state is AttemptState.VERIFIED, "a warning, not a revocation"
+
+    def test_records_from_before_proof_files_were_recorded_still_load_clean(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Compared only when present: an old record is neither changed nor forged."""
+        self.write_proof(config)
+        submit(setup, config)
+        self.strip_proof_files(config, "submission.yaml")
+        self.edit_skill(config)
+
+        _, attempt = reload_attempt(config)
+        assert not evidence_changed(config, attempt)
+        self.approve(config)
+        self.strip_proof_files(config, "review.yaml")
+        self.edit_skill(config)
+
+        report = ProblemReport()
+        world = load_world(config, report)
+        assert world is not None, report.to_text()
+        assert report.ok, report.to_text()
+        codes = {p.code for p in report.problems}
+        assert not codes & {
+            "progress.proof_changed_since_approval",
+            "progress.evidence_changed_since_approval",
+            "progress.unverified_verified_state",
+        }
+        _, after = reload_attempt(config)
+        assert after.recorded_state is AttemptState.VERIFIED
+
+    def test_a_proof_path_that_leads_out_of_participant_is_never_read(
+        self, config: AppConfig, tmp_path
+    ) -> None:  # type: ignore[no-untyped-def]
+        from quest_app.evidence import proof_file_digests
+
+        outside = tmp_path / "elsewhere.txt"
+        outside.write_text("not the participant's\n")
+        link = config.resolve_participant_path(self.SKILL)
+        link.parent.mkdir(parents=True, exist_ok=True)
+        link.symlink_to(outside)
+        digests = proof_file_digests(config, [self.SKILL, "participant/../escape"])
+        assert {item["digest"] for item in digests} == {"unresolvable"}

@@ -86,7 +86,11 @@
 
 {% if evidence_changed %}
 <div class="alert alert-warning" role="status">
-  <h2>The evidence changed since it was last reviewed</h2>
+  <h2>The evidence changed since it was submitted</h2>
+  {% if changed_since_submission %}
+  <p>Changed since submission:</p>
+  <ul>{% for path in changed_since_submission %}<li><code>{{ path }}</code></li>{% endfor %}</ul>
+  {% endif %}
   <p>Acknowledge this before approving. A decision must apply to the evidence in front of you.</p>
 </div>
 {% endif %}

@@ -28,7 +28,13 @@ from typing import Any
 import yaml
 
 from quest_app.config import AppConfig
-from quest_app.evidence import evidence_hash, scan_evidence
+from quest_app.evidence import (
+    changed_proof_files,
+    evidence_hash,
+    proof_file_digests,
+    proof_paths_outside_package,
+    scan_evidence,
+)
 from quest_app.models import AttemptState, Decision, Quest
 from quest_app.progress import Attempt, ParticipantState, ReviewDecision
 from quest_app.store import ProgressStore, append_audit, atomic_write_text
@@ -56,6 +62,9 @@ class SubmissionRecord:
     advisories: tuple[str, ...] = ()
     note: str | None = None
     reproduction: str | None = None
+    # The declared proof outside the package, as it stood (ADR-031). None only for a record
+    # built before this existed; a new submission always carries it, even when empty.
+    proof_files: tuple[dict[str, str], ...] | None = None
 
     def to_document(self) -> dict[str, Any]:
         document: dict[str, Any] = {
@@ -78,6 +87,8 @@ class SubmissionRecord:
             document["note"] = self.note
         if self.reproduction:
             document["reproduction"] = self.reproduction
+        if self.proof_files is not None:
+            document["proof_files"] = [dict(item) for item in self.proof_files]
         return document
 
 
@@ -178,6 +189,9 @@ def create_submission(
         validation_result_ids=tuple(result.run_id for result in participant.results_for(attempt)),
         advisories=advisories,
         note=note,
+        proof_files=tuple(
+            proof_file_digests(config, proof_paths_outside_package(quest, attempt.evidence_path))
+        ),
     )
 
     directory = config.resolve_participant_path(attempt.evidence_path)
@@ -237,10 +251,11 @@ def record_decision(
             raise ReviewError(
                 "Approval requires a verification statement saying what you checked and how."
             )
-        if evidence_changed(config, attempt) and not acknowledge_changed_evidence:
+        changed = changes_since_submission(config, attempt)
+        if changed and not acknowledge_changed_evidence:
             raise ReviewError(
-                "The evidence has changed since it was submitted. Re-read it and acknowledge "
-                "the change before approving."
+                f"The evidence has changed since it was submitted ({', '.join(changed)}). "
+                "Re-read it and acknowledge the change before approving."
             )
     elif not findings:
         raise ReviewError(
@@ -249,6 +264,16 @@ def record_decision(
         )
 
     digest = evidence_hash(config, attempt.evidence_path) or "sha256:" + "0" * 64
+    # The same paths the submission recorded, so the review describes what was submitted.
+    # A submission from before proof files were recorded falls back to what the quest
+    # declares now, so even that attempt's approval can be checked for staleness later.
+    submitted_proof = (read_submission(config, attempt) or {}).get("proof_files")
+    proof_paths = (
+        [str(item.get("path")) for item in submitted_proof if isinstance(item, dict)]
+        if isinstance(submitted_proof, list)
+        else list(proof_paths_outside_package(quest, attempt.evidence_path))
+    )
+    proof_files = proof_file_digests(config, proof_paths)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
     document = {
         "schema_version": 1,
@@ -261,6 +286,7 @@ def record_decision(
         "reviewed_at": _now(),
         "decision": decision,
         "findings": findings,
+        "proof_files": proof_files,
     }
     if verification_statement:
         document["verification_statement"] = verification_statement.strip()
@@ -297,6 +323,7 @@ def record_decision(
         ),
         source=f"{attempt.evidence_path}/{REVIEW_FILENAME}",
         verification_statement=verification_statement,
+        proof_files=tuple((item["path"], item["digest"]) for item in proof_files),
     )
 
 
@@ -324,11 +351,25 @@ def _apply_decision(
 
 def evidence_changed(config: AppConfig, attempt: Attempt) -> bool:
     """Whether the evidence differs from what the submission recorded."""
+    return bool(changes_since_submission(config, attempt))
+
+
+def changes_since_submission(config: AppConfig, attempt: Attempt) -> list[str]:
+    """What differs from what the submission recorded: the package, and each proof path.
+
+    The package hash alone missed every declared proof outside the package, which is most
+    of them. Proof paths are compared only when the submission recorded them, so a record
+    from before they were recorded does not suddenly read as changed.
+    """
     submission = read_submission(config, attempt)
     if submission is None:
-        return False
+        return []
+    changes: list[str] = []
     current = evidence_hash(config, attempt.evidence_path)
-    return current is not None and current != submission.get("evidence_hash")
+    if current is not None and current != submission.get("evidence_hash"):
+        changes.append(attempt.evidence_path)
+    changes.extend(changed_proof_files(config, submission.get("proof_files")))
+    return changes
 
 
 def read_submission(config: AppConfig, attempt: Attempt) -> dict[str, Any] | None:

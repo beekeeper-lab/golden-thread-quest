@@ -933,7 +933,7 @@ def _review_context(
 ) -> dict[str, Any]:
     """Everything U10 requires about one attempt."""
     from quest_app.evidence import detect_proof, scan_evidence
-    from quest_app.review import evidence_changed, read_submission, review_history
+    from quest_app.review import changes_since_submission, read_submission, review_history
 
     attempt = entry.attempt
     if attempt is None:
@@ -947,6 +947,7 @@ def _review_context(
         entry.quest, detect_proof(entry.quest, config, attempt.evidence_path, results)
     )
     history = review_history(config, attempt)
+    changed = changes_since_submission(config, attempt)
 
     return {
         "quest": summary,
@@ -959,7 +960,10 @@ def _review_context(
         "advisories": tuple(submission.get("advisories") or ()),
         "secret_scan_clean": not scan_evidence(config, attempt.evidence_path),
         "evidence_hash": submission.get("evidence_hash"),
-        "evidence_changed": evidence_changed(config, attempt),
+        "evidence_changed": bool(changed),
+        # Which of the package and the declared proof outside it changed, so the reviewer
+        # knows what to re-read rather than only that something moved.
+        "changed_since_submission": tuple(changed),
         "outcomes": entry.quest.outcomes,
         "acceptance_criteria": entry.quest.acceptance_criteria,
         "required_proof": required,
@@ -1023,6 +1027,7 @@ def _review_queue_context(
         "quest_version": 1,
         "evidence_hash": None,
         "evidence_changed": False,
+        "changed_since_submission": (),
         "outcomes": (),
         "acceptance_criteria": (),
         "required_proof": (),
