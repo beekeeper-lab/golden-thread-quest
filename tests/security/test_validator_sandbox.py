@@ -267,6 +267,46 @@ class TestRunning:
         assert result.outcome == "interrupted"
         assert result.outcome not in ("pass", "fail", "warning")
 
+    @pytest.mark.slow
+    def test_a_nonzero_exit_is_environment_failure_even_with_a_complete_result(
+        self, monkeypatch, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """A child's exit status is not separable from what it printed.
+
+        `docs/VALIDATOR-CONTRACT.md` says a nonzero exit is `environment_failure` whatever
+        the child printed first. Dropping the `process.returncode != 0` half of the check
+        at `run_validator` (keeping only `not stdout.strip()`) passes the rest of this
+        suite, because nothing else exercises a child that writes a complete, schema-shaped
+        result and then exits nonzero anyway.
+        """
+        import json as json_module
+
+        from quest_app import validator_runner
+
+        payload = json_module.dumps(
+            {
+                "checks": [{"id": "probe", "outcome": "pass", "summary": "ran"}],
+                "notes": [],
+                "environment_failure": None,
+            }
+        )
+        # Replaces the real child entirely: a fixed script that writes a complete result
+        # and then exits nonzero, which is exactly the case nothing else here covers.
+        monkeypatch.setattr(
+            validator_runner,
+            "CHILD_BOOTSTRAP",
+            f"import sys; sys.stdout.write({payload!r}); sys.stdout.flush(); sys.exit(7)",
+        )
+        result = run_validator(
+            registry.get("validate-repository-foundation"),
+            config,
+            quest_id="base-camp-repository-safety",
+            attempt_id="a-001",
+            run_id="nonzero-exit-run",
+        )
+        assert result.outcome == "environment_failure", result
+        assert "status 7" in result.output_excerpt
+
 
 class TestClassification:
     def test_an_inconclusive_check_is_not_a_pass(self) -> None:

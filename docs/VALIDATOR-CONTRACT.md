@@ -63,6 +63,9 @@ A validator with more to say than that should summarize it in its checks.
   output is held in memory, not after.
 - Interrupted validators produce an interrupted or inconclusive result. A run whose checks
   were all `skipped` is `inconclusive`: nothing was checked.
+- A child that exits with a nonzero status is `environment_failure`, whatever it printed
+  first: exit status is not separable from the result, and a process that considered
+  itself to have failed is not trusted to have reported anything reliably.
 - The process group is terminated when the validator exits and on timeout, so nothing it
   started outlives the run — always by the time the run returns, not only when the direct
   child happens to die on its own signal.
