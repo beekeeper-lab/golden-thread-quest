@@ -6,6 +6,8 @@ everything they wrote. These are the tests that hold it.
 
 from __future__ import annotations
 
+import re
+import shlex
 import subprocess
 from pathlib import Path
 
@@ -195,32 +197,97 @@ class TestGitSafety:
         assert result.proposed_backup_branch in result.instructions
 
 
-@pytest.mark.slow
-def test_participant_files_survive_an_upstream_style_update(config: AppConfig) -> None:
-    """The promise, end to end: program files change, participant files do not.
+def _git_commands(instructions: str) -> list[list[str]]:
+    """The `git` lines a participant would copy out of `update_instructions()`.
 
-    Simulated rather than mocked — a real repository, a real commit, a real change to
-    program-owned content while participant evidence sits beside it.
+    Strips the trailing `# comment` off each line and drops anything that is not a `git`
+    invocation (the printed recipe also names `make validate-content`, which this fixture's
+    stripped-down repository copy cannot run).
+    """
+    commands = []
+    for line in instructions.splitlines():
+        line = re.split(r"\s+#", line, maxsplit=1)[0].strip()
+        if line.startswith("git "):
+            commands.append(shlex.split(line)[1:])
+    return commands
+
+
+@pytest.mark.slow
+def test_participant_files_survive_an_upstream_style_update(
+    config: AppConfig, tmp_path_factory: pytest.TempPathFactory
+) -> None:
+    """The promise, end to end, driven by the application's own preflight and the exact
+    commands `update_instructions()` prints — not a hand-rolled Git sequence that would
+    still pass with `quest_app/update.py` gutted.
+
+    A real repository, a real second remote standing in for upstream, program-owned content
+    changed there, and the merge performed by running the printed recipe verbatim.
     """
     _init_repo(config.repo_root, commit=True)
+
+    # A real 'upstream' remote, so `preflight()` reports the repository as safe to update
+    # from and the instructions it prints are the ones this test then runs.
+    upstream = tmp_path_factory.mktemp("upstream") / "origin.git"
+    subprocess.run(
+        ["git", "clone", "--bare", "-q", str(config.repo_root), str(upstream)],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(config.repo_root), "remote", "add", "upstream", str(upstream)],
+        check=True,
+        capture_output=True,
+    )
+
+    result = preflight(config)
+    assert result.safe_to_proceed, [
+        finding.summary for finding in result.findings if finding.blocks
+    ]
+    assert result.proposed_backup_branch is not None
+
     evidence = config.participant_root / "evidence" / "base-camp-repository-safety"
     proof = next(evidence.rglob("PROOF.md"))
     before = proof.read_text()
     progress_before = (config.participant_root / "progress.yaml").read_text()
 
-    # An "upstream" change: program-owned content is rewritten.
-    quest = config.repo_root / "content" / "quests" / "base-camp" / "repository-safety.md"
-    quest.write_text(quest.read_text().replace("## Mission", "## Mission\n\nA new sentence."))
+    # Upstream publishes a change to program-owned content, through a second clone —
+    # nothing here touches the participant's own working copy directly.
+    upstream_work = tmp_path_factory.mktemp("upstream-work") / "clone"
     subprocess.run(
-        ["git", "-C", str(config.repo_root), "add", "-A"], check=True, capture_output=True
+        ["git", "clone", "-q", str(upstream), str(upstream_work)], check=True, capture_output=True
+    )
+    quest = upstream_work / "content" / "quests" / "base-camp" / "repository-safety.md"
+    quest.write_text(quest.read_text().replace("## Mission", "## Mission\n\nA new sentence."))
+    subprocess.run(["git", "-C", str(upstream_work), "add", "-A"], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(upstream_work), "commit", "-q", "-m", "upstream change"],
+        check=True,
+        capture_output=True,
+        env=_git_env(),
     )
     subprocess.run(
-        ["git", "-C", str(config.repo_root), "commit", "-m", "upstream change"],
+        ["git", "-C", str(upstream_work), "push", "-q", "origin", "HEAD:main"],
         check=True,
         capture_output=True,
         env=_git_env(),
     )
 
+    # Run exactly the commands `update_instructions()` printed for the participant to
+    # copy and paste — the real update path, not a paraphrase of it.
+    commands = _git_commands(result.instructions)
+    assert commands, "update_instructions() printed no git commands to run"
+    for command in commands:
+        subprocess.run(
+            ["git", "-C", str(config.repo_root), *command],
+            check=True,
+            capture_output=True,
+            env=_git_env(),
+        )
+
+    # The update actually happened...
+    quest_now = config.repo_root / "content" / "quests" / "base-camp" / "repository-safety.md"
+    assert "A new sentence." in quest_now.read_text()
+    # ...and the participant's own files were not touched by any of it.
     assert proof.read_text() == before
     assert (config.participant_root / "progress.yaml").read_text() == progress_before
 
