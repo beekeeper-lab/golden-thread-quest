@@ -8,6 +8,7 @@ matter, that the evidence package answers the questions a reviewer will ask.
 
 from __future__ import annotations
 
+from fnmatch import fnmatchcase
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -15,13 +16,26 @@ if TYPE_CHECKING:
 
 from quest_app.validator_runner import Check
 
-# The categories a participant's ignore rules must cover. Named by intent rather than by
-# exact pattern, because there are many correct spellings of each.
+# The categories a participant's ignore rules must cover, each as names a rule for that
+# category would ignore. Named by example rather than by exact pattern, because there are
+# many correct spellings of each: `*.pem`, `secrets/` and `**/credentials.json` all cover
+# credentials. A rule covers a category when it would ignore one of these names.
+#
+# These were substrings, so a rule was read as a bag of letters: `mysecretfolder/` covered
+# "credentials" because it contains "secret", and `rebuild.log` covered "generated output"
+# because it contains "build". Neither ignores anything of the kind.
 IGNORE_CATEGORIES = {
-    "generated output": ("generated", "dist", "build/"),
-    "local runtime data": ("local-data", ".cache", "tmp/"),
-    "environment files": (".env",),
-    "credentials": ("*.pem", "*.key", "credentials", "secret"),
+    "generated output": ("generated", "dist", "build"),
+    "local runtime data": ("local-data", ".cache", "tmp"),
+    "environment files": (".env", ".env.local"),
+    "credentials": (
+        "server.pem",
+        "server.key",
+        "credentials",
+        "credentials.json",
+        "secret",
+        "secrets",
+    ),
 }
 
 PROOF_QUESTIONS = {
@@ -57,6 +71,21 @@ def _ignore_patterns(text: str) -> list[str]:
     return patterns
 
 
+def _ignores(pattern: str, name: str) -> bool:
+    """Whether a .gitignore rule would ignore a file or directory called `name`.
+
+    Git matches a rule against the final component of a path (or, with a slash inside, the
+    whole path), so the rule's last real segment is what names the thing ignored:
+    `/generated/`, `**/secrets/` and `dist/**` name `generated`, `secrets` and `dist`, while
+    `build/output` ignores only `output` inside `build`. The segment is then matched as the
+    glob it is. `**` alone ignores everything, and so covers every category.
+    """
+    segments = [part for part in pattern.strip("/").split("/") if part and part != "**"]
+    if not segments:
+        return pattern.strip("/") == "**"
+    return fnmatchcase(name, segments[-1])
+
+
 def _check_ignore_rules(workspace: Workspace, output: ValidatorOutput) -> None:
     candidates = [".gitignore"]
     present = False
@@ -89,8 +118,8 @@ def _check_ignore_rules(workspace: Workspace, output: ValidatorOutput) -> None:
 
     missing = [
         category
-        for category, markers in sorted(IGNORE_CATEGORIES.items())
-        if not any(marker in pattern for pattern in patterns for marker in markers)
+        for category, names in sorted(IGNORE_CATEGORIES.items())
+        if not any(_ignores(pattern, name) for pattern in patterns for name in names)
     ]
     if missing:
         output.add(

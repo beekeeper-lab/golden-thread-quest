@@ -62,6 +62,34 @@ class TestIgnoreRulesAreRules:
         _check_ignore_rules(_workspace(tmp_path), output)
         assert _outcome(output, "ignore-rules-cover-categories") == "pass"
 
+    def test_a_rule_that_only_contains_a_marker_is_not_coverage(self, tmp_path: Path) -> None:
+        """`mysecretfolder/` ignores a folder, not secrets; `rebuild.log` ignores a log."""
+        (tmp_path / ".gitignore").write_text(
+            "rebuild.log\nlocal-data/\n.env\nmysecretfolder/\nnot-credentials-notes.md\n"
+        )
+        output = ValidatorOutput()
+        _check_ignore_rules(_workspace(tmp_path), output)
+        assert _outcome(output, "ignore-rules-cover-categories") == "fail"
+        evidence = next(
+            c.evidence for c in output.checks if c.id == "ignore-rules-cover-categories"
+        )
+        assert "credentials" in evidence and "generated output" in evidence
+
+    def test_the_usual_spellings_of_each_category_are_coverage(self, tmp_path: Path) -> None:
+        (tmp_path / ".gitignore").write_text(
+            "/dist/\n**/.cache/\n.env.*\n**/secrets/\n", encoding="utf-8"
+        )
+        output = ValidatorOutput()
+        _check_ignore_rules(_workspace(tmp_path), output)
+        assert _outcome(output, "ignore-rules-cover-categories") == "pass"
+
+    def test_a_rule_inside_a_directory_does_not_cover_the_directory(self, tmp_path: Path) -> None:
+        """`build/output` ignores `output` inside `build`, not the build output as a whole."""
+        (tmp_path / ".gitignore").write_text("build/output\nlocal-data/\n.env\n*.key\n")
+        output = ValidatorOutput()
+        _check_ignore_rules(_workspace(tmp_path), output)
+        assert _outcome(output, "ignore-rules-cover-categories") == "fail"
+
 
 class TestBrittleSelectors:
     """The check exists to catch a test coupled to markup, which is usually a class name."""
