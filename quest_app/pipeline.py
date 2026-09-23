@@ -41,6 +41,13 @@ def load_world(
     if content is None:
         return None
     validate_bundle(content, report)
+    # A quest naming a validator that is not registered, or not registered for it, passed
+    # `validate` and `build` and only failed when a participant pressed the button.
+    from quest_app.validator_registry import check_quest_references, load_registry
+
+    registry = load_registry(config, report)
+    if registry is not None:
+        check_quest_references(registry, content.quests, report)
 
     participant: ParticipantState | None = None
     if report.ok and ((config.participant_root / "progress.yaml").exists() or require_participant):

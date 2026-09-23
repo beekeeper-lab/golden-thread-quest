@@ -292,3 +292,30 @@ def test_path_outside_the_participant_root_is_refused(config: AppConfig) -> None
 def test_a_legitimate_evidence_path_resolves_inside_the_root(config: AppConfig) -> None:
     resolved = config.resolve_participant_path("participant/evidence/quest-id/attempt-001")
     assert config.participant_root in resolved.parents
+
+
+class TestValidatorReferences:
+    """`check_quest_references` existed and nothing called it, so a quest could name a
+    validator that did not exist and only the participant pressing the button found out."""
+
+    def test_a_quest_naming_an_unregistered_validator_is_refused(
+        self, content_repo: Path, config: AppConfig, report: ProblemReport
+    ) -> None:
+        edit_front_matter(content_repo, QUEST, validators=["no-such-validator"])
+        assert load(config, report) is None
+        assert problem(report, "validator.unknown")
+
+    def test_a_validator_registered_for_another_quest_is_refused(
+        self, content_repo: Path, config: AppConfig, report: ProblemReport
+    ) -> None:
+        edit_front_matter(content_repo, QUEST, validators=["validate-jira-read-assigned"])
+        assert load(config, report) is None
+        assert problem(report, "validator.not_permitted_for_quest")
+
+    @pytest.mark.parametrize("raw", [b"validators: [unclosed\n", b"validators: caf\xe9\n"])
+    def test_a_registry_that_does_not_parse_is_a_reported_problem(
+        self, content_repo: Path, config: AppConfig, report: ProblemReport, raw: bytes
+    ) -> None:
+        (content_repo / "validators" / "registry.yaml").write_bytes(raw)
+        assert load(config, report) is None
+        assert any(p.source == "validators/registry.yaml" for p in report.errors), codes(report)

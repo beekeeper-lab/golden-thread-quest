@@ -17,7 +17,6 @@ from typing import Any
 
 from quest_app.config import AppConfig
 from quest_app.errors import ContentProblem, ProblemReport, Severity
-from quest_app.yaml_loader import strict_safe_load
 
 REGISTRY_FILENAME = "registry.yaml"
 
@@ -159,7 +158,13 @@ def load_registry(config: AppConfig, report: ProblemReport) -> ValidatorRegistry
         )
         return None
 
-    data = strict_safe_load(path.read_text(encoding="utf-8"))
+    from quest_app.content_loader import read_yaml
+
+    # Through the content reader, so a registry that does not parse or decode is a reported
+    # problem rather than a codec or parser message in front of the participant.
+    data = read_yaml(path, config, report)
+    if data is None:
+        return None
     if not isinstance(data, dict):
         report.add(
             ContentProblem(
