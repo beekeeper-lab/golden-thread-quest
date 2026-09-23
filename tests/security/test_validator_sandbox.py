@@ -1185,3 +1185,29 @@ class TestHostileChildren:
         assert result.outcome == "environment_failure"
         assert secret_root not in result.output_excerpt
         assert "<path>" in result.output_excerpt
+
+    @pytest.mark.slow
+    def test_far_too_many_checks_reaches_the_truncation_not_environment_failure(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """A validator reporting far more checks than the schema allows used to exceed the
+        1 MiB output ceiling before `MAX_CHECKS` ever had a chance to apply, so the whole
+        run was thrown away as `environment_failure` instead of being truncated and shown.
+        """
+        from quest_app.validator_runner import MAX_CHECKS
+
+        result = self._run(
+            registry,
+            config,
+            """
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                for i in range(20000):
+                    output.add(Check(id=f"c{i}", outcome="pass", summary="ok"))
+            """,
+        )
+        assert result.outcome != "environment_failure", result
+        truncation = next(c for c in result.checks if c.id == "checks-truncated")
+        assert str(20000 - MAX_CHECKS) in truncation.summary
+        assert sum(1 for c in result.checks if c.id != "checks-truncated") == MAX_CHECKS

@@ -52,6 +52,7 @@ def main() -> int:
         ValidatorOutput,
         Workspace,
         WorkspaceError,
+        _apply_check_limit,
         _import_entrypoint,
     )
 
@@ -87,6 +88,13 @@ def main() -> int:
         # The type and message, never the traceback: a traceback carries absolute paths and
         # this text is shown to a participant.
         output.fail_environment(f"the validator raised {type(exc).__name__}: {exc!s:.200}")
+
+    # A validator that reports far more checks than the schema allows must not be allowed
+    # to produce a result document larger than the 1 MiB ceiling on this stream: that would
+    # be stopped and thrown away whole as `environment_failure`, and the truncation this
+    # cap exists for would never run. Applying it here, before serializing, means the
+    # parent never has to receive more than it would keep anyway.
+    output.checks = _apply_check_limit(output.checks)
 
     payload: dict[str, Any] = {
         "checks": [asdict(check) for check in output.checks],

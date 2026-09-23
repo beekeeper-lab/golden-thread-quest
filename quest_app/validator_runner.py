@@ -267,6 +267,39 @@ def classify(output: ValidatorOutput) -> str:
     return "pass"
 
 
+def _apply_check_limit(checks: list[Check]) -> list[Check]:
+    """Cap a run's checks at `MAX_CHECKS`, and say how many were dropped.
+
+    `quest_app.validator_child` applies this before it serializes its result, so a
+    validator that reports far more than the schema allows never produces a document large
+    enough to trip `STREAM_LIMIT` before this limit had a chance to apply. Twenty thousand
+    checks made a document past the 1 MiB ceiling on either stream, and the run was thrown
+    away whole as `environment_failure` — the truncation this function exists for was
+    never reached.
+
+    Applied again here for whatever else reaches the runner. Doing it twice is harmless: a
+    list already at or under the cap is returned unchanged, and one that already ends with
+    this exact marker — because the child already applied it — is recognised and left
+    alone rather than truncated a second time.
+    """
+    if len(checks) <= MAX_CHECKS:
+        return checks
+    if len(checks) == MAX_CHECKS + 1 and checks[-1].id == "checks-truncated":
+        return checks
+    dropped = len(checks) - MAX_CHECKS
+    limited = checks[:MAX_CHECKS]
+    limited.append(
+        Check(
+            id="checks-truncated",
+            outcome="warning",
+            summary=f"{dropped} further check(s) were dropped; this run reported too many.",
+            severity="medium",
+            suggested_action="A validator that reports this much detail should summarize it.",
+        )
+    )
+    return limited
+
+
 def _import_entrypoint(entrypoint: str) -> Any:
     module_path, _, attribute = entrypoint.partition(":")
     if not module_path.startswith(f"{ALLOWED_ENTRYPOINT_PACKAGE}.") or not attribute:
@@ -436,18 +469,7 @@ def run_validator(
     if not output.checks:
         output.checks.append(_explaining_check(outcome, definition, environment_failure))
 
-    if len(output.checks) > MAX_CHECKS:
-        dropped = len(output.checks) - MAX_CHECKS
-        output.checks = output.checks[:MAX_CHECKS]
-        output.checks.append(
-            Check(
-                id="checks-truncated",
-                outcome="warning",
-                summary=f"{dropped} further check(s) were dropped; this run reported too many.",
-                severity="medium",
-                suggested_action="A validator that reports this much detail should summarize it.",
-            )
-        )
+    output.checks = _apply_check_limit(output.checks)
     excerpt, truncated = _bounded(
         "\n".join(output.notes), min(definition.max_output_bytes, EXCERPT_LIMIT)
     )
