@@ -130,6 +130,15 @@ participant state, which ADR-011 denies it, and would discard the `evidence_read
 participant deliberately made. `SCREEN-SPECS.md` U06 requires that a validator failure never become
 "quest failed".
 
+**Amended (round 11):** the guard protected the transition, not the file. A `locally_validated`
+state written into `progress.yaml` by hand loaded and was shown under the validator's authority.
+The loader now refuses it (`progress.unvalidated_locally_validated_state`, an error, as a forged
+`verified` is) when a quest declares validators and any of them has no qualifying result for the
+attempt. It asks for *a* qualifying result per validator, not that the latest one qualifies,
+because a failing re-run after local validation leaves the attempt where it was under this ADR
+and must not take the site down. No other state is checked, because submission is allowed
+straight from `evidence_ready`.
+
 ## ADR-018 — Participant paths are contract-fixed, the participant root is configuration
 
 **Decision:** `evidence_path` and `result_path` keep the literal `participant/` prefix the schemas
@@ -330,6 +339,35 @@ freshly submitted attempt read as "changed since submission" the moment it was s
 The same applies to a validation re-run and to the review record itself. The question the
 hash answers is "has the participant's work changed?", so the application's own bookkeeping
 has no business in it.
+
+**Amended (round 11):** the participant's work is not only the package. Every quest declares
+proof outside it — a test under `participant/tests/`, a document under `participant/context/`
+— and editing one after submission or after approval raised nothing. Submission and review
+records now also carry `proof_files`: each declared proof path (required and optional, of a
+path-bearing type) that does not lie under the quest's own evidence area, with a digest of
+what it held. Authored `attempt-001` paths under the evidence area are left out because
+`_inside_the_package` maps them into the package, which `evidence_hash` already covers. A
+path is resolved with `resolve_participant_path`, so one that leads outside `participant/`
+is recorded as `unresolvable` and never read; one with nothing at it is `missing`, so a file
+appearing or disappearing is a change. The approval gate compares the submission's
+`proof_files`, the reviewer page names each changed path, and the loader warns
+(`progress.proof_changed_since_approval`) when an approved review's `proof_files` no longer
+match. The review records the paths the submission recorded, so both describe the same set.
+
+Old records lack the field. They are compared on `evidence_hash` alone, exactly as before,
+and never read as changed or forged for its absence. A review of an old submission computes
+its paths from the quest as it stands, so its approval can still go stale later. The paths
+come from the quest as loaded, not from the attempt's recorded version: the application
+keeps no earlier version of a quest's text, so when an update has moved a quest on, the
+submission records the current version's declared paths.
+
+**Amended (round 11, links):** a symbolic link inside the package that resolves outside it
+is refused the same way by render, hash and scan: `PROOF.md` is not rendered through it, the
+hash takes its link text rather than its target, the secret scan reports it (which blocks
+submission), and the loader warns (`evidence.link_outside_package`). A link that resolves
+inside the package is hashed by the content it shows, because that is what the build
+renders. A package holding such a link hashes differently from before this change; a
+package with no links hashes the same.
 
 ## ADR-032 — The application never pushes, opens a pull request, or merges
 

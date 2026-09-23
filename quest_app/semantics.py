@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from quest_app.errors import ContentProblem, ProblemReport, Severity
 from quest_app.models import AttemptState, ContentBundle, Quest
-from quest_app.progress import ParticipantProgress
+from quest_app.progress import ParticipantProgress, ParticipantState
 
 DOC_ROUTE = "/docs/content-authoring/"
 
@@ -552,3 +552,54 @@ def validate_progress_against_content(
                     ),
                 )
             )
+
+
+def validate_local_validation_claims(
+    participant: ParticipantState, bundle: ContentBundle, report: ProblemReport
+) -> None:
+    """A `locally_validated` attempt must have the validator results the state claims.
+
+    The state is shown under the registered validator's authority — "required automated
+    checks passed" — and the transition guard refuses it without qualifying results. A
+    participant could still write it into `progress.yaml` by hand, and it loaded and was
+    displayed exactly as if the checks had passed (ADR-030 says such a claim is refused).
+
+    The rule is that every declared validator has *a* qualifying result for this attempt,
+    not that its latest one qualifies. ADR-017 says a failing re-run leaves the attempt
+    where it was, so a pass followed by a fail is a legitimate record, not a forgery; an
+    error there would take the whole site down for following the documented flow. A quest
+    that declares no validators reaches the state on the participant's word, and says so.
+    Only `locally_validated` is checked: no later state implies it, because submission is
+    allowed straight from `evidence_ready`.
+    """
+    for attempt in participant.progress.attempts:
+        if attempt.recorded_state is not AttemptState.LOCALLY_VALIDATED:
+            continue
+        quest = bundle.quests.get(attempt.quest_id)
+        if quest is None or not quest.validators:
+            continue
+        passed = {
+            result.validator_id for result in participant.results_for(attempt) if result.qualifies
+        }
+        missing = [validator for validator in quest.validators if validator not in passed]
+        if not missing:
+            continue
+        report.add(
+            ContentProblem.build(
+                code="progress.unvalidated_locally_validated_state",
+                severity=Severity.ERROR,
+                public_message=(
+                    f"Attempt {attempt.attempt_id!r} claims local validation, but "
+                    f"{', '.join(missing)} has no qualifying result for it."
+                ),
+                source=participant.progress.source,
+                entity_id=attempt.attempt_id,
+                field_path="attempts[].state",
+                expected="a passing or warning result from every declared validator",
+                suggestion=(
+                    "Local validation comes from validator results, not from this file. Set "
+                    "the state back to 'evidence_ready', run the checks, then record local "
+                    "validation."
+                ),
+            )
+        )

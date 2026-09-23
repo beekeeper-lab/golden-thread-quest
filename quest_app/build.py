@@ -42,7 +42,7 @@ from quest_app.progress_calc import (
     totals,
 )
 from quest_app.recommend import recommend
-from quest_app.state_machine import CONFIRMATIONS, allowed_actions
+from quest_app.state_machine import CONFIRMATIONS, DECISION_CONFIRMATIONS, allowed_actions
 from quest_app.view_models import (
     ActionView,
     ActivityEvent,
@@ -903,14 +903,16 @@ def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None
     """
     if not evidence_path:
         return None
-    try:
-        path = world.config.resolve_participant_path(evidence_path) / "PROOF.md"
-    except ValueError:
-        return None
-    if not path.is_file():
-        return None
+    from quest_app.evidence import package_file
     from quest_app.markdown_render import render_markdown
     from quest_app.secret_patterns import redact_text
+
+    # Only the directory used to be resolved, so a PROOF.md that was a link to any file the
+    # build could read was rendered into the site. A link out of the package is refused
+    # here, reported by the loader, and blocks submission through the secret scan.
+    path = package_file(world.config, evidence_path, "PROOF.md")
+    if path is None:
+        return None
 
     # Redacted before rendering. It is the participant's own file and they can already read
     # it, but the guarantee "generated output contains no secrets" has to hold for the
@@ -931,7 +933,7 @@ def _review_context(
 ) -> dict[str, Any]:
     """Everything U10 requires about one attempt."""
     from quest_app.evidence import detect_proof, scan_evidence
-    from quest_app.review import evidence_changed, read_submission, review_history
+    from quest_app.review import changes_since_submission, read_submission, review_history
 
     attempt = entry.attempt
     if attempt is None:
@@ -945,11 +947,15 @@ def _review_context(
         entry.quest, detect_proof(entry.quest, config, attempt.evidence_path, results)
     )
     history = review_history(config, attempt)
+    changed = changes_since_submission(config, attempt)
 
     return {
         "quest": summary,
         "attempt_id": attempt.attempt_id,
         "quest_version": attempt.quest_version,
+        # Said on the page, not only in CLI output: a reviewer judging an attempt on an older
+        # version is reading the published version's criteria, which may differ.
+        "published_version": entry.quest.version,
         "submission_id": submission.get("submission_id"),
         "submitted_at": submission.get("submitted_at"),
         # What the participant was told did not block submission. A reviewer could otherwise
@@ -957,7 +963,10 @@ def _review_context(
         "advisories": tuple(submission.get("advisories") or ()),
         "secret_scan_clean": not scan_evidence(config, attempt.evidence_path),
         "evidence_hash": submission.get("evidence_hash"),
-        "evidence_changed": evidence_changed(config, attempt),
+        "evidence_changed": bool(changed),
+        # Which of the package and the declared proof outside it changed, so the reviewer
+        # knows what to re-read rather than only that something moved.
+        "changed_since_submission": tuple(changed),
         "outcomes": entry.quest.outcomes,
         "acceptance_criteria": entry.quest.acceptance_criteria,
         "required_proof": required,
@@ -975,6 +984,8 @@ def _review_context(
         "decision_route": routes.action("record-review", entry.quest.id),
         # One definition of what the reviewer confirms, shared with the service (ADR-033).
         "confirm": CONFIRMATIONS["record-review"],
+        # Each decision's own wording, which the script swaps in when one is chosen.
+        "decision_confirmations": DECISION_CONFIRMATIONS,
     }
 
 
@@ -1019,8 +1030,10 @@ def _review_queue_context(
         "submitted_at": None,
         "secret_scan_clean": None,
         "quest_version": 1,
+        "published_version": None,
         "evidence_hash": None,
         "evidence_changed": False,
+        "changed_since_submission": (),
         "outcomes": (),
         "acceptance_criteria": (),
         "required_proof": (),

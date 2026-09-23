@@ -66,7 +66,7 @@ address. Open it.
 
 | | |
 |---|---|
-| Tests | 736 — 694 under `make check`, 42 driving a real browser. The line `make check` prints counts skips too, so it can read one or two higher where an optional dependency is missing. |
+| Tests | 759 — 716 under `make check`, 43 driving a real browser. The line `make check` prints counts skips too, so it can read one or two higher where an optional dependency is missing. |
 | Screens | 13 page templates, 11 reusable components |
 | Schemas | 10, validating content, progress, reviews, validation results and the validator registry |
 | Sample curriculum | 8 regions, 8 quests, 4 badges, 1 track |

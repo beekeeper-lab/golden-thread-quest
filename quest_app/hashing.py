@@ -39,6 +39,10 @@ def normalize_text(text: str) -> str:
     return "\n".join(line.rstrip() for line in lines).strip() + "\n"
 
 
+def hash_bytes(data: bytes) -> str:
+    return _digest([data])
+
+
 def hash_text(text: str) -> str:
     return _digest([normalize_text(text).encode("utf-8")])
 
@@ -63,10 +67,15 @@ def hash_directory(
 ) -> str:
     """The identity of a directory tree: sorted relative names plus file contents.
 
-    Symbolic links are hashed as their target string rather than followed, so a link that
-    points outside the tree cannot silently pull unrelated content into the digest.
+    A symbolic link that resolves inside the tree is hashed by what it points at, because
+    that is what the build renders and the secret scan reads: hashing only the link text let
+    a participant change the rendered proof after approval without changing the hash. A link
+    that resolves outside the tree is hashed by its link text alone, so unrelated content is
+    never pulled into the digest; the evidence loader reports such a link and nothing
+    renders through it.
     """
     chunks: list[bytes] = []
+    resolved_root = root.resolve()
     for path in sorted(root.rglob("*"), key=lambda p: p.relative_to(root).as_posix()):
         relative = path.relative_to(root).as_posix()
         parts = path.relative_to(root).parts
@@ -75,10 +84,26 @@ def hash_directory(
         if any(fnmatch(parts[-1], pattern) for pattern in skip_globs):
             continue
         chunks.append(relative.encode("utf-8"))
-        if path.is_symlink():
-            chunks.append(b"symlink:" + str(path.readlink()).encode("utf-8"))
+        if not resolves_inside(path, resolved_root):
+            link = path.readlink() if path.is_symlink() else Path("?")
+            chunks.append(b"symlink-outside:" + str(link).encode("utf-8"))
         elif path.is_file():
+            if path.is_symlink():
+                chunks.append(b"symlink:" + str(path.readlink()).encode("utf-8"))
             chunks.append(path.read_bytes())
         else:
             chunks.append(b"dir")
     return _digest(chunks)
+
+
+def resolves_inside(path: Path, root: Path) -> bool:
+    """Whether `path`, with every symbolic link followed, is `root` or lies under it.
+
+    `root` must already be resolved. A path that cannot be resolved (a link loop) is
+    treated as outside, because nothing can vouch for where it leads.
+    """
+    try:
+        target = path.resolve(strict=False)
+    except (OSError, RuntimeError):
+        return False
+    return target == root or root in target.parents

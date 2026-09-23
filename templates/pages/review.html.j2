@@ -46,7 +46,8 @@
   <dl class="definition-list">
     <dt>Participant</dt><dd>{{ participant.display_name if participant else 'unknown' }}</dd>
     <dt>Quest</dt><dd><a href="{{ url(quest.route) }}">{{ quest.title }}</a></dd>
-    <dt>Quest version</dt><dd>{{ quest_version }}</dd>
+    <dt>Quest version</dt>
+    <dd>{{ quest_version }}{% if published_version and published_version > quest_version %} (version {{ published_version }} is now published){% endif %}</dd>
     <dt>Attempt</dt><dd><code>{{ attempt_id }}</code></dd>
     {% if submission_id %}<dt>Submission</dt><dd><code>{{ submission_id }}</code></dd>{% endif %}
     {% if submitted_at %}
@@ -56,6 +57,13 @@
     {% if evidence_hash %}<dt>Evidence hash</dt><dd><code>{{ evidence_hash }}</code></dd>{% endif %}
   </dl>
 </section>
+
+{% if published_version and published_version > quest_version %}
+<div class="alert alert-information" role="status">
+  <h2>This attempt is on an older version of the quest</h2>
+  <p>The participant worked against version {{ quest_version }}. Version {{ published_version }} is published now, and the outcomes and acceptance criteria on this page are version {{ published_version }}'s. The application does not keep the text of earlier versions, so if the criteria changed, check the quest's history in Git before you decide.</p>
+</div>
+{% endif %}
 
 {# Required by SCREEN-SPECS U10: a reviewer must not have to guess whether the evidence was
    scanned before it reached them. #}
@@ -86,7 +94,11 @@
 
 {% if evidence_changed %}
 <div class="alert alert-warning" role="status">
-  <h2>The evidence changed since it was last reviewed</h2>
+  <h2>The evidence changed since it was submitted</h2>
+  {% if changed_since_submission %}
+  <p>Changed since submission:</p>
+  <ul>{% for path in changed_since_submission %}<li><code>{{ path }}</code></li>{% endfor %}</ul>
+  {% endif %}
   <p>Acknowledge this before approving. A decision must apply to the evidence in front of you.</p>
 </div>
 {% endif %}
@@ -176,9 +188,9 @@
       <label for="decision">Decision</label>
       <select id="decision" name="decision" required>
         <option value="">Choose</option>
-        <option value="approved">Approve</option>
-        <option value="needs_changes">Needs changes</option>
-        <option value="rejected">Reject</option>
+        <option value="approved" data-confirm="{{ decision_confirmations['approved'] }}?">Approve</option>
+        <option value="needs_changes" data-confirm="{{ decision_confirmations['needs_changes'] }}?">Needs changes</option>
+        <option value="rejected" data-confirm="{{ decision_confirmations['rejected'] }}?">Reject</option>
       </select>
     </div>
     <div class="field">
@@ -233,7 +245,7 @@
     <div class="field">
       <label for="confirm-decision">
         <input type="checkbox" id="confirm-decision" name="confirm" value="yes" required>
-        {{ confirm }}
+        <span data-confirm-label>{{ confirm }}</span>
       </label>
       <p class="hint">This is recorded in the repository and the participant will see it.</p>
     </div>

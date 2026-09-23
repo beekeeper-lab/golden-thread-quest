@@ -32,10 +32,35 @@ CONFIRMATIONS: dict[str, str] = {
     # this list reached. Until round 8 the reviewer's decision was confirmed by a
     # `window.confirm` in the page's script and by nothing else, so a browser with
     # scripting off, the JSON endpoint and the CLI all recorded an approval unguarded.
+    #
+    # Neutral, because the same form and the same CLI flag carry all three decisions: the
+    # old text told a reviewer requesting changes that they were producing verified XP.
+    # `confirmation_for` gives the wording for a decision once one is chosen.
     "record-review": (
-        "Record this decision. Approving produces verified completion and verified XP"
+        "Record this decision. Only an approval produces verified completion and verified XP"
     ),
 }
+
+# What the reviewer confirms for each decision, once it is known. Keyed by `Decision` value.
+DECISION_CONFIRMATIONS: dict[str, str] = {
+    "approved": "Record this approval. It produces verified completion and verified XP",
+    "needs_changes": (
+        "Record this request for changes. The participant will see your findings, and "
+        "nothing is verified"
+    ),
+    "rejected": (
+        "Record this rejection. The participant will see your findings, and nothing is verified"
+    ),
+}
+
+
+def confirmation_for(action: str, payload: dict[str, object] | None = None) -> str:
+    """The words confirmed for `action`, specific to the decision when there is one."""
+    if action == "record-review" and payload is not None:
+        decision = payload.get("decision")
+        if isinstance(decision, str) and decision in DECISION_CONFIRMATIONS:
+            return DECISION_CONFIRMATIONS[decision]
+    return CONFIRMATIONS[action]
 
 
 @dataclass(frozen=True, slots=True)

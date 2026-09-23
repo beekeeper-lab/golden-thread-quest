@@ -17,7 +17,7 @@ from typing import Any
 
 from quest_app.build import build_site
 from quest_app.errors import ProblemReport
-from quest_app.state_machine import BY_ACTION, CONFIRMATIONS
+from quest_app.state_machine import BY_ACTION, CONFIRMATIONS, confirmation_for
 from quest_app.store import ProgressStore, StoreError, start_attempt, transition_attempt
 from quest_app.view_models import online_service_view
 
@@ -99,7 +99,7 @@ class ActionRunner:
             # the JSON endpoint and `quest-app action` performed the same actions with no
             # confirmation at all — including `record-review`, which produces verified
             # completion and verified XP.
-            raise ValueError(f"{CONFIRMATIONS[action]} — confirm it, then try again.")
+            raise ValueError(f"{confirmation_for(action, payload)} — confirm it, then try again.")
         if action not in MUTATING_ACTIONS:
             return self._perform(action, payload)
         with ProgressStore(self.config).exclusive():
