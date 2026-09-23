@@ -106,6 +106,8 @@ class ValidatorDefinition:
         caller believe they had changed the run when they had not.
         """
         supplied = supplied or {}
+        if not isinstance(supplied, dict):
+            raise ValidatorError("parameters must be an object of names and values")
         unexpected = sorted(set(supplied) - set(self.parameters))
         if unexpected:
             raise ValidatorError(f"unknown parameter(s): {', '.join(unexpected)}")
