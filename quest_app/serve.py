@@ -151,6 +151,12 @@ def _is_loopback(address: str) -> bool:
 
 
 SERVICE_HEADER = "X-Quest-App"
+# Which repository the answering service serves. The probe used to accept any service of
+# this application on the port, so a second clone on one machine — two participants, or a
+# reviewer with the curriculum checked out twice — made `quest-app build` publish pages
+# saying the service was running, with live-looking controls, for a repository that had no
+# service. It also made `make check` fail on any machine already running `make serve`.
+REPO_HEADER = "X-Quest-Repo"
 
 
 PORTS_DIRNAME = "service-ports"
@@ -201,6 +207,18 @@ def running_service_port(config: AppConfig) -> int:
     return running_service_ports(config)[0]
 
 
+def repo_signature(config: AppConfig) -> str:
+    """A short, stable name for the repository and participant tree a service is serving.
+
+    A hash rather than the paths themselves: this goes out in a response header, and the
+    paths are the participant's home directory.
+    """
+    import hashlib
+
+    material = f"{config.repo_root.resolve()}\0{config.participant_root.resolve()}"
+    return hashlib.sha256(material.encode("utf-8")).hexdigest()[:16]
+
+
 def is_service_running(config: AppConfig) -> bool:
     """Whether a service of this application is answering on the configured address.
 
@@ -226,10 +244,10 @@ def is_service_running(config: AppConfig) -> bool:
         try:
             # A loopback URL this function built, from a port this application wrote.
             with urllib.request.urlopen(url, timeout=0.5) as response:  # noqa: S310
-                if response.headers.get(SERVICE_HEADER):
+                if _is_this_repositorys_service(response.headers, config):
                     return True
         except urllib.error.HTTPError as error:
-            if error.headers.get(SERVICE_HEADER):
+            if _is_this_repositorys_service(error.headers, config):
                 return True
         except OSError as error:
             # Nothing is listening there. A service killed outright never ran its own
@@ -244,6 +262,17 @@ def is_service_running(config: AppConfig) -> bool:
                     entry.unlink(missing_ok=True)
             continue
     return False
+
+
+def _is_this_repositorys_service(headers: Any, config: AppConfig) -> bool:
+    """Not just a service of this application: the one serving this repository.
+
+    A service that predates the repository header answers without one, and is treated as
+    somebody else's — which is the safe reading, and the only one available.
+    """
+    if not headers.get(SERVICE_HEADER):
+        return False
+    return bool(headers.get(REPO_HEADER) == repo_signature(config))
 
 
 def _token_matches(supplied: str, expected: str) -> bool:
@@ -292,6 +321,7 @@ class ActionHandler(BaseHTTPRequestHandler):
         # Also the signature `is_service_running` probes for. A bare TCP connect would call
         # anything holding the port this application.
         self.send_header(SERVICE_HEADER, APPLICATION_VERSION)
+        self.send_header(REPO_HEADER, repo_signature(self.state.config))
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("Cache-Control", "no-store")

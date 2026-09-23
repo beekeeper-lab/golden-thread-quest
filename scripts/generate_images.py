@@ -92,16 +92,16 @@ def parse_frontmatter(text):
     """Extract plan-level defaults from top-of-file **Key:** value lines."""
     defaults = {}
     keys = {
-        "style":         r"^\*\*Style:\*\*\s*(.+)$",
-        "branding":      r"^\*\*Branding:\*\*\s*(.+)$",
-        "aspect_ratio":  r"^\*\*Aspect ratio:\*\*\s*(.+)$",
-        "background":    r"^\*\*Background:\*\*\s*(.+)$",
+        "style": r"^\*\*Style:\*\*\s*(.+)$",
+        "branding": r"^\*\*Branding:\*\*\s*(.+)$",
+        "aspect_ratio": r"^\*\*Aspect ratio:\*\*\s*(.+)$",
+        "background": r"^\*\*Background:\*\*\s*(.+)$",
         "text_in_image": r"^\*\*Text in image:\*\*\s*(.+)$",
-        "avoid":         r"^\*\*Avoid:\*\*\s*(.+)$",
-        "philosophy":    r"^\*\*Philosophy:\*\*\s*(.+)$",
-        "generator":     r"^\*\*Generator:\*\*\s*(.+)$",
-        "quality":       r"^\*\*Quality:\*\*\s*(.+)$",
-        "size":          r"^\*\*Size:\*\*\s*(.+)$",
+        "avoid": r"^\*\*Avoid:\*\*\s*(.+)$",
+        "philosophy": r"^\*\*Philosophy:\*\*\s*(.+)$",
+        "generator": r"^\*\*Generator:\*\*\s*(.+)$",
+        "quality": r"^\*\*Quality:\*\*\s*(.+)$",
+        "size": r"^\*\*Size:\*\*\s*(.+)$",
     }
     head = text.split("\n## ", 1)[0]
     for key, pattern in keys.items():
@@ -151,8 +151,12 @@ def parse_image_plan(plan_path):
                     break
 
                 if in_prompt:
-                    if (re.match(r"^- \*\*", l) or re.match(r"^###\s+", l)
-                            or re.match(r"^##\s+", l) or l.strip() == "---"):
+                    if (
+                        re.match(r"^- \*\*", l)
+                        or re.match(r"^###\s+", l)
+                        or re.match(r"^##\s+", l)
+                        or l.strip() == "---"
+                    ):
                         in_prompt = False
                     else:
                         prompt_lines.append(l.strip())
@@ -160,8 +164,12 @@ def parse_image_plan(plan_path):
                         continue
 
                 if in_description:
-                    if (re.match(r"^- \*\*", l) or re.match(r"^###\s+", l)
-                            or re.match(r"^##\s+", l) or l.strip() == "---"):
+                    if (
+                        re.match(r"^- \*\*", l)
+                        or re.match(r"^###\s+", l)
+                        or re.match(r"^##\s+", l)
+                        or l.strip() == "---"
+                    ):
                         in_description = False
                     else:
                         description_lines.append(l)
@@ -190,10 +198,19 @@ def parse_image_plan(plan_path):
                 entry["description"] = "\n".join(description_lines).strip()
 
             prompt_text = "\n".join(prompt_lines)
-            for key in ["Goal", "Scene", "Style", "Aspect ratio", "Background", "Text in image", "Avoid"]:
+            for key in [
+                "Goal",
+                "Scene",
+                "Style",
+                "Aspect ratio",
+                "Background",
+                "Text in image",
+                "Avoid",
+            ]:
                 m = re.search(
                     rf"{key}:\s*(.+?)(?:\n\s*(?:Goal|Scene|Style|Aspect ratio|Background|Text in image|Avoid):|$)",
-                    prompt_text, re.DOTALL,
+                    prompt_text,
+                    re.DOTALL,
                 )
                 if m:
                     entry["prompt_parts"][key.lower().replace(" ", "_")] = m.group(1).strip()
@@ -213,7 +230,15 @@ def assemble_prompt(entry):
 
     if parts:
         sections = []
-        for key in ["goal", "scene", "style", "aspect_ratio", "background", "text_in_image", "avoid"]:
+        for key in [
+            "goal",
+            "scene",
+            "style",
+            "aspect_ratio",
+            "background",
+            "text_in_image",
+            "avoid",
+        ]:
             if key in parts:
                 label = {
                     "goal": "Goal",
@@ -373,42 +398,47 @@ def _generate_gemini(prompt, output_path, api_key, config):
 # Per-image cost estimates for cost reporting (USD). Keep in sync with
 # standards/providers.md.
 OPENAI_COST_TABLE = {
-    ("gpt-image-1.5", "low",    "1024x1024"): 0.011,
+    ("gpt-image-1.5", "low", "1024x1024"): 0.011,
     ("gpt-image-1.5", "medium", "1024x1024"): 0.042,
-    ("gpt-image-1.5", "high",   "1024x1024"): 0.167,
-    ("gpt-image-1.5", "low",    "1536x1024"): 0.011,
+    ("gpt-image-1.5", "high", "1024x1024"): 0.167,
+    ("gpt-image-1.5", "low", "1536x1024"): 0.011,
     ("gpt-image-1.5", "medium", "1536x1024"): 0.042,
-    ("gpt-image-1.5", "high",   "1536x1024"): 0.133,
-    ("gpt-image-1.5", "low",    "1024x1536"): 0.011,
+    ("gpt-image-1.5", "high", "1536x1024"): 0.133,
+    ("gpt-image-1.5", "low", "1024x1536"): 0.011,
     ("gpt-image-1.5", "medium", "1024x1536"): 0.042,
-    ("gpt-image-1.5", "high",   "1024x1536"): 0.133,
-    ("gpt-image-2",   "low",    "1024x1024"): 0.006,
-    ("gpt-image-2",   "medium", "1024x1024"): 0.053,
-    ("gpt-image-2",   "high",   "1024x1024"): 0.211,
-    ("gpt-image-2",   "low",    "1536x1024"): 0.005,
-    ("gpt-image-2",   "medium", "1536x1024"): 0.041,
-    ("gpt-image-2",   "high",   "1536x1024"): 0.165,
-    ("gpt-image-2",   "low",    "1024x1536"): 0.005,
-    ("gpt-image-2",   "medium", "1024x1536"): 0.041,
-    ("gpt-image-2",   "high",   "1024x1536"): 0.165,
+    ("gpt-image-1.5", "high", "1024x1536"): 0.133,
+    ("gpt-image-2", "low", "1024x1024"): 0.006,
+    ("gpt-image-2", "medium", "1024x1024"): 0.053,
+    ("gpt-image-2", "high", "1024x1024"): 0.211,
+    ("gpt-image-2", "low", "1536x1024"): 0.005,
+    ("gpt-image-2", "medium", "1536x1024"): 0.041,
+    ("gpt-image-2", "high", "1536x1024"): 0.165,
+    ("gpt-image-2", "low", "1024x1536"): 0.005,
+    ("gpt-image-2", "medium", "1024x1536"): 0.041,
+    ("gpt-image-2", "high", "1024x1536"): 0.165,
 }
 
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="Generate images from a markdown plan")
-    parser.add_argument("--plan", default=None,
-                        help="Path to plan markdown (default: <project>/IMAGE-PLAN.md)")
-    parser.add_argument("--images-dir", default=None,
-                        help="Image output root (default: <project>/images/)")
-    parser.add_argument("--dry-run", action="store_true",
-                        help="Show what would be generated without making API calls")
-    parser.add_argument("--force", action="store_true",
-                        help="Regenerate existing images")
-    parser.add_argument("--filter",
-                        help="Only generate images whose file path contains this string")
-    parser.add_argument("--generator",
-                        help="Override plan frontmatter Generator: line")
+    parser.add_argument(
+        "--plan", default=None, help="Path to plan markdown (default: <project>/IMAGE-PLAN.md)"
+    )
+    parser.add_argument(
+        "--images-dir", default=None, help="Image output root (default: <project>/images/)"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be generated without making API calls",
+    )
+    parser.add_argument("--force", action="store_true", help="Regenerate existing images")
+    parser.add_argument(
+        "--filter", help="Only generate images whose file path contains this string"
+    )
+    parser.add_argument("--generator", help="Override plan frontmatter Generator: line")
     args = parser.parse_args()
 
     if args.plan:
@@ -427,11 +457,17 @@ def main():
                 project_root = candidate
                 break
         if project_root is None:
-            print(f"ERROR: no {DEFAULT_PLAN_NAME} found. Pass --plan <path> or cd to a project with one.")
+            print(
+                f"ERROR: no {DEFAULT_PLAN_NAME} found. Pass --plan <path> or cd to a project with one."
+            )
             sys.exit(1)
         plan_path = project_root / DEFAULT_PLAN_NAME
 
-    images_dir = Path(args.images_dir).resolve() if args.images_dir else (project_root / DEFAULT_IMAGES_DIR_NAME)
+    images_dir = (
+        Path(args.images_dir).resolve()
+        if args.images_dir
+        else (project_root / DEFAULT_IMAGES_DIR_NAME)
+    )
 
     if not plan_path.exists():
         print(f"ERROR: plan not found: {plan_path}")
@@ -451,7 +487,9 @@ def main():
     print(f"Project:     {project_root}")
     print(f"Images dir:  {images_dir}")
     if config["provider"] == "openai":
-        print(f"Provider:    openai · model: {config['model']} · quality: {config['quality']} · size: {config['size']}")
+        print(
+            f"Provider:    openai · model: {config['model']} · quality: {config['quality']} · size: {config['size']}"
+        )
     else:
         print(f"Provider:    gemini · model: {config['model']}")
     print("=" * 60)
@@ -466,9 +504,9 @@ def main():
     for idx, img in enumerate(images):
         rel = img["file"]
         if rel.startswith("images/"):
-            rel = rel[len("images/"):]
+            rel = rel[len("images/") :]
         file_path = images_dir / rel
-        short = f"[{idx+1}/{len(images)}] {img['short_name']}"
+        short = f"[{idx + 1}/{len(images)}] {img['short_name']}"
 
         if file_path.exists() and not args.force:
             print(f"  {short} — exists, skipping")
@@ -477,7 +515,9 @@ def main():
 
         prompt = assemble_prompt(img)
         if not prompt:
-            print(f"  {short} — no prompt (no Description and no structured Prompt block), skipping")
+            print(
+                f"  {short} — no prompt (no Description and no structured Prompt block), skipping"
+            )
             skipped += 1
             continue
 
@@ -505,7 +545,7 @@ def main():
             generated += 1
 
             size_kb = file_path.stat().st_size / 1024
-            print(f" OK {size_kb:.0f} KB, {tokens} tokens, {elapsed_ms_meta/1000:.1f}s")
+            print(f" OK {size_kb:.0f} KB, {tokens} tokens, {elapsed_ms_meta / 1000:.1f}s")
 
         except Exception as e:
             errors += 1
@@ -519,12 +559,18 @@ def main():
                 (config["model"], config["quality"], config["size"]), 0.13
             )
             est_cost = generated * per_img
-            print(f"Total time:     {total_time_ms/1000:.1f}s ({total_time_ms/1000/generated:.1f}s avg)")
-            print(f"Estimated cost: ${est_cost:.2f}  (~${per_img:.3f}/image at {config['quality']} {config['size']})")
+            print(
+                f"Total time:     {total_time_ms / 1000:.1f}s ({total_time_ms / 1000 / generated:.1f}s avg)"
+            )
+            print(
+                f"Estimated cost: ${est_cost:.2f}  (~${per_img:.3f}/image at {config['quality']} {config['size']})"
+            )
         else:
             est_cost = total_tokens * 0.00007
             print(f"Total tokens:   {total_tokens:,}")
-            print(f"Total time:     {total_time_ms/1000:.1f}s ({total_time_ms/1000/generated:.1f}s avg)")
+            print(
+                f"Total time:     {total_time_ms / 1000:.1f}s ({total_time_ms / 1000 / generated:.1f}s avg)"
+            )
             print(f"Estimated cost: ${est_cost:.2f}")
 
     return {

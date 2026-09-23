@@ -1294,3 +1294,38 @@ def test_a_read_failure_is_not_reported_as_a_failed_write(
     assert "generated site" in body, body
     assert "participant directory" not in body, body
     assert "quest-app build" in body
+
+
+class TestTheProbeAsksAboutThisRepository:
+    """A service of this application is not the same thing as this repository's service.
+
+    The probe accepted any answer carrying the application header, so a second clone on one
+    machine — two participants, or a reviewer with the curriculum checked out twice — made
+    `quest-app build` publish pages saying the service was running, with live-looking
+    controls, for a repository that had no service at all.
+    """
+
+    def test_a_service_for_another_repository_is_not_this_one(
+        self, service: tuple[str, str], config: AppConfig, tmp_path: Path
+    ) -> None:
+        import dataclasses
+
+        from quest_app.serve import PORTS_DIRNAME, is_service_running
+
+        base, _ = service
+        port = int(base.rsplit(":", 1)[1])
+
+        mine = dataclasses.replace(config, service_port=port)
+        directory = mine.local_data_root / PORTS_DIRNAME
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / str(port)).write_text(f"{port}\n")
+        assert is_service_running(mine), "its own service answers for it"
+
+        elsewhere = dataclasses.replace(
+            mine,
+            repo_root=tmp_path / "another-clone",
+            participant_root=tmp_path / "another-clone" / "participant",
+        )
+        assert not is_service_running(elsewhere), (
+            "a different clone's service answered on the port and was believed"
+        )

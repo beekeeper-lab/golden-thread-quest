@@ -9,8 +9,10 @@ for.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
-from quest_app.config import PurePosixCheck
+from quest_app.config import AppConfig, PurePosixCheck
 
 
 @pytest.mark.parametrize(
@@ -40,3 +42,39 @@ def test_an_ordinary_participant_path_is_accepted(raw: str) -> None:
 def test_the_other_refusals_still_hold(raw: str) -> None:
     with pytest.raises(ValueError):
         PurePosixCheck(raw).checked()
+
+
+class TestTheResolutionStepItself:
+    """`PurePosixCheck` is lexical. A symbolic link is not, and this is the check for it.
+
+    `resolve_participant_path` resolves and then re-checks that the result is still inside
+    the participant root. Deleting that re-check left the whole suite green: every path test
+    was about the lexical stage, and the equivalent guard in `tools/clean.py` has symlink
+    tests of its own while this one had none.
+    """
+
+    def _config(self, tmp_path: Path) -> AppConfig:
+        participant = tmp_path / "repo" / "participant"
+        participant.mkdir(parents=True)
+        return AppConfig.for_repo(tmp_path / "repo", participant_root=participant)
+
+    def test_a_link_out_of_the_participant_tree_is_refused(self, tmp_path: Path) -> None:
+        config = self._config(tmp_path)
+        outside = tmp_path / "outside"
+        outside.mkdir()
+        (outside / "secret.txt").write_text("not the participant's\n")
+        (config.participant_root / "escape").symlink_to(outside, target_is_directory=True)
+
+        with pytest.raises(ValueError, match="outside the participant root"):
+            config.resolve_participant_path("participant/escape/secret.txt")
+
+    def test_a_link_within_the_participant_tree_is_still_allowed(self, tmp_path: Path) -> None:
+        """The check is about leaving the tree, not about links."""
+        config = self._config(tmp_path)
+        real = config.participant_root / "evidence"
+        real.mkdir()
+        (real / "PROOF.md").write_text("# Proof\n")
+        (config.participant_root / "shortcut").symlink_to(real, target_is_directory=True)
+
+        resolved = config.resolve_participant_path("participant/shortcut/PROOF.md")
+        assert resolved == (real / "PROOF.md").resolve()

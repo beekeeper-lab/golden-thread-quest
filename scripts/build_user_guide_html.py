@@ -7,17 +7,26 @@ data URIs) into one file that opens offline with no remote resources.
 
     python3 scripts/build_user_guide_html.py
 """
+
 from __future__ import annotations
 
 import base64
 import io
+import os
 import pathlib
 import sys
 
-from PIL import Image
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-SKILL = pathlib.Path.home() / ".claude/skills/html-artifact-output/snippets"
+# The two stylesheets this guide is built with. They are not in this repository and are not
+# a package dependency: they come from the authoring tool the maintainer uses. CONTRIBUTING
+# told a contributor to run this script as though it worked anywhere, and on any machine
+# without that directory it died on a `FileNotFoundError` for `base.css`. Point
+# `GTQ_HTML_SNIPPETS` at a directory holding `base.css` and `print.css` to use your own.
+SKILL = pathlib.Path(
+    os.environ.get("GTQ_HTML_SNIPPETS")
+    or pathlib.Path.home() / ".claude/skills/html-artifact-output/snippets"
+)
 BODY = ROOT / "artifacts/html/guides/_user-guide-body.html"
 OUT = ROOT / "artifacts/html/guides/user-guide.html"
 IMAGES = ROOT / "docs/media/images"
@@ -120,6 +129,10 @@ th[scope="row"] { font-weight: 600; white-space: normal; background: var(--th-bg
 
 def webp_data_uri(png: pathlib.Path, max_px: int = 1200, quality: int = 90) -> str:
     """Flat vector art: WebP at doc resolution is ~6% of the PNG."""
+    # Imported here, not at the top: the script has to be able to say what it needs before
+    # it needs it, and `.[docs]` is an extra a contributor may not have installed.
+    from PIL import Image
+
     image = Image.open(png).convert("RGB")
     image.thumbnail((max_px, max_px), Image.LANCZOS)
     buffer = io.BytesIO()
@@ -129,6 +142,17 @@ def webp_data_uri(png: pathlib.Path, max_px: int = 1200, quality: int = 90) -> s
 
 
 def main() -> int:
+    missing = [name for name in ("base.css", "print.css") if not (SKILL / name).is_file()]
+    if missing:
+        print(
+            f"cannot build the guide: {', '.join(missing)} not found in {SKILL}.\n"
+            "Set GTQ_HTML_SNIPPETS to a directory holding base.css and print.css. "
+            "The built guide is committed at artifacts/html/guides/user-guide.html, so "
+            "rebuilding it is a maintainer step and not one a contributor has to take.",
+            file=sys.stderr,
+        )
+        return 2
+
     body = BODY.read_text()
     for index, stem in enumerate(DIAGRAMS, start=1):
         png = IMAGES / f"{stem}.png"
@@ -152,7 +176,7 @@ def main() -> int:
         '<meta name="viewport" content="width=device-width, initial-scale=1" />\n'
         "<title>Golden Thread Quest</title>\n"
         '<meta name="description" content="Participant user guide for the Golden '
-        'Thread Quest: install it, work through a quest, assemble evidence, and get '
+        "Thread Quest: install it, work through a quest, assemble evidence, and get "
         'it reviewed." />\n'
         f"<style>\n{base_css}\n{OVERRIDES}\n@media print {{\n{print_css}\n}}\n</style>\n"
         f"</head>\n<body>\n{body}\n</body>\n</html>\n"

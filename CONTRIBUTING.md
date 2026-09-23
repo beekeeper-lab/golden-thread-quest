@@ -14,8 +14,12 @@ make check            # format, lint, types, YAML safety, secret scan, tests
 `pyproject.toml` declares and CI tests. Everything else is installed into `.venv`, which is
 gitignored.
 
-Rebuilding the HTML user guide needs one more package, because it re-encodes the diagrams:
-`uv pip install -e '.[docs]'`, then `python scripts/build_user_guide_html.py`.
+Rebuilding the HTML user guide is a maintainer step, not one you need to take: the built
+guide is committed at `artifacts/html/guides/user-guide.html`. It needs one more package,
+because it re-encodes the diagrams (`uv pip install -e '.[docs]'`), and two stylesheets that
+are not in this repository — `base.css` and `print.css` from the authoring tool the guide was
+written with. Point `GTQ_HTML_SNIPPETS` at a directory holding those two files, then run
+`python scripts/build_user_guide_html.py`. Without them the script says so and stops.
 
 Browser-driven tests need one extra step, because they download a browser:
 
