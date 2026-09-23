@@ -118,11 +118,17 @@ class TestApprovalGuards:
             )
 
     def test_a_token_verification_statement_is_refused(self, setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
-        """ "ok" is not a judgment."""
+        """ "ok" is not a judgment.
+
+        Both `record_decision`'s own length check and the schema's `minLength: 20` would
+        catch this string, so asserting only `ReviewError` would still pass with the Python
+        guard deleted. Matching the guard's own wording proves it is that check, not the
+        schema, doing the refusing.
+        """
         submit(setup, config)
         world, attempt = reload_attempt(config)
         _, schemas, store, quest, _ = setup
-        with pytest.raises(ReviewError):
+        with pytest.raises(ReviewError, match="verification statement saying what you checked"):
             record_decision(
                 config,
                 store,
