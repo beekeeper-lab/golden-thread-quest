@@ -370,7 +370,13 @@ def run_validator(
         env=environment,
         start_new_session=True,
     )
-    captured = _collect(process, specification.encode("utf-8"), definition.timeout_seconds)
+    # `start_new_session=True` calls `setsid()` before exec, which makes the child both a
+    # new session leader and the leader of a new process group whose id equals its own pid.
+    # Capturing that now, rather than reaching for `os.getpgid(process.pid)` later, is what
+    # lets every kill below still find the group after the child itself has been reaped —
+    # `getpgid` raises `ProcessLookupError` at exactly that point.
+    pgid = process.pid
+    captured = _collect(process, pgid, specification.encode("utf-8"), definition.timeout_seconds)
     stdout = captured.stdout.decode("utf-8", errors="replace")
     stderr = captured.stderr.decode("utf-8", errors="replace")
     if captured.timed_out:
@@ -532,7 +538,7 @@ class _Captured:
     overflowed: bool = False
 
 
-def _collect(process: subprocess.Popen[bytes], data: bytes, timeout: float) -> _Captured:
+def _collect(process: subprocess.Popen[bytes], pgid: int, data: bytes, timeout: float) -> _Captured:
     """Feed the child its specification and read both streams under a byte ceiling.
 
     `communicate()` read everything into memory before any limit applied, and waited for the
@@ -563,7 +569,7 @@ def _collect(process: subprocess.Popen[bytes], data: bytes, timeout: float) -> _
             if exited_at is None and process.poll() is not None:
                 exited_at = now
                 # The child is done; anything it started is not part of the run.
-                _kill_group(process)
+                _kill_group(pgid)
             if exited_at is not None and now - exited_at > 1:
                 break
             if exited_at is None and now >= deadline:
@@ -580,7 +586,7 @@ def _collect(process: subprocess.Popen[bytes], data: bytes, timeout: float) -> _
                     captured.overflowed = True
             if captured.overflowed:
                 break
-    _terminate_tree(process)
+    _terminate_tree(process, pgid)
     for stream in buffers:
         with contextlib.suppress(OSError):
             stream.close()
@@ -589,9 +595,9 @@ def _collect(process: subprocess.Popen[bytes], data: bytes, timeout: float) -> _
     return captured
 
 
-def _kill_group(process: subprocess.Popen[bytes]) -> None:
+def _kill_group(pgid: int) -> None:
     with contextlib.suppress(ProcessLookupError, PermissionError, OSError):
-        os.killpg(process.pid, signal.SIGKILL)
+        os.killpg(pgid, signal.SIGKILL)
 
 
 def _bounded(text: str, limit: int) -> tuple[str, bool]:
@@ -608,22 +614,28 @@ def _bounded(text: str, limit: int) -> tuple[str, bool]:
     return encoded[:room].decode("utf-8", errors="ignore") + TRUNCATION_SUFFIX, True
 
 
-def _terminate_tree(process: subprocess.Popen[bytes]) -> None:
+def _terminate_tree(process: subprocess.Popen[bytes], pgid: int) -> None:
     """Kill the whole process group, not just the child.
 
     A validator that spawned something of its own would otherwise survive its own timeout,
-    which is how a "stopped" run keeps writing files.
+    which is how a "stopped" run keeps writing files. SIGTERM goes to the group first, so
+    anything willing to clean up on its own gets the chance; then, always — regardless of
+    whether the direct child has already exited — SIGKILL goes to the same group.
+
+    "Always" is the fix: the previous version returned the moment `process.wait()` reaped
+    the direct child, which is exactly what happens when the child dies of its own SIGTERM
+    while a grandchild in the same group ignores it and keeps running. The SIGKILL that
+    would have reached that grandchild was never sent, so it outlived the run.
+
+    `pgid` is the id captured at spawn time, never `os.getpgid(process.pid)`: that call
+    raises `ProcessLookupError` once the child has already been reaped, which is routinely
+    true by the time this runs.
     """
-    for sig in (signal.SIGTERM, signal.SIGKILL):
-        try:
-            os.killpg(os.getpgid(process.pid), sig)
-        except (ProcessLookupError, PermissionError, OSError):
-            break
-        try:
-            process.wait(timeout=3)
-            return
-        except subprocess.TimeoutExpired:
-            continue
+    with contextlib.suppress(ProcessLookupError, PermissionError, OSError):
+        os.killpg(pgid, signal.SIGTERM)
+    with contextlib.suppress(subprocess.TimeoutExpired):
+        process.wait(timeout=3)
+    with contextlib.suppress(ProcessLookupError, PermissionError, OSError):
+        os.killpg(pgid, signal.SIGKILL)
     with contextlib.suppress(OSError, subprocess.TimeoutExpired):
-        process.kill()
         process.wait(timeout=3)

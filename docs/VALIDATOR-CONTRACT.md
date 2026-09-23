@@ -64,7 +64,8 @@ A validator with more to say than that should summarize it in its checks.
 - Interrupted validators produce an interrupted or inconclusive result. A run whose checks
   were all `skipped` is `inconclusive`: nothing was checked.
 - The process group is terminated when the validator exits and on timeout, so nothing it
-  started outlives the run.
+  started outlives the run — always by the time the run returns, not only when the direct
+  child happens to die on its own signal.
 - The child's import path starts at the repository, never at its working directory, so a
   file in `participant/` cannot stand in for a registered validator or a standard module.
 - Results are written atomically.

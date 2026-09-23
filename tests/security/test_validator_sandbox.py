@@ -1032,3 +1032,89 @@ class TestHostileChildren:
             time.sleep(0.1)
         os.kill(pid, signal.SIGKILL)
         pytest.fail("the grandchild was still running after the run finished")
+
+    @staticmethod
+    def _wait_for_the_grandchild_to_die(marker: str, before: set[int]) -> set[int]:
+        import time
+
+        deadline = time.monotonic() + 5
+        survivors = _processes_carrying(marker) - before
+        while survivors and time.monotonic() < deadline:
+            time.sleep(0.2)
+            survivors = _processes_carrying(marker) - before
+        for pid in survivors:
+            with contextlib.suppress(ProcessLookupError, PermissionError):
+                os.kill(pid, signal.SIGKILL)
+        return survivors
+
+    @pytest.mark.slow
+    def test_a_sigterm_ignoring_grandchild_does_not_outlive_a_timeout(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """SIGTERM to the group is not enough on its own.
+
+        `_terminate_tree` used to return the moment `process.wait()` reaped the direct
+        child, which happens whether or not anything else in the group is still alive: a
+        grandchild that ignores SIGTERM and stays in the same process group outlived a
+        timed-out run, because the SIGKILL that would have reached it was never sent.
+        """
+        marker = "gtq-r11-sigterm-ignoring-grandchild-timeout"
+        before = _processes_carrying(marker)
+        result = self._run(
+            registry,
+            config,
+            f"""
+            import subprocess, sys, time
+
+            def run(workspace, output):
+                subprocess.Popen([
+                    sys.executable,
+                    "-c",
+                    "import signal, time; "
+                    "signal.signal(signal.SIGTERM, signal.SIG_IGN); "
+                    "time.sleep(120)  # {marker}",
+                ])
+                while True:
+                    time.sleep(1)
+            """,
+            timeout=1,
+        )
+        assert result.outcome == "interrupted"
+        survivors = self._wait_for_the_grandchild_to_die(marker, before)
+        assert not survivors, f"a SIGTERM-ignoring grandchild outlived the timeout: {survivors}"
+
+    @pytest.mark.slow
+    def test_a_sigterm_ignoring_grandchild_does_not_outlive_an_output_overflow(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """The overflow stop path ends in the same `_terminate_tree`, so it needs the same
+        proof: a SIGTERM-ignoring grandchild must not survive a run stopped for writing
+        too much output, any more than it survives a timeout.
+        """
+        marker = "gtq-r11-sigterm-ignoring-grandchild-flood"
+        before = _processes_carrying(marker)
+        result = self._run(
+            registry,
+            config,
+            f"""
+            import os, subprocess, sys, time
+
+            def run(workspace, output):
+                subprocess.Popen([
+                    sys.executable,
+                    "-c",
+                    "import signal, time; "
+                    "signal.signal(signal.SIGTERM, signal.SIG_IGN); "
+                    "time.sleep(120)  # {marker}",
+                ])
+                time.sleep(0.5)
+                while True:
+                    os.write(2, b"x" * 65536)
+            """,
+            timeout=30,
+        )
+        assert result.outcome == "environment_failure"
+        survivors = self._wait_for_the_grandchild_to_die(marker, before)
+        assert not survivors, (
+            f"a SIGTERM-ignoring grandchild outlived the overflow stop: {survivors}"
+        )
