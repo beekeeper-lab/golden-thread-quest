@@ -290,6 +290,18 @@ class TestClassification:
     def test_no_checks_is_inconclusive_not_a_pass(self) -> None:
         assert classify(ValidatorOutput()) == "inconclusive"
 
+    def test_every_check_skipped_is_inconclusive_not_a_pass(self) -> None:
+        output = ValidatorOutput(checks=[Check(id="a", outcome="skipped", summary="s")] * 3)
+        assert classify(output) == "inconclusive"
+
+    def test_run_ids_made_in_the_same_second_sort_in_the_order_they_were_made(self) -> None:
+        """Results are ordered by `(completed_at, run_id)` at one-second resolution, so the
+        run ID is the tie-break. A random suffix decided which of two runs was the latest."""
+        from quest_app.evidence import new_run_id
+
+        made = [new_run_id("validate-repository-foundation") for _ in range(50)]
+        assert made == sorted(made)
+
     def test_an_environment_failure_outranks_everything(self) -> None:
         output = ValidatorOutput(checks=[Check(id="a", outcome="pass", summary="s")])
         output.fail_environment("no fixture installed")
@@ -666,9 +678,9 @@ class TestTheJiraFixturesTestWhatTheyDescribe:
     def _sync(self, config: AppConfig, document: dict) -> None:  # type: ignore[type-arg]
         import json
 
-        directory = config.participant_root / "context" / "jira"
+        directory = config.participant_root / "context" / "jira" / "assigned"
         directory.mkdir(parents=True, exist_ok=True)
-        (directory / "assigned.json").write_text(json.dumps(document))
+        (directory / "stories.json").write_text(json.dumps(document))
 
     def _run(self, registry, config: AppConfig, fixture_set: str):  # type: ignore[no-untyped-def]
         return run_validator(
@@ -690,6 +702,33 @@ class TestTheJiraFixturesTestWhatTheyDescribe:
         }
         record.update(extra)
         return record
+
+    def test_the_file_it_checks_is_the_one_the_quest_requires(self, config: AppConfig) -> None:
+        """The validator took the first JSON file it found, which the quest never mentioned,
+        so a participant who followed the quest could only ever get `inconclusive`."""
+        from quest_app.pipeline import load_world
+        from validators.jira_read_assigned import STORIES_PATH
+
+        world = load_world(config, ProblemReport())
+        assert world is not None
+        quest = world.content.quests["jira-read-assigned-stories"]
+        assert STORIES_PATH in {item.path for item in quest.required_proof}
+        assert STORIES_PATH in (config.repo_root / quest.source).read_text()
+
+    @pytest.mark.slow
+    def test_another_json_file_beside_it_is_not_checked_instead(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        import json
+
+        self._sync(
+            config,
+            {"stories": [self._story(key) for key in ("GTQ-101", "GTQ-102", "GTQ-103")]},
+        )
+        summary = config.participant_root / "context" / "jira" / "assigned" / "a-summary.json"
+        summary.write_text(json.dumps({"reconciled": 3}))
+        result = self._run(registry, config, "happy-path")
+        assert result.outcome == "pass", [(c.id, c.outcome, c.evidence) for c in result.checks]
 
     @pytest.mark.slow
     def test_dropping_a_story_that_disappeared_fails(self, registry, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
@@ -819,3 +858,177 @@ def test_a_timeout_kills_what_the_validator_spawned(registry, config: AppConfig)
         with contextlib.suppress(ProcessLookupError, PermissionError):
             os.kill(pid, signal.SIGKILL)
     assert not survivors, f"the validator's grandchild outlived the timeout: {survivors}"
+
+
+class TestHostileChildren:
+    """Validators written to break the parent, each placed in the test's own copy.
+
+    Every one of these used to succeed: a participant's file replaced registered code, a
+    non-UTF-8 byte lost the whole run, output was read into memory without a ceiling, a
+    stray `print()` became "could not be read", and a grandchild outlived a finished run.
+    """
+
+    @staticmethod
+    def _run(registry, config: AppConfig, source: str, timeout: int = 20):  # type: ignore[no-untyped-def]
+        import dataclasses
+        import textwrap
+
+        (config.repo_root / "validators" / "hostile_probe.py").write_text(textwrap.dedent(source))
+        definition = dataclasses.replace(
+            registry.get("validate-repository-foundation"),
+            timeout_seconds=timeout,
+            entrypoint="validators.hostile_probe:run",
+        )
+        return run_validator(
+            definition,
+            config,
+            quest_id="base-camp-repository-safety",
+            attempt_id="a-001",
+            run_id="hostile-run",
+        )
+
+    PASSING = """
+        from quest_app.validator_runner import Check
+
+        def run(workspace, output):
+            output.add(Check(id="probe", outcome="pass", summary="ran"))
+    """
+
+    @pytest.mark.slow
+    def test_participant_code_cannot_replace_a_registered_validator(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """The child runs in `participant/`, which `python -m` put first on the import path."""
+        shadow = config.participant_root / "validators"
+        shadow.mkdir(parents=True, exist_ok=True)
+        (shadow / "__init__.py").write_text("")
+        (shadow / "hostile_probe.py").write_text(
+            "from quest_app.validator_runner import Check\n"
+            "def run(workspace, output):\n"
+            "    output.add(Check(id='shadow', outcome='pass', summary='participant code'))\n"
+        )
+        (config.participant_root / "json.py").write_text("raise SystemExit(3)\n")
+        result = self._run(registry, config, self.PASSING)
+        assert [check.id for check in result.checks] == ["probe"], result.checks
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("stream", ["stdout", "stderr"])
+    def test_non_utf8_output_still_produces_a_result(
+        self, registry, config: AppConfig, stream: str
+    ) -> None:  # type: ignore[no-untyped-def]
+        result = self._run(
+            registry,
+            config,
+            f"""
+            import sys
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                sys.{stream}.buffer.write(b"\\xff\\xfe caf\\xe9\\n")
+                sys.{stream}.flush()
+                output.add(Check(id="probe", outcome="pass", summary="ran"))
+            """,
+        )
+        assert result.outcome == "pass", result
+
+    @pytest.mark.slow
+    def test_a_stray_print_does_not_corrupt_the_result(self, registry, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        result = self._run(
+            registry,
+            config,
+            """
+            import subprocess, sys
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                print("debugging output")
+                subprocess.run([sys.executable, "-c", "print('from a child')"], check=True)
+                output.add(Check(id="probe", outcome="pass", summary="ran"))
+            """,
+        )
+        assert result.outcome == "pass", result
+
+    @pytest.mark.slow
+    def test_output_past_the_ceiling_stops_the_run(self, registry, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        import resource
+
+        from quest_app.validator_runner import STREAM_LIMIT
+
+        before = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        result = self._run(
+            registry,
+            config,
+            """
+            import sys
+
+            def run(workspace, output):
+                chunk = b"x" * 1048576
+                for _ in range(200):
+                    sys.stderr.buffer.write(chunk)
+            """,
+        )
+        grown_kib = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - before
+        assert result.outcome == "environment_failure"
+        assert f"more than {STREAM_LIMIT} bytes" in result.output_excerpt
+        assert grown_kib < 50 * 1024, f"the parent grew by {grown_kib} KiB"
+
+    @pytest.mark.slow
+    def test_a_grandchild_holding_the_pipe_does_not_turn_a_pass_into_a_timeout(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        import time
+
+        started = time.monotonic()
+        result = self._run(
+            registry,
+            config,
+            """
+            import subprocess, sys
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+                output.add(Check(id="probe", outcome="pass", summary="ran"))
+            """,
+            timeout=10,
+        )
+        assert result.outcome == "pass", result
+        assert time.monotonic() - started < 8
+
+    @pytest.mark.slow
+    def test_a_grandchild_does_not_outlive_a_finished_run(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        import time
+
+        marker = config.participant_root / "grandchild.pid"
+        result = self._run(
+            registry,
+            config,
+            f"""
+            import subprocess, sys
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                child = subprocess.Popen(
+                    [sys.executable, "-c", "import time; time.sleep(60)"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                open({str(marker)!r}, "w").write(str(child.pid))
+                output.add(Check(id="probe", outcome="pass", summary="ran"))
+            """,
+        )
+        assert result.outcome == "pass"
+        pid = int(marker.read_text())
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                return
+            with contextlib.suppress(ChildProcessError):
+                os.waitpid(pid, os.WNOHANG)
+            time.sleep(0.1)
+        os.kill(pid, signal.SIGKILL)
+        pytest.fail("the grandchild was still running after the run finished")

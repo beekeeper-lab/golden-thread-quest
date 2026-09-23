@@ -43,7 +43,7 @@ quest_app/           the application
 validators/          registry.yaml, three quest-facing validators, two registered
                      environment probes, one unregistered slow probe used only by the
                      timeout test, and the Jira fixtures
-templates/           layouts, ten component macros, thirteen page templates
+templates/           layouts, eleven component macros, thirteen page templates
 assets/              design tokens, application stylesheet, enhancement script
 tools/               secret scan, YAML-safety check, cleanup
 ```

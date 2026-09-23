@@ -18,6 +18,12 @@ from quest_app.validator_runner import Check
 
 REQUIRED_FIELDS = ("key", "source_url", "status", "summary", "retrieved_at")
 
+# The one file this checks, named by the quest's required proof. It used to take whichever
+# JSON file under `participant/context/jira` sorted first, which the quest never mentioned,
+# so a participant who followed the quest could not pass, and one who added a
+# reconciliation summary (a stretch goal) could have that file checked instead.
+STORIES_PATH = "participant/context/jira/assigned/stories.json"
+
 
 def run(workspace: Workspace, output: ValidatorOutput) -> None:
     fixture_set = workspace.parameters.get("fixture_set", "happy-path")
@@ -49,20 +55,22 @@ def _load_participant_output(
     The document matters as well as the list, because a story that disappeared between runs
     is reported outside the list of stories that are still assigned.
     """
-    candidates = workspace.iter_files("participant/context/jira", "*.json")
-    if not candidates:
+    if not workspace.exists(STORIES_PATH):
         output.add(
             Check(
                 id="synchronized-output-exists",
                 outcome="inconclusive",
                 summary="No synchronized output was found to evaluate.",
-                evidence="participant/context/jira contains no JSON.",
-                suggested_action="Write the normalized stories there, then run this again.",
+                evidence=f"{STORIES_PATH} does not exist.",
+                suggested_action=(
+                    "Write the normalized stories there as the quest describes, then run this "
+                    "again."
+                ),
             )
         )
         return None
     try:
-        data = json.loads(workspace.read_text(str(candidates[0])))
+        data = json.loads(workspace.read_text(STORIES_PATH))
     except json.JSONDecodeError as exc:
         output.add(
             Check(
@@ -71,7 +79,7 @@ def _load_participant_output(
                 severity="high",
                 summary="The synchronized output is not valid JSON.",
                 evidence=f"line {exc.lineno}: {exc.msg}",
-                artifact=workspace.relative(candidates[0]),
+                artifact=STORIES_PATH,
             )
         )
         return None

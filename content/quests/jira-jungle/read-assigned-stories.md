@@ -1,6 +1,6 @@
 ---
 id: jira-read-assigned-stories
-version: 1
+version: 2
 title: Synchronize My Assigned Jira Stories
 summary: Retrieve every Jira story assigned to the authenticated user and preserve it as normalized, updateable local Markdown.
 region: jira-jungle
@@ -37,6 +37,10 @@ proof:
       type: file
       description: Provide a sanitized generated index of the synchronized assigned stories.
       path: participant/context/jira/assigned/index.md
+    - id: synchronized-stories
+      type: file
+      description: Provide the normalized stories as JSON, the file the validator checks.
+      path: participant/context/jira/assigned/stories.json
     - id: jira-sync-validation
       type: validator
       description: Run the registered Jira read-assigned validator against sandbox or fixture data.
@@ -79,7 +83,27 @@ Your agent will eventually answer “What should I work on next?” from local c
 
 ## Required evidence
 
-Provide the skill, a sanitized index, fixture data or a safe sandbox demonstration, and a `PROOF.md` that explains pagination, identity resolution, merge behavior, and known limitations.
+Provide the skill, a sanitized index, the normalized stories as JSON, fixture data or a safe sandbox demonstration, and a `PROOF.md` that explains pagination, identity resolution, merge behavior, and known limitations.
+
+The validator reads `participant/context/jira/assigned/stories.json` and nothing else. It expects an object with a `stories` list. Each story carries at least `key`, `summary`, `status`, `source_url` and `retrieved_at`, and its `comments`, when present, are a list of objects with an `id`. A story that was assigned on the previous run and is not now is listed under `removed` with its key and last known status, rather than deleted:
+
+```json
+{
+  "stories": [
+    {
+      "key": "GTQ-101",
+      "summary": "Fixture story",
+      "status": "To Do",
+      "source_url": "https://jira.example.invalid/browse/GTQ-101",
+      "retrieved_at": "2026-09-22T00:00:00Z",
+      "comments": [{"id": "9001"}]
+    }
+  ],
+  "removed": [{"key": "GTQ-100", "last_known_status": "In Progress"}]
+}
+```
+
+Run the validator against the fixture that matches what you want to demonstrate: `happy-path`, `pagination`, `stale-item` or `duplicate-comment`.
 
 ## Safety constraints
 

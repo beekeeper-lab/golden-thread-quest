@@ -17,7 +17,6 @@ from typing import Any
 
 from quest_app.config import AppConfig
 from quest_app.errors import ContentProblem, ProblemReport, Severity
-from quest_app.yaml_loader import strict_safe_load
 
 REGISTRY_FILENAME = "registry.yaml"
 
@@ -107,6 +106,8 @@ class ValidatorDefinition:
         caller believe they had changed the run when they had not.
         """
         supplied = supplied or {}
+        if not isinstance(supplied, dict):
+            raise ValidatorError("parameters must be an object of names and values")
         unexpected = sorted(set(supplied) - set(self.parameters))
         if unexpected:
             raise ValidatorError(f"unknown parameter(s): {', '.join(unexpected)}")
@@ -159,16 +160,12 @@ def load_registry(config: AppConfig, report: ProblemReport) -> ValidatorRegistry
         )
         return None
 
-    data = strict_safe_load(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        report.add(
-            ContentProblem(
-                code="validator.registry_invalid",
-                severity=Severity.ERROR,
-                public_message="The validator registry is not a mapping of fields.",
-                source=relative,
-            )
-        )
+    from quest_app.content_loader import read_yaml
+
+    # Through the content reader, so a registry that does not parse or decode is a reported
+    # problem rather than a codec or parser message in front of the participant.
+    data = read_yaml(path, config, report)
+    if data is None:
         return None
 
     schemas = SchemaSet(config.schemas_root)

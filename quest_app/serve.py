@@ -29,7 +29,7 @@ import socket
 import sys
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import partial
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -69,6 +69,9 @@ class UnsafeBindError(RuntimeError):
     """A bind address that is not loopback."""
 
 
+FLASH_LIMIT = 64
+
+
 @dataclass(slots=True)
 class ServiceState:
     """What one run of the service knows. The token lives here and nowhere else."""
@@ -81,6 +84,22 @@ class ServiceState:
     # for 0 and the kernel chooses. Origin checking must compare against what was bound, or
     # it refuses every same-origin request.
     bound_port: int = 0
+    # Messages the service itself wrote, by the identifier a redirect carries. Bounded, so a
+    # long session cannot grow it; a message that has aged out simply is not shown.
+    flashes: dict[str, str] = field(default_factory=dict)
+    flash_lock: threading.Lock = field(default_factory=threading.Lock)
+
+    def remember_flash(self, text: str) -> str:
+        key = secrets.token_urlsafe(9)
+        with self.flash_lock:
+            self.flashes[key] = text
+            while len(self.flashes) > FLASH_LIMIT:
+                del self.flashes[next(iter(self.flashes))]
+        return key
+
+    def flash(self, key: str) -> str:
+        with self.flash_lock:
+            return self.flashes.get(key.strip(), "").strip()
 
 
 def assert_loopback(host: str) -> None:
@@ -293,6 +312,9 @@ class ActionHandler(BaseHTTPRequestHandler):
     server_version = "GoldenThread"
     sys_version = ""
     protocol_version = "HTTP/1.1"
+    # Applied to the connection by `StreamRequestHandler`. Without it a client that declared a
+    # body and sent less of it held a thread open indefinitely.
+    timeout = 30
 
     def __init__(self, *args: Any, state: ServiceState, **kwargs: Any) -> None:
         self.state = state
@@ -441,7 +463,8 @@ class ActionHandler(BaseHTTPRequestHandler):
             return None
         try:
             payload = json.loads(self.rfile.read(length).decode("utf-8"))
-        except (UnicodeDecodeError, json.JSONDecodeError):
+        except (UnicodeDecodeError, json.JSONDecodeError, RecursionError):
+            # RecursionError: sixty thousand `[` parse as nesting, not as a syntax error.
             self._refuse(HTTPStatus.BAD_REQUEST, "The body is not valid JSON.")
             return None
         if not isinstance(payload, dict):
@@ -461,7 +484,7 @@ class ActionHandler(BaseHTTPRequestHandler):
         """
         try:
             self._get()
-        except (BrokenPipeError, ConnectionResetError):
+        except (BrokenPipeError, ConnectionResetError, TimeoutError):
             # The reader went away. There is nobody left to answer.
             self.close_connection = True
         except OSError as exc:
@@ -507,7 +530,7 @@ class ActionHandler(BaseHTTPRequestHandler):
         """
         try:
             self._post()
-        except (BrokenPipeError, ConnectionResetError):
+        except (BrokenPipeError, ConnectionResetError, TimeoutError):
             self.close_connection = True
         except OSError as exc:
             self._answer_failure(_filesystem_message(exc))
@@ -707,7 +730,7 @@ class ActionHandler(BaseHTTPRequestHandler):
 
         del path
         query = parse_qs(urlparse(self.path).query)
-        message = (query.get("problem") or [""])[0].strip()
+        message = self.state.flash((query.get("problem") or [""])[0])
         if message:
             # `role="alert"` and not `role="status"`: this banner is the whole answer to an
             # action the participant just took, and the spec reserves assertive announcement
@@ -718,7 +741,7 @@ class ActionHandler(BaseHTTPRequestHandler):
                 f"<p><strong>That did not happen.</strong> {escape(message[:400])}</p>"
                 "</div>"
             )
-        notice = (query.get("notice") or [""])[0].strip()
+        notice = self.state.flash((query.get("notice") or [""])[0])
         if notice:
             return (
                 '<div class="alert alert-warning" role="status">'
@@ -736,11 +759,12 @@ class ActionHandler(BaseHTTPRequestHandler):
         target = self.headers.get("Referer") or "/"
         parsed = urlparse(target)
         location = parsed.path or "/"
-        if not location.startswith("/") or location.startswith("//"):
+        if not location.startswith("/") or location.startswith("//") or "\\" in location:
             # A path beginning `//` is a protocol-relative URL: `Location: //elsewhere/x`
             # sends the browser off this machine, carrying the refusal text — which quotes
             # values the participant supplied — with it. The origin check does not catch it,
-            # because it compares the Referer's origin and never its path.
+            # because it compares the Referer's origin and never its path. A backslash is
+            # refused too: browsers read `/\\elsewhere` as `//elsewhere`.
             location = "/"
         if message:
             # Rebuild before redirecting, so the page the participant lands on describes the
@@ -748,14 +772,12 @@ class ActionHandler(BaseHTTPRequestHandler):
             # previous build's "no secrets found" panel beside the refusal.
             with contextlib.suppress(StoreError, OSError):
                 build_site(self._load(), service=online_service_view())
+        # The URL carries an identifier, never the text. A link carrying free text could put
+        # any words an attacker chose inside a real alert on a real page of this application.
         if message:
-            from urllib.parse import quote
-
-            location = f"{location}?problem={quote(message[:300])}"
+            location = f"{location}?problem={self.state.remember_flash(message[:300])}"
         elif notice:
-            from urllib.parse import quote
-
-            location = f"{location}?notice={quote(notice[:300])}"
+            location = f"{location}?notice={self.state.remember_flash(notice[:300])}"
         self.send_response(HTTPStatus.SEE_OTHER)
         self.send_header("Location", location)
         self.send_header("Content-Length", "0")

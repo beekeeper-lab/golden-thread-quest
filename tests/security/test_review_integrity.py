@@ -118,11 +118,17 @@ class TestApprovalGuards:
             )
 
     def test_a_token_verification_statement_is_refused(self, setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
-        """ "ok" is not a judgment."""
+        """ "ok" is not a judgment.
+
+        Both `record_decision`'s own length check and the schema's `minLength: 20` would
+        catch this string, so asserting only `ReviewError` would still pass with the Python
+        guard deleted. Matching the guard's own wording proves it is that check, not the
+        schema, doing the refusing.
+        """
         submit(setup, config)
         world, attempt = reload_attempt(config)
         _, schemas, store, quest, _ = setup
-        with pytest.raises(ReviewError):
+        with pytest.raises(ReviewError, match="verification statement saying what you checked"):
             record_decision(
                 config,
                 store,
@@ -546,3 +552,51 @@ class TestTheParticipantIsToldWhy:
             assert FINDING["summary"] in page, f"{relative} does not say what is wrong"
             assert FINDING["evidence"] in page, f"{relative} does not say what was observed"
             assert FINDING["severity"] in page, f"{relative} does not say how serious it is"
+
+
+def test_an_attempt_started_before_a_version_bump_can_still_be_approved(
+    content_repo, config: AppConfig
+) -> None:  # type: ignore[no-untyped-def]
+    """An update that bumps a quest leaves in-progress attempts on the version they started.
+
+    Submission and review recorded the current content version rather than the attempt's,
+    so the integrity check then read the reviewer's own approval as a forgery and refused to
+    load the participant's state at all.
+    """
+    quest_file = content_repo / "content" / "quests" / "jira-jungle" / "read-assigned-stories.md"
+    import re
+
+    text = quest_file.read_text()
+    started_on = int(re.search(r"\nversion: (\d+)\n", text).group(1))  # type: ignore[union-attr]
+    quest_file.write_text(
+        text.replace(f"\nversion: {started_on}\n", f"\nversion: {started_on + 1}\n", 1)
+    )
+
+    report = ProblemReport()
+    world = load_world(config, report)
+    assert world is not None, report.to_text()
+    schemas = SchemaSet(config.schemas_root)
+    store = ProgressStore(config)
+    quest = world.content.quests[QUEST]
+    attempt = world.participant.progress.attempt_for(QUEST)
+    assert (quest.version, attempt.quest_version) == (started_on + 1, started_on)
+
+    record = submit((world, schemas, store, quest, attempt), config)
+    assert record.quest_version == started_on
+    world, attempt = reload_attempt(config)
+    decision = record_decision(
+        config,
+        store,
+        quest=world.content.quests[QUEST],
+        attempt=attempt,
+        participant=world.participant,
+        decision="approved",
+        reviewer_name="A Reviewer",
+        verification_statement=STATEMENT,
+        findings=[],
+        schemas=schemas,
+    )
+    assert decision.quest_version == started_on
+
+    _, after = reload_attempt(config)
+    assert after.recorded_state is AttemptState.VERIFIED

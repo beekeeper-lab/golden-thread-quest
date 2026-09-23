@@ -141,7 +141,7 @@ canonicalized and re-verified inside the configured root after symbolic links ar
 participant's live directory, and the schema prefix is part of the published contract, so it is
 configuration that moves, not the contract.
 
-## ADR-019 — Python 3.12 or newer
+## ADR-019 — Python 3.10 or newer
 
 **Decision:** `requires-python = ">=3.12"`. Development and CI run 3.12 and the newest stable release.
 

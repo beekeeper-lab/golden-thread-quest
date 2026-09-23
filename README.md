@@ -56,7 +56,7 @@ address. Open it.
 | `docs/guides/UPDATING.md` | Taking upstream curriculum changes without losing your work |
 | `docs/CONTENT-AUTHORING-GUIDE.md` | Writing a quest |
 | `docs/SETUP.md` | Installing, and troubleshooting when it will not start |
-| `docs/RELEASE-NOTES.md` | What works, and the eight known limitations |
+| `docs/RELEASE-NOTES.md` | What works, and the nine known limitations |
 | `docs/IMPLEMENTATION-DETAILS.md` | What was actually built, and where it diverges from the plan |
 | `docs/TRACEABILITY.md` | Which test holds which requirement |
 | `docs/audits/` | Every audit, including the four that failed and the external review |
@@ -66,8 +66,8 @@ address. Open it.
 
 | | |
 |---|---|
-| Tests | 685 — 643 under `make check`, 42 driving a real browser. The line `make check` prints counts skips too, so it can read one or two higher where an optional dependency is missing. |
-| Screens | 13 page templates, 10 reusable components |
+| Tests | 731 — 689 under `make check`, 42 driving a real browser. The line `make check` prints counts skips too, so it can read one or two higher where an optional dependency is missing. |
+| Screens | 13 page templates, 11 reusable components |
 | Schemas | 10, validating content, progress, reviews, validation results and the validator registry |
 | Sample curriculum | 8 regions, 8 quests, 4 badges, 1 track |
 | Sample validators | 3 quest-facing, plus 2 registered probes and one unregistered slow probe used only by the tests |

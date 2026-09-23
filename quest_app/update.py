@@ -24,14 +24,13 @@ from quest_app.git_status import inspect
 
 TIMEOUT_SECONDS = 20
 
-# Every Git command this module may run. Two of them change something — creating a branch
-# and fetching — and both are additive: neither moves HEAD, rewrites history or touches the
-# working tree.
+# Every Git command this module may run. All of them are read-only: the fetch, the backup
+# branch and the merge are printed for the participant to run, never run here.
 PERMITTED_COMMANDS: frozenset[tuple[str, ...]] = frozenset(
     {
-        ("fetch", "upstream", "--dry-run"),
         ("remote",),
         ("branch", "--list"),
+        ("rev-parse", "--git-path", "MERGE_HEAD"),
     }
 )
 
@@ -78,6 +77,14 @@ def _git(repo_root: Path, arguments: tuple[str, ...]) -> str | None:
     return result.stdout.strip() if result.returncode == 0 else None
 
 
+def _merge_in_progress(repo_root: Path) -> bool:
+    marker = _git(repo_root, ("rev-parse", "--git-path", "MERGE_HEAD"))
+    if not marker:
+        return False
+    path = Path(marker)
+    return (path if path.is_absolute() else repo_root / path).exists()
+
+
 def backup_branch_name() -> str:
     return f"backup/pre-update-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
 
@@ -107,7 +114,21 @@ def preflight(config: AppConfig) -> Preflight:
         Finding(id="repository", status="pass", summary=f"On branch {status.branch or 'unknown'}.")
     )
 
-    if not status.clean:
+    if _merge_in_progress(config.repo_root):
+        # Checked before the working tree, whose advice is to commit everything: during a
+        # conflict that commits the conflict markers.
+        findings.append(
+            Finding(
+                id="merge-in-progress",
+                status="fail",
+                summary="A merge is in progress. Files with conflicts still hold conflict markers.",
+                remediation=(
+                    "Resolve each conflict, `git add` the file, then `git commit`; or undo "
+                    "the merge with `git merge --abort`."
+                ),
+            )
+        )
+    elif not status.clean:
         findings.append(
             Finding(
                 id="working-tree",
@@ -227,3 +248,40 @@ def migration_report(config: AppConfig) -> tuple[list[str], list[str]]:
             for attempt in stale
         )
     return applied, warnings
+
+
+def apply_migrations(config: AppConfig) -> tuple[list[str], list[str]]:
+    """Move `progress.yaml` to the schema this build reads. Returns (steps, problems).
+
+    The explicit act `migration_report` describes. The migrated document is validated by the
+    store before it replaces the original, and the whole participant state is loaded again
+    afterwards; if that load fails, the original bytes are put back.
+    """
+    from quest_app.content_loader import SchemaSet
+    from quest_app.errors import ProblemReport
+    from quest_app.migrations import MigrationError, migrate
+    from quest_app.pipeline import load_world
+    from quest_app.store import ProgressStore, StoreError, atomic_write_text
+
+    store = ProgressStore(config)
+    if not store.path.exists():
+        return [], ["No participant progress file exists yet."]
+    original = store.path.read_text(encoding="utf-8")
+    try:
+        migrated, applied = migrate(store.read())
+    except MigrationError as exc:
+        return [], [str(exc)]
+    if not applied:
+        return [], []
+    try:
+        store.write(migrated, SchemaSet(config.schemas_root))
+    except StoreError as exc:
+        return [], [f"The migrated file did not validate, so nothing was changed: {exc}"]
+    report = ProblemReport()
+    if load_world(config, report) is None:
+        atomic_write_text(store.path, original)
+        return [], [
+            "Your state did not load after migrating, so the original was restored.",
+            report.to_text(),
+        ]
+    return applied, []

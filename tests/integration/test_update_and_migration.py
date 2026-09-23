@@ -6,11 +6,13 @@ everything they wrote. These are the tests that hold it.
 
 from __future__ import annotations
 
+import re
+import shlex
 import subprocess
 from pathlib import Path
 
 import pytest
-from quest_app.config import AppConfig
+from quest_app.config import SUPPORTED_SCHEMA_VERSION, AppConfig
 from quest_app.migrations import (
     MIGRATIONS,
     Migration,
@@ -195,32 +197,97 @@ class TestGitSafety:
         assert result.proposed_backup_branch in result.instructions
 
 
-@pytest.mark.slow
-def test_participant_files_survive_an_upstream_style_update(config: AppConfig) -> None:
-    """The promise, end to end: program files change, participant files do not.
+def _git_commands(instructions: str) -> list[list[str]]:
+    """The `git` lines a participant would copy out of `update_instructions()`.
 
-    Simulated rather than mocked — a real repository, a real commit, a real change to
-    program-owned content while participant evidence sits beside it.
+    Strips the trailing `# comment` off each line and drops anything that is not a `git`
+    invocation (the printed recipe also names `make validate-content`, which this fixture's
+    stripped-down repository copy cannot run).
+    """
+    commands = []
+    for line in instructions.splitlines():
+        line = re.split(r"\s+#", line, maxsplit=1)[0].strip()
+        if line.startswith("git "):
+            commands.append(shlex.split(line)[1:])
+    return commands
+
+
+@pytest.mark.slow
+def test_participant_files_survive_an_upstream_style_update(
+    config: AppConfig, tmp_path_factory: pytest.TempPathFactory
+) -> None:
+    """The promise, end to end, driven by the application's own preflight and the exact
+    commands `update_instructions()` prints — not a hand-rolled Git sequence that would
+    still pass with `quest_app/update.py` gutted.
+
+    A real repository, a real second remote standing in for upstream, program-owned content
+    changed there, and the merge performed by running the printed recipe verbatim.
     """
     _init_repo(config.repo_root, commit=True)
+
+    # A real 'upstream' remote, so `preflight()` reports the repository as safe to update
+    # from and the instructions it prints are the ones this test then runs.
+    upstream = tmp_path_factory.mktemp("upstream") / "origin.git"
+    subprocess.run(
+        ["git", "clone", "--bare", "-q", str(config.repo_root), str(upstream)],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(config.repo_root), "remote", "add", "upstream", str(upstream)],
+        check=True,
+        capture_output=True,
+    )
+
+    result = preflight(config)
+    assert result.safe_to_proceed, [
+        finding.summary for finding in result.findings if finding.blocks
+    ]
+    assert result.proposed_backup_branch is not None
+
     evidence = config.participant_root / "evidence" / "base-camp-repository-safety"
     proof = next(evidence.rglob("PROOF.md"))
     before = proof.read_text()
     progress_before = (config.participant_root / "progress.yaml").read_text()
 
-    # An "upstream" change: program-owned content is rewritten.
-    quest = config.repo_root / "content" / "quests" / "base-camp" / "repository-safety.md"
-    quest.write_text(quest.read_text().replace("## Mission", "## Mission\n\nA new sentence."))
+    # Upstream publishes a change to program-owned content, through a second clone —
+    # nothing here touches the participant's own working copy directly.
+    upstream_work = tmp_path_factory.mktemp("upstream-work") / "clone"
     subprocess.run(
-        ["git", "-C", str(config.repo_root), "add", "-A"], check=True, capture_output=True
+        ["git", "clone", "-q", str(upstream), str(upstream_work)], check=True, capture_output=True
+    )
+    quest = upstream_work / "content" / "quests" / "base-camp" / "repository-safety.md"
+    quest.write_text(quest.read_text().replace("## Mission", "## Mission\n\nA new sentence."))
+    subprocess.run(["git", "-C", str(upstream_work), "add", "-A"], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(upstream_work), "commit", "-q", "-m", "upstream change"],
+        check=True,
+        capture_output=True,
+        env=_git_env(),
     )
     subprocess.run(
-        ["git", "-C", str(config.repo_root), "commit", "-m", "upstream change"],
+        ["git", "-C", str(upstream_work), "push", "-q", "origin", "HEAD:main"],
         check=True,
         capture_output=True,
         env=_git_env(),
     )
 
+    # Run exactly the commands `update_instructions()` printed for the participant to
+    # copy and paste — the real update path, not a paraphrase of it.
+    commands = _git_commands(result.instructions)
+    assert commands, "update_instructions() printed no git commands to run"
+    for command in commands:
+        subprocess.run(
+            ["git", "-C", str(config.repo_root), *command],
+            check=True,
+            capture_output=True,
+            env=_git_env(),
+        )
+
+    # The update actually happened...
+    quest_now = config.repo_root / "content" / "quests" / "base-camp" / "repository-safety.md"
+    assert "A new sentence." in quest_now.read_text()
+    # ...and the participant's own files were not touched by any of it.
     assert proof.read_text() == before
     assert (config.participant_root / "progress.yaml").read_text() == progress_before
 
@@ -249,3 +316,96 @@ def _init_repo(root: Path, *, commit: bool = False) -> None:
             capture_output=True,
             env=_git_env(),
         )
+
+
+class TestSchemaVersionAtLoad:
+    """`config.SUPPORTED_SCHEMA_VERSION` said a newer file is refused. It was loaded, and the
+    next action rewrote it in the old shape. No command applied a migration at all."""
+
+    @staticmethod
+    def _declare(config: AppConfig, version: int) -> None:
+        import yaml
+
+        path = config.participant_root / "progress.yaml"
+        data = yaml.safe_load(path.read_text())
+        data["schema_version"] = version
+        path.write_text(yaml.safe_dump(data, sort_keys=False))
+
+    def test_a_file_from_a_newer_application_is_refused(self, config: AppConfig) -> None:
+        from quest_app.errors import ProblemReport
+        from quest_app.pipeline import load_world
+
+        self._declare(config, 7)
+        report = ProblemReport()
+        assert load_world(config, report) is None
+        assert "progress.newer_schema" in {p.code for p in report.errors}
+
+    def test_an_older_file_is_refused_until_migrated_and_then_loads(
+        self, config: AppConfig
+    ) -> None:
+        import yaml
+        from quest_app.errors import ProblemReport
+        from quest_app.pipeline import load_world
+        from quest_app.update import apply_migrations
+
+        self._declare(config, 0)
+        report = ProblemReport()
+        assert load_world(config, report) is None
+        assert "progress.needs_migration" in {p.code for p in report.errors}
+
+        applied, problems = apply_migrations(config)
+        assert problems == []
+        assert applied and applied[0].startswith("0 → 1")
+        assert (
+            yaml.safe_load((config.participant_root / "progress.yaml").read_text())[
+                "schema_version"
+            ]
+            == SUPPORTED_SCHEMA_VERSION
+        )
+        assert load_world(config, ProblemReport()) is not None
+
+    def test_a_migration_that_leaves_state_unloadable_is_rolled_back(
+        self, config: AppConfig
+    ) -> None:
+        from quest_app.update import apply_migrations
+
+        self._declare(config, 0)
+        path = config.participant_root / "progress.yaml"
+        before = path.read_text()
+        # Valid against the schema, but the attempt now points at a quest that does not exist.
+        broken = before.replace("quest_id: jira-read-assigned-stories", "quest_id: no-such-quest")
+        path.write_text(broken)
+        applied, problems = apply_migrations(config)
+        assert applied == []
+        assert "restored" in problems[0]
+        assert path.read_text() == broken
+
+
+def test_a_merge_in_progress_is_named_and_committing_everything_is_not_advised(
+    config: AppConfig,
+) -> None:
+    root = config.repo_root
+    _init_repo(root, commit=True)
+    git = ["git", "-C", str(root)]
+    target = root / "content" / "README-conflict.txt"
+    target.write_text("base\n")
+    subprocess.run([*git, "add", "-A"], check=True, capture_output=True)
+    subprocess.run([*git, "commit", "-qm", "base"], check=True, capture_output=True, env=_git_env())
+    subprocess.run([*git, "switch", "-qc", "upstream-side"], check=True, capture_output=True)
+    target.write_text("theirs\n")
+    subprocess.run(
+        [*git, "commit", "-qam", "theirs"], check=True, capture_output=True, env=_git_env()
+    )
+    subprocess.run([*git, "switch", "-q", "main"], check=True, capture_output=True)
+    target.write_text("ours\n")
+    subprocess.run(
+        [*git, "commit", "-qam", "ours"], check=True, capture_output=True, env=_git_env()
+    )
+    merged = subprocess.run([*git, "merge", "upstream-side"], capture_output=True, env=_git_env())
+    assert merged.returncode != 0, "the fixture needs a real conflict"
+
+    result = preflight(config)
+    merge = next(f for f in result.findings if f.id == "merge-in-progress")
+    assert merge.blocks
+    assert "git merge --abort" in (merge.remediation or "")
+    assert not any("git add -A" in (f.remediation or "") for f in result.findings)

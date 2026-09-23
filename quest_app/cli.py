@@ -136,6 +136,21 @@ def update_command(args: argparse.Namespace) -> int:
     from quest_app.update import migration_report, preflight
 
     config = _config_from_args(args)
+    if args.migrate:
+        from quest_app.update import apply_migrations
+
+        if not (config.participant_root / "progress.yaml").exists():
+            print("No participant progress file exists yet, so there is nothing to migrate.")
+            return EXIT_OK
+        applied, problems = apply_migrations(config)
+        for problem in problems:
+            print(problem, file=sys.stderr)
+        for step in applied:
+            print(f"[migrated] {step}")
+        if not applied and not problems:
+            print("Your progress file is already on the current schema.")
+        return EXIT_CONTENT_ERROR if problems else EXIT_OK
+
     result = preflight(config)
     steps, warnings = migration_report(config)
 
@@ -169,6 +184,8 @@ def update_command(args: argparse.Namespace) -> int:
             print(f"    fix: {finding.remediation}")
     for step in steps:
         print(f"[migration] {step}")
+    if steps:
+        print("    apply: make migrate   (after the merge, with your work committed)")
     for note in (*warnings, *result.notes):
         print(f"[note] {note}")
 
@@ -348,14 +365,25 @@ def build_parser() -> argparse.ArgumentParser:
         "update", help="Check whether it is safe to take upstream curriculum changes"
     )
     _common_arguments(update)
+    update.add_argument(
+        "--migrate",
+        action="store_true",
+        help="Move participant/progress.yaml to the current schema, validating before and after",
+    )
     update.set_defaults(func=update_command)
 
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
+    from quest_app.content_loader import SchemaFileError
+
     args = build_parser().parse_args(argv)
-    result: int = args.func(args)
+    try:
+        result: int = args.func(args)
+    except SchemaFileError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_CONTENT_ERROR
     return result
 
 

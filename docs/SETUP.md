@@ -96,4 +96,4 @@ patch a resolution failure instead of a working install, which is a worse first 
 than a version drift the test suite would catch anyway.
 
 The trade is real: a future dependency release can break a previously working setup. `make
-check` is how you find out, and it runs entirely offline in about a minute.
+check` is how you find out, and it runs entirely offline in a few minutes.

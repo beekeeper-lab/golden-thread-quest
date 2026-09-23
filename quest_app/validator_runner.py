@@ -260,6 +260,9 @@ def classify(output: ValidatorOutput) -> str:
         return "inconclusive"
     if "warning" in outcomes:
         return "warning"
+    if outcomes <= {"skipped"}:
+        # Every check stood aside, so nothing was checked. That is not evidence either.
+        return "inconclusive"
     return "pass"
 
 
@@ -314,10 +317,11 @@ def run_validator(
     for name in definition.environment_allowlist:
         if name in os.environ:
             environment[name] = os.environ[name]
-    # The child runs in the validator's declared working directory, so the repository is no
-    # longer on the import path by virtue of being the current directory. Naming it here
-    # keeps `-m quest_app.validator_child` working without putting anything else on the path.
-    environment["PYTHONPATH"] = str(config.repo_root)
+    # The child runs in the validator's declared working directory, which is usually
+    # participant-owned. `python -m` would put that directory first on the import path, so
+    # a participant's `validators/` package or `json.py` would replace the registered code.
+    # `CHILD_BOOTSTRAP` puts the repository there instead, and `-s` drops the user's site
+    # directory; nothing else is on the path.
 
     # A fresh interpreter started as a subprocess, not a `multiprocessing` child of any
     # start method. `fork` from the threaded service would inherit locks held by other
@@ -357,22 +361,23 @@ def run_validator(
         # is what the first action does in any case, and refusing to start the check is a
         # worse answer than starting it in an empty directory.
         working_directory.mkdir(parents=True, exist_ok=True)
-    process = subprocess.Popen(
-        [sys.executable, "-m", "quest_app.validator_child"],
+    process = subprocess.Popen(  # noqa: S603 - fixed argv, no shell
+        [sys.executable, "-s", "-c", CHILD_BOOTSTRAP, str(config.repo_root)],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=str(working_directory),
         env=environment,
-        text=True,
         start_new_session=True,
     )
-    try:
-        stdout, stderr = process.communicate(specification, timeout=definition.timeout_seconds)
-    except subprocess.TimeoutExpired:
+    captured = _collect(process, specification.encode("utf-8"), definition.timeout_seconds)
+    stdout = captured.stdout.decode("utf-8", errors="replace")
+    stderr = captured.stderr.decode("utf-8", errors="replace")
+    if captured.timed_out:
         interrupted = True
-        _terminate_tree(process)
         stdout, stderr = "", ""
+    elif captured.overflowed:
+        environment_failure = f"it wrote more than {STREAM_LIMIT} bytes of output and was stopped"
     else:
         if process.returncode != 0 or not stdout.strip():
             environment_failure = (
@@ -387,12 +392,12 @@ def run_validator(
                 checks = [Check(**entry) for entry in payload["checks"]]
                 notes = list(payload["notes"])
                 environment_failure = payload["environment_failure"]
-        if stderr.strip():
-            notes.append(_redact_stderr(stderr))
-            if environment_failure:
-                # On a failure the first line of stderr is usually the cause, and it is far
-                # more useful than the line count. Redacted like any other captured output.
-                notes.append(f"Its last message was: {stderr.strip().splitlines()[-1][:300]}")
+    if stderr.strip():
+        notes.append(_redact_stderr(stderr))
+        if environment_failure:
+            # On a failure the first line of stderr is usually the cause, and it is far
+            # more useful than the line count. Redacted like any other captured output.
+            notes.append(f"Its last message was: {stderr.strip().splitlines()[-1][:300]}")
 
     completed = datetime.now(timezone.utc)
     duration_ms = int((time.monotonic() - start_monotonic) * 1000)
@@ -506,6 +511,88 @@ def _redact_stderr(text: str) -> str:
 
 TRUNCATION_SUFFIX = "\n… output truncated …"
 
+# The ceiling on either stream of a child. Output is read as it arrives and the run is
+# stopped when it passes this, so a validator cannot make the parent hold its output in
+# memory. The result is a few kilobytes of JSON; a megabyte is far more than any needs.
+STREAM_LIMIT = 1024 * 1024
+
+# How the child starts. `-c` rather than `-m`, so the import path's first entry is ours to
+# replace: the repository, never the working directory the validator runs in.
+CHILD_BOOTSTRAP = (
+    "import sys, runpy; sys.path[0] = sys.argv.pop(1); "
+    "runpy.run_module('quest_app.validator_child', run_name='__main__', alter_sys=True)"
+)
+
+
+@dataclass
+class _Captured:
+    stdout: bytes
+    stderr: bytes
+    timed_out: bool = False
+    overflowed: bool = False
+
+
+def _collect(process: subprocess.Popen[bytes], data: bytes, timeout: float) -> _Captured:
+    """Feed the child its specification and read both streams under a byte ceiling.
+
+    `communicate()` read everything into memory before any limit applied, and waited for the
+    pipes to close rather than for the child to exit, so a grandchild holding a pipe open
+    turned a finished pass into a timeout. Here the child's exit ends the run: whatever it
+    left behind in its process group is killed, and what is already in the pipes is read.
+    """
+    import selectors
+
+    assert process.stdin is not None and process.stdout is not None
+    assert process.stderr is not None
+    try:
+        process.stdin.write(data)
+        process.stdin.close()
+    except (BrokenPipeError, OSError):
+        pass
+
+    buffers = {process.stdout: bytearray(), process.stderr: bytearray()}
+    deadline = time.monotonic() + timeout
+    captured = _Captured(b"", b"")
+    with selectors.DefaultSelector() as selector:
+        for stream in buffers:
+            os.set_blocking(stream.fileno(), False)
+            selector.register(stream, selectors.EVENT_READ)
+        exited_at: float | None = None
+        while selector.get_map():
+            now = time.monotonic()
+            if exited_at is None and process.poll() is not None:
+                exited_at = now
+                # The child is done; anything it started is not part of the run.
+                _kill_group(process)
+            if exited_at is not None and now - exited_at > 1:
+                break
+            if exited_at is None and now >= deadline:
+                captured.timed_out = True
+                break
+            for key, _ in selector.select(timeout=0.1):
+                chunk = os.read(key.fd, 65536)
+                if not chunk:
+                    selector.unregister(key.fileobj)
+                    continue
+                buffer = buffers[key.fileobj]  # type: ignore[index]
+                buffer.extend(chunk)
+                if len(buffer) > STREAM_LIMIT:
+                    captured.overflowed = True
+            if captured.overflowed:
+                break
+    _terminate_tree(process)
+    for stream in buffers:
+        with contextlib.suppress(OSError):
+            stream.close()
+    captured.stdout = bytes(buffers[process.stdout][:STREAM_LIMIT])
+    captured.stderr = bytes(buffers[process.stderr][:STREAM_LIMIT])
+    return captured
+
+
+def _kill_group(process: subprocess.Popen[bytes]) -> None:
+    with contextlib.suppress(ProcessLookupError, PermissionError, OSError):
+        os.killpg(process.pid, signal.SIGKILL)
+
 
 def _bounded(text: str, limit: int) -> tuple[str, bool]:
     """Cap captured output, and say so rather than quietly losing the end of it.
@@ -521,7 +608,7 @@ def _bounded(text: str, limit: int) -> tuple[str, bool]:
     return encoded[:room].decode("utf-8", errors="ignore") + TRUNCATION_SUFFIX, True
 
 
-def _terminate_tree(process: subprocess.Popen[str]) -> None:
+def _terminate_tree(process: subprocess.Popen[bytes]) -> None:
     """Kill the whole process group, not just the child.
 
     A validator that spawned something of its own would otherwise survive its own timeout,

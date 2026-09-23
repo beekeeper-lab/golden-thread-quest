@@ -166,7 +166,9 @@ def create_submission(
     record = SubmissionRecord(
         submission_id=f"submission-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(3)}",
         quest_id=quest.id,
-        quest_version=quest.version,
+        # The version the participant worked against, which an update may have moved on
+        # from. Recording the current one would contradict the attempt it describes.
+        quest_version=attempt.quest_version,
         attempt_id=attempt.attempt_id,
         content_hash=quest.content_hash,
         evidence_hash=digest,
@@ -252,7 +254,7 @@ def record_decision(
         "schema_version": 1,
         "review_id": f"review-{stamp}-{secrets.token_hex(3)}",
         "quest_id": quest.id,
-        "quest_version": quest.version,
+        "quest_version": attempt.quest_version,
         "attempt_id": attempt.attempt_id,
         "evidence_hash": digest,
         "reviewer": {"display_name": reviewer_name},
@@ -277,7 +279,7 @@ def record_decision(
     return ReviewDecision(
         review_id=str(document["review_id"]),
         quest_id=quest.id,
-        quest_version=quest.version,
+        quest_version=attempt.quest_version,
         attempt_id=attempt.attempt_id,
         evidence_hash=digest,
         reviewer_display_name=reviewer_name,

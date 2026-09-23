@@ -76,7 +76,8 @@ Validators should run with the least available privileges. The architecture shou
 ## External-system writes
 
 **Release one performs none.** Every quest declares `risk.external_write: false`, every
-validator is registered `network: denied`, and the application makes no outbound request of
+validator is registered `network: denied` (a declaration that review holds, not a socket
+block: see `docs/VALIDATOR-CONTRACT.md`), and the application makes no outbound request of
 its own. The requirements below are the conditions a write-capable quest must meet before it
 is added — not a description of a mechanism running today. `tests/test_release_facts.py`
 asserts the invariant while it holds, so the day a quest declares a write, the test that
