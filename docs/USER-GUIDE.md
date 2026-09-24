@@ -356,6 +356,8 @@ reasons, is in `docs/RELEASE-NOTES.md`.
    program-owned and reviewed like code; it is not sandboxed against a hostile author.
 6. **Catalog filtering needs JavaScript.** Region and tag pages work without it.
 7. **The secret scanner is a safety net**, not a guarantee. It will not catch every shape.
+   It reads text evidence files up to 2 MB each. A larger log blocks submission until you
+   trim it to the part that shows the result.
 8. **Clean-clone installation is tested one step short of a real clone.** The `clean-export`
    CI job runs `make verify-package`, which exports tracked files with `git archive`, then
    installs, validates, and builds in a fresh virtual environment on every change. See DH1 in

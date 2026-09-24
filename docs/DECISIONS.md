@@ -564,3 +564,31 @@ on disk.
 
 **Rejected:** binding to a name rather than an address. The address is right; what was
 missing was checking the name the request arrived under.
+
+## ADR-042 — Nothing is written through a link below `participant/`, and an unusable activity file skips the line
+
+**Decision:** Every write below the participant root walks from the root one component at a
+time with `O_NOFOLLOW` (`safe_io.atomic_write`, `safe_io.append_to_regular_file`). A
+component that is a link or not a directory, or a target that exists and is not a regular
+file, is refused. Nothing is opened in a way that can block. When the refused target is
+`ACTIVITY.md`, the line is skipped and a warning goes to stderr; the progress change it
+describes stands, and both locks are released as normal. When it is `progress.yaml`, a
+record or a validation result, the action is refused before anything is written, as any
+other write failure is. The loader does not read results from a `validation/` directory that
+is a link: it reports it and reads nothing there.
+
+**Reason:** Round 12 found the activity append following a link out of the tree, and
+blocking forever on a FIFO named `ACTIVITY.md` while it held the progress lock and the
+service lock, after `progress.yaml` had changed. Validation results were written into a
+linked `validation/` directory and read back as the attempt's evidence, and the review
+archive was a plain `write_text`. Following the link is the escape; blocking is the outage.
+The activity line runs after the change is on disk, so the only choices are to skip it, to
+report a failure that did not happen (ADR-038), or to undo the change with a second write the
+same tree could refuse. Skipping loses a note; the other two lose the participant's trust in
+their own record.
+
+**Rejected:** writing the activity line before the change, so a refusal could stop it. A line
+saying something happened that then did not is worse than a missing one. Also rejected:
+resolving links and re-checking containment, as reading does. A link that stays inside the
+tree still moves a write somewhere the participant did not expect, and resolution hides the
+link from the check that would refuse it.

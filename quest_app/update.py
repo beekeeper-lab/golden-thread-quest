@@ -311,7 +311,7 @@ def apply_migrations(config: AppConfig) -> tuple[list[str], list[str]]:
             return [], [f"The migrated file did not validate, so nothing was changed: {exc}"]
         report = ProblemReport()
         if load_world(config, report) is None:
-            atomic_write_bytes(store.path, original)
+            atomic_write_bytes(config.participant_root, store.path, original)
             return [], [
                 "Your state did not load after migrating, so the original was restored.",
                 report.to_text(),

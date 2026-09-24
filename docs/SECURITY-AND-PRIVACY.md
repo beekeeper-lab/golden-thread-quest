@@ -39,6 +39,25 @@ Primary threats include:
 - Canonicalize paths and verify they remain within approved roots after resolving symbolic links.
 - Write atomically and preserve recoverable prior state.
 
+### Files in the participant tree
+
+The participant tree is untrusted input, so reads and writes there follow fixed rules
+(`quest_app/safe_io.py`, ADR-042):
+
+- A state file, record or validation result is read only if it is a regular file, and only
+  up to a ceiling. A FIFO, a device or a link to either is reported, never read.
+- Nothing is written through a symbolic link, into a directory reached through one, or onto
+  a target that is not a regular file. Nothing is opened in a way that can block.
+
+| Ceiling | Applies to | Over it |
+|---|---|---|
+| 2 MB (`MAX_STATE_BYTES`) | `progress.yaml`, `review.yaml`, review archives, `submission.yaml` | reported by `validate`; not read |
+| 8 MB (`MAX_VALIDATION_RESULT_BYTES`) | a validation result | refused when written; reported by `validate` if found |
+| 2 MB (`MAX_EVIDENCE_FILE_BYTES`) | each evidence file the secret scan reads (not images, PDF or zip) | a scan finding that blocks submission and tells the participant to trim the file |
+
+Validator output has its own limits: see `docs/VALIDATOR-CONTRACT.md`. Evidence is hashed
+by streaming, so a large image or archive costs time, not memory.
+
 ## Validator safety
 
 Validators are registered by stable ID. A registry entry defines:

@@ -905,6 +905,7 @@ def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None
         return None
     from quest_app.evidence import package_file
     from quest_app.markdown_render import render_markdown
+    from quest_app.safe_io import MAX_EVIDENCE_FILE_BYTES, UnsafeStateFileError, read_bounded_bytes
     from quest_app.secret_patterns import redact_text
 
     # Only the directory used to be resolved, so a PROOF.md that was a link to any file the
@@ -917,7 +918,13 @@ def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None
     # Redacted before rendering. It is the participant's own file and they can already read
     # it, but the guarantee "generated output contains no secrets" has to hold for the
     # generated directory as a whole — it can be served, and it is what a screenshot catches.
-    text, _ = redact_text(path.read_text(encoding="utf-8", errors="replace"))
+    # Bounded like the scan: a PROOF.md over the ceiling is a scan finding that blocks
+    # submission, and rendering it would cost every build what the scan no longer does.
+    try:
+        raw = read_bounded_bytes(path, max_bytes=MAX_EVIDENCE_FILE_BYTES)
+    except (UnsafeStateFileError, OSError):
+        return None
+    text, _ = redact_text(raw.decode("utf-8", errors="replace"))
     return render_markdown(text)
 
 
