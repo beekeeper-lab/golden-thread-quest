@@ -88,6 +88,14 @@ trust than one that misses a defect.
 ## What the runner does to you
 
 Your process runs in its own process group with a constructed environment. A timeout kills
-the group, not just you — so a child you spawned dies too. Output is capped, marked
-truncated, and redacted before it is stored. An exception becomes an `environment_failure`,
-never a `fail`, because a defect in the validator is not a defect in the work.
+the group, not just you — so a child you spawned dies too (unless it starts a session of
+its own with `setsid`; see `docs/VALIDATOR-CONTRACT.md`'s known limitation). Output is
+capped, marked truncated, and redacted — before it is cut to length, not after, so a
+secret cannot survive by landing on the boundary — before it is stored. An exception
+becomes an `environment_failure`, never a `fail`, because a defect in the validator is not
+a defect in the work. So does a check whose `outcome` or `id` is not one this contract
+defines: it is replaced with a check reporting that, not read as whatever `outcome` you
+wrote. Returning as soon as you have added your checks is what ends the run; a background
+thread you started and did not make a daemon does not keep your result from being read; it
+only stops your own process from exiting on its own, which the runner treats as the run
+being done regardless.
