@@ -60,6 +60,32 @@ EXCERPT_LIMIT = 20000
 # every later page render read back in full.
 MAX_CHECKS = 200
 
+# `$defs.check`'s `outcome` enum in `schemas/validation-result.schema.json`. Deliberately
+# separate from `OUTCOMES` above, which is the *run's* outcome: a single check cannot be
+# `environment_failure` or `interrupted` — those describe why the whole run could not
+# reach a verdict, not what one check found. A validator's process only promises JSON; it
+# does not promise a value from this set, and `outcome="passed"` (not `pass`) or
+# `outcome=None` used to fall through `classify()`'s set-membership checks and read as a
+# pass (round 12, E6).
+CHECK_OUTCOMES = ("pass", "fail", "warning", "skipped", "inconclusive")
+
+# `$defs.id` in the same schema, which every check's `id` must match, exactly like a
+# validator or quest ID does everywhere else in this application.
+CHECK_ID_PATTERN = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
+CHECK_ID_MAX_LENGTH = 120
+
+# `$defs.check`'s `maxLength` for each free-text field. Nothing enforced these before round
+# 12's E6: a field over its limit did not shrink the check, it broke the document — the
+# same failure mode `EXCERPT_LIMIT` exists to prevent for `output_excerpt`, and
+# `evidence.store_result` refuses to write a document that does not fit, a passing run
+# included.
+CHECK_FIELD_LIMITS = {
+    "summary": 500,
+    "evidence": 4000,
+    "suggested_action": 1000,
+    "artifact": 300,
+}
+
 
 class WorkspaceError(RuntimeError):
     """A path a validator asked for that is outside the roots it was registered with."""
@@ -300,6 +326,94 @@ def _apply_check_limit(checks: list[Check]) -> list[Check]:
     return limited
 
 
+def _sanitize_checks(raw_checks: Any) -> tuple[list[Check], bool]:
+    """Turn what a validator's process reported into checks that fit the schema.
+
+    The process only promises to speak JSON on its result channel; nothing enforces that
+    what is inside is the shape `docs/VALIDATOR-CONTRACT.md` describes. Before round 12's
+    E6, `Check(**entry)` trusted every entry outright: an `id` that did not match the
+    schema's pattern, an `outcome` outside its enum (`"passed"`, `None`, anything else a
+    hostile or merely buggy validator wrote), or a check missing its required `summary`
+    reached `classify()` unchanged, which read an unrecognised outcome as a pass and made
+    `store_result` refuse the whole document for one bad entry — a passing run's verdict
+    thrown away with it.
+
+    Each entry here is checked against exactly the constraints the schema states. One that
+    fails is not patched; it is replaced outright with a check of our own that says a
+    check was malformed and why, so nothing the validator claimed for it survives.
+
+    Returns the sanitized checks and whether any entry needed replacing. A validator that
+    broke its own contract this way has a defect in itself, not in the participant's
+    work — the same principle already applied to a nonzero exit and an uncaught exception
+    — so the caller forces the run's outcome to `environment_failure` rather than letting
+    a replaced check's own (necessarily non-`pass`) outcome decide it through `classify()`.
+    """
+    if not isinstance(raw_checks, list):
+        return [], bool(raw_checks)
+    checks: list[Check] = []
+    any_malformed = False
+    for index, entry in enumerate(raw_checks):
+        check, valid = _sanitize_check(entry, index)
+        checks.append(check)
+        any_malformed = any_malformed or not valid
+    return checks, any_malformed
+
+
+def _sanitize_check(entry: Any, index: int) -> tuple[Check, bool]:
+    """One raw entry from the child, validated against `$defs.check`'s id and outcome.
+
+    Field lengths are handled later, uniformly for every check regardless of validity,
+    alongside redaction (see `run_validator`) — truncation is not a reason to discard a
+    check, only a missing summary or a value outside the id/outcome constraints is.
+    """
+    check_id = entry.get("id") if isinstance(entry, dict) else None
+    outcome = entry.get("outcome") if isinstance(entry, dict) else None
+    summary = entry.get("summary") if isinstance(entry, dict) else None
+    valid = (
+        isinstance(entry, dict)
+        and isinstance(check_id, str)
+        and len(check_id) <= CHECK_ID_MAX_LENGTH
+        and CHECK_ID_PATTERN.match(check_id) is not None
+        and isinstance(outcome, str)
+        and outcome in CHECK_OUTCOMES
+        and isinstance(summary, str)
+        and summary != ""
+    )
+    if not valid:
+        evidence = (
+            f"It reported id={check_id!r}, outcome={outcome!r}."
+            if isinstance(entry, dict)
+            else f"Entry {index + 1} of the reported checks was not a check object."
+        )
+        return (
+            Check(
+                id=f"malformed-check-{index + 1}",
+                # Not `fail`: that would blame the participant's work for a defect in the
+                # validator. Not `pass` or `skipped`: `classify()` must never read this as
+                # a verdict. `inconclusive` is the closest schema-legal value to "we could
+                # not tell what this was" — `run_validator` also forces the run's own
+                # outcome to `environment_failure` so this is never mistaken for the
+                # ordinary "insufficient evidence" case a validator reports on purpose.
+                outcome="inconclusive",
+                severity="information",
+                summary="A check this validator reported did not fit the result schema.",
+                evidence=evidence,
+                suggested_action=(
+                    "This is a defect in the validator, not in your work; report it so the "
+                    "check can be fixed."
+                ),
+            ),
+            False,
+        )
+    fields: dict[str, Any] = {"id": check_id, "outcome": outcome}
+    for name in ("summary", "evidence", "suggested_action", "artifact"):
+        value = entry.get(name)
+        fields[name] = value if isinstance(value, str) else None
+    severity = entry.get("severity")
+    fields["severity"] = severity if isinstance(severity, str) else None
+    return Check(**fields), True
+
+
 def _import_entrypoint(entrypoint: str) -> Any:
     module_path, _, attribute = entrypoint.partition(":")
     if not module_path.startswith(f"{ALLOWED_ENTRYPOINT_PACKAGE}.") or not attribute:
@@ -382,6 +496,10 @@ def run_validator(
     notes: list[str] = []
     environment_failure: str | None = None
     interrupted = False
+    # One flag for the whole document, matching the schema's single `redaction_applied`
+    # property. Set as soon as any field is redacted, wherever that happens below —
+    # the stderr summary line, the excerpt, or a check's own text.
+    redaction_applied = False
 
     # `start_new_session` puts the child in its own process group, so a timeout kills
     # anything it spawned rather than only the child itself.
@@ -419,7 +537,17 @@ def run_validator(
     elif captured.overflowed:
         environment_failure = f"it wrote more than {STREAM_LIMIT} bytes of output and was stopped"
     else:
-        if process.returncode != 0 or not stdout.strip():
+        # A nonzero exit is normally trusted over anything printed (`docs/VALIDATOR-
+        # CONTRACT.md`: "exit status is not separable from the result"), *except* when we
+        # are the ones who produced it: `captured.result_closed_early` means the child had
+        # already written its result and returned — `validator_child.main()` closes the
+        # result channel as its very last act before `return 0` — and something it left
+        # running (round 12 E11: a non-daemon thread) kept the OS process alive past that
+        # point. The signal-based return code that follows describes our own cleanup, not
+        # a judgment the validator made about itself, so it must not discard a result that
+        # was already complete.
+        exit_is_self_reported = not captured.result_closed_early
+        if (process.returncode != 0 and exit_is_self_reported) or not stdout.strip():
             environment_failure = (
                 f"it exited with status {process.returncode} and produced no result"
             )
@@ -429,20 +557,47 @@ def run_validator(
             except json.JSONDecodeError:
                 environment_failure = "the validator produced output that could not be read"
             else:
-                checks = [Check(**entry) for entry in payload["checks"]]
-                notes = list(payload["notes"])
-                environment_failure = payload["environment_failure"]
+                raw_checks = payload.get("checks") if isinstance(payload, dict) else None
+                checks, checks_malformed = _sanitize_checks(raw_checks)
+                raw_notes = payload.get("notes") if isinstance(payload, dict) else None
+                notes = (
+                    [note for note in raw_notes if isinstance(note, str)]
+                    if isinstance(raw_notes, list)
+                    else []
+                )
+                reported_failure = (
+                    payload.get("environment_failure") if isinstance(payload, dict) else None
+                )
+                environment_failure = (
+                    reported_failure if isinstance(reported_failure, str) else None
+                )
+                if checks_malformed and environment_failure is None:
+                    # A defect in the validator's own output, not a fact about the
+                    # participant's work — the same reasoning that already applies to an
+                    # uncaught exception or a nonzero exit (round 12, E6).
+                    environment_failure = (
+                        "it reported a check outside its contract (an invalid outcome or id)"
+                    )
+                if not exit_is_self_reported:
+                    notes.append(
+                        "The validator's process did not exit on its own after writing its "
+                        "result; the runner terminated it."
+                    )
     if stderr.strip():
         notes.append(_redact_stderr(stderr))
         if environment_failure:
             # On a failure the first line of stderr is usually the cause, and it is far
-            # more useful than the line count. `_redact_stderr` never reproduces stderr at
-            # all, precisely because it may carry absolute paths — quoting this one line
-            # verbatim would have been the exemption that rule was written to prevent, so
-            # it gets the same path redaction `validator_child._safe_reason` applies to an
-            # exception's message.
+            # more useful than the line count. Redacted before it is cut to length, never
+            # after: truncating first can sever a secret-shaped token at the boundary, and
+            # the half that survives no longer matches any detector's pattern (round 12,
+            # E7). `_redact_paths` never reproduces a path verbatim for the same reason
+            # `validator_child._safe_reason` scrubs one from an exception's message.
             last_line = stderr.strip().splitlines()[-1]
-            notes.append(f"Its last message was: {_redact_paths(last_line)[:300]}")
+            scrubbed, line_redacted = redact_text(last_line)
+            scrubbed = _redact_paths(scrubbed)
+            bounded_line, _ = _bounded(scrubbed, 300, suffix=CHECK_TRUNCATION_SUFFIX)
+            notes.append(f"Its last message was: {bounded_line}")
+            redaction_applied = redaction_applied or line_redacted
 
     completed = datetime.now(timezone.utc)
     duration_ms = int((time.monotonic() - start_monotonic) * 1000)
@@ -470,23 +625,34 @@ def run_validator(
         output.checks.append(_explaining_check(outcome, definition, environment_failure))
 
     output.checks = _apply_check_limit(output.checks)
-    excerpt, truncated = _bounded(
-        "\n".join(output.notes), min(definition.max_output_bytes, EXCERPT_LIMIT)
-    )
-    redacted, redaction_applied = redact_text(excerpt)
+    # Redacted before it is cut to the excerpt limit, never after: the previous order
+    # truncated first, and a secret-shaped token cut in half at that boundary no longer
+    # matches any detector's pattern, so it was stored in clear (round 12, E7). Redacting
+    # the complete, untruncated text first means there is nothing left to sever by the
+    # time truncation runs.
+    joined_notes = "\n".join(output.notes)
+    redacted_notes, notes_redacted = redact_text(joined_notes)
+    redaction_applied = redaction_applied or notes_redacted
+    excerpt, truncated = _bounded(redacted_notes, min(definition.max_output_bytes, EXCERPT_LIMIT))
 
-    # Every free-text field a check carries, not only the captured output. The docstring at
-    # the top of this module promised this and only the excerpt had it, so a check quoting a
-    # token wrote it to disk verbatim.
+    # Every free-text field a check carries, not only the captured output — redacted
+    # first and truncated to its own schema `maxLength` second, for the same reason as
+    # the excerpt above. Before round 12's E6 these fields were redacted but never
+    # truncated at all: a check whose `summary`, `evidence`, `suggested_action` or
+    # `artifact` field ran past its schema limit broke the document exactly like an
+    # over-length `output_excerpt` did, and `evidence.store_result` refuses to write a
+    # document that does not fit — a passing run's verdict thrown away with it.
     checks_out: list[Check] = []
     for check in output.checks:
-        fields = {}
-        for name in ("summary", "evidence", "suggested_action", "artifact"):
+        fields: dict[str, Any] = {}
+        for name, limit in CHECK_FIELD_LIMITS.items():
             value = getattr(check, name)
-            if isinstance(value, str):
-                cleaned, changed = redact_text(value)
-                fields[name] = cleaned
-                redaction_applied = redaction_applied or changed
+            if not isinstance(value, str):
+                continue
+            cleaned, changed = redact_text(value)
+            bounded_value, _ = _bounded(cleaned, limit, suffix=CHECK_TRUNCATION_SUFFIX)
+            fields[name] = bounded_value
+            redaction_applied = redaction_applied or changed
         checks_out.append(replace(check, **fields))
 
     return RunResult(
@@ -500,7 +666,7 @@ def run_validator(
         duration_ms=duration_ms,
         outcome=outcome,
         checks=tuple(checks_out),
-        output_excerpt=redacted,
+        output_excerpt=excerpt,
         output_truncated=truncated,
         redaction_applied=redaction_applied,
         environment={"validator_version": definition.version, "network": definition.network},
@@ -555,6 +721,12 @@ def _redact_paths(text: str) -> str:
 
 TRUNCATION_SUFFIX = "\n… output truncated …"
 
+# Used for a single-line field cut to a schema `maxLength` — a check's `summary`,
+# `evidence`, `suggested_action` or `artifact`, or the one-line stderr excerpt appended on
+# a failure. Shorter and inline, unlike `TRUNCATION_SUFFIX`, which is written for the much
+# larger captured-output excerpt and starts with its own newline.
+CHECK_TRUNCATION_SUFFIX = " …[truncated]"
+
 # The ceiling on either stream of a child. Output is read as it arrives and the run is
 # stopped when it passes this, so a validator cannot make the parent hold its output in
 # memory. The result is a few kilobytes of JSON; a megabyte is far more than any needs.
@@ -574,6 +746,23 @@ class _Captured:
     stderr: bytes
     timed_out: bool = False
     overflowed: bool = False
+    result_closed_early: bool = False
+    """The child's result channel (its stdout) hit EOF while the OS process was still
+    alive, rather than because the process itself had exited.
+
+    `validator_child.main()` closes that channel as its very last act before returning, so
+    this is a stronger completion signal than `process.poll()`: a non-daemon thread the
+    validator left running can keep the process alive indefinitely past that point (round
+    12, E11). When this is true, the nonzero return code `_terminate_tree` produces by
+    killing the leftover process afterward describes our own cleanup, not a judgment the
+    validator made about itself, and `run_validator` must not read it as a self-reported
+    failure.
+
+    Defaults `False`, the same as `docs/VALIDATOR-CONTRACT.md`'s ordinary rule that a
+    nonzero exit is trusted "whatever it printed first": a code path that forgets to set
+    this explicitly keeps that existing, deliberately strict behavior rather than silently
+    granting every unrecognised case the E11 exemption.
+    """
 
 
 def _collect(process: subprocess.Popen[bytes], pgid: int, data: bytes, timeout: float) -> _Captured:
@@ -602,11 +791,33 @@ def _collect(process: subprocess.Popen[bytes], pgid: int, data: bytes, timeout: 
             os.set_blocking(stream.fileno(), False)
             selector.register(stream, selectors.EVENT_READ)
         exited_at: float | None = None
+        # When the child's result channel (its stdout) closes before `process.poll()`
+        # says the OS process has exited, this is when that happened — not yet treated
+        # as an exit on its own, only a candidate for one, because the ordinary case
+        # is this exact order: `validator_child.main()` closes its one reference to that
+        # pipe a Python statement or two before the interpreter actually finishes tearing
+        # down, so the parent routinely sees EOF a scheduler tick before `poll()` returns
+        # non-`None` for a process that was going to exit on its own regardless. Reading
+        # every EOF here as "something is stuck" made every ordinary run report one.
+        stdout_closed_at: float | None = None
         while selector.get_map():
             now = time.monotonic()
             if exited_at is None and process.poll() is not None:
                 exited_at = now
                 # The child is done; anything it started is not part of the run.
+                _kill_group(pgid)
+            if exited_at is None and stdout_closed_at is not None and now - stdout_closed_at > 1:
+                # A full second past the result channel closing with the process still
+                # not reaped is long enough that this is not the ordinary scheduling gap
+                # above: something the validator left running — round 12 E11's non-daemon
+                # thread — is holding the interpreter open. Treat it like a self-reported
+                # exit for cleanup (kill now, do not wait out the rest of the timeout for
+                # a run whose result is already in hand), but record that we, not the
+                # validator, ended it: the return code `_terminate_tree` is about to
+                # produce describes our cleanup, not a verdict the validator passed on
+                # itself.
+                exited_at = now
+                captured.result_closed_early = True
                 _kill_group(pgid)
             if exited_at is not None and now - exited_at > 1:
                 break
@@ -617,6 +828,8 @@ def _collect(process: subprocess.Popen[bytes], pgid: int, data: bytes, timeout: 
                 chunk = os.read(key.fd, 65536)
                 if not chunk:
                     selector.unregister(key.fileobj)
+                    if key.fileobj is process.stdout and stdout_closed_at is None:
+                        stdout_closed_at = now
                     continue
                 buffer = buffers[key.fileobj]  # type: ignore[index]
                 buffer.extend(chunk)
@@ -638,18 +851,24 @@ def _kill_group(pgid: int) -> None:
         os.killpg(pgid, signal.SIGKILL)
 
 
-def _bounded(text: str, limit: int) -> tuple[str, bool]:
-    """Cap captured output, and say so rather than quietly losing the end of it.
+def _bounded(text: str, limit: int, suffix: str = TRUNCATION_SUFFIX) -> tuple[str, bool]:
+    """Cap `text`, and say so rather than quietly losing the end of it.
 
     The notice is counted inside the budget. It used to be appended after truncating to
     the limit, so a validator registered at exactly the schema's cap produced an excerpt
     over it by the length of the notice, and the result was refused for being too long.
+
+    `suffix` defaults to the multi-line marker used for the large captured-output
+    excerpt; callers bounding a single-line schema field pass `CHECK_TRUNCATION_SUFFIX`
+    instead. Callers are also expected to redact `text` before calling this, never after:
+    cutting first can sever a secret-shaped token at the boundary, and the half that
+    survives no longer matches any detector's pattern (round 12, E7).
     """
     encoded = text.encode("utf-8")
     if len(encoded) <= limit:
         return text, False
-    room = max(limit - len(TRUNCATION_SUFFIX.encode("utf-8")), 0)
-    return encoded[:room].decode("utf-8", errors="ignore") + TRUNCATION_SUFFIX, True
+    room = max(limit - len(suffix.encode("utf-8")), 0)
+    return encoded[:room].decode("utf-8", errors="ignore") + suffix, True
 
 
 def _terminate_tree(process: subprocess.Popen[bytes], pgid: int) -> None:
