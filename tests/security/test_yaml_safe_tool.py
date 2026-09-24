@@ -81,7 +81,8 @@ def test_directories_outside_search_dirs_are_not_scanned(fake_repo: Path) -> Non
 
 def test_the_allowed_file_is_exempt(fake_repo: Path) -> None:
     """`quest_app/yaml_loader.py` is the one audited call site (ADR-025)."""
-    (allowed,) = check_yaml_safe.ALLOWED_FILES
+    allowed = "quest_app/yaml_loader.py"
+    assert allowed in check_yaml_safe.ALLOWED_FILES
     _write(fake_repo, allowed, _call("load", extra=", Loader=StrictSafeLoader"))
     assert check_yaml_safe.main() == 0
 
@@ -89,4 +90,26 @@ def test_the_allowed_file_is_exempt(fake_repo: Path) -> None:
 def test_the_exemption_is_by_filename_not_by_pattern(fake_repo: Path) -> None:
     """The same unsafe call in a file that is not the named exception still fails."""
     _write(fake_repo, "quest_app/other.py", _call("load", extra=", Loader=StrictSafeLoader"))
+    assert check_yaml_safe.main() == 1
+
+
+def test_a_same_named_yaml_loader_in_another_directory_is_flagged(fake_repo: Path) -> None:
+    """The exemption is by exact relative path, not by basename (T1).
+
+    `quest_app/yaml_loader.py` is exempt; a file that merely shares its basename in a
+    different directory is an ordinary file the scanner has never audited, and used to slip
+    through because the old check compared `path.name` alone.
+    """
+    _write(fake_repo, "validators/yaml_loader.py", _call("load", extra=", Loader=StrictSafeLoader"))
+    assert check_yaml_safe.main() == 1
+
+
+def test_the_tool_is_exempt_only_at_its_own_path(fake_repo: Path) -> None:
+    """`tools/check_yaml_safe.py` is exempt; a file of that name anywhere else is not (T1)."""
+    _write(fake_repo, "tools/check_yaml_safe.py", _call("load"))
+    assert check_yaml_safe.main() == 0
+
+
+def test_a_same_named_check_yaml_safe_in_another_directory_is_flagged(fake_repo: Path) -> None:
+    _write(fake_repo, "quest_app/check_yaml_safe.py", _call("load"))
     assert check_yaml_safe.main() == 1
