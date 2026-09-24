@@ -95,6 +95,9 @@ here.
    installs, validates and builds in a fresh virtual environment on every change. A true
    `git clone` from the remote followed by `make setup` was run by hand in round 4 and
    recorded in `docs/audits/round-04-independent-audit.md`; nothing runs it on a schedule.
+9. **Earlier quest versions are not kept.** An attempt records the quest version it was
+   started on, and the review page says when a newer one is published, but the quest page and
+   the review page show the current version's criteria. Git history holds the earlier text.
 
 ## For the pilot cohort
 

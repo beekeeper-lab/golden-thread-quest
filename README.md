@@ -56,7 +56,7 @@ address. Open it.
 | `docs/guides/UPDATING.md` | Taking upstream curriculum changes without losing your work |
 | `docs/CONTENT-AUTHORING-GUIDE.md` | Writing a quest |
 | `docs/SETUP.md` | Installing, and troubleshooting when it will not start |
-| `docs/RELEASE-NOTES.md` | What works, and the nine known limitations |
+| `docs/RELEASE-NOTES.md` | What works, and the ten known limitations |
 | `docs/IMPLEMENTATION-DETAILS.md` | What was actually built, and where it diverges from the plan |
 | `docs/TRACEABILITY.md` | Which test holds which requirement |
 | `docs/audits/` | Every audit, including the four that failed and the external review |
