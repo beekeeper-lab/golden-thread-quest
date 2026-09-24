@@ -21,7 +21,7 @@ import shutil
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -813,11 +813,15 @@ def _quest_detail_context(
 def _evidence_context(
     entry: QuestProgress, summary: Any, world: LoadedWorld, service: ServiceView
 ) -> dict[str, Any]:
-    from quest_app.evidence import detect_proof, scan_evidence
+    from quest_app.evidence import detect_proof, scan_evidence, scan_kinds
 
     quest = entry.quest
     results = _results_for(entry, world)
     evidence_path = entry.attempt.evidence_path if entry.attempt else None
+    # The scan runs at build time so the page can say something true about the evidence as
+    # it stands. It is also enforced at the moment of submission, which is the check that
+    # actually matters.
+    scan_findings = scan_evidence(world.config, evidence_path) if evidence_path else []
     detected = detect_proof(quest, world.config, evidence_path, results)
     required, optional = build_proof_views(quest, detected)
     latest: dict[str, Any] = {r.validator_id: r for r in results}
@@ -843,6 +847,16 @@ def _evidence_context(
             reason=None if service.available else "Start the local service to run this check.",
         )
         for validator in validators
+    )
+    # Round 12 C4: `locally_validated` is earned once (ADR-017 — a failing re-run never
+    # unwinds it), so nothing here changes that state. But the same page also shows each
+    # validator's *latest* result, and a reviewer or participant reading "Required automated
+    # checks passed" beside "Last run: fail" for the same check needs to be told those are
+    # two different moments, not a contradiction.
+    stale_local_validation = (
+        tuple(vid for vid in quest.validators if vid in latest and not latest[vid].qualifies)
+        if entry.state.id is QuestState.LOCALLY_VALIDATED
+        else ()
     )
     allowed = {
         transition.action
@@ -880,13 +894,10 @@ def _evidence_context(
         "validators": validators,
         "run_actions": run_actions,
         "results": results,
+        "stale_local_validation": stale_local_validation,
         "proof_document": _proof_document(world, evidence_path),
-        # The scan runs at build time so the page can say something true about the evidence
-        # as it stands. It is also enforced at the moment of submission, which is the check
-        # that actually matters.
-        "secret_scan_clean": (
-            not scan_evidence(world.config, evidence_path) if evidence_path else None
-        ),
+        "secret_scan_clean": not scan_findings if evidence_path else None,
+        "scan_kinds": scan_kinds(scan_findings),
         "actions": tuple(a for a in actions if a.enabled or a.id in allowed)
         if entry.attempt
         else (),
@@ -905,6 +916,7 @@ def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None
         return None
     from quest_app.evidence import package_file
     from quest_app.markdown_render import render_markdown
+    from quest_app.safe_io import MAX_EVIDENCE_FILE_BYTES, UnsafeStateFileError, read_bounded_bytes
     from quest_app.secret_patterns import redact_text
 
     # Only the directory used to be resolved, so a PROOF.md that was a link to any file the
@@ -917,7 +929,13 @@ def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None
     # Redacted before rendering. It is the participant's own file and they can already read
     # it, but the guarantee "generated output contains no secrets" has to hold for the
     # generated directory as a whole — it can be served, and it is what a screenshot catches.
-    text, _ = redact_text(path.read_text(encoding="utf-8", errors="replace"))
+    # Bounded like the scan: a PROOF.md over the ceiling is a scan finding that blocks
+    # submission, and rendering it would cost every build what the scan no longer does.
+    try:
+        raw = read_bounded_bytes(path, max_bytes=MAX_EVIDENCE_FILE_BYTES)
+    except (UnsafeStateFileError, OSError):
+        return None
+    text, _ = redact_text(raw.decode("utf-8", errors="replace"))
     return render_markdown(text)
 
 
@@ -932,7 +950,7 @@ def _review_context(
     entry: QuestProgress, summary: Any, world: LoadedWorld, service: ServiceView
 ) -> dict[str, Any]:
     """Everything U10 requires about one attempt."""
-    from quest_app.evidence import detect_proof, scan_evidence
+    from quest_app.evidence import detect_proof, scan_evidence, scan_kinds
     from quest_app.review import changes_since_submission, read_submission, review_history
 
     attempt = entry.attempt
@@ -946,6 +964,23 @@ def _review_context(
     required, _ = build_proof_views(
         entry.quest, detect_proof(entry.quest, config, attempt.evidence_path, results)
     )
+    if attempt.quest_version != entry.quest.version:
+        # Round 12 C5: the checklist above is the *published* quest's required evidence,
+        # detected against paths that version currently declares. An attempt on a different
+        # version may have been written and submitted against proof paths the curriculum has
+        # since renamed, so "Not detected" here does not mean the evidence is missing — it
+        # may mean the path moved. Only missing items get the note; a path that still
+        # resolves needs no caveat.
+        version_note = (
+            f"This checklist reflects version {entry.quest.version}, the published one. "
+            f"The attempt was made against version {attempt.quest_version}, so a missing "
+            "item here may be a proof path that has since been renamed rather than evidence "
+            "that was never produced."
+        )
+        required = tuple(
+            replace(item, detail=version_note) if item.status == "missing" else item
+            for item in required
+        )
     history = review_history(config, attempt)
     changed = changes_since_submission(config, attempt)
 
@@ -961,7 +996,10 @@ def _review_context(
         # What the participant was told did not block submission. A reviewer could otherwise
         # only infer an unrun check from an empty result list, which reads as "none declared".
         "advisories": tuple(submission.get("advisories") or ()),
-        "secret_scan_clean": not scan_evidence(config, attempt.evidence_path),
+        # Round 12 C3: a secret, a link out of the package and a file too large to scan all
+        # fail the scan, and each needs its own words. See `scan_kinds`.
+        "secret_scan_clean": not (scan_findings := scan_evidence(config, attempt.evidence_path)),
+        "scan_kinds": scan_kinds(scan_findings),
         "evidence_hash": submission.get("evidence_hash"),
         "evidence_changed": bool(changed),
         # Which of the package and the declared proof outside it changed, so the reviewer
@@ -1029,6 +1067,7 @@ def _review_queue_context(
         "submission_id": None,
         "submitted_at": None,
         "secret_scan_clean": None,
+        "scan_kinds": frozenset(),
         "quest_version": 1,
         "published_version": None,
         "evidence_hash": None,

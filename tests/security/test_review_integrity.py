@@ -181,6 +181,36 @@ class TestApprovalGuards:
                 schemas=schemas,
             )
 
+    def test_deciding_a_submitted_attempt_with_no_submission_record_is_refused(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """E4: `create_submission` always writes `submission.yaml` before this transition.
+
+        `_check_integrity` refuses this at load (`progress.unsubmitted_submitted_state`,
+        tested in `TestForgery`), but the loader is not `record_decision`'s only caller.
+        This attempt is forged in memory rather than on disk, so the guard here is the one
+        under test, not the one in `progress.py`. Its evidence directory (a stock fixture
+        attempt that has never been submitted) holds no `submission.yaml`.
+        """
+        from dataclasses import replace
+
+        world, schemas, store, quest, attempt = setup
+        forged = replace(attempt, recorded_state=AttemptState.SUBMITTED)
+
+        with pytest.raises(ReviewError, match="no readable submission record"):
+            record_decision(
+                config,
+                store,
+                quest=quest,
+                attempt=forged,
+                participant=world.participant,
+                decision="approved",
+                reviewer_name="A Reviewer",
+                verification_statement=STATEMENT,
+                findings=[],
+                schemas=schemas,
+            )
+
     def test_approving_evidence_that_changed_since_submission_is_refused(
         self, setup, config: AppConfig
     ) -> None:  # type: ignore[no-untyped-def]
@@ -387,6 +417,94 @@ class TestForgery:
         report = ProblemReport()
         assert load_world(config, report) is None
         assert "progress.unverified_verified_state" in {p.code for p in report.errors}
+
+    def test_a_hand_written_submitted_state_with_no_submission_record_is_refused(
+        self, config: AppConfig
+    ) -> None:
+        """E4: without this, the state loaded clean and could be approved straight to
+        `verified`, skipping the secret-scan gate `create_submission` runs before it ever
+        writes `submission.yaml`."""
+        store = ProgressStore(config)
+        data = store.read()
+        for attempt in data["attempts"]:
+            if attempt["quest_id"] == QUEST:
+                attempt["state"] = "submitted"
+        store.path.write_text(yaml.safe_dump(data, sort_keys=False))
+
+        report = ProblemReport()
+        assert load_world(config, report) is None
+        assert "progress.unsubmitted_submitted_state" in {p.code for p in report.errors}
+
+    def test_a_legitimate_submission_still_loads_clean(self, setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        """The other side of the fix: a real `submit-for-review` must not start erroring."""
+        submit(setup, config)
+
+        report = ProblemReport()
+        assert load_world(config, report) is not None, report.to_text()
+        assert "progress.unsubmitted_submitted_state" not in {p.code for p in report.problems}
+
+    def test_a_withdrawn_submission_still_loads_clean(self, setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        """E4 only judges a *current* `submitted` state. `submission.yaml` is never deleted,
+        but the attempt is `in_progress` again after a withdrawal, and must load exactly as
+        before."""
+        from quest_app.store import no_guard, transition_attempt
+
+        submit(setup, config)
+        _, schemas, store, _, _ = setup
+        transition_attempt(
+            store, quest_id=QUEST, action="withdraw-submission", schemas=schemas, guard=no_guard
+        )
+
+        report = ProblemReport()
+        assert load_world(config, report) is not None, report.to_text()
+        assert "progress.unsubmitted_submitted_state" not in {p.code for p in report.problems}
+
+    def test_a_needs_changes_decision_still_loads_clean(self, setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        submit(setup, config)
+        world, schemas, store, quest, _ = setup
+        world, attempt = reload_attempt(config)
+        record_decision(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            decision="needs_changes",
+            reviewer_name="A Reviewer",
+            verification_statement=None,
+            findings=[FINDING],
+            schemas=schemas,
+        )
+
+        report = ProblemReport()
+        assert load_world(config, report) is not None, report.to_text()
+        assert "progress.unsubmitted_submitted_state" not in {p.code for p in report.problems}
+
+    def test_resuming_after_needs_changes_still_loads_clean(self, setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        from quest_app.store import no_guard, transition_attempt
+
+        submit(setup, config)
+        world, schemas, store, quest, _ = setup
+        world, attempt = reload_attempt(config)
+        record_decision(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            decision="needs_changes",
+            reviewer_name="A Reviewer",
+            verification_statement=None,
+            findings=[FINDING],
+            schemas=schemas,
+        )
+        transition_attempt(
+            store, quest_id=QUEST, action="resume-quest", schemas=schemas, guard=no_guard
+        )
+
+        report = ProblemReport()
+        assert load_world(config, report) is not None, report.to_text()
+        assert "progress.unsubmitted_submitted_state" not in {p.code for p in report.problems}
 
 
 class TestEvidenceChangedAfterApproval:

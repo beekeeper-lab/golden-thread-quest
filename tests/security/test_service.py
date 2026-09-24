@@ -316,6 +316,30 @@ class TestCrossOrigin:
         status, _ = post(base, {"action": "rebuild", "token": token}, headers={"Origin": base})
         assert status == 200
 
+    def test_an_origin_of_null_is_refused(self, service: tuple[str, str]) -> None:
+        """A browser sends `Origin: null` for a genuinely cross-origin or sandboxed request.
+
+        Round 12's C1 fix changes the referrer policy from `no-referrer` to `same-origin` so
+        that a *same-origin* form POST stops carrying this value — but the fix must not do it
+        by making the check accept `null`. A real cross-origin request still sends it, and it
+        must still be refused.
+        """
+        base, token = service
+        status, _ = post(base, {"action": "rebuild", "token": token}, headers={"Origin": "null"})
+        assert status == 403
+
+
+class TestFormRouteCrossOrigin:
+    def test_an_origin_of_null_is_refused(self, service: tuple[str, str]) -> None:
+        base, token = service
+        status, _ = post_form(
+            base,
+            "/api/action/rebuild/base-camp-repository-safety",
+            {"token": token},
+            headers={"Origin": "null"},
+        )
+        assert status == 403
+
 
 class TestRequestShape:
     def test_a_non_json_content_type_is_refused(self, service: tuple[str, str]) -> None:
@@ -428,7 +452,10 @@ class TestResponseHeaders:
         with urllib.request.urlopen(f"{base}/api/health", timeout=10) as response:  # noqa: S310
             headers = dict(response.headers)
         assert headers["X-Content-Type-Options"] == "nosniff"
-        assert headers["Referrer-Policy"] == "no-referrer"
+        # Not `no-referrer`: that strips the Origin header to "null" on a same-origin form
+        # POST too, so `_origin_is_acceptable` refused every action form in a real browser
+        # (round 12, C1). `same-origin` still sends nothing cross-origin.
+        assert headers["Referrer-Policy"] == "same-origin"
         assert "default-src 'none'" in headers["Content-Security-Policy"]
         assert "frame-ancestors 'none'" in headers["Content-Security-Policy"]
 

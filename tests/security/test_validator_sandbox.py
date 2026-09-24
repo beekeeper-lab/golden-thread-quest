@@ -909,15 +909,25 @@ class TestHostileChildren:
     """
 
     @staticmethod
-    def _run(registry, config: AppConfig, source: str, timeout: int = 20):  # type: ignore[no-untyped-def]
+    def _run(
+        registry,  # type: ignore[no-untyped-def]
+        config: AppConfig,
+        source: str,
+        timeout: int = 20,
+        max_output_bytes: int | None = None,
+    ):
         import dataclasses
         import textwrap
 
         (config.repo_root / "validators" / "hostile_probe.py").write_text(textwrap.dedent(source))
+        overrides: dict[str, object] = {
+            "timeout_seconds": timeout,
+            "entrypoint": "validators.hostile_probe:run",
+        }
+        if max_output_bytes is not None:
+            overrides["max_output_bytes"] = max_output_bytes
         definition = dataclasses.replace(
-            registry.get("validate-repository-foundation"),
-            timeout_seconds=timeout,
-            entrypoint="validators.hostile_probe:run",
+            registry.get("validate-repository-foundation"), **overrides
         )
         return run_validator(
             definition,
@@ -1211,3 +1221,297 @@ class TestHostileChildren:
         truncation = next(c for c in result.checks if c.id == "checks-truncated")
         assert str(20000 - MAX_CHECKS) in truncation.summary
         assert sum(1 for c in result.checks if c.id != "checks-truncated") == MAX_CHECKS
+
+
+def _schema_errors(config: AppConfig, document: dict) -> list[str]:  # type: ignore[type-arg]
+    """Every way `document` disagrees with `schemas/validation-result.schema.json`.
+
+    An empty list is the thing every result must produce: `evidence.store_result` refuses
+    to write anything that fails this check, so a result this cannot validate is a result
+    that would have been thrown away whole, verdict included (round 12, E6).
+    """
+    import json
+
+    from jsonschema import Draft202012Validator, FormatChecker
+
+    schema = json.loads((config.schemas_root / "validation-result.schema.json").read_text())
+    return [
+        error.message
+        for error in Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(
+            document
+        )
+    ]
+
+
+# A GitHub token is `gh[pousr]_` followed by 36-or-more base62 characters. Forty
+# characters total, the minimum the pattern in `quest_app/secret_patterns.py` matches, so
+# where it lands relative to a byte limit is exact and easy to reason about.
+# secret-scan: allow
+_TEST_TOKEN = "ghp_" + "A" * 36
+
+
+class TestRoundTwelveRunnerFindings:
+    """E6, E7, E9 and E11 of `docs/audits/round-12-independent-audit.md`.
+
+    Each of these used to make the runner discard a run it should have kept (E6, E11), or
+    keep one with a secret in it (E7). E9 has no fix here; see its own test for why.
+    """
+
+    # --- E6: an out-of-schema check must not be silently trusted -------------------
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("bad_outcome", ["passed", "PASS", "None", None])
+    def test_a_hostile_outcome_never_classifies_as_a_pass(
+        self, registry, config: AppConfig, bad_outcome: str | None
+    ) -> None:  # type: ignore[no-untyped-def]
+        """`outcome="passed"` (not `pass`) or `outcome=None` used to fall through every
+        branch of `classify()`'s set-membership checks and read as a pass."""
+        result = TestHostileChildren._run(
+            registry,
+            config,
+            f"""
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                output.add(Check(id="probe", outcome={bad_outcome!r}, summary="ran"))
+            """,
+        )
+        assert result.outcome not in ("pass", "warning"), result
+        assert result.outcome == "environment_failure", result
+        assert _schema_errors(config, result.to_document()) == []
+
+    @pytest.mark.slow
+    def test_a_hostile_check_id_never_classifies_as_a_pass(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """An id outside `$defs.id`'s pattern is exactly as untrustworthy as a bad outcome."""
+        result = TestHostileChildren._run(
+            registry,
+            config,
+            """
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                output.add(Check(id="Not An ID!", outcome="pass", summary="ran"))
+            """,
+        )
+        assert result.outcome == "environment_failure", result
+        assert _schema_errors(config, result.to_document()) == []
+
+    @pytest.mark.slow
+    def test_an_over_length_check_field_is_truncated_not_thrown_away(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """A `summary` past its schema's 500-character `maxLength` used to make
+        `store_result` refuse the entire document — a passing run's verdict included.
+        Truncating it, rather than discarding the check, is what E6 asks for."""
+        result = TestHostileChildren._run(
+            registry,
+            config,
+            """
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                output.add(Check(id="probe", outcome="pass", summary="y" * 600))
+            """,
+        )
+        assert result.outcome == "pass", result
+        (check,) = result.checks
+        assert len(check.summary) <= 500
+        assert check.summary.endswith("[truncated]")
+        assert _schema_errors(config, result.to_document()) == []
+
+    # --- E7: redact the complete field, then cut it to length ----------------------
+
+    @staticmethod
+    def _straddling_text(limit: int, suffix: str, mid: int = 20, trailing_len: int = 50) -> str:
+        """Text shaped so a truncation to `limit` (with `suffix` counted inside the
+        budget, exactly as `_bounded` applies it) lands `mid` characters into
+        `_TEST_TOKEN`, wherever that truncation happens to run — before redaction, as the
+        runner used to, or after, as it does now.
+
+        Trailing padding keeps the whole text over `limit` even once the token has
+        shrunk to its much shorter redacted placeholder, so redacting first still ends in
+        a real truncation rather than a shrink that avoids one — the case that matters,
+        since a truncation nothing ever reaches proves nothing about the order it runs in.
+
+        The leading padding ends in a space, never a word character, so the token itself
+        starts at a regex `\\b` boundary the detector recognises: a token straddling that
+        boundary too would defeat the test before the length boundary ever got a chance
+        to.
+        """
+        room = max(limit - len(suffix.encode("utf-8")), 0)
+        padding_len = max(room - mid, 1)
+        padding = "x" * (padding_len - 1) + " "
+        trailing = (" " + "z" * (trailing_len - 1)) if trailing_len else ""
+        return padding + _TEST_TOKEN + trailing
+
+    @pytest.mark.slow
+    def test_a_token_straddling_the_excerpt_limit_is_never_stored_in_clear(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Cutting to the excerpt limit first, as the runner used to, can sever a token in
+        half at the boundary; the surviving half no longer matches the detector's pattern
+        and was stored in clear."""
+        from quest_app.validator_runner import TRUNCATION_SUFFIX
+
+        limit = 100
+        text = self._straddling_text(limit, TRUNCATION_SUFFIX)
+        result = TestHostileChildren._run(
+            registry,
+            config,
+            f"""
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                output.note({text!r})
+                output.add(Check(id="probe", outcome="pass", summary="ran"))
+            """,
+            max_output_bytes=limit,
+        )
+        assert "ghp_" not in result.output_excerpt, result.output_excerpt
+        assert "[REDACTED]" in result.output_excerpt
+        assert result.redaction_applied
+
+    @pytest.mark.slow
+    def test_a_token_straddling_the_stderr_line_limit_is_never_stored_in_clear(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """The same boundary problem, for the one stderr line quoted on a failure: the
+        `_redact_paths(last_line)[:300]` line used to cut here with no secret-redaction
+        pass of its own, ahead of the whole-excerpt redaction that runs on the joined
+        notes afterward — by which point the token was already cut in half."""
+        from quest_app.validator_runner import CHECK_TRUNCATION_SUFFIX
+
+        text = self._straddling_text(300, CHECK_TRUNCATION_SUFFIX)
+        result = TestHostileChildren._run(
+            registry,
+            config,
+            f"""
+            import sys
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                sys.stderr.write({text!r} + "\\n")
+                output.fail_environment("forced for the test")
+            """,
+        )
+        assert result.outcome == "environment_failure", result
+        assert "ghp_" not in result.output_excerpt, result.output_excerpt
+        assert "[REDACTED]" in result.output_excerpt
+        assert result.redaction_applied
+
+    @pytest.mark.slow
+    def test_a_token_straddling_a_check_fields_limit_is_never_stored_in_clear(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """A check's own fields are truncated to their schema limits too (E6); redaction
+        has to run before that cut here as well, or the same boundary leak reappears one
+        layer down."""
+        from quest_app.validator_runner import CHECK_TRUNCATION_SUFFIX
+
+        text = self._straddling_text(500, CHECK_TRUNCATION_SUFFIX)
+        result = TestHostileChildren._run(
+            registry,
+            config,
+            f"""
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                output.add(Check(id="probe", outcome="pass", summary={text!r}))
+            """,
+        )
+        assert result.outcome == "pass", result
+        (check,) = result.checks
+        assert "ghp_" not in check.summary, check.summary
+        assert "[REDACTED]" in check.summary
+        assert len(check.summary) <= 500
+        assert _schema_errors(config, result.to_document()) == []
+
+    # --- E11: a finished result must survive a validator that will not exit --------
+
+    @pytest.mark.slow
+    def test_a_leftover_non_daemon_thread_does_not_discard_a_finished_result(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """A validator that writes its result and returns, but leaves a non-daemon thread
+        running, keeps the interpreter alive past that point: Python joins non-daemon
+        threads before it actually exits. The old code waited for the process to exit (or
+        the run to time out) before trusting anything on stdout, so a perfectly good
+        result was reported `interrupted` and thrown away. The fix ends the run as soon as
+        the result channel itself closes, which is a stronger completion signal than the
+        process exiting, so this must finish in well under the thread's sleep or the
+        registered timeout."""
+        import time
+
+        started = time.monotonic()
+        result = TestHostileChildren._run(
+            registry,
+            config,
+            """
+            import threading, time as _time
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                threading.Thread(target=lambda: _time.sleep(60), daemon=False).start()
+                output.add(Check(id="probe", outcome="pass", summary="ran"))
+            """,
+            timeout=20,
+        )
+        elapsed = time.monotonic() - started
+        assert result.outcome == "pass", result
+        assert elapsed < 10, (
+            f"took {elapsed:.1f}s; a finished result must not wait out a hung thread"
+        )
+        assert "did not exit on its own" in result.output_excerpt
+
+    # --- E9: documented rather than fixed; see the test's own explanation ----------
+
+    def test_the_process_group_escape_is_a_documented_known_limitation(self) -> None:
+        """A grandchild that calls `setsid()`/`start_new_session` leaves the validator's
+        process group and survives `_terminate_tree`'s `killpg`.
+
+        There is no reliable fix on Linux without either an isolation layer this release
+        does not have (a namespace, a container, cgroups) or making the whole service
+        process a `PR_SET_CHILD_SUBREAPER`: reparented orphans would then land on the
+        service process itself, mixed in with every other run's, with no cheap way to
+        tell which run a given reparented PID belongs to, and the service process is not
+        itself killed at the end of a run the way the per-run child is — so nothing would
+        ever clean them up. That trade only replaces one unbounded-survivor problem with
+        another, so this is recorded as a known limitation instead of "fixed": both
+        `docs/VALIDATOR-CONTRACT.md` and `docs/RELEASE-NOTES.md` say so, and this test
+        keeps that statement from silently drifting out of either document.
+        """
+        root = Path(__file__).resolve().parent.parent.parent
+        contract = (root / "docs" / "VALIDATOR-CONTRACT.md").read_text()
+        assert "session of its own" in contract
+
+        release_notes = (root / "docs" / "RELEASE-NOTES.md").read_text()
+        limitations = release_notes.split("## Known limitations", 1)[1]
+        assert "setsid" in limitations or "session of its own" in limitations
+
+    @pytest.mark.slow
+    def test_an_ordinary_run_is_not_reported_as_a_leftover_process(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """The fix for E11 must not treat every run as one where the validator's process
+        failed to exit on its own.
+
+        `validator_child.main()` closes its result channel a Python statement or two
+        before the interpreter actually finishes tearing down, so the parent routinely
+        sees that pipe's EOF a scheduler tick before `process.poll()` confirms the exit —
+        for a process that was always going to exit on its own, no lingering thread
+        involved. Reading every such EOF as "something is stuck" (an earlier version of
+        this fix) made every ordinary, single-threaded validator report one."""
+        result = TestHostileChildren._run(
+            registry,
+            config,
+            """
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                output.add(Check(id="probe", outcome="pass", summary="ran"))
+            """,
+        )
+        assert result.outcome == "pass", result
+        assert "did not exit on its own" not in result.output_excerpt

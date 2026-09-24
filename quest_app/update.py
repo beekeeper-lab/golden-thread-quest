@@ -279,7 +279,7 @@ def apply_migrations(config: AppConfig) -> tuple[list[str], list[str]]:
     from quest_app.migrations import MigrationError, migrate
     from quest_app.pipeline import load_world
     from quest_app.safe_io import UnsafeStateFileError, read_bounded_bytes
-    from quest_app.store import ProgressStore, StoreError, atomic_write_bytes
+    from quest_app.store import ProgressStore, StoreError, append_audit, atomic_write_bytes
 
     store = ProgressStore(config)
     if not store.path.exists():
@@ -311,9 +311,13 @@ def apply_migrations(config: AppConfig) -> tuple[list[str], list[str]]:
             return [], [f"The migrated file did not validate, so nothing was changed: {exc}"]
         report = ProblemReport()
         if load_world(config, report) is None:
-            atomic_write_bytes(store.path, original)
+            atomic_write_bytes(config.participant_root, store.path, original)
             return [], [
                 "Your state did not load after migrating, so the original was restored.",
                 report.to_text(),
             ]
+        # `make migrate` is the one mutator of progress.yaml with no activity line (E10):
+        # every other writer here appends one, and a rewrite this consequential is exactly
+        # what ACTIVITY.md exists to say happened.
+        append_audit(config, f"Migrated progress.yaml: {'; '.join(applied)}.")
         return applied, []

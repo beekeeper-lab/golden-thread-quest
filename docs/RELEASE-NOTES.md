@@ -56,7 +56,7 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 751 under `make check`, plus 43 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
+| Tests | 830 under `make check`, plus 45 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3 quest-facing, plus 2 registered environment probes and one unregistered slow probe used only to prove the timeout |
@@ -98,6 +98,18 @@ here.
 9. **Earlier quest versions are not kept.** An attempt records the quest version it was
    started on, and the review page says when a newer one is published, but the quest page and
    the review page show the current version's criteria. Git history holds the earlier text.
+10. **A validator's grandchild that starts a session of its own outlives the timeout.**
+    `docs/VALIDATOR-CONTRACT.md` covers the ordinary case: the run's process group is
+    killed on exit and on timeout, which reaches anything a validator spawns normally.
+    A descendant that calls `setsid()` (Python's `start_new_session`) leaves that group
+    and is not reached by the same `killpg`. Making the whole service process a Linux
+    `PR_SET_CHILD_SUBREAPER` would catch a reparented orphan like that one, but only by
+    landing it on the service process itself, mixed in with every other run's — with no
+    cheap way to tell which run a given reparented PID came from, and nothing that ever
+    kills the service process the way the per-run child is killed to clean its own up.
+    That trade swaps one unbounded-survivor case for another, so this is recorded here
+    rather than "fixed": every shipped validator is reviewed code that does not do this,
+    and the gap only matters against one that is not.
 
 ## For the pilot cohort
 

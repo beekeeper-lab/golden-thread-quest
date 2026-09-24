@@ -13,24 +13,61 @@ timestamps, no absolute paths.
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
+import os
+import stat
 from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any
 
+from quest_app.safe_io import HASH_CHUNK_BYTES
+
 PREFIX = "sha256:"
 
 
-def _digest(chunks: list[bytes]) -> str:
+def _digest(chunks: list[bytes | Path]) -> str:
+    """SHA-256 over length-prefixed chunks. A `Path` chunk is a file, streamed.
+
+    Length-prefix each chunk so that concatenation cannot be ambiguous: without it,
+    ("ab", "c") and ("a", "bc") would hash identically. A file is hashed exactly as its bytes
+    would be, so a digest recorded before files were streamed still matches.
+    """
     hasher = hashlib.sha256()
     for chunk in chunks:
-        # Length-prefix each chunk so that concatenation cannot be ambiguous: without it,
-        # ("ab", "c") and ("a", "bc") would hash identically.
+        if isinstance(chunk, Path):
+            _update_with_file(hasher, chunk)
+            continue
         hasher.update(str(len(chunk)).encode("ascii"))
         hasher.update(b"\0")
         hasher.update(chunk)
     return PREFIX + hasher.hexdigest()
+
+
+def _update_with_file(hasher: Any, path: Path) -> None:
+    """Feed one file to `hasher` as a length-prefixed chunk, a megabyte at a time.
+
+    `hash_directory` used to hold every file of a package in memory at once, so a large log
+    cost its size in memory on every build (round 12 E8). The length prefix comes from
+    `fstat` on the open descriptor; a file that shrinks while it is read raises `OSError`
+    rather than producing a digest of something that never existed. Opened `O_NONBLOCK` and
+    refused unless regular, so nothing swapped in after the caller's check can block.
+    """
+    flags = os.O_RDONLY | os.O_NONBLOCK | getattr(os, "O_CLOEXEC", 0)
+    with os.fdopen(os.open(path, flags), "rb") as stream:
+        status = os.fstat(stream.fileno())
+        if not stat.S_ISREG(status.st_mode):
+            raise OSError(errno.EINVAL, "not an ordinary file")
+        remaining = status.st_size
+        hasher.update(str(remaining).encode("ascii"))
+        hasher.update(b"\0")
+        while remaining:
+            block = stream.read(min(HASH_CHUNK_BYTES, remaining))
+            if not block:
+                raise OSError(errno.EIO, "the file changed while it was being hashed")
+            hasher.update(block)
+            remaining -= len(block)
 
 
 def normalize_text(text: str) -> str:
@@ -41,6 +78,11 @@ def normalize_text(text: str) -> str:
 
 def hash_bytes(data: bytes) -> str:
     return _digest([data])
+
+
+def hash_file(path: Path) -> str:
+    """`hash_bytes(path.read_bytes())`, streamed, so the file is never held in memory."""
+    return _digest([path])
 
 
 def hash_text(text: str) -> str:
@@ -74,7 +116,7 @@ def hash_directory(
     never pulled into the digest; the evidence loader reports such a link and nothing
     renders through it.
     """
-    chunks: list[bytes] = []
+    chunks: list[bytes | Path] = []
     resolved_root = root.resolve()
     for path in sorted(root.rglob("*"), key=lambda p: p.relative_to(root).as_posix()):
         relative = path.relative_to(root).as_posix()
@@ -90,7 +132,7 @@ def hash_directory(
         elif path.is_file():
             if path.is_symlink():
                 chunks.append(b"symlink:" + str(path.readlink()).encode("utf-8"))
-            chunks.append(path.read_bytes())
+            chunks.append(path)
         else:
             chunks.append(b"dir")
     return _digest(chunks)

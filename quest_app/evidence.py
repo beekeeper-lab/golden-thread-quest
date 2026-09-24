@@ -11,19 +11,49 @@ participant a minute, and a missed credential costs them a rotation and a conver
 
 from __future__ import annotations
 
+import json
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
 from quest_app.config import AppConfig
-from quest_app.hashing import hash_bytes, hash_directory, resolves_inside
+from quest_app.hashing import hash_directory, hash_file, resolves_inside
 from quest_app.models import ProofRequirement, Quest
-from quest_app.progress import ValidationResult
+from quest_app.progress import REVIEW_ARCHIVE_GLOBS, ValidationResult
+from quest_app.safe_io import (
+    MAX_EVIDENCE_FILE_BYTES,
+    MAX_VALIDATION_RESULT_BYTES,
+    UnsafeStateFileError,
+    read_bounded_bytes,
+)
 from quest_app.secret_patterns import scan_text
 from quest_app.store import write_json_atomic
 
 OUTSIDE_LINK_DESCRIPTION = "is a link that leads outside the evidence package"
+OVERSIZE_DESCRIPTION = (
+    f"is larger than the {MAX_EVIDENCE_FILE_BYTES // 1_000_000} MB the secret scan reads, "
+    "so it cannot be checked"
+)
+
+
+def scan_kinds(findings: list[SecretFinding]) -> frozenset[str]:
+    """Which kinds of problem a scan found: `secret`, `link` or `oversize`.
+
+    The three fail the scan alike but need different words. A page that called a link or an
+    unreadably large file "secret-like" sent people looking for a credential that was never
+    there (round 12 C3).
+    """
+    kinds = {
+        "link"
+        if f.description == OUTSIDE_LINK_DESCRIPTION
+        else "oversize"
+        if f.description == OVERSIZE_DESCRIPTION
+        else "secret"
+        for f in findings
+    }
+    return frozenset(kinds)
+
 
 SKIP_SUFFIXES = frozenset({".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf", ".zip"})
 
@@ -148,7 +178,14 @@ def scan_evidence(config: AppConfig, evidence_path: str) -> list[SecretFinding]:
         if not path.is_file() or path.suffix.lower() in SKIP_SUFFIXES:
             continue
         try:
-            raw = path.read_bytes()
+            raw = read_bounded_bytes(path, max_bytes=MAX_EVIDENCE_FILE_BYTES)
+        except UnsafeStateFileError:
+            # Over the ceiling, or swapped for something that is not a file since `is_file`.
+            # Either way the scan did not read it, so it cannot vouch for it: a finding that
+            # blocks submission and says why, rather than a minute of pattern matching on
+            # every build while the locks are held (round 12 E8).
+            findings.append(SecretFinding(relative, 1, OVERSIZE_DESCRIPTION))
+            continue
         except OSError:
             # A file the scan cannot read is a file it cannot vouch for, so it blocks.
             findings.append(SecretFinding(relative, 1, "could not be read to check it"))
@@ -217,7 +254,9 @@ def evidence_hash(config: AppConfig, evidence_path: str) -> str | None:
     return hash_directory(
         root,
         skip_names=frozenset({"validation"}),
-        skip_globs=("submission.yaml", "review.yaml", "review-*.yaml"),
+        # Exactly the review records the loader checks (`progress.review_archive_paths`). The
+        # looser `review-*.yaml` also hid a participant's own `review-notes.yaml` from it.
+        skip_globs=("submission.yaml", "review.yaml", *REVIEW_ARCHIVE_GLOBS),
     )
 
 
@@ -265,7 +304,7 @@ def proof_file_digests(
             continue
         try:
             if target.is_file():
-                digest = hash_bytes(target.read_bytes())
+                digest = hash_file(target)
             elif target.is_dir():
                 digest = hash_directory(target)
             else:
@@ -337,10 +376,20 @@ def store_result(
                 + "; ".join(problem.public_message for problem in report.errors[:3])
             )
 
-    directory = config.resolve_participant_path(evidence_path) / "validation"
-    directory.mkdir(parents=True, exist_ok=True)
+    # The lexical path, walked without following a link: a `validation/` directory that is
+    # a link out of the tree used to receive the result, and the loader then read it back
+    # (round 12 E1). `write_json_atomic` refuses it, and every other link below the root.
+    directory = config.participant_write_path(evidence_path) / "validation"
     run_id = str(document["run_id"])
     relative = f"{evidence_path}/validation/{run_id}.json"
     document["result_path"] = relative
-    write_json_atomic(directory / f"{run_id}.json", document)
+    # The loader reads a result only up to this ceiling, so one over it would be written and
+    # then ignored. Refusing it here says so while the run is still in front of the caller.
+    size = len(json.dumps(document, indent=2, sort_keys=True).encode("utf-8"))
+    if size > MAX_VALIDATION_RESULT_BYTES:
+        raise ResultRejectedError(
+            f"the validator produced a result of {size} bytes, over the "
+            f"{MAX_VALIDATION_RESULT_BYTES} byte limit for a stored result"
+        )
+    write_json_atomic(config.participant_root, directory / f"{run_id}.json", document)
     return relative

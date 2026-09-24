@@ -46,12 +46,35 @@ def set_state(config: AppConfig, quest_id: str, state: str) -> None:
     path.write_text(yaml.safe_dump(data, sort_keys=False))
 
 
+def submit_for_review(config: AppConfig, quest_id: str) -> None:
+    """A real `create_submission` call, not `set_state(..., "submitted")` (E4): since that
+    check, a `submitted` attempt with no `submission.yaml` is a load error."""
+    from quest_app.content_loader import SchemaSet
+    from quest_app.review import create_submission
+    from quest_app.store import ProgressStore
+
+    report = ProblemReport()
+    world = load_world(config, report)
+    assert world is not None, report.to_text()
+    create_submission(
+        config,
+        ProgressStore(config),
+        quest=world.content.quests[quest_id],
+        attempt=world.participant.progress.attempt_for(quest_id),
+        participant=world.participant,
+        schemas=SchemaSet(config.schemas_root),
+    )
+
+
 @pytest.mark.parametrize(
     "state",
     ["in_progress", "evidence_ready", "locally_validated", "submitted", "needs_changes"],
 )
 def test_every_storable_state_renders_on_the_map(config: AppConfig, state: str) -> None:
-    set_state(config, QUEST, state)
+    if state == "submitted":
+        submit_for_review(config, QUEST)
+    else:
+        set_state(config, QUEST, state)
     root = rebuild(config)
 
     catalog = (root / "catalog" / "index.html").read_text()
