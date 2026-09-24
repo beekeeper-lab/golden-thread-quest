@@ -25,12 +25,14 @@ code behind the same guards, not a shortcut around them:
 quest-app action record-review --quest <quest-id> \
   --decision approved \
   --reviewer "Your Name" \
-  --statement "What you checked and how, in your own words."
+  --statement "What you checked and how, in your own words." \
+  --confirm
 
 quest-app action record-review --quest <quest-id> \
   --decision needs_changes \
   --reviewer "Your Name" \
-  --finding "high:What is wrong:Where you saw it"
+  --finding "high:What is wrong:Where you saw it" \
+  --confirm
 ```
 
 `--decision` takes the same three values the browser form posts: `approved`,

@@ -89,6 +89,23 @@ class TestMigrationSafety:
         migrated, _ = migrate({"schema_version": 0, "attempts": [], "future_field": "keep me"})
         assert migrated["future_field"] == "keep me"
 
+    @pytest.mark.parametrize(
+        "schema_version",
+        ["abc", [1], {"nested": True}],
+        ids=["string", "list", "mapping"],
+    )
+    def test_a_non_integer_schema_version_is_a_migration_error_not_a_traceback(
+        self, schema_version: object
+    ) -> None:
+        """`migrate()` called `int(data.get("schema_version", 0))` unguarded (E2). A
+        `schema_version` written as a string, a list or a mapping — all of which a hostile
+        or merely broken `progress.yaml` can carry, and which `validate` already reports
+        cleanly — raised `ValueError`/`TypeError` straight out of `migrate()` and into a CLI
+        traceback instead of the `MigrationError` every caller already handles.
+        """
+        with pytest.raises(MigrationError, match="not a whole number"):
+            migrate({"schema_version": schema_version, "attempts": []})
+
 
 class TestInProgressAttempts:
     def test_an_in_progress_attempt_on_an_older_version_is_reported_not_moved(self) -> None:
@@ -141,6 +158,13 @@ class TestUpdatePreflight:
         text = update_instructions("backup/x", "main")
         assert text.index("git branch backup/x") < text.index("git merge")
         assert "reset --hard backup/x" in text
+
+    def test_the_instructions_name_make_migrate_after_validate_content(self) -> None:
+        """The printed sequence used to end at `make validate-content` and never name
+        `make migrate`, so after a merge the stale-progress-schema notes went unmentioned
+        until the participant found `make migrate` some other way."""
+        text = update_instructions("backup/x", "main")
+        assert text.index("make validate-content") < text.index("make migrate")
 
     def test_the_preflight_says_participant_files_are_never_replaced(
         self, config: AppConfig
@@ -409,3 +433,230 @@ def test_a_merge_in_progress_is_named_and_committing_everything_is_not_advised(
     assert merge.blocks
     assert "git merge --abort" in (merge.remediation or "")
     assert not any("git add -A" in (f.remediation or "") for f in result.findings)
+
+
+def _conflict_progress_yaml(root: Path) -> None:
+    """Leave `participant/progress.yaml` mid-merge, holding real conflict markers.
+
+    Conflict markers are not valid YAML, so this is what `store.read()` used to raise
+    `yaml.YAMLError` on straight out of `migration_report`/`apply_migrations` (E2), before
+    `preflight`'s own `merge-in-progress` finding — computed from Git, never from this
+    file's content — ever printed a word.
+    """
+    _init_repo(root, commit=True)
+    git = ["git", "-C", str(root)]
+    progress = root / "participant" / "progress.yaml"
+    subprocess.run([*git, "switch", "-qc", "upstream-side"], check=True, capture_output=True)
+    progress.write_text(progress.read_text().replace("Alex Rivera", "Upstream Rivera"))
+    subprocess.run(
+        [*git, "commit", "-qam", "theirs"], check=True, capture_output=True, env=_git_env()
+    )
+    subprocess.run([*git, "switch", "-q", "main"], check=True, capture_output=True)
+    progress.write_text(progress.read_text().replace("Alex Rivera", "Local Rivera"))
+    subprocess.run(
+        [*git, "commit", "-qam", "ours"], check=True, capture_output=True, env=_git_env()
+    )
+    merged = subprocess.run([*git, "merge", "upstream-side"], capture_output=True, env=_git_env())
+    assert merged.returncode != 0, "the fixture needs a real conflict"
+    assert "<<<<<<<" in progress.read_text(), "the fixture needs conflict markers in the file"
+
+
+class TestUpdateCommandOnHostileProgressFiles:
+    """`update.py` read `progress.yaml` through `ProgressStore.read()`'s raw
+    `strict_safe_load`, with none of the exception handling `content_loader.read_text` gives
+    `validate` — so every one of these shapes, which `validate` already reports as one clean
+    line, raised straight through `migration_report`/`apply_migrations` and into a CLI
+    traceback carrying absolute paths (E2)."""
+
+    def test_a_merge_in_progress_produces_no_traceback_from_update_check(
+        self, config: AppConfig, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import quest_app.update as update_module
+        from quest_app.cli import main
+
+        _conflict_progress_yaml(config.repo_root)
+
+        def _must_not_be_called(*_args: object, **_kwargs: object) -> None:
+            raise AssertionError(
+                "migration_report must not run while progress.yaml may hold conflict markers"
+            )
+
+        monkeypatch.setattr(update_module, "migration_report", _must_not_be_called)
+
+        exit_code = main(["update", "--repo-root", str(config.repo_root)])
+        out = capsys.readouterr()
+
+        assert "Traceback" not in out.err
+        assert exit_code != 0
+        assert "merge is in progress" in (out.out + out.err).lower()
+
+    def test_a_merge_in_progress_produces_no_traceback_from_update_migrate(
+        self, config: AppConfig, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        from quest_app.cli import main
+
+        _conflict_progress_yaml(config.repo_root)
+
+        exit_code = main(["update", "--migrate", "--repo-root", str(config.repo_root)])
+        out = capsys.readouterr()
+
+        assert "Traceback" not in out.err
+        assert exit_code != 0
+        assert "merge is in progress" in (out.out + out.err).lower()
+
+    @pytest.mark.parametrize(
+        "make_hostile",
+        [
+            lambda p: p.write_text(
+                p.read_text().replace("schema_version: 1", "schema_version: abc")
+            ),
+            lambda p: p.write_text(
+                p.read_text().replace("schema_version: 1", "schema_version: [1]")
+            ),
+            lambda p: p.write_text("schema_version: 1\nattempts: [\n"),
+            lambda p: p.write_bytes(
+                b'schema_version: 1\nparticipant: {id: x, display_name: "\xff\xfe"}\n'
+            ),
+            lambda p: (p.unlink(), p.symlink_to("/etc/passwd")),
+            lambda p: (p.unlink(), p.mkdir()),
+        ],
+        ids=[
+            "non_integer_schema_version",
+            "list_schema_version",
+            "malformed_yaml",
+            "non_utf8",
+            "symlink_outside_participant",
+            "directory",
+        ],
+    )
+    def test_migration_report_and_apply_migrations_do_not_raise(
+        self, config: AppConfig, make_hostile: object
+    ) -> None:
+        from quest_app.update import apply_migrations, migration_report
+
+        path = config.participant_root / "progress.yaml"
+        make_hostile(path)  # type: ignore[operator]
+
+        migration_report(config)  # must not raise
+        apply_migrations(config)  # must not raise
+
+    def test_update_check_on_these_files_prints_no_traceback(
+        self, config: AppConfig, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        from quest_app.cli import main
+
+        path = config.participant_root / "progress.yaml"
+        path.write_text("schema_version: 1\nattempts: [\n")
+
+        main(["update", "--repo-root", str(config.repo_root)])
+        assert "Traceback" not in capsys.readouterr().err
+
+    def test_update_migrate_on_these_files_prints_no_traceback(
+        self, config: AppConfig, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        from quest_app.cli import main
+
+        path = config.participant_root / "progress.yaml"
+        path.write_text("schema_version: 1\nattempts: [\n")
+
+        main(["update", "--migrate", "--repo-root", str(config.repo_root)])
+        assert "Traceback" not in capsys.readouterr().err
+
+
+def test_apply_migrations_takes_the_progress_lock(tmp_path: Path) -> None:
+    """`make migrate` (`apply_migrations`) reads, decides and writes `progress.yaml` the same
+    shape every action does, but did not take `participant/.progress.lock` across it (E8):
+    a concurrent holder of the lock did not make it wait, so it could run its read-modify-
+    write interleaved with an action's. Wrapping it in `store.exclusive()` makes it wait like
+    everything else that touches this file — observable here the same way
+    `test_waiting_for_another_change_says_so` observes an action waiting: the message
+    `store.exclusive()` prints only while it is blocked on the lock.
+    """
+    import sys
+
+    from quest_app.config import AppConfig
+    from quest_app.content_loader import SchemaSet
+    from quest_app.store import ProgressStore
+
+    repo_root = Path(__file__).resolve().parents[2]
+    participant = tmp_path / "participant"
+    config = AppConfig.for_repo(repo_root, participant_root=participant)
+    store = ProgressStore(config)
+    store.initialise(
+        "p", "Participant", "golden-thread-foundations", SchemaSet(config.schemas_root)
+    )
+    # A pending migration to apply, so `apply_migrations` actually writes.
+    path = participant / "progress.yaml"
+    path.write_text(path.read_text().replace("schema_version: 1\n", "", 1))
+
+    holder = subprocess.Popen(
+        [
+            sys.executable,
+            "-c",
+            "import fcntl,sys,time\n"
+            "h=open(sys.argv[1],'a+')\n"
+            "fcntl.flock(h.fileno(), fcntl.LOCK_EX)\n"
+            "print('held', flush=True)\n"
+            "time.sleep(2)\n",
+            str(store.lock_path),
+        ],
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    assert holder.stdout is not None
+    assert holder.stdout.readline().strip() == "held"
+    try:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "quest_app.cli",
+                "update",
+                "--migrate",
+                "--repo-root",
+                str(repo_root),
+                "--participant-root",
+                str(participant),
+            ],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    finally:
+        holder.wait(timeout=30)
+
+    assert "Another change is in progress" in result.stderr
+    assert result.returncode == 0, result.stderr
+    assert "[migrated]" in result.stdout
+
+
+def test_a_failed_migration_restores_original_bytes_including_crlf(config: AppConfig) -> None:
+    """The restore after a failed migration used `read_text`/`write_text` (E9), which
+    normalizes CRLF line endings to LF on the way through — a participant whose editor uses
+    CRLF would see their untouched file "restored" with different bytes. Restoring through
+    `atomic_write_bytes` puts back exactly what was read, line endings included.
+    """
+    import yaml
+    from quest_app.update import apply_migrations
+
+    path = config.participant_root / "progress.yaml"
+    data = yaml.safe_load(path.read_text())
+    data["schema_version"] = 0
+    for attempt in data["attempts"]:
+        if attempt["quest_id"] == "jira-read-assigned-stories":
+            attempt["quest_id"] = "no-such-quest"  # valid against the schema, refuses to load
+    text = "# a participant's own comment, which a text round-trip also keeps\n" + yaml.safe_dump(
+        data, sort_keys=False
+    )
+    original_bytes = text.replace("\n", "\r\n").encode("utf-8")
+    path.write_bytes(original_bytes)
+
+    applied, problems = apply_migrations(config)
+
+    assert applied == []
+    assert "restored" in problems[0]
+    restored = path.read_bytes()
+    assert restored == original_bytes
+    assert b"\r\n" in restored
+    assert b"a participant's own comment" in restored

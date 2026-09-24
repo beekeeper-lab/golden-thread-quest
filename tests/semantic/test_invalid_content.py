@@ -368,3 +368,48 @@ class TestContentThatUsedToEndInATraceback:
         err = capsys.readouterr().err
         assert "schemas/quest.schema.json is not a valid JSON Schema" in err
         assert "Traceback" not in err
+
+    @pytest.mark.parametrize(
+        "relative",
+        [
+            "participant/progress.yaml",
+            "participant/evidence/base-camp-repository-safety/base-camp-attempt-001/review.yaml",
+            "participant/evidence/base-camp-repository-safety/base-camp-attempt-001/"
+            "submission.yaml",
+        ],
+    )
+    @pytest.mark.parametrize("kind", ["fifo", "device", "too_large"])
+    def test_participant_state_that_is_not_a_small_ordinary_file_is_reported_not_read(
+        self,
+        content_repo: Path,
+        config: AppConfig,
+        report: ProblemReport,
+        relative: str,
+        kind: str,
+    ) -> None:
+        """`progress.yaml`, `review.yaml` and `submission.yaml` are read from a participant's
+        own repository, which a reviewer checks out and runs this application against — the
+        same untrusted place `content/` is, but through a fixed path opened directly rather
+        than `discover()`'s scan, so round 10's symlink rule never reached them and neither
+        did a size ceiling (E7). An 18 MB `progress.yaml` took `validate` past two minutes; a
+        symlink to `/dev/zero` read until the process ran out of memory; a FIFO would hang
+        waiting for a writer that never comes.
+        """
+        import os
+
+        from quest_app.safe_io import MAX_STATE_BYTES
+
+        target = content_repo / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if target.exists():
+            target.unlink()
+        if kind == "fifo":
+            os.mkfifo(target)
+        elif kind == "device":
+            target.symlink_to("/dev/zero")
+        else:
+            target.write_text(
+                "schema_version: 1\nattempts:\n" + "- {a: 1}\n" * (MAX_STATE_BYTES // 8 + 1000)
+            )
+        assert load(config, report) is None
+        assert problem(report, "content.not_a_regular_file")

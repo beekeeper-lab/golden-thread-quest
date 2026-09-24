@@ -133,12 +133,23 @@ def serve_command(args: argparse.Namespace) -> int:
 
 def update_command(args: argparse.Namespace) -> int:
     """Report whether an update is safe, and print the commands. It runs no merge."""
-    from quest_app.update import migration_report, preflight
+    from quest_app.update import merge_in_progress, migration_report, preflight
 
     config = _config_from_args(args)
     if args.migrate:
         from quest_app.update import apply_migrations
 
+        if merge_in_progress(config.repo_root):
+            print(
+                "A merge is in progress. Files with conflicts still hold conflict markers.",
+                file=sys.stderr,
+            )
+            print(
+                "Resolve each conflict, `git add` the file, then `git commit`; or undo the "
+                "merge with `git merge --abort`. Migrate afterwards.",
+                file=sys.stderr,
+            )
+            return EXIT_CONTENT_ERROR
         if not (config.participant_root / "progress.yaml").exists():
             print("No participant progress file exists yet, so there is nothing to migrate.")
             return EXIT_OK
@@ -152,7 +163,14 @@ def update_command(args: argparse.Namespace) -> int:
         return EXIT_CONTENT_ERROR if problems else EXIT_OK
 
     result = preflight(config)
-    steps, warnings = migration_report(config)
+    # `migration_report` reads `progress.yaml` to say what a migration would do. During a
+    # merge that file may still hold conflict markers, which is exactly what the
+    # `merge-in-progress` finding already says to fix first — reading it now would just
+    # report a parse error that repeats what the finding above it already said. `preflight`
+    # already ran the one Git check this needs, so its finding is read rather than asking
+    # Git again.
+    already_named = any(finding.id == "merge-in-progress" for finding in result.findings)
+    steps, warnings = ([], []) if already_named else migration_report(config)
 
     if args.json:
         print(

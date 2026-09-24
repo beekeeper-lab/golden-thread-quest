@@ -102,9 +102,28 @@ def read_text(path: Path, relative: str, report: ProblemReport) -> str | None:
 
     Read as `utf-8-sig` so a byte-order mark is consumed rather than becoming the first
     character of the front-matter delimiter (Stage 2 audit L1).
+
+    Bounded by `safe_io.read_bounded_text`: a FIFO, a device, a directory, or a file over the
+    size ceiling is refused before it is read, the same rule `discover()` applies while
+    scanning `content/` — this is the call sites that path never sees, a fixed path opened
+    directly (`participant/progress.yaml`, `review.yaml`, `submission.yaml`, `site.yaml`).
     """
+    from quest_app.safe_io import UnsafeStateFileError, read_bounded_text
+
     try:
-        return path.read_text(encoding="utf-8-sig")
+        return read_bounded_text(path)
+    except UnsafeStateFileError:
+        report.add(
+            ContentProblem(
+                code="content.not_a_regular_file",
+                severity=Severity.ERROR,
+                public_message=("This is not an ordinary, size-bounded file, so it was not read."),
+                source=relative,
+                expected="a regular file no larger than the size limit",
+                suggestion="Replace the link or special file with the file itself, or trim it.",
+            )
+        )
+        return None
     except UnicodeDecodeError as exc:
         report.add(
             ContentProblem.build(
