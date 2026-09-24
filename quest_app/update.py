@@ -77,7 +77,8 @@ def _git(repo_root: Path, arguments: tuple[str, ...]) -> str | None:
     return result.stdout.strip() if result.returncode == 0 else None
 
 
-def _merge_in_progress(repo_root: Path) -> bool:
+def merge_in_progress(repo_root: Path) -> bool:
+    """Whether Git is mid-merge here. Public: `update_command` checks it before migrating too."""
     marker = _git(repo_root, ("rev-parse", "--git-path", "MERGE_HEAD"))
     if not marker:
         return False
@@ -114,7 +115,7 @@ def preflight(config: AppConfig) -> Preflight:
         Finding(id="repository", status="pass", summary=f"On branch {status.branch or 'unknown'}.")
     )
 
-    if _merge_in_progress(config.repo_root):
+    if merge_in_progress(config.repo_root):
         # Checked before the working tree, whose advice is to commit everything: during a
         # conflict that commits the conflict markers.
         findings.append(
@@ -211,6 +212,7 @@ def update_instructions(backup: str, branch: str) -> str:
         "git log --oneline HEAD..upstream/main   # read what is coming\n"
         "git merge upstream/main\n"
         "make validate-content                   # confirm your state still loads\n"
+        "make migrate      # only if validate-content says your progress schema is old\n"
         "\n"
         f"# If the merge goes wrong: git merge --abort, or git reset --hard {backup}"
     )
@@ -220,17 +222,26 @@ def migration_report(config: AppConfig) -> tuple[list[str], list[str]]:
     """What a migration would do, without doing it.
 
     Returns (steps, warnings). Running it is a separate, explicit act.
+
+    Callable only when nothing else is wrong with the file: `update_command` checks
+    `merge_in_progress` first and does not call this while conflict markers may still be in
+    it. `store.read()` is called anyway, and guarded here too, because a merge is not the
+    only way this file arrives broken — a hostile clone can commit any of the other shapes
+    `StoreError` now reports instead of raising past this function (E2).
     """
     from quest_app.errors import ProblemReport
     from quest_app.migrations import MigrationError, attempts_on_older_quest_versions, migrate
     from quest_app.pipeline import load_world
-    from quest_app.store import ProgressStore
+    from quest_app.store import ProgressStore, StoreError
 
     store = ProgressStore(config)
     if not store.path.exists():
         return [], ["No participant progress file exists yet."]
 
-    data = store.read()
+    try:
+        data = store.read()
+    except StoreError as exc:
+        return [], [str(exc)]
     try:
         _, applied = migrate(data)
     except MigrationError as exc:
@@ -255,33 +266,54 @@ def apply_migrations(config: AppConfig) -> tuple[list[str], list[str]]:
 
     The explicit act `migration_report` describes. The migrated document is validated by the
     store before it replaces the original, and the whole participant state is loaded again
-    afterwards; if that load fails, the original bytes are put back.
+    afterwards; if that load fails, the original bytes are put back exactly (E9: bytes, not
+    text, so a CRLF file is restored as CRLF rather than normalized to LF on the way through).
+
+    The whole read-modify-write runs under `store.exclusive()` (E8): every action holds this
+    lock across the same shape of sequence, and `make migrate` is the one mutator of
+    `progress.yaml` that did not, so it could interleave with an action running at the same
+    moment instead of waiting its turn.
     """
     from quest_app.content_loader import SchemaSet
     from quest_app.errors import ProblemReport
     from quest_app.migrations import MigrationError, migrate
     from quest_app.pipeline import load_world
-    from quest_app.store import ProgressStore, StoreError, atomic_write_text
+    from quest_app.safe_io import UnsafeStateFileError, read_bounded_bytes
+    from quest_app.store import ProgressStore, StoreError, atomic_write_bytes
 
     store = ProgressStore(config)
     if not store.path.exists():
         return [], ["No participant progress file exists yet."]
-    original = store.path.read_text(encoding="utf-8")
-    try:
-        migrated, applied = migrate(store.read())
-    except MigrationError as exc:
-        return [], [str(exc)]
-    if not applied:
-        return [], []
-    try:
-        store.write(migrated, SchemaSet(config.schemas_root))
-    except StoreError as exc:
-        return [], [f"The migrated file did not validate, so nothing was changed: {exc}"]
-    report = ProblemReport()
-    if load_world(config, report) is None:
-        atomic_write_text(store.path, original)
-        return [], [
-            "Your state did not load after migrating, so the original was restored.",
-            report.to_text(),
-        ]
-    return applied, []
+
+    with store.exclusive():
+        try:
+            original = read_bounded_bytes(store.path)
+        except UnsafeStateFileError as exc:
+            return [], [f"The participant progress file is not safe to read: {exc}"]
+        except OSError as exc:
+            return [], [
+                f"The participant progress file could not be read: "
+                f"{exc.strerror or 'unknown error'}."
+            ]
+        try:
+            data = store.read()
+        except StoreError as exc:
+            return [], [str(exc)]
+        try:
+            migrated, applied = migrate(data)
+        except MigrationError as exc:
+            return [], [str(exc)]
+        if not applied:
+            return [], []
+        try:
+            store.write(migrated, SchemaSet(config.schemas_root))
+        except StoreError as exc:
+            return [], [f"The migrated file did not validate, so nothing was changed: {exc}"]
+        report = ProblemReport()
+        if load_world(config, report) is None:
+            atomic_write_bytes(store.path, original)
+            return [], [
+                "Your state did not load after migrating, so the original was restored.",
+                report.to_text(),
+            ]
+        return applied, []

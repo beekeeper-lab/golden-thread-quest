@@ -29,8 +29,9 @@ import yaml
 
 from quest_app.config import SUPPORTED_SCHEMA_VERSION, AppConfig
 from quest_app.models import AttemptState
+from quest_app.safe_io import UnsafeStateFileError, read_bounded_text
 from quest_app.state_machine import TransitionError, check
-from quest_app.yaml_loader import strict_safe_load
+from quest_app.yaml_loader import DeepNestingError, strict_safe_load
 
 PROGRESS_FILENAME = "progress.yaml"
 # Never read as data and safe to delete; it exists only while a change is in flight.
@@ -61,6 +62,30 @@ def atomic_write_text(path: Path, text: str) -> None:
             stream.flush()
             # fsync before the rename: without it a crash can leave the rename durable and
             # the contents not, which is the one failure mode atomic writing exists to stop.
+            os.fsync(stream.fileno())
+        temporary.replace(path)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
+
+
+def atomic_write_bytes(path: Path, data: bytes) -> None:
+    """`atomic_write_text`, for callers restoring exact original bytes.
+
+    A failed migration restores what was on disk before it ran. Text round-tripped through
+    `read_text`/`write_text` turns CRLF line endings into LF, so a restore that is meant to
+    put back exactly what was there before instead rewrites it — a participant sees their
+    untouched file has changed anyway. Bytes in, bytes out, has no line ending to normalize.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        dir=path.parent, prefix=f".{path.name}.", suffix=".tmp"
+    )
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(data)
+            stream.flush()
             os.fsync(stream.fileno())
         temporary.replace(path)
     except BaseException:
@@ -153,7 +178,33 @@ class ProgressStore:
             raise StoreError(
                 "No participant progress file exists yet. Start a quest to create one."
             )
-        data = strict_safe_load(self.path.read_text(encoding="utf-8"))
+        # `make validate` reports every one of these through `content_loader.read_text`
+        # without a traceback (round 10, then E7). Every other reader of this file —
+        # every CLI action, `make migrate` — went through `strict_safe_load` directly, with
+        # none of that: a merge conflict's markers, a symlink to a device, or a file over the
+        # size ceiling raised straight out of here (E2). This is now the same bounded read,
+        # translated into `StoreError`, the exception every caller of `.read()` already
+        # expects.
+        try:
+            text = read_bounded_text(self.path, encoding="utf-8")
+        except UnsafeStateFileError as exc:
+            raise StoreError(f"The participant progress file is not safe to read: {exc}") from exc
+        except UnicodeDecodeError as exc:
+            raise StoreError("The participant progress file is not valid UTF-8 text.") from exc
+        except OSError as exc:
+            raise StoreError(
+                f"The participant progress file could not be read: "
+                f"{exc.strerror or 'unknown error'}."
+            ) from exc
+        try:
+            data = strict_safe_load(text)
+        except DeepNestingError as exc:
+            raise StoreError("The participant progress file nests too deeply to parse.") from exc
+        except yaml.YAMLError as exc:
+            raise StoreError(
+                "The participant progress file could not be parsed as YAML. If a merge is in "
+                "progress, resolve the conflict (or `git merge --abort`) before trying again."
+            ) from exc
         if not isinstance(data, dict):
             raise StoreError("The participant progress file is not a mapping of fields.")
         return data
