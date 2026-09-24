@@ -571,6 +571,19 @@ def validate_local_validation_claims(
     that declares no validators reaches the state on the participant's word, and says so.
     Only `locally_validated` is checked: no later state implies it, because submission is
     allowed straight from `evidence_ready`.
+
+    A validator missing from `passed` is only ever a forgery when it could have been run:
+    when `attempt.quest_version` is not the quest's current version, an upstream update may
+    have *added* a validator since this attempt validated (ADR-017, amended round 12). This
+    application keeps no record of an earlier version's declared validators, so it cannot
+    tell "never ran it" from "it did not exist yet" — and refusing to load punished the
+    second case for looking exactly like the first, including refusing the one action,
+    `run-validator`, that would clear it. The version mismatch alone is not enough to
+    excuse it, though: an attempt with *no* qualifying result at all is exactly the
+    wholesale forgery this check exists to catch, version mismatch or not. So: a version
+    mismatch with at least one qualifying result downgrades each missing validator to a
+    named warning instead of failing the load; same version, or no qualifying result at
+    all, is still the error.
     """
     for attempt in participant.progress.attempts:
         if attempt.recorded_state is not AttemptState.LOCALLY_VALIDATED:
@@ -583,6 +596,28 @@ def validate_local_validation_claims(
         }
         missing = [validator for validator in quest.validators if validator not in passed]
         if not missing:
+            continue
+        if attempt.quest_version != quest.version and passed:
+            for validator in missing:
+                report.add(
+                    ContentProblem.build(
+                        code="progress.locally_validated_missing_new_validator",
+                        severity=Severity.WARNING,
+                        public_message=(
+                            f"Attempt {attempt.attempt_id!r} claims local validation, but "
+                            f"{validator!r} has no qualifying result for it. The attempt "
+                            f"validated against version {attempt.quest_version} of "
+                            f"{quest.id!r}; version {quest.version} is published now, and "
+                            "this application keeps no record of which validators an "
+                            "earlier version required."
+                        ),
+                        source=participant.progress.source,
+                        entity_id=attempt.attempt_id,
+                        field_path="attempts[].state",
+                        expected=f"a qualifying result from {validator!r}",
+                        suggestion=f"Run {validator!r} to confirm the attempt still qualifies.",
+                    )
+                )
             continue
         report.add(
             ContentProblem.build(

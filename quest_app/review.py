@@ -255,6 +255,15 @@ def record_decision(
             f"{attempt.recorded_state.value!r}."
         )
 
+    if read_submission(config, attempt) is None:
+        # `_check_integrity` already refuses this record at load (E4), but the loader is
+        # not the only caller: a `state: submitted` hand-edited after a page loaded, or a
+        # participant state a caller constructed some other way, must not let a decision
+        # be recorded against a request that was never actually made.
+        raise ReviewError(
+            "This attempt has no readable submission record, so there is nothing to decide."
+        )
+
     if decision == Decision.APPROVED:
         if not verification_statement or len(verification_statement.strip()) < 20:
             raise ReviewError(

@@ -10,7 +10,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-import yaml
 from quest_app.actions import ActionRunner
 from quest_app.build import build_site
 from quest_app.config import AppConfig
@@ -54,12 +53,23 @@ def test_the_action_layer_still_refuses_an_unconfirmed_decision_in_its_own_words
 
 
 def _submitted_review_page(config: AppConfig) -> str:
-    path = config.participant_root / "progress.yaml"
-    data = yaml.safe_load(path.read_text())
-    for attempt in data["attempts"]:
-        if attempt["quest_id"] == QUEST:
-            attempt["state"] = "submitted"
-    path.write_text(yaml.safe_dump(data, sort_keys=False))
+    """A real `create_submission` call, not a hand-edited `state: submitted` (E4): since
+    that check, a `submitted` attempt with no `submission.yaml` is a load error."""
+    from quest_app.review import create_submission
+    from quest_app.store import ProgressStore
+
+    setup_report = ProblemReport()
+    world = load_world(config, setup_report)
+    assert world is not None, setup_report.to_text()
+    create_submission(
+        config,
+        ProgressStore(config),
+        quest=world.content.quests[QUEST],
+        attempt=world.participant.progress.attempt_for(QUEST),
+        participant=world.participant,
+        schemas=SchemaSet(config.schemas_root),
+    )
+
     report = ProblemReport()
     world = load_world(config, report)
     assert world is not None, report.to_text()

@@ -197,6 +197,11 @@ def load_participant_state(
     progress = _build_progress(data, relative)
     reviews: dict[str, ReviewDecision] = {}
     validations: dict[str, list[ValidationResult]] = {}
+    # Attempts whose evidence directory holds a `submission.yaml` that is present, readable
+    # and schema-valid. `_check_integrity` uses this to refuse a hand-edited `submitted`
+    # state with no request behind it (E4), the same way a `verified` state is refused
+    # without a matching approval.
+    readable_submissions: set[str] = set()
 
     for attempt in progress.attempts:
         try:
@@ -254,8 +259,11 @@ def load_participant_state(
         for record_path, schema_name in records:
             if record_path.exists():
                 data = read_yaml(record_path, config, report)
-                if data is not None:
-                    schemas.validate(schema_name, data, config.relative(record_path), report)
+                valid = data is not None and schemas.validate(
+                    schema_name, data, config.relative(record_path), report
+                )
+                if valid and schema_name == "submission":
+                    readable_submissions.add(attempt.attempt_id)
 
         for result_path in sorted((evidence_dir / "validation").glob("*.json")):
             result = _load_validation(result_path, config, schemas, report)
@@ -286,7 +294,7 @@ def load_participant_state(
                 continue
             validations.setdefault(attempt.attempt_id, []).append(result)
 
-    _check_integrity(progress, reviews, relative, report, config)
+    _check_integrity(progress, reviews, relative, report, config, readable_submissions)
 
     return ParticipantState(
         progress=progress,
@@ -589,8 +597,10 @@ def _check_integrity(
     relative: str,
     report: ProblemReport,
     config: AppConfig | None = None,
+    readable_submissions: set[str] | None = None,
 ) -> None:
     """The rules that stop a participant record claiming authority it does not have."""
+    readable_submissions = readable_submissions or set()
     seen_attempt_ids: set[str] = set()
     for attempt in progress.attempts:
         if attempt.attempt_id in seen_attempt_ids:
@@ -619,6 +629,36 @@ def _check_integrity(
                     entity_id=attempt.attempt_id,
                     field_path="attempts[].updated_at",
                     received=attempt.updated_at,
+                )
+            )
+
+        if (
+            attempt.recorded_state is AttemptState.SUBMITTED
+            and attempt.attempt_id not in readable_submissions
+        ):
+            # A `submitted` state is the shadow of a request for review, exactly as
+            # `verified` is the shadow of an approval: `create_submission` always writes
+            # `submission.yaml` before making this transition. A hand-edited state with no
+            # readable request behind it let a reviewer approve straight to `verified`
+            # without the record submission is supposed to guarantee exists — including the
+            # secret scan `readiness_problems` runs before `create_submission` ever writes
+            # the file (E4).
+            report.add(
+                ContentProblem(
+                    code="progress.unsubmitted_submitted_state",
+                    severity=Severity.ERROR,
+                    public_message=(
+                        f"Attempt {attempt.attempt_id!r} claims to be submitted for review, "
+                        "but its evidence directory holds no readable submission record."
+                    ),
+                    source=relative,
+                    entity_id=attempt.attempt_id,
+                    field_path="attempts[].state",
+                    expected="a submission.yaml written by submit-for-review",
+                    suggestion=(
+                        "Set the state back to 'evidence_ready' or 'locally_validated' and "
+                        "submit again."
+                    ),
                 )
             )
 

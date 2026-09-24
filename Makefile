@@ -2,7 +2,6 @@
 # `make check` means a green `check` job. CI also runs a `browser` job (`make test-ui`) and a
 # `clean-export` job (`make verify-package`), which `make check` does not cover.
 .DEFAULT_GOAL := help
-PYTHON ?= python3
 VENV := .venv
 BIN := $(VENV)/bin
 
