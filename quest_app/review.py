@@ -19,6 +19,7 @@ remaining gap is social and is documented rather than papered over.
 
 from __future__ import annotations
 
+import os
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -30,6 +31,7 @@ import yaml
 from quest_app.config import AppConfig
 from quest_app.evidence import (
     OUTSIDE_LINK_DESCRIPTION,
+    OVERSIZE_DESCRIPTION,
     changed_proof_files,
     evidence_hash,
     proof_file_digests,
@@ -38,7 +40,8 @@ from quest_app.evidence import (
 )
 from quest_app.models import AttemptState, Decision, Quest
 from quest_app.progress import Attempt, ParticipantState, ReviewDecision
-from quest_app.store import ProgressStore, append_audit, atomic_write_text
+from quest_app.safe_io import UnsafeStateFileError, read_bounded_bytes
+from quest_app.store import ProgressStore, append_audit, atomic_write_bytes
 
 SUBMISSION_FILENAME = "submission.yaml"
 REVIEW_FILENAME = "review.yaml"
@@ -119,6 +122,14 @@ def readiness_problems(
         problems.append(
             f"{links[0].path} is a link that leads outside the evidence package, so it cannot "
             "be checked or shown. Replace it with a copy of the file."
+        )
+    oversize = [f for f in findings if f.description == OVERSIZE_DESCRIPTION]
+    findings = [f for f in findings if f.description != OVERSIZE_DESCRIPTION]
+    if oversize:
+        # Not a secret either: a file too large for the scan to read (round 12 E8).
+        problems.append(
+            f"{oversize[0].path} {OVERSIZE_DESCRIPTION}. Trim it, or keep the full file out "
+            "of the evidence and include only the part that shows the result."
         )
     if findings:
         problems.append(
@@ -203,8 +214,10 @@ def create_submission(
         ),
     )
 
-    directory = config.resolve_participant_path(attempt.evidence_path)
-    _write_yaml(directory / SUBMISSION_FILENAME, record.to_document(), schemas, "submission")
+    directory = config.participant_write_path(attempt.evidence_path)
+    _write_yaml(
+        config, directory / SUBMISSION_FILENAME, record.to_document(), schemas, "submission"
+    )
 
     transition_attempt(
         store, quest_id=quest.id, action="submit-for-review", schemas=schemas, guard=no_guard
@@ -269,7 +282,7 @@ def record_decision(
             raise ReviewError(
                 "Approval requires a verification statement saying what you checked and how."
             )
-        changed = changes_since_submission(config, attempt)
+        changed = changes_since_submission(config, attempt, strict=True)
         if changed and not acknowledge_changed_evidence:
             raise ReviewError(
                 f"The evidence has changed since it was submitted ({', '.join(changed)}). "
@@ -285,7 +298,7 @@ def record_decision(
     # The same paths the submission recorded, so the review describes what was submitted.
     # A submission from before proof files were recorded falls back to what the quest
     # declares now, so even that attempt's approval can be checked for staleness later.
-    submitted_proof = (read_submission(config, attempt) or {}).get("proof_files")
+    submitted_proof = (read_submission(config, attempt, strict=True) or {}).get("proof_files")
     proof_paths = (
         [str(item.get("path")) for item in submitted_proof if isinstance(item, dict)]
         if isinstance(submitted_proof, list)
@@ -312,8 +325,8 @@ def record_decision(
     if results:
         document["validation_result_ids"] = [result.run_id for result in results]
 
-    directory = config.resolve_participant_path(attempt.evidence_path)
-    _write_yaml(directory / REVIEW_FILENAME, document, schemas, "review")
+    directory = config.participant_write_path(attempt.evidence_path)
+    _write_yaml(config, directory / REVIEW_FILENAME, document, schemas, "review")
 
     _apply_decision(store, quest.id, str(document["review_id"]), decision, schemas)
     append_audit(config, f"Review of {quest.id}: {decision} by {reviewer_name}.")
@@ -372,14 +385,16 @@ def evidence_changed(config: AppConfig, attempt: Attempt) -> bool:
     return bool(changes_since_submission(config, attempt))
 
 
-def changes_since_submission(config: AppConfig, attempt: Attempt) -> list[str]:
+def changes_since_submission(
+    config: AppConfig, attempt: Attempt, *, strict: bool = False
+) -> list[str]:
     """What differs from what the submission recorded: the package, and each proof path.
 
     The package hash alone missed every declared proof outside the package, which is most
     of them. Proof paths are compared only when the submission recorded them, so a record
     from before they were recorded does not suddenly read as changed.
     """
-    submission = read_submission(config, attempt)
+    submission = read_submission(config, attempt, strict=strict)
     if submission is None:
         return []
     changes: list[str] = []
@@ -390,17 +405,53 @@ def changes_since_submission(config: AppConfig, attempt: Attempt) -> list[str]:
     return changes
 
 
-def read_submission(config: AppConfig, attempt: Attempt) -> dict[str, Any] | None:
-    from quest_app.yaml_loader import strict_safe_load
+class DamagedRecordError(ReviewError):
+    """A submission or review record that exists but cannot be read as one."""
 
+
+def _read_record(config: AppConfig, path: Path) -> dict[str, Any] | None:
+    """One submission or review record, read the way the loader reads it.
+
+    `None` when nothing is there. `DamagedRecordError` when something is there that is not
+    a readable mapping: a FIFO, a device, a link to either, a file over the state ceiling,
+    text that is not UTF-8 or YAML that does not parse. These used to be read with an
+    unbounded `read_text` and an unguarded parse, so the same file the loader reported —
+    or, for a name only one of them looked at, did not — hung or crashed `build` instead
+    (round 12 E3). The loader checks exactly these files first, so on a world that loaded
+    this raises only if a record changed after the load.
+    """
+    from quest_app.content_loader import read_yaml
+    from quest_app.errors import ProblemReport
+
+    if not path.exists():
+        return None
+    scratch = ProblemReport()
+    data = read_yaml(path, config, scratch)
+    if data is None or not scratch.ok:
+        reason = scratch.errors[0].public_message if scratch.errors else "it is not a mapping"
+        raise DamagedRecordError(f"{config.relative(path)} could not be read: {reason}")
+    return data
+
+
+def read_submission(
+    config: AppConfig, attempt: Attempt, *, strict: bool = False
+) -> dict[str, Any] | None:
+    """The attempt's submission record, or `None` when there is none.
+
+    A damaged record is `None` for a page, which only describes it and whose loader has
+    already reported it. With `strict`, it raises `DamagedRecordError` instead: a reviewer's
+    decision must not treat "could not read the submission" as "nothing changed since it".
+    """
     try:
         path = config.resolve_participant_path(attempt.evidence_path) / SUBMISSION_FILENAME
     except ValueError:
         return None
-    if not path.exists():
+    try:
+        return _read_record(config, path)
+    except DamagedRecordError:
+        if strict:
+            raise
         return None
-    data = strict_safe_load(path.read_text(encoding="utf-8"))
-    return data if isinstance(data, dict) else None
 
 
 def review_history(config: AppConfig, attempt: Attempt) -> list[dict[str, Any]]:
@@ -408,24 +459,37 @@ def review_history(config: AppConfig, attempt: Attempt) -> list[dict[str, Any]]:
 
     Release one keeps the current decision in `review.yaml` and archives superseded ones
     beside it, so a participant can see that a reviewer changed their mind rather than only
-    the outcome.
+    the outcome. The records are exactly the files the loader checks —
+    `progress.review_archive_paths` and `review.yaml` — and a damaged one, which the loader
+    has reported, is left out rather than stopping the page.
     """
-    from quest_app.yaml_loader import strict_safe_load
+    from quest_app.progress import review_archive_paths
 
     try:
         directory = config.resolve_participant_path(attempt.evidence_path)
     except ValueError:
         return []
     history: list[dict[str, Any]] = []
-    for path in sorted(directory.glob("review*.yaml")):
-        data = strict_safe_load(path.read_text(encoding="utf-8"))
-        if isinstance(data, dict):
+    for path in [*review_archive_paths(directory), directory / REVIEW_FILENAME]:
+        try:
+            data = _read_record(config, path)
+        except DamagedRecordError:
+            continue
+        if data is not None:
             history.append(data)
     return sorted(history, key=lambda item: str(item.get("reviewed_at", "")))
 
 
-def _write_yaml(path: Path, document: dict[str, Any], schemas: Any, schema_name: str) -> None:
-    """Validate against the published schema before writing, never after."""
+def _write_yaml(
+    config: AppConfig, path: Path, document: dict[str, Any], schemas: Any, schema_name: str
+) -> None:
+    """Validate against the published schema before writing, never after.
+
+    `path` is the lexical location (`participant_write_path`), and both writes go through
+    `atomic_write_bytes`, which refuses a link or special file anywhere below the
+    participant root. The archive was a plain `write_text`, which followed a link at its
+    name to wherever it led (round 12 E1).
+    """
     from quest_app.errors import ProblemReport
 
     report = ProblemReport()
@@ -434,13 +498,22 @@ def _write_yaml(path: Path, document: dict[str, Any], schemas: Any, schema_name:
             "The record would not validate: "
             + "; ".join(problem.public_message for problem in report.errors[:3])
         )
+    root = config.participant_root
     # A superseded decision is archived rather than overwritten, so history survives.
-    if path.exists() and schema_name == "review":
+    if os.path.lexists(path) and schema_name == "review":
+        try:
+            previous = read_bounded_bytes(path, follow_symlinks=False)
+        except UnsafeStateFileError as exc:
+            raise ReviewError(
+                f"{config.relative(path)} is not an ordinary file, so it cannot be archived: {exc}"
+            ) from exc
         archive = path.with_name(
             f"review-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.yaml"
         )
-        archive.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
-    atomic_write_text(path, yaml.safe_dump(document, sort_keys=False, allow_unicode=True))
+        atomic_write_bytes(root, archive, previous)
+    atomic_write_bytes(
+        root, path, yaml.safe_dump(document, sort_keys=False, allow_unicode=True).encode("utf-8")
+    )
 
 
 def submission_instructions(quest_id: str, attempt_id: str, branch: str | None) -> str:

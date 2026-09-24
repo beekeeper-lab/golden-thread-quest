@@ -186,7 +186,7 @@ class TestAtomicWrites:
     def test_a_write_replaces_the_file_completely(self, tmp_path: Path) -> None:
         target = tmp_path / "progress.yaml"
         target.write_text("old contents\n")
-        atomic_write_text(target, "new contents\n")
+        atomic_write_text(tmp_path, target, "new contents\n")
         assert target.read_text() == "new contents\n"
 
     def test_a_failed_write_leaves_the_original_and_no_debris(
@@ -207,14 +207,14 @@ class TestAtomicWrites:
 
         monkeypatch.setattr(os, "fsync", explode)
         with pytest.raises(OSError, match="no space"):
-            atomic_write_text(target, "new contents\n")
+            atomic_write_text(tmp_path, target, "new contents\n")
 
         assert target.read_text() == "original\n"
         assert [entry.name for entry in tmp_path.iterdir()] == ["progress.yaml"]
 
     def test_writing_creates_missing_parent_directories(self, tmp_path: Path) -> None:
         target = tmp_path / "a" / "b" / "c.md"
-        atomic_write_text(target, "x")
+        atomic_write_text(tmp_path, target, "x")
         assert target.read_text() == "x"
 
 

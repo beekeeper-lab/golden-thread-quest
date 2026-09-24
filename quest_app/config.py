@@ -123,6 +123,20 @@ class AppConfig:
             raise ValueError(f"{declared!r} resolves outside the participant root")
         return candidate
 
+    def participant_write_path(self, declared: str) -> Path:
+        """Where a `participant/...` contract path lies, for writing: no link resolved.
+
+        `resolve_participant_path` follows links and then checks the result, which is right
+        for reading and wrong for writing: it turns a link inside the tree into the place it
+        leads, so the write never sees that there was a link at all. A writer needs the
+        lexical path, which `safe_io.atomic_write` then walks one component at a time and
+        refuses at the first link (round 12 E1). The same traversal checks apply.
+        """
+        prefix = "participant/"
+        if not declared.startswith(prefix):
+            raise ValueError(f"participant path must start with {prefix!r}, got {declared!r}")
+        return self.participant_root / PurePosixCheck(declared[len(prefix) :]).checked()
+
 
 @dataclass(frozen=True, slots=True)
 class PurePosixCheck:

@@ -23,11 +23,13 @@ because "we did not finish" is not evidence either way.
 from __future__ import annotations
 
 import contextlib
+import errno
 import importlib
 import json
 import os
 import re
 import signal
+import stat
 import subprocess
 import sys
 import time
@@ -211,7 +213,21 @@ class Workspace:
     def write_text(self, path: str, text: str) -> None:
         target = self._contained(Path(path), self.write_roots, "writing")
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(text, encoding="utf-8")
+        # `_contained` resolved every link, so what is left to refuse is a special file at
+        # the resolved name: a FIFO there blocked the validator until its timeout (round 12
+        # E1). Never blocks, never truncates anything but a regular file.
+        flags = os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW | os.O_NONBLOCK
+        try:
+            descriptor = os.open(target, flags, 0o666)
+        except OSError as exc:
+            if exc.errno not in (errno.ELOOP, errno.ENXIO, errno.EISDIR):
+                raise
+            raise WorkspaceError("writing is only permitted to an ordinary file") from exc
+        with os.fdopen(descriptor, "wb") as stream:
+            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                raise WorkspaceError("writing is only permitted to an ordinary file")
+            stream.truncate(0)
+            stream.write(text.encode("utf-8"))
 
     def relative(self, path: Path) -> str:
         """A label for a finding: repository-relative, or participant-relative, never absolute."""
