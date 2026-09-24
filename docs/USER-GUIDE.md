@@ -78,7 +78,7 @@ criteria are. Ask it to list what is available and it will.
 
 ```
 quest-app action --list
-quest-app action start-quest --quest <quest-id>
+quest-app action start-quest --quest <quest-id> --confirm
 ```
 
 Ask Claude to run them. It is the same action layer the web interface uses, with the same
@@ -111,7 +111,8 @@ would be in the sandbox and your browser is not.
    are numbered, and a reviewer's findings will refer to them by number. Ask Claude to show
    you the full brief rather than a summary.
 
-3. **Start it:** `quest-app action start-quest --quest <quest-id>`. Three things happen:
+3. **Start it:** `quest-app action start-quest --quest <quest-id> --confirm`. Three things
+   happen:
    - `participant/progress.yaml` is created if it did not exist
    - an evidence package appears at `participant/evidence/<quest-id>/<attempt-id>/`
    - a line is added to `participant/ACTIVITY.md` saying what was done
@@ -132,7 +133,7 @@ would be in the sandbox and your browser is not.
    ```
    quest-app action mark-evidence-ready   --quest <quest-id>
    quest-app action mark-locally-validated --quest <quest-id>
-   quest-app action submit-for-review      --quest <quest-id>
+   quest-app action submit-for-review      --quest <quest-id> --confirm
    ```
 
    Each refuses if you are not entitled to it yet, and says what state it is legal from.
@@ -284,6 +285,7 @@ carries the identity. `docs/guides/REVIEWER.md` says the same thing to reviewers
 | The printed `make serve` address will not open | You are in Cowork; the server is inside the sandbox and your browser is outside it | Expected. Use `quest-app action` commands instead — they do everything the buttons do |
 | `make setup` fails on the Python version | Your interpreter is older than 3.10 | Ask Claude to check `python3 -V`. The Cowork sandbox ships 3.10, which is supported |
 | A `quest-app action` command says the action is not possible | The transition is not legal from your current state | The message names the states it *is* legal from. Ask Claude what state you are in |
+| A command's error ends "— confirm it, then try again." | The action is one of the ones you confirm before it happens (`start-quest`, `submit-for-review`, `record-review`); you ran it without `--confirm` | Add `--confirm` to the command and run it again |
 | "only possible from…" | The transition is not legal from your current state | The message names the states it *is* legal from |
 | A check says `inconclusive` | It could not tell — not a failure | The finding says what was missing |
 | The site looks unstyled from disk | You opened `generated/index.html` directly | Reading from disk works; controls do not. In Cowork, ask Claude to read the quest files instead |
