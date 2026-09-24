@@ -8,6 +8,7 @@ was shown under the registered validator's authority, as though the checks had p
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import yaml
@@ -17,6 +18,9 @@ from quest_app.pipeline import load_world
 
 QUEST = "jira-read-assigned-stories"
 CODE = "progress.unvalidated_locally_validated_state"
+NEW_VALIDATOR_CODE = "progress.locally_validated_missing_new_validator"
+QUEST_CONTENT_PATH = "content/quests/jira-jungle/read-assigned-stories.md"
+REGISTRY_PATH = "validators/registry.yaml"
 
 
 def _set_state(config: AppConfig, state: str) -> None:
@@ -37,6 +41,32 @@ def _set_outcomes(config: AppConfig, outcome: str) -> None:
         data = json.loads(path.read_text())
         data["outcome"] = outcome
         path.write_text(json.dumps(data))
+
+
+def _add_validator_in_a_newer_quest_version(config: AppConfig, new_validator: str) -> None:
+    """Simulate an upstream curriculum update that requires one more validator.
+
+    The quest's declared version moves past the attempt's `quest_version`, and the new
+    validator is registered to run for it — everything a legitimate upstream change does,
+    with no forgery involved.
+    """
+    quest_path = config.repo_root / QUEST_CONTENT_PATH
+    text = quest_path.read_text()
+    current = int(re.search(r"(?m)^version: (\d+)$", text).group(1).strip())
+    text = re.sub(r"(?m)^version: \d+$", f"version: {current + 1}", text, count=1)
+    text = text.replace(
+        "validators:\n  - validate-jira-read-assigned\n",
+        f"validators:\n  - validate-jira-read-assigned\n  - {new_validator}\n",
+        1,
+    )
+    quest_path.write_text(text)
+
+    registry_path = config.repo_root / REGISTRY_PATH
+    registry = yaml.safe_load(registry_path.read_text())
+    for entry in registry["validators"]:
+        if entry["id"] == new_validator:
+            entry["quest_ids"].append(QUEST)
+    registry_path.write_text(yaml.safe_dump(registry, sort_keys=False))
 
 
 def test_a_hand_written_local_validation_with_no_results_is_refused(config: AppConfig) -> None:
@@ -100,3 +130,46 @@ def test_other_states_are_not_judged_by_this_rule(config: AppConfig) -> None:
     report = ProblemReport()
     load_world(config, report)
     assert CODE not in {p.code for p in report.problems}
+
+
+def test_a_validator_added_after_the_attempts_version_is_a_warning_not_a_load_error(
+    config: AppConfig,
+) -> None:
+    """ADR-017 (amended round 12, E5).
+
+    An upstream update that adds a validator must not turn a legitimate `locally_validated`
+    attempt into a load error: this application keeps no record of what a quest required at
+    an earlier version, so a validator missing here may simply not have existed yet. The
+    attempt still has a qualifying result from the validator it did run, which is what
+    keeps this from being a wholesale forgery.
+    """
+    _set_state(config, "locally_validated")
+    _add_validator_in_a_newer_quest_version(config, "validate-playwright-quality")
+
+    report = ProblemReport()
+    world = load_world(config, report)
+
+    assert world is not None, report.to_text()
+    assert CODE not in {p.code for p in report.problems}, report.to_text()
+    warnings = [p for p in report.warnings if p.code == NEW_VALIDATOR_CODE]
+    assert len(warnings) == 1, report.to_text()
+    assert "validate-playwright-quality" in warnings[0].public_message
+    assert "validate-playwright-quality" in (warnings[0].suggestion or "")
+
+
+def test_a_version_mismatch_with_no_qualifying_result_at_all_is_still_refused(
+    config: AppConfig,
+) -> None:
+    """The version mismatch alone does not excuse it.
+
+    An attempt that never produced a single qualifying result is indistinguishable from the
+    forgery this whole check exists to catch, whatever quest version it claims.
+    """
+    for path in _results(config).glob("*.json"):
+        path.unlink()
+    _set_state(config, "locally_validated")
+    _add_validator_in_a_newer_quest_version(config, "validate-playwright-quality")
+
+    report = ProblemReport()
+    assert load_world(config, report) is None
+    assert CODE in {p.code for p in report.errors}

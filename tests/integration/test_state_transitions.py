@@ -124,9 +124,18 @@ class TestWritingProgress:
     def test_a_transition_is_recorded_and_survives_a_reload(
         self, store: ProgressStore, schemas: SchemaSet, config: AppConfig
     ) -> None:
-        """State lives in a file, not in a browser, so restarting restores it."""
+        """State lives in a file, not in a browser, so restarting restores it.
+
+        `mark-locally-validated` rather than `submit-for-review`: the latter is only ever
+        legitimate alongside a `submission.yaml` `create_submission` writes (E4), and this
+        test's subject is the state-machine layer's own persistence, not that record.
+        """
         transition_attempt(
-            store, quest_id=IN_PROGRESS, action="submit-for-review", schemas=schemas, guard=no_guard
+            store,
+            quest_id=IN_PROGRESS,
+            action="mark-locally-validated",
+            schemas=schemas,
+            guard=no_guard,
         )
 
         report = ProblemReport()
@@ -134,7 +143,7 @@ class TestWritingProgress:
         assert world is not None, report.to_text()
         attempt = world.participant.progress.attempt_for(IN_PROGRESS)
         assert attempt is not None
-        assert attempt.recorded_state is AttemptState.SUBMITTED
+        assert attempt.recorded_state is AttemptState.LOCALLY_VALIDATED
 
     def test_an_invalid_transition_leaves_the_file_untouched(
         self, store: ProgressStore, schemas: SchemaSet

@@ -139,6 +139,20 @@ because a failing re-run after local validation leaves the attempt where it was 
 and must not take the site down. No other state is checked, because submission is allowed
 straight from `evidence_ready`.
 
+**Amended (round 12):** the round 11 check compared the attempt against the *current* quest's
+validators, which punished a legitimate attempt exactly like a forged one: an upstream update
+that added a validator moved a `locally_validated` attempt from "consistent" to "a required
+validator has no result", with no way to tell that apart from a hand-edited state, because
+nothing here keeps a record of what a quest required at an earlier version. Every action was
+then refused for that attempt, including the one, `run-validator`, that would clear the finding.
+The check now reads `attempt.quest_version` first. On the same version, nothing changes: any
+validator missing a qualifying result is still `progress.unvalidated_locally_validated_state`,
+an error. On a different version, a validator missing a qualifying result is only an error if
+the attempt has *no* qualifying result at all — indistinguishable from the forgery this check
+exists to catch — and otherwise becomes `progress.locally_validated_missing_new_validator`, a
+warning naming the validator and saying to run it, because the application has no way to know
+whether that validator existed when the attempt validated.
+
 ## ADR-018 — Participant paths are contract-fixed, the participant root is configuration
 
 **Decision:** `evidence_path` and `result_path` keep the literal `participant/` prefix the schemas
@@ -149,6 +163,16 @@ canonicalized and re-verified inside the configured root after symbolic links ar
 **Reason:** Tests must exercise the real loader against the shipped fixtures without writing into a
 participant's live directory, and the schema prefix is part of the published contract, so it is
 configuration that moves, not the contract.
+
+**Amended (round 12):** `participant_root` moved, but `generated_root` and `local_data_root` did
+not — the CLI's `--participant-root` rebuilt the config without carrying them forward, and
+`from_environment` never read a variable for either. A test that ran the CLI as a real subprocess,
+the only way an installed-Cowork participant can act at all, rebuilt the repository's own
+`generated/` on every mutating action, for example overwriting a checked-in `generated/index.html`
+with fixture data until the next `make build`. `generated_root` and `local_data_root` are now
+configuration the same way: `GTQ_GENERATED_ROOT` and `GTQ_LOCAL_DATA_ROOT` are read by
+`AppConfig.from_environment`, and `_config_from_args` carries both forward when
+`--participant-root` is also given. Every test that shells out to the CLI sets all three.
 
 ## ADR-019 — Python 3.10 or newer
 

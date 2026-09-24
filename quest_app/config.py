@@ -67,13 +67,23 @@ class AppConfig:
 
     @classmethod
     def from_environment(cls, repo_root: Path | None = None) -> Self:
-        """Configuration as the CLI sees it. Only the documented variables are read."""
+        """Configuration as the CLI sees it. Only the documented variables are read.
+
+        `GTQ_GENERATED_ROOT` and `GTQ_LOCAL_DATA_ROOT` exist for the same reason
+        `GTQ_PARTICIPANT_ROOT` does (ADR-018): a test that shells out to the CLI must be able
+        to point every writable root away from the repository it is running from, not only
+        the participant one.
+        """
         root = repo_root or Path(__file__).resolve().parent.parent
         participant = os.environ.get("GTQ_PARTICIPANT_ROOT")
+        generated = os.environ.get("GTQ_GENERATED_ROOT")
+        local_data = os.environ.get("GTQ_LOCAL_DATA_ROOT")
         port = os.environ.get("GTQ_SERVICE_PORT")
         return cls.for_repo(
             root,
             participant_root=Path(participant) if participant else None,
+            generated_root=Path(generated) if generated else None,
+            local_data_root=Path(local_data) if local_data else None,
             service_host=os.environ.get("GTQ_SERVICE_HOST"),
             service_port=int(port) if port else None,
         )

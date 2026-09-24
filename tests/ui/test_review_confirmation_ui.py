@@ -12,7 +12,6 @@ import pytest
 
 playwright = pytest.importorskip("playwright.sync_api", reason="Playwright is not installed")
 
-import yaml  # noqa: E402
 from quest_app.build import build_site  # noqa: E402
 from quest_app.config import AppConfig  # noqa: E402
 from quest_app.errors import ProblemReport  # noqa: E402
@@ -38,13 +37,26 @@ def served(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
     for name in ("content", "schemas", "templates", "assets", "validators"):
         shutil.copytree(repo_root / name, tmp / name, ignore=shutil.ignore_patterns("__pycache__"))
     shutil.copytree(repo_root / "fixtures" / "participant", tmp / "participant")
-    progress = tmp / "participant" / "progress.yaml"
-    data = yaml.safe_load(progress.read_text())
-    for attempt in data["attempts"]:
-        if attempt["quest_id"] == QUEST:
-            attempt["state"] = "submitted"
-    progress.write_text(yaml.safe_dump(data, sort_keys=False))
     config = AppConfig.for_repo(tmp, participant_root=tmp / "participant", service_port=0)
+
+    # A real `create_submission` call, not a hand-edited `state: submitted` (E4): since that
+    # check, a `submitted` attempt with no `submission.yaml` behind it is a load error.
+    from quest_app.content_loader import SchemaSet
+    from quest_app.review import create_submission
+    from quest_app.store import ProgressStore
+
+    setup_report = ProblemReport()
+    setup_world = load_world(config, setup_report)
+    assert setup_world is not None, setup_report.to_text()
+    create_submission(
+        config,
+        ProgressStore(config),
+        quest=setup_world.content.quests[QUEST],
+        attempt=setup_world.participant.progress.attempt_for(QUEST),
+        participant=setup_world.participant,
+        schemas=SchemaSet(config.schemas_root),
+    )
+
     report = ProblemReport()
     world = load_world(config, report)
     assert world is not None, report.to_text()

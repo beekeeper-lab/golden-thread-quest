@@ -8,6 +8,7 @@ the same guards, the same refusals, the same messages.
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -19,6 +20,20 @@ from quest_app.actions import CONFIRMATIONS, MUTATING_ACTIONS
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 QUEST = "base-camp-repository-safety"
+
+
+def _isolated_env(base: Path) -> dict[str, str]:
+    """Point every root a mutating action can rebuild away from `ROOT` (C2).
+
+    `--participant-root` below is the only root the CLI lets a caller move on its own;
+    without also setting these, every action here rebuilt the repository's real
+    `generated/` (and could write `local-data/`) because no `--repo-root` is passed.
+    """
+    return {
+        **os.environ,
+        "GTQ_GENERATED_ROOT": str(base / "generated"),
+        "GTQ_LOCAL_DATA_ROOT": str(base / "local-data"),
+    }
 
 
 def run(participant: Path, *args: str, confirm: bool = True) -> subprocess.CompletedProcess[str]:
@@ -39,6 +54,7 @@ def run(participant: Path, *args: str, confirm: bool = True) -> subprocess.Compl
             str(participant),
         ],
         cwd=ROOT,
+        env=_isolated_env(participant.parent),
         capture_output=True,
         text=True,
         check=False,
@@ -49,6 +65,37 @@ def run(participant: Path, *args: str, confirm: bool = True) -> subprocess.Compl
 def participant(tmp_path: Path) -> Path:
     """A participant who has never run anything. The state most defects hide in."""
     return tmp_path / "participant"
+
+
+def _fingerprint(path: Path) -> tuple[str, ...] | None:
+    if not path.exists():
+        return None
+    return tuple(
+        f"{p.relative_to(path)}:{p.stat().st_size}:{p.stat().st_mtime_ns}"
+        for p in sorted(path.rglob("*"))
+    )
+
+
+def test_running_an_action_never_touches_the_repositorys_own_generated_directory(
+    participant: Path,
+) -> None:
+    """C2: `run()` here is exactly how the rest of this file drives the CLI.
+
+    `start-quest` rebuilds the site, and before `GTQ_GENERATED_ROOT` existed that rebuild
+    landed in `ROOT/generated` — the repository's own, checked-in output — because
+    `--participant-root` was the only root the CLI let a caller move. This proves the fix
+    holds for the same call shape every other test in this file uses, and a regression in
+    `AppConfig.from_environment` or `_config_from_args` would fail it even though `run()`
+    still sets the variable, because the CLI would then silently ignore it again.
+    """
+    before = _fingerprint(ROOT / "generated")
+
+    result = run(participant, "start-quest", "--quest", QUEST)
+
+    assert result.returncode == 0, result.stderr
+    assert _fingerprint(ROOT / "generated") == before, (
+        "running a CLI action changed the repository's own generated/"
+    )
 
 
 def test_a_participant_with_nothing_can_start(participant: Path) -> None:
