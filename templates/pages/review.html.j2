@@ -73,10 +73,12 @@
   <p class="authority">The evidence has not been scanned.</p>
   {% elif secret_scan_clean %}
   <p>The secret scan found nothing before this was submitted. It is a safety net, not a guarantee — read the evidence as though it might still contain something.</p>
-  {% elif scan_link_finding %}
-  <div class="alert alert-error"><p>The scan found a link in the evidence that leads outside the package, so it could not be checked or shown. That is not a secret finding — do not approve until it is replaced with a copy of the file.</p></div>
   {% else %}
-  <div class="alert alert-error"><p>The scan found something secret-like. Do not approve until it is removed and the value rotated.</p></div>
+  <div class="alert alert-error">
+    {% if 'secret' in scan_kinds %}<p>The scan found something secret-like. Do not approve until it is removed and the value rotated.</p>{% endif %}
+    {% if 'link' in scan_kinds %}<p>The scan found a link in the evidence that leads outside the package, so it could not be checked or shown. That is not a secret finding — do not approve until it is replaced with a copy of the file.</p>{% endif %}
+    {% if 'oversize' in scan_kinds %}<p>The scan found a file too large to read, so it could not be checked. That is not a secret finding — do not approve until it is trimmed or kept out of the package.</p>{% endif %}
+  </div>
   {% endif %}
   <p class="authority">Validator output is stored redacted and is never rendered as HTML.</p>
 </section>

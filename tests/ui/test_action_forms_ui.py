@@ -44,20 +44,35 @@ START_QUEST = "trello-read-board"
 REVIEW_QUEST = "jira-read-assigned-stories"
 
 
-def _prepared_repo(tmp_path: Path, *, mutate_progress: bool = False) -> Path:
+def _prepared_repo(tmp_path: Path, *, submit_review_quest: bool = False) -> Path:
     repo_root = Path(__file__).resolve().parents[2]
     for name in ("content", "schemas", "templates", "assets", "validators"):
         shutil.copytree(
             repo_root / name, tmp_path / name, ignore=shutil.ignore_patterns("__pycache__")
         )
     shutil.copytree(repo_root / "fixtures" / "participant", tmp_path / "participant")
-    if mutate_progress:
-        progress = tmp_path / "participant" / "progress.yaml"
-        data = yaml.safe_load(progress.read_text())
-        for attempt in data["attempts"]:
-            if attempt["quest_id"] == REVIEW_QUEST:
-                attempt["state"] = "submitted"
-        progress.write_text(yaml.safe_dump(data, sort_keys=False))
+    if submit_review_quest:
+        # A real `create_submission` call, not a hand-edited `state: submitted`: a submitted
+        # attempt with no `submission.yaml` behind it is a load error (round 12 E4).
+        from quest_app.config import AppConfig
+        from quest_app.content_loader import SchemaSet
+        from quest_app.errors import ProblemReport
+        from quest_app.pipeline import load_world
+        from quest_app.review import create_submission
+        from quest_app.store import ProgressStore
+
+        config = AppConfig.for_repo(tmp_path, participant_root=tmp_path / "participant")
+        report = ProblemReport()
+        world = load_world(config, report)
+        assert world is not None, report.to_text()
+        create_submission(
+            config,
+            ProgressStore(config),
+            quest=world.content.quests[REVIEW_QUEST],
+            attempt=world.participant.progress.attempt_for(REVIEW_QUEST),
+            participant=world.participant,
+            schemas=SchemaSet(config.schemas_root),
+        )
     return tmp_path
 
 
@@ -143,7 +158,7 @@ def test_record_review_form_submission_changes_state_on_disk(
     character verification statement `approved` demands — so the test stays about the
     form-submission path this finding is about, not the decision's own validation rules.
     """
-    repo_root = _prepared_repo(tmp_path, mutate_progress=True)
+    repo_root = _prepared_repo(tmp_path, submit_review_quest=True)
     progress_path = repo_root / "participant" / "progress.yaml"
     before = yaml.safe_load(progress_path.read_text())
     (before_attempt,) = [a for a in before["attempts"] if a["quest_id"] == REVIEW_QUEST]

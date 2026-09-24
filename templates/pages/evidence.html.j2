@@ -80,16 +80,19 @@
     </dl>
 
     {% if secret_scan_clean is not none %}
-    <div class="alert alert-{{ 'success' if secret_scan_clean else 'error' }}">
-      <h3>{{ 'No secrets detected' if secret_scan_clean else 'Possible secret in your evidence' }}</h3>
-      <p>
-        {% if secret_scan_clean %}
-          The scan found nothing secret-like. It is a safety net, not a guarantee.
-        {% else %}
-          Remove it before submitting. The scan reports the pattern and never the value.
-        {% endif %}
-      </p>
+    {% if secret_scan_clean %}
+    <div class="alert alert-success">
+      <h3>No secrets detected</h3>
+      <p>The scan found nothing secret-like. It is a safety net, not a guarantee.</p>
     </div>
+    {% else %}
+    <div class="alert alert-error">
+      <h3>{{ 'Possible secret in your evidence' if 'secret' in scan_kinds else 'The scan could not check all of your evidence' }}</h3>
+      {% if 'secret' in scan_kinds %}<p>Remove it before submitting. The scan reports the pattern and never the value.</p>{% endif %}
+      {% if 'link' in scan_kinds %}<p>A file is a link that leads outside the evidence package, so it cannot be checked or shown. Replace it with a copy of the file.</p>{% endif %}
+      {% if 'oversize' in scan_kinds %}<p>A file is too large for the scan to read. Trim it, or keep the full file out of the package and describe it in PROOF.md.</p>{% endif %}
+    </div>
+    {% endif %}
     {% endif %}
 
     {# C19 — reports and advises. It never commits, pushes, merges or cleans. #}

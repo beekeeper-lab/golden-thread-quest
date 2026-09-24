@@ -57,6 +57,13 @@ def action(participant: Path, *args: str) -> subprocess.CompletedProcess[str]:
             str(participant),
         ],
         cwd=ROOT,
+        # The participant root alone does not move the rebuild: without these the action
+        # rebuilt the repository's own `generated/` (round 12 C2).
+        env={
+            **os.environ,
+            "GTQ_GENERATED_ROOT": str(participant.parent / "generated"),
+            "GTQ_LOCAL_DATA_ROOT": str(participant.parent / "local-data"),
+        },
         capture_output=True,
         text=True,
         check=False,

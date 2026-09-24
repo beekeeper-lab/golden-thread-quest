@@ -36,6 +36,25 @@ OVERSIZE_DESCRIPTION = (
     "so it cannot be checked"
 )
 
+
+def scan_kinds(findings: list[SecretFinding]) -> frozenset[str]:
+    """Which kinds of problem a scan found: `secret`, `link` or `oversize`.
+
+    The three fail the scan alike but need different words. A page that called a link or an
+    unreadably large file "secret-like" sent people looking for a credential that was never
+    there (round 12 C3).
+    """
+    kinds = {
+        "link"
+        if f.description == OUTSIDE_LINK_DESCRIPTION
+        else "oversize"
+        if f.description == OVERSIZE_DESCRIPTION
+        else "secret"
+        for f in findings
+    }
+    return frozenset(kinds)
+
+
 SKIP_SUFFIXES = frozenset({".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf", ".zip"})
 
 

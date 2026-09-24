@@ -813,11 +813,15 @@ def _quest_detail_context(
 def _evidence_context(
     entry: QuestProgress, summary: Any, world: LoadedWorld, service: ServiceView
 ) -> dict[str, Any]:
-    from quest_app.evidence import detect_proof, scan_evidence
+    from quest_app.evidence import detect_proof, scan_evidence, scan_kinds
 
     quest = entry.quest
     results = _results_for(entry, world)
     evidence_path = entry.attempt.evidence_path if entry.attempt else None
+    # The scan runs at build time so the page can say something true about the evidence as
+    # it stands. It is also enforced at the moment of submission, which is the check that
+    # actually matters.
+    scan_findings = scan_evidence(world.config, evidence_path) if evidence_path else []
     detected = detect_proof(quest, world.config, evidence_path, results)
     required, optional = build_proof_views(quest, detected)
     latest: dict[str, Any] = {r.validator_id: r for r in results}
@@ -892,12 +896,8 @@ def _evidence_context(
         "results": results,
         "stale_local_validation": stale_local_validation,
         "proof_document": _proof_document(world, evidence_path),
-        # The scan runs at build time so the page can say something true about the evidence
-        # as it stands. It is also enforced at the moment of submission, which is the check
-        # that actually matters.
-        "secret_scan_clean": (
-            not scan_evidence(world.config, evidence_path) if evidence_path else None
-        ),
+        "secret_scan_clean": not scan_findings if evidence_path else None,
+        "scan_kinds": scan_kinds(scan_findings),
         "actions": tuple(a for a in actions if a.enabled or a.id in allowed)
         if entry.attempt
         else (),
@@ -950,7 +950,7 @@ def _review_context(
     entry: QuestProgress, summary: Any, world: LoadedWorld, service: ServiceView
 ) -> dict[str, Any]:
     """Everything U10 requires about one attempt."""
-    from quest_app.evidence import OUTSIDE_LINK_DESCRIPTION, detect_proof, scan_evidence
+    from quest_app.evidence import detect_proof, scan_evidence, scan_kinds
     from quest_app.review import changes_since_submission, read_submission, review_history
 
     attempt = entry.attempt
@@ -996,14 +996,10 @@ def _review_context(
         # What the participant was told did not block submission. A reviewer could otherwise
         # only infer an unrun check from an empty result list, which reads as "none declared".
         "advisories": tuple(submission.get("advisories") or ()),
-        # Round 12 C3: a link out of the package and an actual secret both fail the scan,
-        # but they are not the same problem, and telling a reviewer to rotate a value over a
-        # link sends them looking for a credential that was never there. `scan_link_finding`
-        # is true only when the only reason the scan is not clean is a link; an actual
-        # secret-like match still reports through `secret_scan_clean` alone, unchanged.
+        # Round 12 C3: a secret, a link out of the package and a file too large to scan all
+        # fail the scan, and each needs its own words. See `scan_kinds`.
         "secret_scan_clean": not (scan_findings := scan_evidence(config, attempt.evidence_path)),
-        "scan_link_finding": bool(scan_findings)
-        and all(f.description == OUTSIDE_LINK_DESCRIPTION for f in scan_findings),
+        "scan_kinds": scan_kinds(scan_findings),
         "evidence_hash": submission.get("evidence_hash"),
         "evidence_changed": bool(changed),
         # Which of the package and the declared proof outside it changed, so the reviewer
@@ -1071,7 +1067,7 @@ def _review_queue_context(
         "submission_id": None,
         "submitted_at": None,
         "secret_scan_clean": None,
-        "scan_link_finding": False,
+        "scan_kinds": frozenset(),
         "quest_version": 1,
         "published_version": None,
         "evidence_hash": None,
