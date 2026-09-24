@@ -83,7 +83,19 @@ def migrate(
 
     The input is not mutated: a caller holding the original can always put it back.
     """
-    current = int(data.get("schema_version", 0))
+    raw_version = data.get("schema_version", 0)
+    try:
+        current = int(raw_version)
+    except (TypeError, ValueError) as exc:
+        # `progress.py`'s schema-version check is this lenient on purpose, deferring to the
+        # JSON Schema error that follows for the precise complaint. There is no schema check
+        # here — this is the one place a bad value reaches an unguarded `int()` instead — so
+        # the sentence has to say what is wrong itself, not raise past this function's own
+        # caller as a `ValueError`/`TypeError` neither expects.
+        raise MigrationError(
+            f"schema_version is {raw_version!r}, which is not a whole number. Run "
+            "`make validate-content` for the exact problem, then fix progress.yaml by hand."
+        ) from exc
     steps = plan(current, target_version)
     if not steps:
         return dict(data), []

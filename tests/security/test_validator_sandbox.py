@@ -267,6 +267,46 @@ class TestRunning:
         assert result.outcome == "interrupted"
         assert result.outcome not in ("pass", "fail", "warning")
 
+    @pytest.mark.slow
+    def test_a_nonzero_exit_is_environment_failure_even_with_a_complete_result(
+        self, monkeypatch, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """A child's exit status is not separable from what it printed.
+
+        `docs/VALIDATOR-CONTRACT.md` says a nonzero exit is `environment_failure` whatever
+        the child printed first. Dropping the `process.returncode != 0` half of the check
+        at `run_validator` (keeping only `not stdout.strip()`) passes the rest of this
+        suite, because nothing else exercises a child that writes a complete, schema-shaped
+        result and then exits nonzero anyway.
+        """
+        import json as json_module
+
+        from quest_app import validator_runner
+
+        payload = json_module.dumps(
+            {
+                "checks": [{"id": "probe", "outcome": "pass", "summary": "ran"}],
+                "notes": [],
+                "environment_failure": None,
+            }
+        )
+        # Replaces the real child entirely: a fixed script that writes a complete result
+        # and then exits nonzero, which is exactly the case nothing else here covers.
+        monkeypatch.setattr(
+            validator_runner,
+            "CHILD_BOOTSTRAP",
+            f"import sys; sys.stdout.write({payload!r}); sys.stdout.flush(); sys.exit(7)",
+        )
+        result = run_validator(
+            registry.get("validate-repository-foundation"),
+            config,
+            quest_id="base-camp-repository-safety",
+            attempt_id="a-001",
+            run_id="nonzero-exit-run",
+        )
+        assert result.outcome == "environment_failure", result
+        assert "status 7" in result.output_excerpt
+
 
 class TestClassification:
     def test_an_inconclusive_check_is_not_a_pass(self) -> None:
@@ -1032,3 +1072,142 @@ class TestHostileChildren:
             time.sleep(0.1)
         os.kill(pid, signal.SIGKILL)
         pytest.fail("the grandchild was still running after the run finished")
+
+    @staticmethod
+    def _wait_for_the_grandchild_to_die(marker: str, before: set[int]) -> set[int]:
+        import time
+
+        deadline = time.monotonic() + 5
+        survivors = _processes_carrying(marker) - before
+        while survivors and time.monotonic() < deadline:
+            time.sleep(0.2)
+            survivors = _processes_carrying(marker) - before
+        for pid in survivors:
+            with contextlib.suppress(ProcessLookupError, PermissionError):
+                os.kill(pid, signal.SIGKILL)
+        return survivors
+
+    @pytest.mark.slow
+    def test_a_sigterm_ignoring_grandchild_does_not_outlive_a_timeout(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """SIGTERM to the group is not enough on its own.
+
+        `_terminate_tree` used to return the moment `process.wait()` reaped the direct
+        child, which happens whether or not anything else in the group is still alive: a
+        grandchild that ignores SIGTERM and stays in the same process group outlived a
+        timed-out run, because the SIGKILL that would have reached it was never sent.
+        """
+        marker = "gtq-r11-sigterm-ignoring-grandchild-timeout"
+        before = _processes_carrying(marker)
+        result = self._run(
+            registry,
+            config,
+            f"""
+            import subprocess, sys, time
+
+            def run(workspace, output):
+                subprocess.Popen([
+                    sys.executable,
+                    "-c",
+                    "import signal, time; "
+                    "signal.signal(signal.SIGTERM, signal.SIG_IGN); "
+                    "time.sleep(120)  # {marker}",
+                ])
+                while True:
+                    time.sleep(1)
+            """,
+            timeout=1,
+        )
+        assert result.outcome == "interrupted"
+        survivors = self._wait_for_the_grandchild_to_die(marker, before)
+        assert not survivors, f"a SIGTERM-ignoring grandchild outlived the timeout: {survivors}"
+
+    @pytest.mark.slow
+    def test_a_sigterm_ignoring_grandchild_does_not_outlive_an_output_overflow(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """The overflow stop path ends in the same `_terminate_tree`, so it needs the same
+        proof: a SIGTERM-ignoring grandchild must not survive a run stopped for writing
+        too much output, any more than it survives a timeout.
+        """
+        marker = "gtq-r11-sigterm-ignoring-grandchild-flood"
+        before = _processes_carrying(marker)
+        result = self._run(
+            registry,
+            config,
+            f"""
+            import os, subprocess, sys, time
+
+            def run(workspace, output):
+                subprocess.Popen([
+                    sys.executable,
+                    "-c",
+                    "import signal, time; "
+                    "signal.signal(signal.SIGTERM, signal.SIG_IGN); "
+                    "time.sleep(120)  # {marker}",
+                ])
+                time.sleep(0.5)
+                while True:
+                    os.write(2, b"x" * 65536)
+            """,
+            timeout=30,
+        )
+        assert result.outcome == "environment_failure"
+        survivors = self._wait_for_the_grandchild_to_die(marker, before)
+        assert not survivors, (
+            f"a SIGTERM-ignoring grandchild outlived the overflow stop: {survivors}"
+        )
+
+    @pytest.mark.slow
+    def test_a_leaked_path_in_the_last_stderr_line_is_redacted(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """`_redact_stderr` never reproduces stderr, because it may carry absolute paths.
+
+        The "Its last message was" note added on an environment failure quoted that one
+        line verbatim, which was exactly the exemption `_redact_stderr` was written to
+        prevent: a path a participant's own tree does not need shown to a reviewer.
+        """
+        secret_root = str(config.participant_root)
+        result = self._run(
+            registry,
+            config,
+            f"""
+            import subprocess
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                subprocess.run(["git", "-C", {secret_root!r} + "/nope", "status"])
+                output.fail_environment("git was not usable")
+            """,
+        )
+        assert result.outcome == "environment_failure"
+        assert secret_root not in result.output_excerpt
+        assert "<path>" in result.output_excerpt
+
+    @pytest.mark.slow
+    def test_far_too_many_checks_reaches_the_truncation_not_environment_failure(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """A validator reporting far more checks than the schema allows used to exceed the
+        1 MiB output ceiling before `MAX_CHECKS` ever had a chance to apply, so the whole
+        run was thrown away as `environment_failure` instead of being truncated and shown.
+        """
+        from quest_app.validator_runner import MAX_CHECKS
+
+        result = self._run(
+            registry,
+            config,
+            """
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                for i in range(20000):
+                    output.add(Check(id=f"c{i}", outcome="pass", summary="ok"))
+            """,
+        )
+        assert result.outcome != "environment_failure", result
+        truncation = next(c for c in result.checks if c.id == "checks-truncated")
+        assert str(20000 - MAX_CHECKS) in truncation.summary
+        assert sum(1 for c in result.checks if c.id != "checks-truncated") == MAX_CHECKS

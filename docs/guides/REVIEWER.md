@@ -25,12 +25,14 @@ code behind the same guards, not a shortcut around them:
 quest-app action record-review --quest <quest-id> \
   --decision approved \
   --reviewer "Your Name" \
-  --statement "What you checked and how, in your own words."
+  --statement "What you checked and how, in your own words." \
+  --confirm
 
 quest-app action record-review --quest <quest-id> \
   --decision needs_changes \
   --reviewer "Your Name" \
-  --finding "high:What is wrong:Where you saw it"
+  --finding "high:What is wrong:Where you saw it" \
+  --confirm
 ```
 
 `--decision` takes the same three values the browser form posts: `approved`,
@@ -49,9 +51,13 @@ make it, and the application will not let them.
 The reviewer page shows the participant, the quest and its version, the attempt, the
 submission and the evidence hash at the moment it was submitted. Check:
 
-1. **Has the evidence changed since submission?** The page says so plainly. If it has,
-   re-read it. Approving changed evidence means approving something you have not seen, and
-   the application refuses unless you acknowledge the change.
+1. **Has the evidence changed since submission?** The page says so plainly and lists what
+   changed: the evidence package, and each declared proof file outside it (a test under
+   `participant/tests/`, a document under `participant/context/`). If anything has, re-read
+   it. Approving changed evidence means approving something you have not seen, and the
+   application refuses unless you acknowledge the change. After you approve, `validate`
+   warns if the package or any of those files changes. Submissions and reviews recorded
+   before proof files were tracked are checked on the package alone.
 2. **What did the validators establish?** Their results are facts about artifacts, not
    verdicts about the work. `inconclusive` means nobody could tell, which is not a pass.
 3. **Can you reproduce it?** The proof document should let you, from a clean clone.

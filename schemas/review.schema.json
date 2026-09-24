@@ -43,6 +43,21 @@
     "findings": {
       "type": "array",
       "items": { "$ref": "#/$defs/finding" }
+    },
+    "proof_files": {
+      "type": "array",
+      "description": "Each declared proof path outside the attempt's evidence package, with what it held when the decision was recorded. evidence_hash covers only the package, and most declared proof lies outside it. Optional, because reviews recorded before this field existed lack it; such a review is compared on evidence_hash alone (ADR-031).",
+      "maxItems": 200,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "digest"],
+        "properties": {
+          "path": { "type": "string", "pattern": "^participant/", "maxLength": 400 },
+          "digest": { "type": "string", "pattern": "^(?:sha256:[a-f0-9]{64}|missing|unresolvable)$" }
+        }
+      }
     }
   },
   "allOf": [

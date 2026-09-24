@@ -253,6 +253,19 @@
     // A consequential action confirms immediately before it happens, never at the start of
     // a multi-step workflow, so the confirmation is bound to the submit itself.
     document.querySelectorAll("form[data-confirm]").forEach(function (form) {
+      // A form whose choice changes the consequence (the reviewer's decision) carries each
+      // option's own wording. The dialog and the checkbox label follow the choice, so a
+      // reviewer requesting changes is not asked to confirm producing verified XP.
+      form.querySelectorAll("select").forEach(function (select) {
+        select.addEventListener("change", function () {
+          var chosen = select.options[select.selectedIndex];
+          var wording = chosen && chosen.getAttribute("data-confirm");
+          if (!wording) return;
+          form.setAttribute("data-confirm", wording);
+          var label = form.querySelector("[data-confirm-label]");
+          if (label) label.textContent = wording.replace(/\?$/, "");
+        });
+      });
       form.addEventListener("submit", function (event) {
         var message = form.getAttribute("data-confirm");
         if (!window.confirm(message)) {

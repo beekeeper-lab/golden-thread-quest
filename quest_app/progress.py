@@ -50,6 +50,9 @@ class ReviewDecision:
     verification_statement: str | None = None
     validation_result_ids: tuple[str, ...] = ()
     reviewer_identity_reference: str | None = None
+    # `(path, digest)` for each declared proof outside the package, as approved. None for a
+    # review recorded before these were, which is then compared on the package hash alone.
+    proof_files: tuple[tuple[str, str], ...] | None = None
 
     @property
     def is_approval(self) -> bool:
@@ -236,6 +239,8 @@ def load_participant_state(
             )
             continue
 
+        _check_links_out_of_package(attempt, config, report)
+
         review_path = evidence_dir / REVIEW_FILENAME
         if review_path.exists():
             review = _load_review(review_path, config, schemas, report)
@@ -395,6 +400,11 @@ def _load_review(
         verification_statement=data.get("verification_statement"),
         validation_result_ids=tuple(data.get("validation_result_ids", [])),
         reviewer_identity_reference=reviewer.get("identity_reference"),
+        proof_files=(
+            tuple((str(item["path"]), str(item["digest"])) for item in data["proof_files"])
+            if "proof_files" in data
+            else None
+        ),
     )
 
 
@@ -481,6 +491,33 @@ def _load_validation(
     )
 
 
+def _check_links_out_of_package(attempt: Attempt, config: AppConfig, report: ProblemReport) -> None:
+    """Report every evidence entry that leads outside its package once links are followed.
+
+    Such an entry is not rendered, not hashed by content and not cleared by the secret scan,
+    so the participant has to be told why it seems to have vanished — and a reviewer has to
+    be told that the package points somewhere the application will not read.
+    """
+    from quest_app.evidence import links_outside_package
+
+    for entry in links_outside_package(config, attempt.evidence_path):
+        report.add(
+            ContentProblem.build(
+                code="evidence.link_outside_package",
+                severity=Severity.WARNING,
+                public_message=(
+                    f"An evidence file in attempt {attempt.attempt_id!r} is a link that leads "
+                    "outside its evidence package, so it is not shown, hashed or scanned."
+                ),
+                source=entry,
+                entity_id=attempt.attempt_id,
+                field_path="attempts[].evidence_path",
+                expected="a real file inside the evidence package",
+                suggestion="Replace the link with a copy of the file.",
+            )
+        )
+
+
 def _check_stale_approval(
     attempt: Attempt,
     review: ReviewDecision,
@@ -498,7 +535,29 @@ def _check_stale_approval(
     A warning, not an error: `CONTENT-MODEL.md` keeps verified attempts verified unless a
     documented policy revokes them. The job here is to make it visible.
     """
-    from quest_app.evidence import evidence_hash
+    from quest_app.evidence import changed_proof_files, evidence_hash
+
+    if review.proof_files is not None:
+        recorded = [{"path": path, "digest": digest} for path, digest in review.proof_files]
+        for path in changed_proof_files(config, recorded):
+            report.add(
+                ContentProblem.build(
+                    code="progress.proof_changed_since_approval",
+                    severity=Severity.WARNING,
+                    public_message=(
+                        f"{path} is part of the proof for attempt {attempt.attempt_id!r} and "
+                        "has changed since it was approved, so the approval may no longer "
+                        "describe it."
+                    ),
+                    source=relative,
+                    entity_id=attempt.attempt_id,
+                    field_path="proof_files[].digest",
+                    suggestion=(
+                        "The approval stands until a reviewer revokes it. Ask for re-review if "
+                        "the change was material."
+                    ),
+                )
+            )
 
     current = evidence_hash(config, attempt.evidence_path)
     if current is None or current == review.evidence_hash:

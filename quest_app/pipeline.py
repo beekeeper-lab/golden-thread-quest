@@ -14,7 +14,11 @@ from quest_app.content_loader import SchemaSet, load_content
 from quest_app.errors import ProblemReport
 from quest_app.models import ContentBundle
 from quest_app.progress import ParticipantState, load_participant_state
-from quest_app.semantics import validate_bundle, validate_progress_against_content
+from quest_app.semantics import (
+    validate_bundle,
+    validate_local_validation_claims,
+    validate_progress_against_content,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +59,7 @@ def load_world(
         participant = load_participant_state(config, schemas, report)
         if participant is not None:
             validate_progress_against_content(participant.progress, content, report)
+            validate_local_validation_claims(participant, content, report)
 
     if not report.ok:
         return None

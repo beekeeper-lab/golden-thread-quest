@@ -56,7 +56,7 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 689 under `make check`, plus 42 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
+| Tests | 751 under `make check`, plus 43 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3 quest-facing, plus 2 registered environment probes and one unregistered slow probe used only to prove the timeout |
@@ -95,6 +95,9 @@ here.
    installs, validates and builds in a fresh virtual environment on every change. A true
    `git clone` from the remote followed by `make setup` was run by hand in round 4 and
    recorded in `docs/audits/round-04-independent-audit.md`; nothing runs it on a schedule.
+9. **Earlier quest versions are not kept.** An attempt records the quest version it was
+   started on, and the review page says when a newer one is published, but the quest page and
+   the review page show the current version's criteria. Git history holds the earlier text.
 
 ## For the pilot cohort
 
