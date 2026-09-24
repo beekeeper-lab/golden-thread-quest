@@ -1,6 +1,8 @@
 # Release Audit — Round 12
 
-Status: **in progress.** Findings recorded and verified. Fixes under way.
+Status: **complete.** Eighteen findings returned, all verified and accepted. One severity was
+lowered on the evidence. Every finding except E9 is fixed, and E9 is stated as a known
+limitation. Every code fix carries a test that was shown to fail with the fix reverted.
 
 Commit under audit: `16a0b03` on `main`, the merge of `chore/round-11-audit`.
 Predecessor: `docs/audits/round-11-independent-audit.md`.
@@ -60,6 +62,44 @@ the code at the cited line.
 | T1 | Medium | `tests/integration/test_doc_cli_examples.py` checks five documents and skips `docs/guides/PARTICIPANT.md`, `docs/SETUP.md`, `docs/guides/VALIDATOR-AUTHORING.md` and `docs/CONTENT-AUTHORING-GUIDE.md`. None prints an action command today. | The test checks every Markdown file at the root and under `docs/`, except `docs/audits/**` and five named planning-package files. Test with a planted example in `docs/SETUP.md`. |
 | T2 | Low | `PYTHON ?= python3` in the Makefile is never used. | Removed. A test fails on any Makefile variable nothing references. |
 
+## Gates
+
+| Gate | Result |
+|---|---|
+| `make check` | pass — 830 passed, 45 deselected |
+| `make test-ui` | pass — 45 passed |
+| `make validate-content` | pass — 8 quests, 8 regions, 4 badges, 1 track, 0 warnings |
+| `make verify-package` | pass |
+| Clean clone of `chore/round-12-audit` from GitHub | pass at `72a00bf`: `make setup`, `make serve` on a second port, and `make check` beside it (828 passed, 5 skipped without the UI extras), leaving the clone unchanged |
+| Each fix reverted one at a time | every new test failed with its fix reverted, by the branch that wrote it, and for the merge follow-ups here |
+| Round-11 guards mutated by the tooling lens | 6 mutations, 6 caught |
+| CI on this branch | see the pull request |
+
+Merging the four fix branches needed three follow-ups. The new session guard caught a test from
+the filesystem branch that rebuilt the real `generated/`. The E8 ceiling made a file too large to
+scan read as a secret on both pages. And the web branch's browser test hand-wrote the
+`submitted` state that E4 now refuses.
+
 ## Verdict
 
 **Round 12 does not close DH7.** It found two blocking and four high findings.
+
+C1 went unseen for eleven rounds because no test submitted a form in a browser, and every
+lens that exercised the service used `curl` or the CLI. E1 extends round 11's reading rules to
+writes, which round 11 did not cover.
+
+What held: nothing but a reviewer's approval reached verified state or verified XP, apart from
+the forged-state path E4 closes. The `proof_files` record agreed between the review page, the
+approval gate and load, for files, directories, deletions and edits. The update path handled a
+quest bump, a schema bump and a conflict in participant state. The runner classified floods,
+timeouts and hostile exits correctly. The service refused every malformed request.
+
+Round 13 should run against the merge commit with the same three lenses. Point it at:
+
+- every action through a real browser, not `curl`, including approve with changed evidence,
+  withdraw and resume;
+- `safe_io`'s write path (ADR-042) against every write site, and anything that still writes
+  under `participant/` without it;
+- the `GTQ_GENERATED_ROOT` isolation and the session guard, by writing a test that forgets it;
+- the runner's early-close rule (E11) against a validator that closes stdout before finishing;
+- and the tests added this round, mutated the same way.
