@@ -67,6 +67,13 @@
   <aside class="panel stack" aria-label="Attempt status and actions">
     <h2 class="visually-hidden">Attempt status and actions</h2>
     <div>{{ state_badge(quest.state, show_authority=true) }}</div>
+    {% if stale_local_validation %}
+    {# Round 12 C4: the state is earned once and a failing re-run never unwinds it
+       (ADR-017), so this is not a contradiction with "Last run" below — but it reads like
+       one without this note. #}
+    <p class="authority">This state was earned on an earlier passing run. The latest run of
+      {{ stale_local_validation | join(', ') }} did not pass; see Local validation below.</p>
+    {% endif %}
     <dl class="definition-list">
       <dt>Attempt</dt><dd><code>{{ attempt_id }}</code></dd>
       {% if evidence_path %}<dt>Location</dt><dd><code>{{ evidence_path }}</code></dd>{% endif %}

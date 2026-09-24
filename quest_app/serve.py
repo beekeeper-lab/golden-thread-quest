@@ -345,7 +345,13 @@ class ActionHandler(BaseHTTPRequestHandler):
         self.send_header(SERVICE_HEADER, APPLICATION_VERSION)
         self.send_header(REPO_HEADER, repo_signature(self.state.config))
         self.send_header("X-Content-Type-Options", "nosniff")
-        self.send_header("Referrer-Policy", "no-referrer")
+        # `no-referrer` strips the browser's Origin header to "null" on a same-origin form
+        # POST too (round 12, C1), so `_origin_is_acceptable` refused every action form in a
+        # real browser — only the CLI, which sends no Origin at all, could still change
+        # state. `same-origin` still sends no referrer and no Origin cross-origin, so a
+        # cross-origin POST is refused exactly as before; a same-origin POST now carries the
+        # real Origin and is accepted. Verified against real Chromium, not assumed.
+        self.send_header("Referrer-Policy", "same-origin")
         self.send_header("Cache-Control", "no-store")
         self.send_header(
             "Content-Security-Policy",

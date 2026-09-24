@@ -17,7 +17,11 @@
    it in a meta element and logs a console error saying so. Keeping it in both places bought
    nothing and produced a warning on every page load. #}
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; form-action 'self'; base-uri 'none'">
-<meta name="referrer" content="no-referrer">
+{# `same-origin`, not `no-referrer`: stripping the referrer entirely also strips the
+   browser's Origin header to "null" on a same-origin form POST, which the service's own
+   origin check then refuses as cross-origin (round 12, C1). `same-origin` still sends
+   nothing off-site. #}
+<meta name="referrer" content="same-origin">
 <link rel="icon" type="image/png" href="{{ url('/assets/img/favicon.png') }}">
 <link rel="apple-touch-icon" href="{{ url('/assets/img/app-icon.png') }}">
 <link rel="stylesheet" href="{{ url('/assets/css/tokens.css') }}">

@@ -21,7 +21,7 @@ import shutil
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -844,6 +844,16 @@ def _evidence_context(
         )
         for validator in validators
     )
+    # Round 12 C4: `locally_validated` is earned once (ADR-017 — a failing re-run never
+    # unwinds it), so nothing here changes that state. But the same page also shows each
+    # validator's *latest* result, and a reviewer or participant reading "Required automated
+    # checks passed" beside "Last run: fail" for the same check needs to be told those are
+    # two different moments, not a contradiction.
+    stale_local_validation = (
+        tuple(vid for vid in quest.validators if vid in latest and not latest[vid].qualifies)
+        if entry.state.id is QuestState.LOCALLY_VALIDATED
+        else ()
+    )
     allowed = {
         transition.action
         for transition in allowed_actions(entry.attempt.recorded_state if entry.attempt else None)
@@ -880,6 +890,7 @@ def _evidence_context(
         "validators": validators,
         "run_actions": run_actions,
         "results": results,
+        "stale_local_validation": stale_local_validation,
         "proof_document": _proof_document(world, evidence_path),
         # The scan runs at build time so the page can say something true about the evidence
         # as it stands. It is also enforced at the moment of submission, which is the check
@@ -932,7 +943,7 @@ def _review_context(
     entry: QuestProgress, summary: Any, world: LoadedWorld, service: ServiceView
 ) -> dict[str, Any]:
     """Everything U10 requires about one attempt."""
-    from quest_app.evidence import detect_proof, scan_evidence
+    from quest_app.evidence import OUTSIDE_LINK_DESCRIPTION, detect_proof, scan_evidence
     from quest_app.review import changes_since_submission, read_submission, review_history
 
     attempt = entry.attempt
@@ -946,6 +957,23 @@ def _review_context(
     required, _ = build_proof_views(
         entry.quest, detect_proof(entry.quest, config, attempt.evidence_path, results)
     )
+    if attempt.quest_version != entry.quest.version:
+        # Round 12 C5: the checklist above is the *published* quest's required evidence,
+        # detected against paths that version currently declares. An attempt on a different
+        # version may have been written and submitted against proof paths the curriculum has
+        # since renamed, so "Not detected" here does not mean the evidence is missing — it
+        # may mean the path moved. Only missing items get the note; a path that still
+        # resolves needs no caveat.
+        version_note = (
+            f"This checklist reflects version {entry.quest.version}, the published one. "
+            f"The attempt was made against version {attempt.quest_version}, so a missing "
+            "item here may be a proof path that has since been renamed rather than evidence "
+            "that was never produced."
+        )
+        required = tuple(
+            replace(item, detail=version_note) if item.status == "missing" else item
+            for item in required
+        )
     history = review_history(config, attempt)
     changed = changes_since_submission(config, attempt)
 
@@ -961,7 +989,14 @@ def _review_context(
         # What the participant was told did not block submission. A reviewer could otherwise
         # only infer an unrun check from an empty result list, which reads as "none declared".
         "advisories": tuple(submission.get("advisories") or ()),
-        "secret_scan_clean": not scan_evidence(config, attempt.evidence_path),
+        # Round 12 C3: a link out of the package and an actual secret both fail the scan,
+        # but they are not the same problem, and telling a reviewer to rotate a value over a
+        # link sends them looking for a credential that was never there. `scan_link_finding`
+        # is true only when the only reason the scan is not clean is a link; an actual
+        # secret-like match still reports through `secret_scan_clean` alone, unchanged.
+        "secret_scan_clean": not (scan_findings := scan_evidence(config, attempt.evidence_path)),
+        "scan_link_finding": bool(scan_findings)
+        and all(f.description == OUTSIDE_LINK_DESCRIPTION for f in scan_findings),
         "evidence_hash": submission.get("evidence_hash"),
         "evidence_changed": bool(changed),
         # Which of the package and the declared proof outside it changed, so the reviewer
@@ -1029,6 +1064,7 @@ def _review_queue_context(
         "submission_id": None,
         "submitted_at": None,
         "secret_scan_clean": None,
+        "scan_link_finding": False,
         "quest_version": 1,
         "published_version": None,
         "evidence_hash": None,
