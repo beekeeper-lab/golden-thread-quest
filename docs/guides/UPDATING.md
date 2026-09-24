@@ -42,6 +42,7 @@ git fetch upstream
 git log --oneline HEAD..upstream/main
 git merge upstream/main
 make validate-content
+make migrate      # only if validate-content says your progress schema is old
 ```
 
 If it goes wrong: `git merge --abort`, or `git reset --hard backup/pre-update-<timestamp>`.
@@ -82,9 +83,17 @@ Until you do, the application refuses to load the older file and says so, rather
 it in a shape it no longer describes. A file written by a newer version of the application is
 refused the same way, so an older checkout cannot rewrite it in the old shape.
 
-Migrations validate before and after, refuse to drop an attempt or a field, and carry unknown
-fields forward rather than deleting data written by a newer version you might go back to. If
-your state does not load after migrating, the original file is put back.
+Migrations validate before and after, and carry unknown fields forward rather than deleting
+data written by a newer version you might go back to. If your state does not load after
+migrating, the original file is put back.
+
+What is actually guarded: a migration step that drops a *top-level* field (`selected_track`,
+`focus_tags`, and so on) or that removes one of your *attempt IDs* from `attempts` is refused
+outright, before anything is written. That check does not look inside an attempt — a
+migration that renames or restructures a field nested inside one is not stopped by it, because
+a legitimate migration sometimes needs to do exactly that (moving a field to a new name is not
+losing it). The guard exists for the failure mode migrations actually have: a bug that drops
+a whole quest or an entire top-level section, not one that reshapes a field within it.
 
 If `make update-check` says a merge is in progress, finish it or undo it before anything else:
 resolve each conflict and `git commit`, or `git merge --abort`. Committing everything at that
