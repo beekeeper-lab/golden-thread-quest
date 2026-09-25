@@ -18,6 +18,7 @@ import contextlib
 import json
 import os
 import shutil
+import stat
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -68,6 +69,152 @@ OUTPUT_SUFFIX_NEW = ".building"
 OUTPUT_SUFFIX_OLD = ".previous"
 OUTPUT_SUFFIX_LOCK = ".lock"
 
+# Written first into every staging directory, so it travels with the rename into the
+# published site and into `.previous`. A directory at any of those three names that holds
+# neither this nor a build manifest was not made by this application, and the build refuses
+# to rename or delete it (ADR-043).
+OUTPUT_MARKER = ".golden-thread-output"
+OUTPUT_MARKER_TEXT = "Written by Golden Thread Quest. This directory is generated and disposable.\n"
+MANIFEST_FILENAME = "build-manifest.json"
+
+# Folders inside the repository that are source, not output. The configured content,
+# schema, template, asset, validator, participant and local-data roots are added to these.
+_SOURCE_FOLDER_NAMES = (
+    ".git",
+    "docs",
+    "fixtures",
+    "prototype",
+    "quest_app",
+    "scripts",
+    "tests",
+    "tools",
+    "vendor",
+)
+
+
+class UnsafeOutputRootError(RuntimeError):
+    """The generated root, or one of its siblings, is not somewhere a build may delete.
+
+    Carries `strerror` so the action layer's "the site could not be rebuilt (...)" advisory
+    shows the reason rather than the class name.
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+        self.strerror = message
+
+
+def output_sibling(root: Path, suffix: str) -> Path:
+    """`generated.building` and friends: the suffix appended, never substituted.
+
+    `with_suffix` replaced an existing extension, so `GTQ_GENERATED_ROOT=site.v2` staged into
+    `site.building`, a name the configuration never mentioned.
+    """
+    return root.with_name(root.name + suffix)
+
+
+def _is_application_output(directory: Path) -> bool:
+    """Whether `directory` is empty or carries this application's marker or manifest."""
+    try:
+        if not any(directory.iterdir()):
+            return True
+    except OSError:
+        return False
+    for name in (OUTPUT_MARKER, MANIFEST_FILENAME):
+        try:
+            if stat.S_ISREG((directory / name).lstat().st_mode):
+                return True
+        except OSError:
+            continue
+    return False
+
+
+def _overlaps(path: Path, other: Path) -> bool:
+    return path == other or path in other.parents or other in path.parents
+
+
+def refuse_unsafe_output_root(config: AppConfig) -> None:
+    """Raise `UnsafeOutputRootError` unless the build may replace and delete its output.
+
+    A build renames the generated root to `.previous`, deletes `.previous` and `.building`,
+    and creates `.lock`. Round 13 E1: `AppConfig` resolved the generated root through links,
+    so a committed `generated -> ..` became the repository's parent and a build deleted it,
+    and `GTQ_GENERATED_ROOT` pointed at any existing folder deleted that folder. Refused:
+
+    - any of the four paths being a symbolic link;
+    - the generated root, `.building` or `.previous` equal to, containing, or inside the
+      repository's source folders or the participant or local-data roots, or equal to or
+      containing the repository itself;
+    - the generated root or `.previous` existing as anything but a directory, and any of
+      the three existing as a non-empty directory with neither the output marker nor a
+      build manifest in it.
+
+    A regular file at `.building` is left-over debris of a build that died and is removed
+    by `_render_and_publish`, as before. Nothing here deletes anything.
+    """
+    target = config.generated_root
+    paths = {
+        target: "the generated site",
+        output_sibling(target, OUTPUT_SUFFIX_NEW): "the build's staging directory",
+        output_sibling(target, OUTPUT_SUFFIX_OLD): "the previous generated site",
+        output_sibling(target, OUTPUT_SUFFIX_LOCK): "the build lock",
+    }
+
+    def named(path: Path) -> str:
+        return f"{paths[path]} ({path.name})"
+
+    for path in paths:
+        if path.is_symlink():
+            raise UnsafeOutputRootError(
+                f"Refusing to build: {named(path)} is a symbolic link. A build replaces and "
+                "deletes this path, and never does that through a link. Remove the link, or "
+                "set GTQ_GENERATED_ROOT to a directory of its own."
+            )
+
+    repository = Path(os.path.realpath(config.repo_root))
+    sources = [
+        config.content_root,
+        config.schemas_root,
+        config.templates_root,
+        config.assets_root,
+        config.validators_root,
+        config.participant_root,
+        config.local_data_root,
+        *(config.repo_root / name for name in _SOURCE_FOLDER_NAMES),
+    ]
+    real_sources = [Path(os.path.realpath(source)) for source in sources]
+    for path in list(paths)[:3]:
+        real = Path(os.path.realpath(path))
+        if real == repository or real in repository.parents:
+            raise UnsafeOutputRootError(
+                f"Refusing to build: {named(path)} is or contains the repository. Set "
+                "GTQ_GENERATED_ROOT to a directory of its own."
+            )
+        for source in real_sources:
+            if _overlaps(real, source):
+                raise UnsafeOutputRootError(
+                    f"Refusing to build: {named(path)} overlaps {source.name}/, which is not "
+                    "output. Set GTQ_GENERATED_ROOT to a directory of its own."
+                )
+
+    for path in list(paths)[:3]:
+        if not (path.exists() or path.is_symlink()):
+            continue
+        if not path.is_dir():
+            if paths[path] == "the build's staging directory":
+                continue  # debris, removed as a single file by the build
+            raise UnsafeOutputRootError(
+                f"Refusing to build: {named(path)} exists and is not a directory. Move it "
+                "aside, or set GTQ_GENERATED_ROOT to a directory of its own."
+            )
+        if not _is_application_output(path):
+            raise UnsafeOutputRootError(
+                f"Refusing to build: {named(path)} already exists and was not written by "
+                f"this application (it has no {OUTPUT_MARKER} or {MANIFEST_FILENAME}). A "
+                "build would replace and delete it. Move it aside, or set "
+                "GTQ_GENERATED_ROOT to an empty or new directory."
+            )
+
 
 @dataclass(frozen=True, slots=True)
 class BuildResult:
@@ -105,6 +252,7 @@ def render_error_page(config: AppConfig, report: ProblemReport) -> Path:
     It goes to the gitignored local-data directory and the CLI prints the path.
     """
     from quest_app.config import APPLICATION_VERSION
+    from quest_app.safe_io import LOCAL_DATA, atomic_write
     from quest_app.view_models import (
         BuildView,
         NavItemView,
@@ -146,8 +294,10 @@ def render_error_page(config: AppConfig, report: ProblemReport) -> Path:
         error_count=len(report.errors),
         warning_count=len(report.warnings),
     )
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(html, encoding="utf-8")
+    # Through the no-follow write path (round 13 E2): a committed `local-data` link, or a
+    # link at `build-errors/` or `index.html`, overwrote a file outside the clone. Raises
+    # `UnsafeWriteTargetError` instead.
+    atomic_write(config.local_data_root, target, html.encode("utf-8"), prefix=LOCAL_DATA)
     return target
 
 
@@ -212,10 +362,14 @@ def _exclusive_output(config: AppConfig) -> Iterator[None]:
         yield
         return
 
-    lock_path = config.generated_root.with_suffix(OUTPUT_SUFFIX_LOCK)
+    from quest_app.safe_io import open_lock_file
+
+    lock_path = output_sibling(config.generated_root, OUTPUT_SUFFIX_LOCK)
     try:
-        lock_path.parent.mkdir(parents=True, exist_ok=True)
-        handle = lock_path.open("a+", encoding="utf-8")
+        # Never through a link, never blocking on a FIFO (round 13 E2). A lock that cannot
+        # be opened safely is the "run unlocked" case, and `refuse_unsafe_output_root` has
+        # already refused a build whose lock path is a link.
+        handle = os.fdopen(open_lock_file(lock_path), "a+", encoding="utf-8")
     except OSError:
         yield
         return
@@ -249,8 +403,11 @@ def build_site(
 ) -> BuildResult:
     """Render every page and swap the result into place atomically.
 
-    One build at a time per output directory. See `_exclusive_output`.
+    One build at a time per output directory. See `_exclusive_output`. Refused before
+    anything is locked, written or deleted when the output root is not the application's
+    to replace (`refuse_unsafe_output_root`).
     """
+    refuse_unsafe_output_root(world.config)
     with _exclusive_output(world.config):
         return _render_and_publish(world, built_at=built_at, service=service)
 
@@ -277,8 +434,9 @@ def _render_and_publish(
     service = service or offline_service_view()
     environment = make_environment(config.templates_root)
 
-    staging = config.generated_root.with_suffix(OUTPUT_SUFFIX_NEW)
-    if staging.is_symlink() or (staging.exists() and not staging.is_dir()):
+    staging = output_sibling(config.generated_root, OUTPUT_SUFFIX_NEW)
+    # `build_site` refused a link here and a directory this application did not write.
+    if staging.exists() and not staging.is_dir():
         # Debris in the shape of a file, which `rmtree` answers with `NotADirectoryError` —
         # permanently, for every build, until someone deletes it by hand. `make clean` did
         # not remove it either, because it was not on the list.
@@ -286,6 +444,8 @@ def _render_and_publish(
     elif staging.exists():
         shutil.rmtree(staging)
     staging.mkdir(parents=True)
+    # First, so a staging directory left by a build that died is still recognisably ours.
+    (staging / OUTPUT_MARKER).write_text(OUTPUT_MARKER_TEXT, encoding="utf-8")
 
     pages: list[tuple[str, str, dict[str, Any]]] = []
 
@@ -1315,7 +1475,7 @@ def _write_indexes(
         (index_root / f"{name}.json").write_text(
             json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
-    (root / "build-manifest.json").write_text(
+    (root / MANIFEST_FILENAME).write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     return manifest
@@ -1327,7 +1487,7 @@ def _swap(target: Path, staging: Path) -> None:
     The rename is the publish. Everything before it can fail without a participant ever
     seeing a half-built site.
     """
-    previous = target.with_suffix(OUTPUT_SUFFIX_OLD)
+    previous = output_sibling(target, OUTPUT_SUFFIX_OLD)
     if previous.exists():
         shutil.rmtree(previous)
     if target.exists():

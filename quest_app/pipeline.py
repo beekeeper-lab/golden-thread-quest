@@ -8,6 +8,7 @@ load content and participant state in, or which cross-checks to run. They ask fo
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from quest_app.config import AppConfig
 from quest_app.content_loader import SchemaSet, load_content
@@ -54,7 +55,7 @@ def load_world(
         check_quest_references(registry, content.quests, report)
 
     participant: ParticipantState | None = None
-    if report.ok and ((config.participant_root / "progress.yaml").exists() or require_participant):
+    if report.ok and (_present(config.participant_root / "progress.yaml") or require_participant):
         schemas = SchemaSet(config.schemas_root)
         participant = load_participant_state(config, schemas, report)
         if participant is not None:
@@ -64,3 +65,8 @@ def load_world(
     if not report.ok:
         return None
     return LoadedWorld(config=config, content=content, participant=participant)
+
+
+def _present(path: Path) -> bool:
+    """There, or a link that is there even if its target is not, so the loader reports it."""
+    return path.exists() or path.is_symlink()

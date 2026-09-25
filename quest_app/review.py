@@ -420,13 +420,13 @@ def _read_record(config: AppConfig, path: Path) -> dict[str, Any] | None:
     (round 12 E3). The loader checks exactly these files first, so on a world that loaded
     this raises only if a record changed after the load.
     """
-    from quest_app.content_loader import read_yaml
+    from quest_app.content_loader import read_state_yaml
     from quest_app.errors import ProblemReport
 
-    if not path.exists():
+    if not (path.exists() or path.is_symlink()):
         return None
     scratch = ProblemReport()
-    data = read_yaml(path, config, scratch)
+    data = read_state_yaml(path, config, scratch)
     if data is None or not scratch.ok:
         reason = scratch.errors[0].public_message if scratch.errors else "it is not a mapping"
         raise DamagedRecordError(f"{config.relative(path)} could not be read: {reason}")

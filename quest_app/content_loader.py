@@ -84,16 +84,41 @@ class ParsedDocument:
     front_matter_offset: int = 0
 
 
-def read_yaml(path: Path, config: AppConfig, report: ProblemReport) -> dict[str, Any] | None:
+def read_yaml(
+    path: Path, config: AppConfig, report: ProblemReport, *, follow_symlinks: bool = True
+) -> dict[str, Any] | None:
     """Parse one YAML document safely (ADR-025), reporting position on failure."""
     relative = config.relative(path)
-    text = read_text(path, relative, report)
+    text = read_text(path, relative, report, follow_symlinks=follow_symlinks)
     if text is None:
         return None
     return parse_yaml_text(text, relative, report)
 
 
-def read_text(path: Path, relative: str, report: ProblemReport) -> str | None:
+def read_state_yaml(path: Path, config: AppConfig, report: ProblemReport) -> dict[str, Any] | None:
+    """A participant state record — `progress.yaml`, `submission.yaml`, `review.yaml`, an
+    archived review — read with a link at the file refused (round 13 E5, ADR-043).
+
+    This application writes these files itself and never as links (ADR-042). A link there
+    was read and honored wherever it led, and the linked file's key names reached the
+    problem report through schema validation. A link is now a load error that names the
+    record and reads nothing. A link in a directory above it is already refused by
+    `resolve_participant_path`'s containment check when it leads out of the tree.
+
+    Labeled by the record's own name, not by `config.relative(path)`, which resolves the
+    link and would name the file it leads to.
+    """
+    parent = config.relative(path.parent)
+    relative = f"{parent.removesuffix('/.')}/{path.name}"
+    text = read_text(path, relative, report, follow_symlinks=False)
+    if text is None:
+        return None
+    return parse_yaml_text(text, relative, report)
+
+
+def read_text(
+    path: Path, relative: str, report: ProblemReport, *, follow_symlinks: bool = True
+) -> str | None:
     """File contents as text, or a problem that names no absolute path.
 
     `str(OSError)` embeds the filename, which for a developer's checkout is an absolute path
@@ -111,13 +136,18 @@ def read_text(path: Path, relative: str, report: ProblemReport) -> str | None:
     from quest_app.safe_io import UnsafeStateFileError, read_bounded_text
 
     try:
-        return read_bounded_text(path)
+        return read_bounded_text(path, follow_symlinks=follow_symlinks)
     except UnsafeStateFileError:
+        linked = not follow_symlinks and path.is_symlink()
         report.add(
             ContentProblem(
                 code="content.not_a_regular_file",
                 severity=Severity.ERROR,
-                public_message=("This is not an ordinary, size-bounded file, so it was not read."),
+                public_message=(
+                    "This is a symbolic link, and this record is never read through one."
+                    if linked
+                    else "This is not an ordinary, size-bounded file, so it was not read."
+                ),
                 source=relative,
                 expected="a regular file no larger than the size limit",
                 suggestion="Replace the link or special file with the file itself, or trim it.",
