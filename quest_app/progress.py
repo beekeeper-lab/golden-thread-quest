@@ -276,7 +276,20 @@ def load_participant_state(
         if review_path.exists():
             review = _load_review(review_path, config, schemas, report)
             if review is not None:
-                reviews[review.review_id] = review
+                mismatch = _record_identity_mismatch(
+                    {
+                        "attempt_id": review.attempt_id,
+                        "quest_id": review.quest_id,
+                        "quest_version": review.quest_version,
+                    },
+                    attempt,
+                )
+                if mismatch is None:
+                    reviews[review.review_id] = review
+                else:
+                    _report_record_identity_mismatch(
+                        config, review_path, "review", mismatch, attempt, report
+                    )
         # The submission and the superseded reviews are read by the reviewer's page and the
         # participant's history, so they are checked here too. Otherwise a file left broken by
         # a merge conflict passed `validate` and then stopped `build` with a traceback.
@@ -285,10 +298,20 @@ def load_participant_state(
         for record_path, schema_name in records:
             if record_path.exists():
                 data = read_yaml(record_path, config, report)
-                valid = data is not None and schemas.validate(
+                if data is None or not schemas.validate(
                     schema_name, data, config.relative(record_path), report
-                )
-                if valid and schema_name == "submission":
+                ):
+                    continue
+                # E3: a schema-valid record copied wholesale from another quest or attempt
+                # passed both checks above, so a `submitted` state backed by someone else's
+                # submission — or a superseded decision that belongs to a different attempt
+                # — loaded and was shown as this attempt's own (round 13 E3).
+                mismatch = _record_identity_mismatch(data, attempt)
+                if mismatch is not None:
+                    _report_record_identity_mismatch(
+                        config, record_path, schema_name, mismatch, attempt, report
+                    )
+                elif schema_name == "submission":
                     readable_submissions.add(attempt.attempt_id)
 
         for result_path in _validation_result_paths(attempt, evidence_dir, config, report):
@@ -588,6 +611,58 @@ def _load_validation(
     )
 
 
+def _record_identity_mismatch(data: dict[str, Any], attempt: Attempt) -> str | None:
+    """Whether a submission or review record's own identity fields name this attempt.
+
+    Both schemas require `attempt_id`, `quest_id` and `quest_version`, and both are
+    validated by then, so this is a plain field comparison. `None` means it matches;
+    otherwise the mismatch, for the message.
+    """
+    if (
+        data.get("attempt_id") == attempt.attempt_id
+        and data.get("quest_id") == attempt.quest_id
+        and data.get("quest_version") == attempt.quest_version
+    ):
+        return None
+    return (
+        f"attempt {data.get('attempt_id')!r} of quest {data.get('quest_id')!r} at version "
+        f"{data.get('quest_version')!r}"
+    )
+
+
+def _report_record_identity_mismatch(
+    config: AppConfig,
+    record_path: Path,
+    schema_name: str,
+    mismatch: str,
+    attempt: Attempt,
+    report: ProblemReport,
+) -> None:
+    """A submission or review record sitting in the wrong evidence directory.
+
+    Schema validation only checks the record's own shape, never where it was found. A
+    record copied wholesale from another quest or attempt — still perfectly valid on its
+    own — named a request or a decision that was never made for this one (round 13 E3).
+    """
+    report.add(
+        ContentProblem.build(
+            code="progress.record_identity_mismatch",
+            severity=Severity.ERROR,
+            public_message=(
+                f"{config.relative(record_path)} is a {schema_name} record for {mismatch}, "
+                f"not for attempt {attempt.attempt_id!r} of quest {attempt.quest_id!r} at "
+                f"version {attempt.quest_version}, whose evidence directory holds it."
+            ),
+            source=config.relative(record_path),
+            entity_id=attempt.attempt_id,
+            field_path="attempt_id",
+            expected=f"attempt {attempt.attempt_id!r} of quest {attempt.quest_id!r}",
+            received=mismatch,
+            suggestion="Move the file to the attempt it belongs to, or delete it.",
+        )
+    )
+
+
 def _check_links_out_of_package(attempt: Attempt, config: AppConfig, report: ProblemReport) -> None:
     """Report every evidence entry that leads outside its package once links are followed.
 
@@ -633,6 +708,7 @@ def _check_stale_approval(
     documented policy revokes them. The job here is to make it visible.
     """
     from quest_app.evidence import changed_proof_files, evidence_hash
+    from quest_app.hashing import UnreadableFileError
 
     if review.proof_files is not None:
         recorded = [{"path": path, "digest": digest} for path, digest in review.proof_files]
@@ -656,7 +732,33 @@ def _check_stale_approval(
                 )
             )
 
-    current = evidence_hash(config, attempt.evidence_path)
+    try:
+        current = evidence_hash(config, attempt.evidence_path)
+    except UnreadableFileError as exc:
+        # Round 13 E8: a file the process cannot read used to crash `validate` and `build`
+        # with a traceback carrying an absolute path. It cannot be hashed, so it cannot be
+        # confirmed to still match what was approved either — which is exactly the
+        # condition this check exists to catch, so it is treated as a change, not silence.
+        report.add(
+            ContentProblem.build(
+                code="progress.evidence_changed_since_approval",
+                severity=Severity.WARNING,
+                public_message=(
+                    f"{exc.relative_path} in attempt {attempt.attempt_id!r}'s evidence could "
+                    "not be read, so it cannot be confirmed to still match what was approved."
+                ),
+                source=relative,
+                entity_id=attempt.attempt_id,
+                field_path="attempts[].evidence_path",
+                expected=review.evidence_hash,
+                received="unreadable",
+                suggestion=(
+                    "The approval stands until a reviewer revokes it. Restore read access to "
+                    "the file, or ask for re-review if the change was material."
+                ),
+            )
+        )
+        return
     if current is None or current == review.evidence_hash:
         return
     report.add(

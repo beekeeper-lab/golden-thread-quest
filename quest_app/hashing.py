@@ -27,6 +27,25 @@ from quest_app.safe_io import HASH_CHUNK_BYTES
 PREFIX = "sha256:"
 
 
+class UnreadableFileError(OSError):
+    """A file could not be read while hashing it: permission denied, or it changed mid-read.
+
+    Carries a path relative to the tree being hashed, never an absolute one (round 13 E8):
+    an unhandled `OSError` from deep inside a hash used to reach a participant or reviewer
+    as a traceback with the local filesystem layout in it. A subclass of `OSError` so any
+    caller that already catches that keeps working unchanged.
+    """
+
+    def __init__(self, relative_path: str, cause: BaseException | None = None) -> None:
+        reason = getattr(cause, "strerror", None) or (str(cause) if cause else "could not be read")
+        errno_value = getattr(cause, "errno", None)
+        if errno_value is not None:
+            super().__init__(errno_value, reason)
+        else:
+            super().__init__(reason)
+        self.relative_path = relative_path
+
+
 def _digest(chunks: list[bytes | Path]) -> str:
     """SHA-256 over length-prefixed chunks. A `Path` chunk is a file, streamed.
 
@@ -55,19 +74,26 @@ def _update_with_file(hasher: Any, path: Path) -> None:
     refused unless regular, so nothing swapped in after the caller's check can block.
     """
     flags = os.O_RDONLY | os.O_NONBLOCK | getattr(os, "O_CLOEXEC", 0)
-    with os.fdopen(os.open(path, flags), "rb") as stream:
-        status = os.fstat(stream.fileno())
-        if not stat.S_ISREG(status.st_mode):
-            raise OSError(errno.EINVAL, "not an ordinary file")
-        remaining = status.st_size
-        hasher.update(str(remaining).encode("ascii"))
-        hasher.update(b"\0")
-        while remaining:
-            block = stream.read(min(HASH_CHUNK_BYTES, remaining))
-            if not block:
-                raise OSError(errno.EIO, "the file changed while it was being hashed")
-            hasher.update(block)
-            remaining -= len(block)
+    try:
+        with os.fdopen(os.open(path, flags), "rb") as stream:
+            status = os.fstat(stream.fileno())
+            if not stat.S_ISREG(status.st_mode):
+                raise OSError(errno.EINVAL, "not an ordinary file")
+            remaining = status.st_size
+            hasher.update(str(remaining).encode("ascii"))
+            hasher.update(b"\0")
+            while remaining:
+                block = stream.read(min(HASH_CHUNK_BYTES, remaining))
+                if not block:
+                    raise OSError(errno.EIO, "the file changed while it was being hashed")
+                hasher.update(block)
+                remaining -= len(block)
+    except OSError as exc:
+        if isinstance(exc, UnreadableFileError):
+            raise
+        # `path` is absolute here; `hash_directory` relabels it relative to the root it is
+        # hashing before this ever reaches a caller (round 13 E8).
+        raise UnreadableFileError(str(path), exc) from exc
 
 
 def normalize_text(text: str) -> str:
@@ -118,12 +144,26 @@ def hash_directory(
     """
     chunks: list[bytes | Path] = []
     resolved_root = root.resolve()
-    for path in sorted(root.rglob("*"), key=lambda p: p.relative_to(root).as_posix()):
+    try:
+        entries = sorted(root.rglob("*"), key=lambda p: p.relative_to(root).as_posix())
+    except OSError as exc:
+        raise UnreadableFileError(
+            _relative_to_root(Path(exc.filename), resolved_root) if exc.filename else ".", exc
+        ) from exc
+    for path in entries:
         relative = path.relative_to(root).as_posix()
         parts = path.relative_to(root).parts
-        if any(part in skip_names for part in parts):
+        # Only a *top-level* name is skipped (round 13 E6): `parts[0]` is the first path
+        # segment under `root`, so a folder named `validation` skips itself and everything
+        # under it, but a folder named `validation` nested somewhere else does not, and a
+        # participant's own nested `logs/validation/x.txt` or `some/dir/review.yaml` is
+        # ordinary content the hash must see. `skip_names` and the review-record globs in
+        # `skip_globs` both name only records the application itself writes at the top of
+        # the package (ADR-031); anything with the same name deeper in a participant's own
+        # tree is their content, not the application's bookkeeping.
+        if parts[0] in skip_names:
             continue
-        if any(fnmatch(parts[-1], pattern) for pattern in skip_globs):
+        if len(parts) == 1 and any(fnmatch(parts[-1], pattern) for pattern in skip_globs):
             continue
         chunks.append(relative.encode("utf-8"))
         if not resolves_inside(path, resolved_root):
@@ -135,7 +175,24 @@ def hash_directory(
             chunks.append(path)
         else:
             chunks.append(b"dir")
-    return _digest(chunks)
+    try:
+        return _digest(chunks)
+    except UnreadableFileError as exc:
+        raise UnreadableFileError(
+            _relative_to_root(Path(exc.relative_path), resolved_root), exc.__cause__ or exc
+        ) from exc
+
+
+def _relative_to_root(path: Path, resolved_root: Path) -> str:
+    """`path` named relative to `resolved_root`, or by its own name if it is not under it.
+
+    Never returns an absolute path: this is what keeps a filesystem layout out of an error
+    a participant or reviewer ends up reading (round 13 E8).
+    """
+    try:
+        return path.resolve(strict=False).relative_to(resolved_root).as_posix()
+    except ValueError:
+        return path.name
 
 
 def resolves_inside(path: Path, root: Path) -> bool:
