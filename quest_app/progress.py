@@ -193,10 +193,11 @@ def load_participant_state(
     Records are read from inside the attempt's own evidence directory. Nothing scans the
     whole participant tree, so a stray file somewhere else can never become a review.
     """
-    from quest_app.content_loader import read_yaml
+    from quest_app.content_loader import read_state_yaml
 
     progress_path = config.participant_root / PROGRESS_FILENAME
-    if not progress_path.exists():
+    # A dangling link is reported as a link below, not as a missing file.
+    if not (progress_path.exists() or progress_path.is_symlink()):
         report.add(
             ContentProblem(
                 code="progress.missing",
@@ -210,7 +211,7 @@ def load_participant_state(
         return None
 
     relative = f"participant/{PROGRESS_FILENAME}"
-    data = read_yaml(progress_path, config, report)
+    data = read_state_yaml(progress_path, config, report)
     if data is None:
         return None
     # The version first: the schema describes the current shape, so an older or newer file
@@ -273,7 +274,7 @@ def load_participant_state(
         _check_links_out_of_package(attempt, config, report)
 
         review_path = evidence_dir / REVIEW_FILENAME
-        if review_path.exists():
+        if review_path.exists() or review_path.is_symlink():
             review = _load_review(review_path, config, schemas, report)
             if review is not None:
                 reviews[review.review_id] = review
@@ -283,8 +284,8 @@ def load_participant_state(
         records = [(evidence_dir / SUBMISSION_FILENAME, "submission")]
         records += [(path, "review") for path in review_archive_paths(evidence_dir)]
         for record_path, schema_name in records:
-            if record_path.exists():
-                data = read_yaml(record_path, config, report)
+            if record_path.exists() or record_path.is_symlink():
+                data = read_state_yaml(record_path, config, report)
                 valid = data is not None and schemas.validate(
                     schema_name, data, config.relative(record_path), report
                 )
@@ -404,10 +405,10 @@ def _build_progress(data: dict[str, Any], relative: str) -> ParticipantProgress:
 def _load_review(
     path: Path, config: AppConfig, schemas: Any, report: ProblemReport
 ) -> ReviewDecision | None:
-    from quest_app.content_loader import read_yaml
+    from quest_app.content_loader import read_state_yaml
 
     relative = config.relative(path)
-    data = read_yaml(path, config, report)
+    data = read_state_yaml(path, config, report)
     if data is None or not schemas.validate("review", data, relative, report):
         return None
     reviewer = data["reviewer"]

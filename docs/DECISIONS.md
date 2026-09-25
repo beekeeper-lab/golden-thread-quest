@@ -616,3 +616,37 @@ saying something happened that then did not is worse than a missing one. Also re
 resolving links and re-checking containment, as reading does. A link that stays inside the
 tree still moves a write somewhere the participant did not expect, and resolution hides the
 link from the check that would refuse it.
+
+## ADR-043 — The build deletes only what it made, and nothing the application owns is written through a link
+
+**Decision:** `AppConfig` keeps the generated and local-data roots lexical (absolute, never
+resolved). Before a build locks, writes or deletes anything, `build.refuse_unsafe_output_root`
+refuses it with an `UnsafeOutputRootError` when `generated`, `generated.building`,
+`generated.previous` or `generated.lock` is a symbolic link; when the generated root, staging
+or previous directory equals, contains or lies inside the content, schema, template, asset,
+validator, participant or local-data root or a source folder of the repository, or equals or
+contains the repository itself; and when one of those three exists as anything but a
+directory (a regular file at `.building` is still treated as debris and removed) or as a
+non-empty directory holding neither `.golden-thread-output` nor `build-manifest.json`. Every
+staging directory gets `.golden-thread-output` first, so a crashed staging directory is still
+recognisably ours. Siblings are named by appending the suffix, not substituting it. The build
+error page and the service port file go through `safe_io.atomic_write` with
+`prefix=LOCAL_DATA`, which opens the local-data root itself with `O_NOFOLLOW`; the port file is
+removed with `safe_io.unlink_regular_file`, and the port directory is never listed through a
+link. The build lock uses `safe_io.open_lock_file`. Participant state records are read with
+`follow_symlinks=False` (`content_loader.read_state_yaml`, `ProgressStore.read`), and a link is
+a load error labeled with the record's own name. `serve --host/--port` carries every
+configured root through.
+
+**Reason:** Round 13 E1 found that a committed `generated -> ..`, or `GTQ_GENERATED_ROOT` at an
+existing folder, made a build rename that folder to `.previous` and delete it. E2 found the
+error page, port file and lock following committed links out of the clone, and E5 found state
+records honored through links, with the linked file's key names in the problem report. The
+participant root stays trusted as configured (ADR-042); the application's own roots are fixed
+names inside a clone anyone can commit a link into, so their own name is checked too.
+
+**Rejected:** resolving and then checking containment, which is what hid the link. A marker
+check alone, which would still delete an empty-looking folder named by a link. Refusing a
+regular file at `.building`, which the round-6 debris fix deliberately removes and which a
+single `unlink` cannot turn into a recursive deletion.
+

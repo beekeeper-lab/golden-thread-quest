@@ -169,7 +169,8 @@ class ProgressStore:
         # translated into `StoreError`, the exception every caller of `.read()` already
         # expects.
         try:
-            text = read_bounded_text(self.path, encoding="utf-8")
+            # Never through a link (round 13 E5): this file is written as a regular file.
+            text = read_bounded_text(self.path, encoding="utf-8", follow_symlinks=False)
         except UnsafeStateFileError as exc:
             raise StoreError(f"The participant progress file is not safe to read: {exc}") from exc
         except UnicodeDecodeError as exc:
