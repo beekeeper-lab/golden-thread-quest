@@ -56,7 +56,7 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 830 under `make check`, plus 45 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
+| Tests | 905 under `make check`, plus 56 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3 quest-facing, plus 2 registered environment probes and one unregistered slow probe used only to prove the timeout |
