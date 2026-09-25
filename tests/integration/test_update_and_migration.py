@@ -6,6 +6,7 @@ everything they wrote. These are the tests that hold it.
 
 from __future__ import annotations
 
+import os
 import re
 import shlex
 import subprocess
@@ -388,6 +389,23 @@ class TestSchemaVersionAtLoad:
         )
         assert load_world(config, ProblemReport()) is not None
 
+    def test_apply_migrations_appends_an_activity_line(self, config: AppConfig) -> None:
+        """E10: `make migrate` was the one mutator of `progress.yaml` with no activity line."""
+        from quest_app.update import apply_migrations
+
+        self._declare(config, 0)
+        activity_path = config.participant_root / "ACTIVITY.md"
+        before = activity_path.read_text() if activity_path.exists() else ""
+
+        applied, problems = apply_migrations(config)
+
+        assert problems == []
+        after = activity_path.read_text()
+        assert after != before, "apply_migrations wrote no activity line"
+        new_lines = after[len(before) :]
+        assert "Migrated" in new_lines
+        assert applied[0] in new_lines
+
     def test_a_migration_that_leaves_state_unloadable_is_rolled_back(
         self, config: AppConfig
     ) -> None:
@@ -619,6 +637,14 @@ def test_apply_migrations_takes_the_progress_lock(tmp_path: Path) -> None:
                 str(participant),
             ],
             cwd=repo_root,
+            # `update --migrate` never rebuilds the site, but every CLI subprocess here
+            # points its other writable roots at `tmp_path` too (C2), so this stays true
+            # if that ever changes.
+            env={
+                **os.environ,
+                "GTQ_GENERATED_ROOT": str(tmp_path / "generated"),
+                "GTQ_LOCAL_DATA_ROOT": str(tmp_path / "local-data"),
+            },
             capture_output=True,
             text=True,
             check=False,

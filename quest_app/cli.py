@@ -33,9 +33,15 @@ def _config_from_args(args: argparse.Namespace) -> AppConfig:
     repo_root = Path(args.repo_root).resolve() if args.repo_root else None
     config = AppConfig.from_environment(repo_root)
     if args.participant_root:
+        # Rebuilt rather than mutated (the dataclass is frozen), but every other root
+        # `from_environment` already resolved — generated and local-data included — must
+        # survive this, or a test that sets `GTQ_GENERATED_ROOT` and also passes
+        # `--participant-root` would still build into the repository's real `generated/`.
         config = AppConfig.for_repo(
             config.repo_root,
             participant_root=Path(args.participant_root),
+            generated_root=config.generated_root,
+            local_data_root=config.local_data_root,
             service_host=config.service_host,
             service_port=config.service_port,
         )

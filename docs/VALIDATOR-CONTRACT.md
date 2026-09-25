@@ -62,17 +62,33 @@ A validator with more to say than that should summarize it in its checks.
   writes more than 1 MiB on either stream is stopped, so the limit applies before the
   output is held in memory, not after.
 - Interrupted validators produce an interrupted or inconclusive result. A run whose checks
-  were all `skipped` is `inconclusive`: nothing was checked.
+  were all `skipped` is `inconclusive`: nothing was checked. The one exception: a validator
+  that has already written its complete result and returned, but left something running
+  that keeps its process alive (a non-daemon thread is the case this exists for), is not
+  `interrupted` — its result channel closing is treated as the run finishing, and what it
+  reported is classified and kept, not discarded for a process that will not exit.
 - A child that exits with a nonzero status is `environment_failure`, whatever it printed
   first: exit status is not separable from the result, and a process that considered
-  itself to have failed is not trusted to have reported anything reliably.
+  itself to have failed is not trusted to have reported anything reliably. This does not
+  apply to the exit status the runner itself produces by killing a process in the case
+  just above: that status describes the runner's own cleanup, not a judgment the
+  validator passed on itself.
+- A check outside its own contract — an `outcome` or `id` the result schema does not
+  allow — is never read as a verdict. It is replaced with a check of the runner's own
+  reporting the defect, and the run's outcome is forced to `environment_failure`: a
+  validator that cannot describe its own check correctly has a defect in itself, not a
+  fact about the participant's work, exactly like an uncaught exception or a nonzero
+  exit. A free-text field over its own schema `maxLength` is truncated with a visible
+  marker rather than treated as a defect; only the id and outcome are structural.
 - The process group is terminated when the validator exits and on timeout, so nothing it
   started outlives the run — always by the time the run returns, not only when the direct
   child happens to die on its own signal.
 - The child's import path starts at the repository, never at its working directory, so a
   file in `participant/` cannot stand in for a registered validator or a standard module.
 - Results are written atomically.
-- Output is redacted before persistence or display.
+- Output is redacted before persistence or display, and before it is cut to any length
+  limit, never after: truncating first can sever a secret-shaped token at the boundary,
+  and the half that survives no longer matches any detector's pattern.
 
 ## What these controls are not
 

@@ -13,6 +13,7 @@ integrity error, not a state (ADR-011).
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -24,6 +25,31 @@ from quest_app.models import AttemptState
 
 PROGRESS_FILENAME = "progress.yaml"
 REVIEW_FILENAME = "review.yaml"
+SUBMISSION_FILENAME = "submission.yaml"
+VALIDATION_DIRNAME = "validation"
+# `review._write_yaml` archives a superseded decision as `review-<UTC %Y%m%d%H%M%S>.yaml`, and
+# a record may also be kept under its review ID, `review-<stamp>-<6 hex>.yaml`. Those names,
+# and `review.yaml`, are the review records; nothing else in the package is one.
+REVIEW_ARCHIVE_NAME = re.compile(r"review-[0-9]{14}(-[0-9a-f]{6})?\.yaml")
+REVIEW_ARCHIVE_GLOBS = (
+    "review-" + "[0-9]" * 14 + ".yaml",
+    "review-" + "[0-9]" * 14 + "-" + "[0-9a-f]" * 6 + ".yaml",
+)
+
+
+def review_archive_paths(evidence_dir: Path) -> list[Path]:
+    """The archived review records in a package, oldest first.
+
+    The one definition both the loader and `review.review_history` use. They disagreed:
+    the loader checked `review-*.yaml` and the history read `review*.yaml`, so a stray
+    `reviewer-notes.yaml` with broken YAML passed `validate` and then crashed `build`
+    (round 12 E3). The timestamp in the name sorts oldest first.
+    """
+    return sorted(
+        path
+        for path in evidence_dir.glob("review-*.yaml")
+        if REVIEW_ARCHIVE_NAME.fullmatch(path.name)
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -197,6 +223,11 @@ def load_participant_state(
     progress = _build_progress(data, relative)
     reviews: dict[str, ReviewDecision] = {}
     validations: dict[str, list[ValidationResult]] = {}
+    # Attempts whose evidence directory holds a `submission.yaml` that is present, readable
+    # and schema-valid. `_check_integrity` uses this to refuse a hand-edited `submitted`
+    # state with no request behind it (E4), the same way a `verified` state is refused
+    # without a matching approval.
+    readable_submissions: set[str] = set()
 
     for attempt in progress.attempts:
         try:
@@ -249,15 +280,18 @@ def load_participant_state(
         # The submission and the superseded reviews are read by the reviewer's page and the
         # participant's history, so they are checked here too. Otherwise a file left broken by
         # a merge conflict passed `validate` and then stopped `build` with a traceback.
-        records = [(evidence_dir / "submission.yaml", "submission")]
-        records += [(path, "review") for path in sorted(evidence_dir.glob("review-*.yaml"))]
+        records = [(evidence_dir / SUBMISSION_FILENAME, "submission")]
+        records += [(path, "review") for path in review_archive_paths(evidence_dir)]
         for record_path, schema_name in records:
             if record_path.exists():
                 data = read_yaml(record_path, config, report)
-                if data is not None:
-                    schemas.validate(schema_name, data, config.relative(record_path), report)
+                valid = data is not None and schemas.validate(
+                    schema_name, data, config.relative(record_path), report
+                )
+                if valid and schema_name == "submission":
+                    readable_submissions.add(attempt.attempt_id)
 
-        for result_path in sorted((evidence_dir / "validation").glob("*.json")):
+        for result_path in _validation_result_paths(attempt, evidence_dir, config, report):
             result = _load_validation(result_path, config, schemas, report)
             if result is None:
                 continue
@@ -286,7 +320,7 @@ def load_participant_state(
                 continue
             validations.setdefault(attempt.attempt_id, []).append(result)
 
-    _check_integrity(progress, reviews, relative, report, config)
+    _check_integrity(progress, reviews, relative, report, config, readable_submissions)
 
     return ParticipantState(
         progress=progress,
@@ -408,22 +442,70 @@ def _load_review(
     )
 
 
+def _validation_result_paths(
+    attempt: Attempt, evidence_dir: Path, config: AppConfig, report: ProblemReport
+) -> list[Path]:
+    """The result files in an attempt's `validation/` directory, if it is a real directory.
+
+    A `validation/` that is a link was followed: results were written through it to
+    wherever it led, and read back from there as this attempt's evidence (round 12 E1).
+    Results are what `locally_validated` is derived from (ADR-017), so a directory that is
+    not the participant's own is reported and nothing in it is read.
+    """
+    directory = evidence_dir / VALIDATION_DIRNAME
+    if not directory.is_symlink() and not directory.exists():
+        return []
+    if directory.is_symlink() or not directory.is_dir():
+        report.add(
+            ContentProblem.build(
+                code="validation.directory_not_a_directory",
+                severity=Severity.WARNING,
+                public_message=(
+                    f"The validation folder for attempt {attempt.attempt_id!r} is a link or "
+                    "not a folder, so no result in it was read."
+                ),
+                source=config.relative(evidence_dir) + f"/{VALIDATION_DIRNAME}",
+                entity_id=attempt.attempt_id,
+                expected="an ordinary folder inside the evidence package",
+                suggestion="Replace it with an ordinary folder and run the checks again.",
+            )
+        )
+        return []
+    return sorted(directory.glob("*.json"))
+
+
 def _load_validation(
     path: Path, config: AppConfig, schemas: Any, report: ProblemReport
 ) -> ValidationResult | None:
+    from quest_app.safe_io import (
+        MAX_VALIDATION_RESULT_BYTES,
+        UnsafeStateFileError,
+        read_bounded_text,
+    )
+
     relative = config.relative(path)
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
+        # Bounded, and never through a link: the runner writes these files itself, as
+        # ordinary files. A FIFO hung `validate`, `build` and the service; a link to
+        # `/dev/zero` read until the process was killed (round 12 E2).
+        text = read_bounded_text(
+            path,
+            max_bytes=MAX_VALIDATION_RESULT_BYTES,
+            encoding="utf-8",
+            follow_symlinks=False,
+        )
+    except UnsafeStateFileError:
         report.add(
-            ContentProblem.build(
-                code="validation.invalid_json",
+            ContentProblem(
+                code="validation.not_a_regular_file",
                 severity=Severity.ERROR,
-                public_message="A validation result file is not valid JSON.",
+                public_message=(
+                    "A validation result is a link, a special file or over the size limit, "
+                    "so it was not read."
+                ),
                 source=relative,
-                line=exc.lineno,
-                column=exc.colno,
-                received=exc.msg,
+                expected="an ordinary file written by the validator runner",
+                suggestion="Delete it and run the check again.",
             )
         )
         return None
@@ -437,6 +519,21 @@ def _load_validation(
                 public_message="A validation result file could not be read.",
                 source=relative,
                 received=detail or "unknown error",
+            )
+        )
+        return None
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as exc:
+        report.add(
+            ContentProblem.build(
+                code="validation.invalid_json",
+                severity=Severity.ERROR,
+                public_message="A validation result file is not valid JSON.",
+                source=relative,
+                line=exc.lineno,
+                column=exc.colno,
+                received=exc.msg,
             )
         )
         return None
@@ -589,8 +686,10 @@ def _check_integrity(
     relative: str,
     report: ProblemReport,
     config: AppConfig | None = None,
+    readable_submissions: set[str] | None = None,
 ) -> None:
     """The rules that stop a participant record claiming authority it does not have."""
+    readable_submissions = readable_submissions or set()
     seen_attempt_ids: set[str] = set()
     for attempt in progress.attempts:
         if attempt.attempt_id in seen_attempt_ids:
@@ -619,6 +718,36 @@ def _check_integrity(
                     entity_id=attempt.attempt_id,
                     field_path="attempts[].updated_at",
                     received=attempt.updated_at,
+                )
+            )
+
+        if (
+            attempt.recorded_state is AttemptState.SUBMITTED
+            and attempt.attempt_id not in readable_submissions
+        ):
+            # A `submitted` state is the shadow of a request for review, exactly as
+            # `verified` is the shadow of an approval: `create_submission` always writes
+            # `submission.yaml` before making this transition. A hand-edited state with no
+            # readable request behind it let a reviewer approve straight to `verified`
+            # without the record submission is supposed to guarantee exists — including the
+            # secret scan `readiness_problems` runs before `create_submission` ever writes
+            # the file (E4).
+            report.add(
+                ContentProblem(
+                    code="progress.unsubmitted_submitted_state",
+                    severity=Severity.ERROR,
+                    public_message=(
+                        f"Attempt {attempt.attempt_id!r} claims to be submitted for review, "
+                        "but its evidence directory holds no readable submission record."
+                    ),
+                    source=relative,
+                    entity_id=attempt.attempt_id,
+                    field_path="attempts[].state",
+                    expected="a submission.yaml written by submit-for-review",
+                    suggestion=(
+                        "Set the state back to 'evidence_ready' or 'locally_validated' and "
+                        "submit again."
+                    ),
                 )
             )
 

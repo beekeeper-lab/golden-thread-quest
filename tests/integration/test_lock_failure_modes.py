@@ -38,6 +38,21 @@ QUEST = "base-camp-repository-safety"
 LOCKED_QUEST = "scrum-standup-digest"
 
 
+def _isolated_env(base: Path) -> dict[str, str]:
+    """Every root a mutating CLI action can rebuild into, pointed away from `ROOT` (C2).
+
+    `--participant-root` is the only root the CLI itself lets a caller move; `generated/`
+    and `local-data/` still default to whatever `--repo-root` resolves to, which here is
+    `ROOT` (no `--repo-root` is passed). Without this, every action below rebuilt the
+    repository's own `generated/` and could write `local-data/`.
+    """
+    return {
+        **os.environ,
+        "GTQ_GENERATED_ROOT": str(base / "generated"),
+        "GTQ_LOCAL_DATA_ROOT": str(base / "local-data"),
+    }
+
+
 def action(participant: Path, *args: str) -> subprocess.CompletedProcess[str]:
     # An action that carries a confirmation is refused without one, on every surface
     # (ADR-033). A test about something else says it means it, exactly as the browser form
@@ -55,6 +70,7 @@ def action(participant: Path, *args: str) -> subprocess.CompletedProcess[str]:
             str(participant),
         ],
         cwd=ROOT,
+        env=_isolated_env(participant.parent),
         capture_output=True,
         text=True,
         check=False,
@@ -159,7 +175,15 @@ def _start_quest(barrier: Any, participant: str) -> int:
     from quest_app.errors import ProblemReport
     from quest_app.pipeline import load_world
 
-    config = AppConfig.for_repo(ROOT, participant_root=Path(participant))
+    # `start-quest` rebuilds the site (C2): without `generated_root` here too, four
+    # in-process workers would each rebuild the repository's own `generated/`.
+    base = Path(participant).parent
+    config = AppConfig.for_repo(
+        ROOT,
+        participant_root=Path(participant),
+        generated_root=base / "generated",
+        local_data_root=base / "local-data",
+    )
 
     def load() -> Any:
         world = load_world(config, ProblemReport())
@@ -219,23 +243,27 @@ def test_a_build_whose_lock_cannot_be_opened_still_publishes(tmp_path: Path) -> 
     work, and the build handled a missing `fcntl` module and nothing else: an unwritable
     `generated.lock`, or a filesystem answering `ENOLCK`, crashed every publisher on exactly
     the filesystem the fall-through was written for.
+
+    The lock lives beside `generated_root` (`generated_root.with_suffix(".lock")`), so
+    pointing `GTQ_GENERATED_ROOT` at `tmp_path` (C2) exercises the same lock-file mechanics
+    without touching `ROOT/generated.lock`.
     """
-    lock = ROOT / "generated.lock"
-    existed = lock.exists()
+    generated_root = tmp_path / "generated"
+    lock = generated_root.with_suffix(".lock")
+    lock.parent.mkdir(parents=True, exist_ok=True)
     lock.touch()
     lock.chmod(0o444)
     try:
         result = subprocess.run(
             [sys.executable, "-m", "quest_app.cli", "build"],
             cwd=ROOT,
+            env=_isolated_env(tmp_path),
             capture_output=True,
             text=True,
             check=False,
         )
     finally:
         lock.chmod(0o644)
-        if not existed:
-            lock.unlink(missing_ok=True)
 
     assert "Traceback" not in result.stderr, result.stderr
     assert result.returncode == 0, result.stderr

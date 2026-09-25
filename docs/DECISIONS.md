@@ -139,6 +139,20 @@ because a failing re-run after local validation leaves the attempt where it was 
 and must not take the site down. No other state is checked, because submission is allowed
 straight from `evidence_ready`.
 
+**Amended (round 12):** the round 11 check compared the attempt against the *current* quest's
+validators, which punished a legitimate attempt exactly like a forged one: an upstream update
+that added a validator moved a `locally_validated` attempt from "consistent" to "a required
+validator has no result", with no way to tell that apart from a hand-edited state, because
+nothing here keeps a record of what a quest required at an earlier version. Every action was
+then refused for that attempt, including the one, `run-validator`, that would clear the finding.
+The check now reads `attempt.quest_version` first. On the same version, nothing changes: any
+validator missing a qualifying result is still `progress.unvalidated_locally_validated_state`,
+an error. On a different version, a validator missing a qualifying result is only an error if
+the attempt has *no* qualifying result at all — indistinguishable from the forgery this check
+exists to catch — and otherwise becomes `progress.locally_validated_missing_new_validator`, a
+warning naming the validator and saying to run it, because the application has no way to know
+whether that validator existed when the attempt validated.
+
 ## ADR-018 — Participant paths are contract-fixed, the participant root is configuration
 
 **Decision:** `evidence_path` and `result_path` keep the literal `participant/` prefix the schemas
@@ -149,6 +163,16 @@ canonicalized and re-verified inside the configured root after symbolic links ar
 **Reason:** Tests must exercise the real loader against the shipped fixtures without writing into a
 participant's live directory, and the schema prefix is part of the published contract, so it is
 configuration that moves, not the contract.
+
+**Amended (round 12):** `participant_root` moved, but `generated_root` and `local_data_root` did
+not — the CLI's `--participant-root` rebuilt the config without carrying them forward, and
+`from_environment` never read a variable for either. A test that ran the CLI as a real subprocess,
+the only way an installed-Cowork participant can act at all, rebuilt the repository's own
+`generated/` on every mutating action, for example overwriting a checked-in `generated/index.html`
+with fixture data until the next `make build`. `generated_root` and `local_data_root` are now
+configuration the same way: `GTQ_GENERATED_ROOT` and `GTQ_LOCAL_DATA_ROOT` are read by
+`AppConfig.from_environment`, and `_config_from_args` carries both forward when
+`--participant-root` is also given. Every test that shells out to the CLI sets all three.
 
 ## ADR-019 — Python 3.10 or newer
 
@@ -564,3 +588,31 @@ on disk.
 
 **Rejected:** binding to a name rather than an address. The address is right; what was
 missing was checking the name the request arrived under.
+
+## ADR-042 — Nothing is written through a link below `participant/`, and an unusable activity file skips the line
+
+**Decision:** Every write below the participant root walks from the root one component at a
+time with `O_NOFOLLOW` (`safe_io.atomic_write`, `safe_io.append_to_regular_file`). A
+component that is a link or not a directory, or a target that exists and is not a regular
+file, is refused. Nothing is opened in a way that can block. When the refused target is
+`ACTIVITY.md`, the line is skipped and a warning goes to stderr; the progress change it
+describes stands, and both locks are released as normal. When it is `progress.yaml`, a
+record or a validation result, the action is refused before anything is written, as any
+other write failure is. The loader does not read results from a `validation/` directory that
+is a link: it reports it and reads nothing there.
+
+**Reason:** Round 12 found the activity append following a link out of the tree, and
+blocking forever on a FIFO named `ACTIVITY.md` while it held the progress lock and the
+service lock, after `progress.yaml` had changed. Validation results were written into a
+linked `validation/` directory and read back as the attempt's evidence, and the review
+archive was a plain `write_text`. Following the link is the escape; blocking is the outage.
+The activity line runs after the change is on disk, so the only choices are to skip it, to
+report a failure that did not happen (ADR-038), or to undo the change with a second write the
+same tree could refuse. Skipping loses a note; the other two lose the participant's trust in
+their own record.
+
+**Rejected:** writing the activity line before the change, so a refusal could stop it. A line
+saying something happened that then did not is worse than a missing one. Also rejected:
+resolving links and re-checking containment, as reading does. A link that stays inside the
+tree still moves a write somewhere the participant did not expect, and resolution hides the
+link from the check that would refuse it.

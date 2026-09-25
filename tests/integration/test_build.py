@@ -444,15 +444,28 @@ def test_a_reviewer_page_exists_for_every_attempt(built: AppConfig) -> None:
 
 @pytest.mark.slow
 def test_no_broken_links_with_an_attempt_awaiting_review(config: AppConfig) -> None:
-    """The link check passed only because the fixture had nothing in `submitted`."""
-    import yaml
+    """The link check passed only because the fixture had nothing in `submitted`.
 
-    path = config.participant_root / "progress.yaml"
-    data = yaml.safe_load(path.read_text())
-    for attempt in data["attempts"]:
-        if attempt["quest_id"] == "jira-read-assigned-stories":
-            attempt["state"] = "submitted"
-    path.write_text(yaml.safe_dump(data, sort_keys=False))
+    A real `create_submission` call is used rather than hand-editing `state: submitted`
+    directly: since E4, a `submitted` attempt with no `submission.yaml` behind it is a load
+    error, exactly as a hand-written `verified` is.
+    """
+    from quest_app.content_loader import SchemaSet
+    from quest_app.review import create_submission
+    from quest_app.store import ProgressStore
+
+    quest_id = "jira-read-assigned-stories"
+    setup_report = ProblemReport()
+    world = load_world(config, setup_report)
+    assert world is not None, setup_report.to_text()
+    create_submission(
+        config,
+        ProgressStore(config),
+        quest=world.content.quests[quest_id],
+        attempt=world.participant.progress.attempt_for(quest_id),
+        participant=world.participant,
+        schemas=SchemaSet(config.schemas_root),
+    )
 
     build(config)
 

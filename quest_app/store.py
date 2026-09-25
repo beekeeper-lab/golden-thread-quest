@@ -17,7 +17,6 @@ import contextlib
 import json
 import os
 import sys
-import tempfile
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -29,7 +28,15 @@ import yaml
 
 from quest_app.config import SUPPORTED_SCHEMA_VERSION, AppConfig
 from quest_app.models import AttemptState
-from quest_app.safe_io import UnsafeStateFileError, read_bounded_text
+from quest_app.safe_io import (
+    UnsafeStateFileError,
+    UnsafeWriteTargetError,
+    append_to_regular_file,
+    atomic_write,
+    ensure_directory,
+    open_lock_file,
+    read_bounded_text,
+)
 from quest_app.state_machine import TransitionError, check
 from quest_app.yaml_loader import DeepNestingError, strict_safe_load
 
@@ -44,32 +51,18 @@ class StoreError(RuntimeError):
     """A write that could not be performed, with a participant-facing reason."""
 
 
-def atomic_write_text(path: Path, text: str) -> None:
+def atomic_write_text(root: Path, path: Path, text: str) -> None:
     """Replace `path` with `text`, or leave it exactly as it was.
 
-    The temporary file is created in the same directory so the final `os.replace` is a
-    same-filesystem rename, which is atomic. Writing to a temporary directory and moving
-    across filesystems is not, and that is the case that loses data.
+    `root` is the participant root and `path` a location under it, unresolved. The write is
+    `safe_io.atomic_write`: same-directory temporary file, fsync, rename, and no link or
+    special file followed anywhere between `root` and `path` (round 12 E1). A refusal is a
+    `StoreError`, the exception every caller of a participant write already answers.
     """
-    path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(
-        dir=path.parent, prefix=f".{path.name}.", suffix=".tmp"
-    )
-    temporary = Path(temporary_name)
-    try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
-            stream.write(text)
-            stream.flush()
-            # fsync before the rename: without it a crash can leave the rename durable and
-            # the contents not, which is the one failure mode atomic writing exists to stop.
-            os.fsync(stream.fileno())
-        temporary.replace(path)
-    except BaseException:
-        temporary.unlink(missing_ok=True)
-        raise
+    atomic_write_bytes(root, path, text.encode("utf-8"))
 
 
-def atomic_write_bytes(path: Path, data: bytes) -> None:
+def atomic_write_bytes(root: Path, path: Path, data: bytes) -> None:
     """`atomic_write_text`, for callers restoring exact original bytes.
 
     A failed migration restores what was on disk before it ran. Text round-tripped through
@@ -77,20 +70,10 @@ def atomic_write_bytes(path: Path, data: bytes) -> None:
     put back exactly what was there before instead rewrites it — a participant sees their
     untouched file has changed anyway. Bytes in, bytes out, has no line ending to normalize.
     """
-    path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(
-        dir=path.parent, prefix=f".{path.name}.", suffix=".tmp"
-    )
-    temporary = Path(temporary_name)
     try:
-        with os.fdopen(descriptor, "wb") as stream:
-            stream.write(data)
-            stream.flush()
-            os.fsync(stream.fileno())
-        temporary.replace(path)
-    except BaseException:
-        temporary.unlink(missing_ok=True)
-        raise
+        atomic_write(root, path, data)
+    except UnsafeWriteTargetError as exc:
+        raise StoreError(str(exc)) from exc
 
 
 @dataclass(frozen=True, slots=True)
@@ -141,8 +124,8 @@ class ProgressStore:
         # A refused first action now leaves one hidden, ignored file in a directory the
         # participant owns. That is the cheaper of the two.
         try:
-            self.lock_path.parent.mkdir(parents=True, exist_ok=True)
-            handle = self.lock_path.open("a+", encoding="utf-8")
+            # Never through a link or into a FIFO (round 12 E1); either is an `OSError` here.
+            handle = os.fdopen(open_lock_file(self.lock_path), "a+", encoding="utf-8")
         except OSError:
             yield
             return
@@ -219,7 +202,11 @@ class ProgressStore:
                 "The change would produce a progress file this application cannot read: "
                 + "; ".join(problem.public_message for problem in report.errors[:3])
             )
-        atomic_write_text(self.path, yaml.safe_dump(data, sort_keys=False, allow_unicode=True))
+        atomic_write_text(
+            self.config.participant_root,
+            self.path,
+            yaml.safe_dump(data, sort_keys=False, allow_unicode=True),
+        )
 
     def initialise(
         self, participant_id: str, display_name: str, track_id: str, schemas: Any
@@ -271,8 +258,9 @@ def start_attempt(
 
     attempt_id = _next_attempt_id(quest_id, data["attempts"])
     evidence_path = f"participant/evidence/{quest_id}/{attempt_id}"
-    directory = store.config.resolve_participant_path(evidence_path)
-    _create_evidence_package(directory, quest_id=quest_id, attempt_id=attempt_id)
+    root = store.config.participant_root
+    directory = store.config.participant_write_path(evidence_path)
+    _create_evidence_package(root, directory, quest_id=quest_id, attempt_id=attempt_id)
 
     now = _now()
     data["attempts"].append(
@@ -353,15 +341,23 @@ def _next_attempt_id(quest_id: str, attempts: list[dict[str, Any]]) -> str:
     raise StoreError("Too many attempts for one quest.")
 
 
-def _create_evidence_package(directory: Path, *, quest_id: str, attempt_id: str) -> None:
-    """The standard evidence package, created from a template, never overwriting anything."""
-    directory.mkdir(parents=True, exist_ok=True)
+def _create_evidence_package(
+    root: Path, directory: Path, *, quest_id: str, attempt_id: str
+) -> None:
+    """The standard evidence package, created from a template, never overwriting anything.
+
+    Every directory is created through `ensure_participant_directory`, which refuses a link
+    anywhere below the participant root, and each template file is written only when nothing
+    at all is at its name — `lexists`, so a dangling link counts as something and the atomic
+    write that follows refuses it rather than a later one writing through it.
+    """
     for name in EVIDENCE_TEMPLATE_DIRECTORIES:
-        (directory / name).mkdir(exist_ok=True)
+        ensure_participant_directory(root, directory / name)
 
     proof = directory / "PROOF.md"
-    if not proof.exists():
+    if not os.path.lexists(proof):
         atomic_write_text(
+            root,
             proof,
             f"""# Proof · {quest_id}
 
@@ -394,8 +390,9 @@ Attempt: `{attempt_id}`
         )
 
     manifest = directory / "manifest.yaml"
-    if not manifest.exists():
+    if not os.path.lexists(manifest):
         atomic_write_text(
+            root,
             manifest,
             yaml.safe_dump(
                 {
@@ -416,22 +413,44 @@ def append_audit(config: AppConfig, message: str) -> None:
     Ordinary Markdown in the participant's own tree, so it is readable, diffable and theirs.
     Failing to write it must never fail the operation it describes — losing the work would
     be a worse outcome than losing the note.
+
+    **When `ACTIVITY.md` is unusable** — a link, a FIFO, a directory, a device — the line is
+    skipped and a warning goes to stderr; the change it describes stands (ADR-042). By the time
+    this runs the change is already in `progress.yaml`, so refusing the action here would tell
+    the participant it had failed while their file said it had happened, and undoing it would
+    need a second write the same broken tree could refuse. Round 12 found the old append
+    following the link out of the tree, and blocking forever on a FIFO while both the
+    progress lock and the service lock were held. Every open here is `O_NOFOLLOW` and
+    `O_NONBLOCK`, so it returns at once, and the locks are released as normal.
     """
-    path = config.participant_root / AUDIT_FILENAME
+    root = config.participant_root
+    path = root / AUDIT_FILENAME
     line = f"- `{_now()}` {message}\n"
     try:
-        if not path.exists():
-            atomic_write_text(
+        try:
+            append_to_regular_file(root, path, line.encode("utf-8"))
+        except FileNotFoundError:
+            atomic_write(
+                root,
                 path,
-                "# Activity\n\nEvery change this application made to your files, newest last.\n\n"
-                + line,
+                (
+                    "# Activity\n\nEvery change this application made to your files, "
+                    "newest last.\n\n" + line
+                ).encode("utf-8"),
             )
-        else:
-            with path.open("a", encoding="utf-8") as stream:
-                stream.write(line)
+    except UnsafeWriteTargetError as exc:
+        print(f"The activity line was not written: {exc}", file=sys.stderr)
     except OSError:
         return
 
 
-def write_json_atomic(path: Path, payload: Any) -> None:
-    atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+def write_json_atomic(root: Path, path: Path, payload: Any) -> None:
+    atomic_write_text(root, path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+
+
+def ensure_participant_directory(root: Path, directory: Path) -> None:
+    """Create `directory` and every parent below `root`, refusing a link anywhere on the way."""
+    try:
+        ensure_directory(root, directory)
+    except UnsafeWriteTargetError as exc:
+        raise StoreError(str(exc)) from exc

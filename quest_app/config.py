@@ -67,13 +67,23 @@ class AppConfig:
 
     @classmethod
     def from_environment(cls, repo_root: Path | None = None) -> Self:
-        """Configuration as the CLI sees it. Only the documented variables are read."""
+        """Configuration as the CLI sees it. Only the documented variables are read.
+
+        `GTQ_GENERATED_ROOT` and `GTQ_LOCAL_DATA_ROOT` exist for the same reason
+        `GTQ_PARTICIPANT_ROOT` does (ADR-018): a test that shells out to the CLI must be able
+        to point every writable root away from the repository it is running from, not only
+        the participant one.
+        """
         root = repo_root or Path(__file__).resolve().parent.parent
         participant = os.environ.get("GTQ_PARTICIPANT_ROOT")
+        generated = os.environ.get("GTQ_GENERATED_ROOT")
+        local_data = os.environ.get("GTQ_LOCAL_DATA_ROOT")
         port = os.environ.get("GTQ_SERVICE_PORT")
         return cls.for_repo(
             root,
             participant_root=Path(participant) if participant else None,
+            generated_root=Path(generated) if generated else None,
+            local_data_root=Path(local_data) if local_data else None,
             service_host=os.environ.get("GTQ_SERVICE_HOST"),
             service_port=int(port) if port else None,
         )
@@ -112,6 +122,20 @@ class AppConfig:
         if candidate != root and root not in candidate.parents:
             raise ValueError(f"{declared!r} resolves outside the participant root")
         return candidate
+
+    def participant_write_path(self, declared: str) -> Path:
+        """Where a `participant/...` contract path lies, for writing: no link resolved.
+
+        `resolve_participant_path` follows links and then checks the result, which is right
+        for reading and wrong for writing: it turns a link inside the tree into the place it
+        leads, so the write never sees that there was a link at all. A writer needs the
+        lexical path, which `safe_io.atomic_write` then walks one component at a time and
+        refuses at the first link (round 12 E1). The same traversal checks apply.
+        """
+        prefix = "participant/"
+        if not declared.startswith(prefix):
+            raise ValueError(f"participant path must start with {prefix!r}, got {declared!r}")
+        return self.participant_root / PurePosixCheck(declared[len(prefix) :]).checked()
 
 
 @dataclass(frozen=True, slots=True)
