@@ -38,12 +38,26 @@ from typing import Any
 from urllib.parse import unquote, urlparse
 
 from quest_app.actions import CONFIRMATIONS, MUTATING_ACTIONS, ActionRunner
-from quest_app.build import OUTPUT_SUFFIX_NEW, OUTPUT_SUFFIX_OLD, build_site
+from quest_app.build import (
+    OUTPUT_SUFFIX_NEW,
+    OUTPUT_SUFFIX_OLD,
+    UnsafeOutputRootError,
+    build_site,
+    output_sibling,
+)
 from quest_app.config import APPLICATION_VERSION, AppConfig
 from quest_app.content_loader import SchemaSet
 from quest_app.errors import ProblemReport, filesystem_message, read_failure_message
 from quest_app.git_status import summary_for
 from quest_app.pipeline import load_world
+from quest_app.safe_io import (
+    LOCAL_DATA,
+    UnsafeStateFileError,
+    UnsafeWriteTargetError,
+    atomic_write,
+    read_bounded_text,
+    unlink_regular_file,
+)
 from quest_app.state_machine import allowed_actions, confirmation_for
 from quest_app.store import StoreError
 from quest_app.view_models import online_service_view
@@ -204,15 +218,27 @@ def _port_entries(config: AppConfig) -> list[tuple[int, Path | None]]:
     """Each claimed port and the file that claims it; the default port claims nothing."""
     entries: list[tuple[int, Path | None]] = []
     directory = config.local_data_root / PORTS_DIRNAME
-    try:
-        listing = sorted(directory.iterdir())
-    except OSError:
-        listing = []
+    listing: list[Path] = []
+    # Neither `local-data` nor `service-ports` is listed through a link (round 13 E2): the
+    # stale-entry pruning below deletes what it finds, and through a link that was a file
+    # outside the clone. An entry is read without following a link and without blocking,
+    # so a FIFO there cannot hang every CLI action.
+    if not config.local_data_root.is_symlink() and not directory.is_symlink():
+        try:
+            listing = sorted(directory.iterdir())
+        except OSError:
+            listing = []
     for entry in listing:
         try:
-            with entry.open("r", encoding="utf-8") as handle:
-                port = int(handle.read(PORT_FILE_MAX_BYTES).strip())
-        except (OSError, ValueError):
+            port = int(
+                read_bounded_text(
+                    entry,
+                    max_bytes=PORT_FILE_MAX_BYTES,
+                    encoding="utf-8",
+                    follow_symlinks=False,
+                ).strip()
+            )
+        except (OSError, ValueError, UnsafeStateFileError):
             continue
         if 1 <= port <= 65535:
             entries.append((port, entry))
@@ -277,8 +303,8 @@ def is_service_running(config: AppConfig) -> bool:
                 getattr(error, "reason", None), ConnectionRefusedError
             )
             if entry is not None and refused:
-                with contextlib.suppress(OSError):
-                    entry.unlink(missing_ok=True)
+                with contextlib.suppress(OSError, UnsafeWriteTargetError):
+                    unlink_regular_file(config.local_data_root, entry, prefix=LOCAL_DATA)
             continue
     return False
 
@@ -778,7 +804,7 @@ class ActionHandler(BaseHTTPRequestHandler):
             # Rebuild before redirecting, so the page the participant lands on describes the
             # state as it actually is. Without this a refused evidence-ready still showed the
             # previous build's "no secrets found" panel beside the refusal.
-            with contextlib.suppress(StoreError, OSError):
+            with contextlib.suppress(StoreError, OSError, UnsafeOutputRootError):
                 build_site(self._load(), service=online_service_view())
         # The URL carries an identifier, never the text. A link carrying free text could put
         # any words an attacker chose inside a real alert on a real page of this application.
@@ -834,8 +860,8 @@ class ActionHandler(BaseHTTPRequestHandler):
     def _publishing(self) -> bool:
         """Whether a build is between its two renames right now."""
         root = self.state.config.generated_root
-        return root.with_suffix(OUTPUT_SUFFIX_OLD).exists() or (
-            root.with_suffix(OUTPUT_SUFFIX_NEW).exists()
+        return output_sibling(root, OUTPUT_SUFFIX_OLD).exists() or (
+            output_sibling(root, OUTPUT_SUFFIX_NEW).exists()
         )
 
     def _await_publish(self, candidate: Path, *, attempts: int = 20) -> Path:
@@ -923,6 +949,25 @@ def create_server(config: AppConfig) -> tuple[ThreadingHTTPServer, ServiceState]
     return server, state
 
 
+def claim_port_file(config: AppConfig, bound: int) -> Path | None:
+    """Record the bound port under `local-data/service-ports/`, or `None` if it cannot be.
+
+    Never through a link and never blocking on a special file (round 13 E2): the plain
+    `write_text` this replaced overwrote whatever a committed `local-data` or
+    `service-ports` link led to. A CLI action in a second terminal then assumes the default
+    port, which is worth a degraded probe and never worth refusing to serve.
+    """
+    claimed = config.local_data_root / PORTS_DIRNAME / str(bound)
+    try:
+        atomic_write(config.local_data_root, claimed, f"{bound}\n".encode(), prefix=LOCAL_DATA)
+    except UnsafeWriteTargetError as exc:
+        print(f"the port file was not written: {exc}", file=sys.stderr)
+        return None
+    except OSError:
+        return None
+    return claimed
+
+
 def run_service(config: AppConfig, *, host: str | None = None, port: int | None = None) -> int:
     """Build once, then serve until interrupted."""
     from quest_app.config import AppConfig as Config
@@ -932,9 +977,14 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
     # configuration and then bound the default port — and on a machine already serving there
     # it refused with "choose another port with --port", which is what had just been typed.
     if host is not None or port is not None:
+        # Every configured root carried through (round 13 E4). Dropping the generated and
+        # local-data roots meant `GTQ_GENERATED_ROOT` was obeyed by the CLI and ignored by
+        # `serve --port`, so the two built and probed different trees.
         config = Config.for_repo(
             config.repo_root,
             participant_root=config.participant_root,
+            generated_root=config.generated_root,
+            local_data_root=config.local_data_root,
             service_host=host if host is not None else config.service_host,
             service_port=port if port is not None else config.service_port,
         )
@@ -946,7 +996,11 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
             print(problem.to_text(), file=sys.stderr)
         print("content does not validate, so nothing was generated", file=sys.stderr)
         return 1
-    build_site(world, service=online_service_view())
+    try:
+        build_site(world, service=online_service_view())
+    except UnsafeOutputRootError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
 
     try:
         server, _ = create_server(config)
@@ -965,14 +1019,7 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
         return 2
 
     bound = int(server.server_address[1])
-    port_file = config.local_data_root / PORTS_DIRNAME / str(bound)
-    try:
-        port_file.parent.mkdir(parents=True, exist_ok=True)
-        port_file.write_text(f"{bound}\n", encoding="utf-8")
-    except OSError:
-        # A CLI action in a second terminal will then assume the default port. Worth a
-        # degraded probe, never worth refusing to serve.
-        port_file = None  # type: ignore[assignment]
+    port_file = claim_port_file(config, bound)
 
     address = _service_url(config.service_host, bound)
     print(f"Golden Thread Quest is at {address}", file=sys.stderr)
@@ -991,8 +1038,8 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
     finally:
         server.server_close()
         if port_file is not None:
-            with contextlib.suppress(OSError):
-                port_file.unlink(missing_ok=True)
+            with contextlib.suppress(OSError, UnsafeWriteTargetError):
+                unlink_regular_file(config.local_data_root, port_file, prefix=LOCAL_DATA)
     return 0
 
 

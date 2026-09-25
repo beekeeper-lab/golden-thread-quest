@@ -18,6 +18,7 @@ import contextlib
 import json
 import os
 import shutil
+import stat
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -68,6 +69,152 @@ OUTPUT_SUFFIX_NEW = ".building"
 OUTPUT_SUFFIX_OLD = ".previous"
 OUTPUT_SUFFIX_LOCK = ".lock"
 
+# Written first into every staging directory, so it travels with the rename into the
+# published site and into `.previous`. A directory at any of those three names that holds
+# neither this nor a build manifest was not made by this application, and the build refuses
+# to rename or delete it (ADR-043).
+OUTPUT_MARKER = ".golden-thread-output"
+OUTPUT_MARKER_TEXT = "Written by Golden Thread Quest. This directory is generated and disposable.\n"
+MANIFEST_FILENAME = "build-manifest.json"
+
+# Folders inside the repository that are source, not output. The configured content,
+# schema, template, asset, validator, participant and local-data roots are added to these.
+_SOURCE_FOLDER_NAMES = (
+    ".git",
+    "docs",
+    "fixtures",
+    "prototype",
+    "quest_app",
+    "scripts",
+    "tests",
+    "tools",
+    "vendor",
+)
+
+
+class UnsafeOutputRootError(RuntimeError):
+    """The generated root, or one of its siblings, is not somewhere a build may delete.
+
+    Carries `strerror` so the action layer's "the site could not be rebuilt (...)" advisory
+    shows the reason rather than the class name.
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+        self.strerror = message
+
+
+def output_sibling(root: Path, suffix: str) -> Path:
+    """`generated.building` and friends: the suffix appended, never substituted.
+
+    `with_suffix` replaced an existing extension, so `GTQ_GENERATED_ROOT=site.v2` staged into
+    `site.building`, a name the configuration never mentioned.
+    """
+    return root.with_name(root.name + suffix)
+
+
+def _is_application_output(directory: Path) -> bool:
+    """Whether `directory` is empty or carries this application's marker or manifest."""
+    try:
+        if not any(directory.iterdir()):
+            return True
+    except OSError:
+        return False
+    for name in (OUTPUT_MARKER, MANIFEST_FILENAME):
+        try:
+            if stat.S_ISREG((directory / name).lstat().st_mode):
+                return True
+        except OSError:
+            continue
+    return False
+
+
+def _overlaps(path: Path, other: Path) -> bool:
+    return path == other or path in other.parents or other in path.parents
+
+
+def refuse_unsafe_output_root(config: AppConfig) -> None:
+    """Raise `UnsafeOutputRootError` unless the build may replace and delete its output.
+
+    A build renames the generated root to `.previous`, deletes `.previous` and `.building`,
+    and creates `.lock`. Round 13 E1: `AppConfig` resolved the generated root through links,
+    so a committed `generated -> ..` became the repository's parent and a build deleted it,
+    and `GTQ_GENERATED_ROOT` pointed at any existing folder deleted that folder. Refused:
+
+    - any of the four paths being a symbolic link;
+    - the generated root, `.building` or `.previous` equal to, containing, or inside the
+      repository's source folders or the participant or local-data roots, or equal to or
+      containing the repository itself;
+    - the generated root or `.previous` existing as anything but a directory, and any of
+      the three existing as a non-empty directory with neither the output marker nor a
+      build manifest in it.
+
+    A regular file at `.building` is left-over debris of a build that died and is removed
+    by `_render_and_publish`, as before. Nothing here deletes anything.
+    """
+    target = config.generated_root
+    paths = {
+        target: "the generated site",
+        output_sibling(target, OUTPUT_SUFFIX_NEW): "the build's staging directory",
+        output_sibling(target, OUTPUT_SUFFIX_OLD): "the previous generated site",
+        output_sibling(target, OUTPUT_SUFFIX_LOCK): "the build lock",
+    }
+
+    def named(path: Path) -> str:
+        return f"{paths[path]} ({path.name})"
+
+    for path in paths:
+        if path.is_symlink():
+            raise UnsafeOutputRootError(
+                f"Refusing to build: {named(path)} is a symbolic link. A build replaces and "
+                "deletes this path, and never does that through a link. Remove the link, or "
+                "set GTQ_GENERATED_ROOT to a directory of its own."
+            )
+
+    repository = Path(os.path.realpath(config.repo_root))
+    sources = [
+        config.content_root,
+        config.schemas_root,
+        config.templates_root,
+        config.assets_root,
+        config.validators_root,
+        config.participant_root,
+        config.local_data_root,
+        *(config.repo_root / name for name in _SOURCE_FOLDER_NAMES),
+    ]
+    real_sources = [Path(os.path.realpath(source)) for source in sources]
+    for path in list(paths)[:3]:
+        real = Path(os.path.realpath(path))
+        if real == repository or real in repository.parents:
+            raise UnsafeOutputRootError(
+                f"Refusing to build: {named(path)} is or contains the repository. Set "
+                "GTQ_GENERATED_ROOT to a directory of its own."
+            )
+        for source in real_sources:
+            if _overlaps(real, source):
+                raise UnsafeOutputRootError(
+                    f"Refusing to build: {named(path)} overlaps {source.name}/, which is not "
+                    "output. Set GTQ_GENERATED_ROOT to a directory of its own."
+                )
+
+    for path in list(paths)[:3]:
+        if not (path.exists() or path.is_symlink()):
+            continue
+        if not path.is_dir():
+            if paths[path] == "the build's staging directory":
+                continue  # debris, removed as a single file by the build
+            raise UnsafeOutputRootError(
+                f"Refusing to build: {named(path)} exists and is not a directory. Move it "
+                "aside, or set GTQ_GENERATED_ROOT to a directory of its own."
+            )
+        if not _is_application_output(path):
+            raise UnsafeOutputRootError(
+                f"Refusing to build: {named(path)} already exists and was not written by "
+                f"this application (it has no {OUTPUT_MARKER} or {MANIFEST_FILENAME}). A "
+                "build would replace and delete it. Move it aside, or set "
+                "GTQ_GENERATED_ROOT to an empty or new directory."
+            )
+
 
 @dataclass(frozen=True, slots=True)
 class BuildResult:
@@ -105,6 +252,7 @@ def render_error_page(config: AppConfig, report: ProblemReport) -> Path:
     It goes to the gitignored local-data directory and the CLI prints the path.
     """
     from quest_app.config import APPLICATION_VERSION
+    from quest_app.safe_io import LOCAL_DATA, atomic_write
     from quest_app.view_models import (
         BuildView,
         NavItemView,
@@ -146,8 +294,10 @@ def render_error_page(config: AppConfig, report: ProblemReport) -> Path:
         error_count=len(report.errors),
         warning_count=len(report.warnings),
     )
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(html, encoding="utf-8")
+    # Through the no-follow write path (round 13 E2): a committed `local-data` link, or a
+    # link at `build-errors/` or `index.html`, overwrote a file outside the clone. Raises
+    # `UnsafeWriteTargetError` instead.
+    atomic_write(config.local_data_root, target, html.encode("utf-8"), prefix=LOCAL_DATA)
     return target
 
 
@@ -212,10 +362,14 @@ def _exclusive_output(config: AppConfig) -> Iterator[None]:
         yield
         return
 
-    lock_path = config.generated_root.with_suffix(OUTPUT_SUFFIX_LOCK)
+    from quest_app.safe_io import open_lock_file
+
+    lock_path = output_sibling(config.generated_root, OUTPUT_SUFFIX_LOCK)
     try:
-        lock_path.parent.mkdir(parents=True, exist_ok=True)
-        handle = lock_path.open("a+", encoding="utf-8")
+        # Never through a link, never blocking on a FIFO (round 13 E2). A lock that cannot
+        # be opened safely is the "run unlocked" case, and `refuse_unsafe_output_root` has
+        # already refused a build whose lock path is a link.
+        handle = os.fdopen(open_lock_file(lock_path), "a+", encoding="utf-8")
     except OSError:
         yield
         return
@@ -249,8 +403,11 @@ def build_site(
 ) -> BuildResult:
     """Render every page and swap the result into place atomically.
 
-    One build at a time per output directory. See `_exclusive_output`.
+    One build at a time per output directory. See `_exclusive_output`. Refused before
+    anything is locked, written or deleted when the output root is not the application's
+    to replace (`refuse_unsafe_output_root`).
     """
+    refuse_unsafe_output_root(world.config)
     with _exclusive_output(world.config):
         return _render_and_publish(world, built_at=built_at, service=service)
 
@@ -277,8 +434,9 @@ def _render_and_publish(
     service = service or offline_service_view()
     environment = make_environment(config.templates_root)
 
-    staging = config.generated_root.with_suffix(OUTPUT_SUFFIX_NEW)
-    if staging.is_symlink() or (staging.exists() and not staging.is_dir()):
+    staging = output_sibling(config.generated_root, OUTPUT_SUFFIX_NEW)
+    # `build_site` refused a link here and a directory this application did not write.
+    if staging.exists() and not staging.is_dir():
         # Debris in the shape of a file, which `rmtree` answers with `NotADirectoryError` —
         # permanently, for every build, until someone deletes it by hand. `make clean` did
         # not remove it either, because it was not on the list.
@@ -286,6 +444,8 @@ def _render_and_publish(
     elif staging.exists():
         shutil.rmtree(staging)
     staging.mkdir(parents=True)
+    # First, so a staging directory left by a build that died is still recognisably ours.
+    (staging / OUTPUT_MARKER).write_text(OUTPUT_MARKER_TEXT, encoding="utf-8")
 
     pages: list[tuple[str, str, dict[str, Any]]] = []
 
@@ -813,15 +973,16 @@ def _quest_detail_context(
 def _evidence_context(
     entry: QuestProgress, summary: Any, world: LoadedWorld, service: ServiceView
 ) -> dict[str, Any]:
-    from quest_app.evidence import detect_proof, scan_evidence, scan_kinds
+    from quest_app.evidence import detect_proof, scan_declared_proof, scan_kinds
 
     quest = entry.quest
     results = _results_for(entry, world)
     evidence_path = entry.attempt.evidence_path if entry.attempt else None
     # The scan runs at build time so the page can say something true about the evidence as
     # it stands. It is also enforced at the moment of submission, which is the check that
-    # actually matters.
-    scan_findings = scan_evidence(world.config, evidence_path) if evidence_path else []
+    # actually matters. Round 13 C1: the declared proof outside the package (context/,
+    # skills/) is scanned too, not only the package.
+    scan_findings = scan_declared_proof(world.config, quest, evidence_path) if evidence_path else []
     detected = detect_proof(quest, world.config, evidence_path, results)
     required, optional = build_proof_views(quest, detected)
     latest: dict[str, Any] = {r.validator_id: r for r in results}
@@ -946,11 +1107,36 @@ def git_summary_for(world: LoadedWorld, evidence_path: str | None) -> dict[str, 
     return summary_for(world.config.repo_root, evidence_path)
 
 
+def _changes_since_approval(config: Any, attempt: Any, review: Any) -> list[str]:
+    """What differs from what the reviewer decided on: the package, and each proof path.
+
+    Mirrors `quest_app.progress._check_stale_approval`, which the loader runs for every
+    verified attempt — same two comparisons, same "the approval stands" framing — so a
+    reviewer re-reading a decided attempt on its own page sees the identical signal a
+    `validate` run would have reported, not a second and possibly different one.
+    """
+    from quest_app.evidence import changed_proof_files, evidence_hash
+    from quest_app.hashing import UnreadableFileError
+
+    changes: list[str] = []
+    if review.proof_files is not None:
+        recorded = [{"path": path, "digest": digest} for path, digest in review.proof_files]
+        changes.extend(changed_proof_files(config, recorded))
+    try:
+        current = evidence_hash(config, attempt.evidence_path)
+    except UnreadableFileError as exc:
+        changes.append(exc.relative_path)
+    else:
+        if current is not None and current != review.evidence_hash:
+            changes.append(attempt.evidence_path)
+    return changes
+
+
 def _review_context(
     entry: QuestProgress, summary: Any, world: LoadedWorld, service: ServiceView
 ) -> dict[str, Any]:
     """Everything U10 requires about one attempt."""
-    from quest_app.evidence import detect_proof, scan_evidence, scan_kinds
+    from quest_app.evidence import detect_proof, scan_declared_proof, scan_kinds
     from quest_app.review import changes_since_submission, read_submission, review_history
 
     attempt = entry.attempt
@@ -982,7 +1168,27 @@ def _review_context(
             for item in required
         )
     history = review_history(config, attempt)
-    changed = changes_since_submission(config, attempt)
+    # Round 13 C5: a decided attempt (verified, needs-changes or rejected) is not awaiting a
+    # decision, so what belongs on the page is not "here is what changed since the request
+    # you have not yet acted on" but "here is what the reviewer actually saw, and here is
+    # what has drifted since they decided" — the same question `_check_stale_approval`
+    # answers for the loader, in the same words, because a reviewer re-reading a decided
+    # attempt is asking exactly what that check is for.
+    # Scoped to an actual approval: a needs-changes or rejected attempt is not submitted
+    # either, but nothing was approved, so "the approval stands" would be describing
+    # something that never happened. That attempt keeps comparing against the submission,
+    # exactly as before.
+    review = entry.review
+    decision_made = (
+        review is not None and review.is_approval and entry.state.id is QuestState.VERIFIED
+    )
+    evidence_hash_value: str | None
+    if decision_made and review is not None:
+        evidence_hash_value = review.evidence_hash
+        changed = _changes_since_approval(config, attempt, review)
+    else:
+        evidence_hash_value = submission.get("evidence_hash")
+        changed = changes_since_submission(config, attempt)
 
     return {
         "quest": summary,
@@ -997,14 +1203,19 @@ def _review_context(
         # only infer an unrun check from an empty result list, which reads as "none declared".
         "advisories": tuple(submission.get("advisories") or ()),
         # Round 12 C3: a secret, a link out of the package and a file too large to scan all
-        # fail the scan, and each needs its own words. See `scan_kinds`.
-        "secret_scan_clean": not (scan_findings := scan_evidence(config, attempt.evidence_path)),
+        # fail the scan, and each needs its own words. See `scan_kinds`. Round 13 C1: the
+        # declared proof outside the package is scanned too, not only the package.
+        "secret_scan_clean": not (
+            scan_findings := scan_declared_proof(config, entry.quest, attempt.evidence_path)
+        ),
         "scan_kinds": scan_kinds(scan_findings),
-        "evidence_hash": submission.get("evidence_hash"),
+        "evidence_hash": evidence_hash_value,
         "evidence_changed": bool(changed),
+        "decision_made": decision_made,
         # Which of the package and the declared proof outside it changed, so the reviewer
-        # knows what to re-read rather than only that something moved.
-        "changed_since_submission": tuple(changed),
+        # knows what to re-read rather than only that something moved. Compared against the
+        # submission before a decision, and against the decision itself afterward.
+        "changed_paths": tuple(changed),
         "outcomes": entry.quest.outcomes,
         "acceptance_criteria": entry.quest.acceptance_criteria,
         "required_proof": required,
@@ -1072,7 +1283,8 @@ def _review_queue_context(
         "published_version": None,
         "evidence_hash": None,
         "evidence_changed": False,
-        "changed_since_submission": (),
+        "decision_made": False,
+        "changed_paths": (),
         "outcomes": (),
         "acceptance_criteria": (),
         "required_proof": (),
@@ -1315,7 +1527,7 @@ def _write_indexes(
         (index_root / f"{name}.json").write_text(
             json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
-    (root / "build-manifest.json").write_text(
+    (root / MANIFEST_FILENAME).write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     return manifest
@@ -1327,7 +1539,7 @@ def _swap(target: Path, staging: Path) -> None:
     The rename is the publish. Everything before it can fail without a participant ever
     seeing a half-built site.
     """
-    previous = target.with_suffix(OUTPUT_SUFFIX_OLD)
+    previous = output_sibling(target, OUTPUT_SUFFIX_OLD)
     if previous.exists():
         shutil.rmtree(previous)
     if target.exists():

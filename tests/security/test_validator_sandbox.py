@@ -30,6 +30,7 @@ from quest_app.validator_runner import (
     WorkspaceError,
     _bounded,
     _import_entrypoint,
+    _sanitize_check,
     classify,
     run_validator,
 )
@@ -1515,3 +1516,99 @@ class TestRoundTwelveRunnerFindings:
         )
         assert result.outcome == "pass", result
         assert "did not exit on its own" not in result.output_excerpt
+
+
+class TestCheckSeverityNormalization:
+    """E10 of `docs/audits/round-13-independent-audit.md`.
+
+    A check's `severity` used to pass through `_sanitize_check` unvalidated, so a value
+    outside the result schema's enum survived into the document and made
+    `evidence.store_result`'s schema validation refuse the *entire run* — a passing check
+    included — over one field nobody but `severity` needed.
+    """
+
+    def _entry(self, severity: object) -> dict[str, object]:
+        return {"id": "probe", "outcome": "fail", "summary": "ran", "severity": severity}
+
+    def test_an_invalid_severity_is_dropped_not_kept(self) -> None:
+        check, valid = _sanitize_check(self._entry("critical"), 0)
+        assert valid, "id and outcome are both fine; this check is not malformed"
+        assert check.severity is None
+
+    def test_a_valid_severity_is_kept(self) -> None:
+        check, valid = _sanitize_check(self._entry("medium"), 0)
+        assert valid
+        assert check.severity == "medium"
+
+    def test_a_non_string_severity_is_dropped(self) -> None:
+        check, valid = _sanitize_check(self._entry(7), 0)
+        assert valid
+        assert check.severity is None
+
+
+class TestRoundThirteenRunnerFindings:
+    """E12 of `docs/audits/round-13-independent-audit.md`.
+
+    A process whose result channel closes early used to be killed, and its exit status
+    exempted from the ordinary nonzero rule, the moment more than one second had passed —
+    with no chance for a process that was merely a little slow, not stuck, to reap itself
+    first and be judged by its own exit status instead.
+    """
+
+    @pytest.mark.slow
+    def test_a_process_that_reaps_itself_after_an_early_close_is_judged_by_its_own_exit(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """A non-daemon thread that later calls `os._exit` ends the whole process at a time
+        the main thread does not control, well after the result channel has already closed
+        — exactly the shape a validator with a slow, non-hung background task has. It exits
+        on its own, past the old one-second bound and before the new one, with a nonzero
+        status the runner must not let the E11 exemption swallow (round 13 E12): the
+        ordinary "a nonzero exit is `environment_failure`" rule applies, because nothing
+        about this process was ever a leftover the runner had to kill."""
+        result = TestHostileChildren._run(
+            registry,
+            config,
+            """
+            import os, threading, time as _time
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                def _reap_itself():
+                    _time.sleep(1.5)
+                    os._exit(7)
+
+                threading.Thread(target=_reap_itself, daemon=False).start()
+                output.add(Check(id="probe", outcome="pass", summary="ran"))
+            """,
+        )
+        assert result.outcome == "environment_failure", result
+        assert "exited with status 7" in result.output_excerpt, result.output_excerpt
+        assert "did not exit on its own" not in result.output_excerpt
+
+    @pytest.mark.slow
+    def test_a_leftover_process_that_never_reaps_itself_is_still_killed_and_exempted(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """The other half of E12: the round 12 E11 exemption must still hold for a process
+        that genuinely never exits on its own. A longer grace period must not turn into an
+        indefinite wait."""
+        import time
+
+        started = time.monotonic()
+        result = TestHostileChildren._run(
+            registry,
+            config,
+            """
+            import threading, time as _time
+            from quest_app.validator_runner import Check
+
+            def run(workspace, output):
+                threading.Thread(target=lambda: _time.sleep(60), daemon=False).start()
+                output.add(Check(id="probe", outcome="pass", summary="ran"))
+            """,
+            timeout=20,
+        )
+        elapsed = time.monotonic() - started
+        assert result.outcome == "pass", result
+        assert elapsed < 10, f"took {elapsed:.1f}s; a longer grace must still be bounded"

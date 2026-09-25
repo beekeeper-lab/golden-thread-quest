@@ -105,23 +105,43 @@ def build_command(args: argparse.Namespace) -> int:
     _report_problems(report, args.json)
     if world is None:
         from quest_app.build import render_error_page
+        from quest_app.safe_io import UnsafeWriteTargetError
 
-        page = render_error_page(config, report)
+        try:
+            page: Path | None = render_error_page(config, report)
+            unwritten = ""
+        except (UnsafeWriteTargetError, OSError) as exc:
+            # A link under `local-data/` is refused, not followed (round 13 E2). The errors
+            # themselves were already printed above; only the page is missing.
+            page = None
+            unwritten = (
+                str(exc)
+                if isinstance(exc, UnsafeWriteTargetError)
+                else (exc.strerror or type(exc).__name__)
+            )
         if not args.json:
             _summarize(report, world)
             print(
                 "nothing was generated; the previous output, if any, is untouched",
                 file=sys.stderr,
             )
-            print(f"the same errors as a page: {config.relative(page)}", file=sys.stderr)
+            if page is not None:
+                print(f"the same errors as a page: {config.relative(page)}", file=sys.stderr)
+            else:
+                print(f"the error page was not written: {unwritten}", file=sys.stderr)
         return EXIT_CONTENT_ERROR
     # `make build` while a service is running had the same effect as an action did: the
     # served pages were replaced with copies saying nothing could change state.
+    from quest_app.build import UnsafeOutputRootError
     from quest_app.serve import is_service_running
 
-    result = build_site(
-        world, service=online_service_view() if is_service_running(config) else None
-    )
+    try:
+        result = build_site(
+            world, service=online_service_view() if is_service_running(config) else None
+        )
+    except UnsafeOutputRootError as exc:
+        print(str(exc), file=sys.stderr)
+        return EXIT_USAGE
     if not args.json:
         print(
             f"built {result.page_count} page(s) into {config.relative(config.generated_root)}",

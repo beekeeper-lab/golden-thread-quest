@@ -19,7 +19,8 @@ guide is committed at `artifacts/html/guides/user-guide.html`. It needs one more
 because it re-encodes the diagrams (`uv pip install -e '.[docs]'`), and two stylesheets that
 are not in this repository — `base.css` and `print.css` from the authoring tool the guide was
 written with. Point `GTQ_HTML_SNIPPETS` at a directory holding those two files, then run
-`python scripts/build_user_guide_html.py`. Without them the script says so and stops.
+`python scripts/build_user_guide_html.py`. There is no fallback location: if the variable is
+unset, or set to a directory missing either file, the script says so and stops.
 
 Browser-driven tests need one extra step, because they download a browser:
 

@@ -19,14 +19,13 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 # The two stylesheets this guide is built with. They are not in this repository and are not
-# a package dependency: they come from the authoring tool the maintainer uses. CONTRIBUTING
-# told a contributor to run this script as though it worked anywhere, and on any machine
-# without that directory it died on a `FileNotFoundError` for `base.css`. Point
-# `GTQ_HTML_SNIPPETS` at a directory holding `base.css` and `print.css` to use your own.
-SKILL = pathlib.Path(
-    os.environ.get("GTQ_HTML_SNIPPETS")
-    or pathlib.Path.home() / ".claude/skills/html-artifact-output/snippets"
-)
+# a package dependency: they come from the authoring tool the maintainer uses. A fallback to
+# a path in the maintainer's own home directory here meant the script "worked" only on that
+# one machine and silently used whatever happened to be there, contrary to CONTRIBUTING's
+# promise that without them the script says so and stops. There is no fallback: point
+# `GTQ_HTML_SNIPPETS` at a directory holding `base.css` and `print.css`, or the script stops
+# with the message below.
+SKILL = pathlib.Path(os.environ["GTQ_HTML_SNIPPETS"]) if "GTQ_HTML_SNIPPETS" in os.environ else None
 BODY = ROOT / "artifacts/html/guides/_user-guide-body.html"
 OUT = ROOT / "artifacts/html/guides/user-guide.html"
 IMAGES = ROOT / "docs/media/images"
@@ -142,6 +141,16 @@ def webp_data_uri(png: pathlib.Path, max_px: int = 1200, quality: int = 90) -> s
 
 
 def main() -> int:
+    if SKILL is None:
+        print(
+            "cannot build the guide: GTQ_HTML_SNIPPETS is not set.\n"
+            "Set it to a directory holding base.css and print.css. "
+            "The built guide is committed at artifacts/html/guides/user-guide.html, so "
+            "rebuilding it is a maintainer step and not one a contributor has to take.",
+            file=sys.stderr,
+        )
+        return 2
+
     missing = [name for name in ("base.css", "print.css") if not (SKILL / name).is_file()]
     if missing:
         print(

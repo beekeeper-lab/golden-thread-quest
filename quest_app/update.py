@@ -287,7 +287,7 @@ def apply_migrations(config: AppConfig) -> tuple[list[str], list[str]]:
 
     with store.exclusive():
         try:
-            original = read_bounded_bytes(store.path)
+            original = read_bounded_bytes(store.path, follow_symlinks=False)
         except UnsafeStateFileError as exc:
             return [], [f"The participant progress file is not safe to read: {exc}"]
         except OSError as exc:

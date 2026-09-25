@@ -30,14 +30,14 @@ import yaml
 
 from quest_app.config import AppConfig
 from quest_app.evidence import (
-    OUTSIDE_LINK_DESCRIPTION,
-    OVERSIZE_DESCRIPTION,
     changed_proof_files,
+    describe_scan_findings,
     evidence_hash,
     proof_file_digests,
     proof_paths_outside_package,
-    scan_evidence,
+    scan_declared_proof,
 )
+from quest_app.hashing import UnreadableFileError
 from quest_app.models import AttemptState, Decision, Quest
 from quest_app.progress import Attempt, ParticipantState, ReviewDecision
 from quest_app.safe_io import UnsafeStateFileError, read_bounded_bytes
@@ -114,30 +114,18 @@ def readiness_problems(
             f"The attempt is {attempt.recorded_state.value!r}; mark the evidence ready first."
         )
 
-    findings = scan_evidence(config, attempt.evidence_path)
-    links = [f for f in findings if f.description == OUTSIDE_LINK_DESCRIPTION]
-    findings = [f for f in findings if f.description != OUTSIDE_LINK_DESCRIPTION]
-    if links:
-        # Not a secret, and saying "secret-like" would send the participant hunting for one.
-        problems.append(
-            f"{links[0].path} is a link that leads outside the evidence package, so it cannot "
-            "be checked or shown. Replace it with a copy of the file."
-        )
-    oversize = [f for f in findings if f.description == OVERSIZE_DESCRIPTION]
-    findings = [f for f in findings if f.description != OVERSIZE_DESCRIPTION]
-    if oversize:
-        # Not a secret either: a file too large for the scan to read (round 12 E8).
-        problems.append(
-            f"{oversize[0].path} {OVERSIZE_DESCRIPTION}. Trim it, or keep the full file out "
-            "of the evidence and include only the part that shows the result."
-        )
-    if findings:
-        problems.append(
-            f"Something secret-like is in the evidence ({findings[0].path}:{findings[0].line})."
-        )
+    findings = scan_declared_proof(config, quest, attempt.evidence_path)
+    problems.extend(describe_scan_findings(findings))
 
-    if evidence_hash(config, attempt.evidence_path) is None:
-        problems.append("The evidence directory is missing.")
+    try:
+        missing = evidence_hash(config, attempt.evidence_path) is None
+    except UnreadableFileError as exc:
+        # Round 13 E8: unreadable, so unverifiable — blocking, like a secret the scan could
+        # not check, rather than a crash with an absolute path in it.
+        problems.append(f"{exc.relative_path} could not be read, so it cannot be submitted.")
+    else:
+        if missing:
+            problems.append("The evidence directory is missing.")
 
     results = participant.results_for(attempt)
     latest = {result.validator_id: result for result in results}
@@ -190,7 +178,12 @@ def create_submission(
         raise ReviewError("; ".join(blocking(problems)))
     advisories = tuple(advisory(problems))
 
-    digest = evidence_hash(config, attempt.evidence_path)
+    try:
+        digest = evidence_hash(config, attempt.evidence_path)
+    except UnreadableFileError as exc:
+        raise ReviewError(
+            f"{exc.relative_path} could not be read, so it cannot be submitted."
+        ) from exc
     if digest is None:
         raise ReviewError("The evidence directory could not be hashed.")
 
@@ -268,13 +261,25 @@ def record_decision(
             f"{attempt.recorded_state.value!r}."
         )
 
-    if read_submission(config, attempt) is None:
+    submission_record = read_submission(config, attempt)
+    if submission_record is None:
         # `_check_integrity` already refuses this record at load (E4), but the loader is
         # not the only caller: a `state: submitted` hand-edited after a page loaded, or a
         # participant state a caller constructed some other way, must not let a decision
         # be recorded against a request that was never actually made.
         raise ReviewError(
             "This attempt has no readable submission record, so there is nothing to decide."
+        )
+    if (
+        submission_record.get("attempt_id") != attempt.attempt_id
+        or submission_record.get("quest_id") != attempt.quest_id
+        or submission_record.get("quest_version") != attempt.quest_version
+    ):
+        # Round 13 E3: schema-valid on its own, but copied from another quest or attempt.
+        # `_check_integrity` refuses this at load too; the loader is not this function's
+        # only caller either.
+        raise ReviewError(
+            "The submission record does not describe this attempt, so there is nothing to decide."
         )
 
     if decision == Decision.APPROVED:
@@ -294,7 +299,13 @@ def record_decision(
             "participant knows what to do."
         )
 
-    digest = evidence_hash(config, attempt.evidence_path) or "sha256:" + "0" * 64
+    try:
+        digest = evidence_hash(config, attempt.evidence_path) or "sha256:" + "0" * 64
+    except UnreadableFileError as exc:
+        raise ReviewError(
+            f"{exc.relative_path} in the evidence could not be read, so the decision cannot "
+            "be recorded."
+        ) from exc
     # The same paths the submission recorded, so the review describes what was submitted.
     # A submission from before proof files were recorded falls back to what the quest
     # declares now, so even that attempt's approval can be checked for staleness later.
@@ -398,9 +409,16 @@ def changes_since_submission(
     if submission is None:
         return []
     changes: list[str] = []
-    current = evidence_hash(config, attempt.evidence_path)
-    if current is not None and current != submission.get("evidence_hash"):
-        changes.append(attempt.evidence_path)
+    try:
+        current = evidence_hash(config, attempt.evidence_path)
+    except UnreadableFileError as exc:
+        # Round 13 E8: unreadable is unverifiable, which is a change for this question's
+        # purposes — a reviewer must not be told the evidence still matches what a file
+        # nobody could read was part of.
+        changes.append(exc.relative_path)
+    else:
+        if current is not None and current != submission.get("evidence_hash"):
+            changes.append(attempt.evidence_path)
     changes.extend(changed_proof_files(config, submission.get("proof_files")))
     return changes
 
@@ -420,13 +438,13 @@ def _read_record(config: AppConfig, path: Path) -> dict[str, Any] | None:
     (round 12 E3). The loader checks exactly these files first, so on a world that loaded
     this raises only if a record changed after the load.
     """
-    from quest_app.content_loader import read_yaml
+    from quest_app.content_loader import read_state_yaml
     from quest_app.errors import ProblemReport
 
-    if not path.exists():
+    if not (path.exists() or path.is_symlink()):
         return None
     scratch = ProblemReport()
-    data = read_yaml(path, config, scratch)
+    data = read_state_yaml(path, config, scratch)
     if data is None or not scratch.ok:
         reason = scratch.errors[0].public_message if scratch.errors else "it is not a mapping"
         raise DamagedRecordError(f"{config.relative(path)} could not be read: {reason}")
