@@ -69,6 +69,19 @@ _KEYWORDS = "|".join(
 
 # Ordered most specific first: a GitHub token should be reported as a GitHub token, not as
 # a generic high-entropy assignment.
+#
+# None of the fixed-prefix patterns below (`AKIA…`, `ghp_…`, `glpat-…`, `xox[abposr]-…`,
+# `AIza…`, `sk-ant-…`, `sk-…`, `ATATT3…`, `eyJ…`, `sk_`/`rk_…`, `npm_…`) anchor on a leading
+# `\b` any more. `\b` requires a transition between a word and a non-word character, and
+# every one of these prefixes starts with a letter — itself a word character — so a token
+# immediately preceded by any other letter or digit, with nothing between them, silently
+# failed to match at all: `nnnghp_…` and `xAKIA…` were invisible to both the scan and
+# redaction (round 13 E11). The literal prefixes are specific enough on their own — none is
+# a fragment that turns up inside ordinary words or identifiers at the required length — so
+# dropping the leading boundary catches a token wherever it appears without a meaningful
+# increase in false positives, which is the trade this scanner is built to take (a false
+# positive costs a minute; a missed credential costs a rotation). The trailing `\b` is
+# unaffected: it is not what this finding is about.
 PATTERNS: Final[tuple[SecretPattern, ...]] = (
     SecretPattern(
         "private-key-block", "PEM private key block", _c(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")
@@ -76,26 +89,26 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     SecretPattern(
         "aws-access-key-id",
         "AWS access key id",
-        _c(r"\b((?:AKIA|ASIA|AGPA|AIDA|AROA)[A-Z0-9]{16})\b"),
+        _c(r"((?:AKIA|ASIA|AGPA|AIDA|AROA)[A-Z0-9]{16})\b"),
     ),
     SecretPattern(
         "aws-secret-key",
         "AWS secret access key assignment",
         _c(r"aws_secret_access_key\s*[=:]\s*['\"]?([A-Za-z0-9/+=]{40})"),
     ),
-    SecretPattern("github-token", "GitHub token", _c(r"\b(gh[pousr]_[A-Za-z0-9]{36,})\b")),
+    SecretPattern("github-token", "GitHub token", _c(r"(gh[pousr]_[A-Za-z0-9]{36,})\b")),
     SecretPattern(
-        "gitlab-token", "GitLab personal access token", _c(r"\b(glpat-[A-Za-z0-9_-]{20,})\b")
+        "gitlab-token", "GitLab personal access token", _c(r"(glpat-[A-Za-z0-9_-]{20,})\b")
     ),
-    SecretPattern("slack-token", "Slack token", _c(r"\b(xox[abposr]-[A-Za-z0-9-]{10,})\b")),
-    SecretPattern("google-api-key", "Google API key", _c(r"\b(AIza[0-9A-Za-z_-]{35})\b")),
-    SecretPattern("anthropic-key", "Anthropic API key", _c(r"\b(sk-ant-[A-Za-z0-9_-]{20,})\b")),
-    SecretPattern("openai-key", "OpenAI API key", _c(r"\b(sk-[A-Za-z0-9_-]{20,})\b")),
-    SecretPattern("atlassian-token", "Atlassian API token", _c(r"\b(ATATT3[A-Za-z0-9_=-]{20,})\b")),
+    SecretPattern("slack-token", "Slack token", _c(r"(xox[abposr]-[A-Za-z0-9-]{10,})\b")),
+    SecretPattern("google-api-key", "Google API key", _c(r"(AIza[0-9A-Za-z_-]{35})\b")),
+    SecretPattern("anthropic-key", "Anthropic API key", _c(r"(sk-ant-[A-Za-z0-9_-]{20,})\b")),
+    SecretPattern("openai-key", "OpenAI API key", _c(r"(sk-[A-Za-z0-9_-]{20,})\b")),
+    SecretPattern("atlassian-token", "Atlassian API token", _c(r"(ATATT3[A-Za-z0-9_=-]{20,})\b")),
     SecretPattern(
         "jwt",
         "JSON Web Token",
-        _c(r"\b(eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})\b"),
+        _c(r"(eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})\b"),
     ),
     SecretPattern(
         "basic-auth-url",
@@ -103,9 +116,9 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
         _c(r"\b[a-z][a-z0-9+.-]*://[^/\s:@]+:([^/\s:@]{3,})@"),
     ),
     SecretPattern(
-        "stripe-key", "Stripe secret key", _c(r"\b((?:sk|rk)_(?:live|test)_[A-Za-z0-9]{10,})\b")
+        "stripe-key", "Stripe secret key", _c(r"((?:sk|rk)_(?:live|test)_[A-Za-z0-9]{10,})\b")
     ),
-    SecretPattern("npm-token", "npm access token", _c(r"\b(npm_[A-Za-z0-9]{20,})\b")),
+    SecretPattern("npm-token", "npm access token", _c(r"(npm_[A-Za-z0-9]{20,})\b")),
     SecretPattern(
         "bearer-header",
         "Bearer credential in a header",

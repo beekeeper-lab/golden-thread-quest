@@ -973,15 +973,16 @@ def _quest_detail_context(
 def _evidence_context(
     entry: QuestProgress, summary: Any, world: LoadedWorld, service: ServiceView
 ) -> dict[str, Any]:
-    from quest_app.evidence import detect_proof, scan_evidence, scan_kinds
+    from quest_app.evidence import detect_proof, scan_declared_proof, scan_kinds
 
     quest = entry.quest
     results = _results_for(entry, world)
     evidence_path = entry.attempt.evidence_path if entry.attempt else None
     # The scan runs at build time so the page can say something true about the evidence as
     # it stands. It is also enforced at the moment of submission, which is the check that
-    # actually matters.
-    scan_findings = scan_evidence(world.config, evidence_path) if evidence_path else []
+    # actually matters. Round 13 C1: the declared proof outside the package (context/,
+    # skills/) is scanned too, not only the package.
+    scan_findings = scan_declared_proof(world.config, quest, evidence_path) if evidence_path else []
     detected = detect_proof(quest, world.config, evidence_path, results)
     required, optional = build_proof_views(quest, detected)
     latest: dict[str, Any] = {r.validator_id: r for r in results}
@@ -1135,7 +1136,7 @@ def _review_context(
     entry: QuestProgress, summary: Any, world: LoadedWorld, service: ServiceView
 ) -> dict[str, Any]:
     """Everything U10 requires about one attempt."""
-    from quest_app.evidence import detect_proof, scan_evidence, scan_kinds
+    from quest_app.evidence import detect_proof, scan_declared_proof, scan_kinds
     from quest_app.review import changes_since_submission, read_submission, review_history
 
     attempt = entry.attempt
@@ -1202,8 +1203,11 @@ def _review_context(
         # only infer an unrun check from an empty result list, which reads as "none declared".
         "advisories": tuple(submission.get("advisories") or ()),
         # Round 12 C3: a secret, a link out of the package and a file too large to scan all
-        # fail the scan, and each needs its own words. See `scan_kinds`.
-        "secret_scan_clean": not (scan_findings := scan_evidence(config, attempt.evidence_path)),
+        # fail the scan, and each needs its own words. See `scan_kinds`. Round 13 C1: the
+        # declared proof outside the package is scanned too, not only the package.
+        "secret_scan_clean": not (
+            scan_findings := scan_declared_proof(config, entry.quest, attempt.evidence_path)
+        ),
         "scan_kinds": scan_kinds(scan_findings),
         "evidence_hash": evidence_hash_value,
         "evidence_changed": bool(changed),

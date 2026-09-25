@@ -30,13 +30,12 @@ import yaml
 
 from quest_app.config import AppConfig
 from quest_app.evidence import (
-    OUTSIDE_LINK_DESCRIPTION,
-    OVERSIZE_DESCRIPTION,
     changed_proof_files,
+    describe_scan_findings,
     evidence_hash,
     proof_file_digests,
     proof_paths_outside_package,
-    scan_evidence,
+    scan_declared_proof,
 )
 from quest_app.hashing import UnreadableFileError
 from quest_app.models import AttemptState, Decision, Quest
@@ -115,27 +114,8 @@ def readiness_problems(
             f"The attempt is {attempt.recorded_state.value!r}; mark the evidence ready first."
         )
 
-    findings = scan_evidence(config, attempt.evidence_path)
-    links = [f for f in findings if f.description == OUTSIDE_LINK_DESCRIPTION]
-    findings = [f for f in findings if f.description != OUTSIDE_LINK_DESCRIPTION]
-    if links:
-        # Not a secret, and saying "secret-like" would send the participant hunting for one.
-        problems.append(
-            f"{links[0].path} is a link that leads outside the evidence package, so it cannot "
-            "be checked or shown. Replace it with a copy of the file."
-        )
-    oversize = [f for f in findings if f.description == OVERSIZE_DESCRIPTION]
-    findings = [f for f in findings if f.description != OVERSIZE_DESCRIPTION]
-    if oversize:
-        # Not a secret either: a file too large for the scan to read (round 12 E8).
-        problems.append(
-            f"{oversize[0].path} {OVERSIZE_DESCRIPTION}. Trim it, or keep the full file out "
-            "of the evidence and include only the part that shows the result."
-        )
-    if findings:
-        problems.append(
-            f"Something secret-like is in the evidence ({findings[0].path}:{findings[0].line})."
-        )
+    findings = scan_declared_proof(config, quest, attempt.evidence_path)
+    problems.extend(describe_scan_findings(findings))
 
     try:
         missing = evidence_hash(config, attempt.evidence_path) is None

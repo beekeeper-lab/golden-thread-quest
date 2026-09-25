@@ -72,7 +72,11 @@ A validator with more to say than that should summarize it in its checks.
   itself to have failed is not trusted to have reported anything reliably. This does not
   apply to the exit status the runner itself produces by killing a process in the case
   just above: that status describes the runner's own cleanup, not a judgment the
-  validator passed on itself.
+  validator passed on itself. That exemption is for the process still alive, killed by the
+  runner, only. A process that reaps itself — however long it takes, and whatever exit
+  status it produces — is classified by that exit status under the ordinary nonzero rule;
+  the runner only calls something a leftover and exempts its exit status once it has waited
+  long enough that the process reaping itself in that window is no longer the explanation.
 - A check outside its own contract — an `outcome` or `id` the result schema does not
   allow — is never read as a verdict. It is replaced with a check of the runner's own
   reporting the defect, and the run's outcome is forced to `environment_failure`: a
