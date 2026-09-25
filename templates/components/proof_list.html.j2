@@ -1,7 +1,11 @@
 {# C11 — proof requirements, each independently addressable. #}
-{% macro proof_list(items, title, empty_message='None.', heading_level=3, slug='') -%}
+{# C3 (round 13) — a page can also carry an authored narrative section with this same
+   title ("Required evidence"). When it does, the caller passes `landmark_label` so the
+   two regions on that page get distinct accessible names; the visible heading text is
+   unchanged either way. #}
+{% macro proof_list(items, title, empty_message='None.', heading_level=3, slug='', landmark_label=none) -%}
 {% set anchor = (slug or title) | lower | replace(' ', '-') %}
-<section aria-labelledby="proof-{{ anchor }}">
+<section{% if landmark_label %} aria-label="{{ landmark_label }}"{% else %} aria-labelledby="proof-{{ anchor }}"{% endif %}>
   <h{{ heading_level }} id="proof-{{ anchor }}">{{ title }}</h{{ heading_level }}>
   {% if items %}
   <ul class="checklist">

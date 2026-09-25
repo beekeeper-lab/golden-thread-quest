@@ -24,6 +24,15 @@ def load(monkeypatch: pytest.MonkeyPatch, snippets: Path) -> object:
     return module
 
 
+def load_without_env(monkeypatch: pytest.MonkeyPatch) -> object:
+    monkeypatch.delenv("GTQ_HTML_SNIPPETS", raising=False)
+    spec = importlib.util.spec_from_file_location("build_user_guide_html_no_env", SCRIPT)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def test_it_says_what_is_missing_instead_of_raising(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -44,3 +53,20 @@ def test_the_snippet_directory_is_configurable(
     (snippets / "print.css").write_text("/* print */\n")
     module = load(monkeypatch, snippets)
     assert snippets == module.SKILL  # type: ignore[attr-defined]
+
+
+def test_there_is_no_fallback_to_a_maintainers_home_directory(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """T2 (round 13): a `pathlib.Path.home() / ".claude/skills/..."` fallback let this script
+    "work" only on the one machine that path happens to exist on, and silently — contrary to
+    CONTRIBUTING's promise that without the two stylesheets the script says so and stops.
+    With `GTQ_HTML_SNIPPETS` unset, `SKILL` must be `None` regardless of what is on the
+    machine running the test, and `main()` must stop with its documented message.
+    """
+    module = load_without_env(monkeypatch)
+    assert module.SKILL is None  # type: ignore[attr-defined]
+    assert module.main() == 2  # type: ignore[attr-defined]
+    message = capsys.readouterr().err
+    assert "GTQ_HTML_SNIPPETS" in message
+    assert "not set" in message

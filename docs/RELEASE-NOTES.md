@@ -67,38 +67,38 @@ them. It does not own them.
 These are real and deliberate. Each one is written down where it matters rather than only
 here.
 
-0. **The reviewer decision form needs the local service.** A reviewer reads everything from
+1. **The reviewer decision form needs the local service.** A reviewer reads everything from
    generated pages, but recording a decision writes files, so it happens through the running
    service like every other state change.
 
-1. **Reviewer provenance is conventional, not cryptographic** (ADR-030). A reviewer is
+2. **Reviewer provenance is conventional, not cryptographic** (ADR-030). A reviewer is
    identified by the display name in the record and by Git history. A participant with write
    access to their own repository could author a record naming someone else. Every
    *internally inconsistent* claim is refused; the remaining gap is social. If your program
    needs more, review through pull requests so the Git history carries the identity.
-2. **Environment Health reports build-time facts, not live ones.** A generated page cannot
+3. **Environment Health reports build-time facts, not live ones.** A generated page cannot
    inspect the machine at the moment it is read. Live checks arrive with the service.
-3. **Reviewer-awarded badges cannot yet be awarded.** There is no badge-award record type, so
+4. **Reviewer-awarded badges cannot yet be awarded.** There is no badge-award record type, so
    meeting the criteria shows as "pending". Granting one by arithmetic would be exactly the
    blurring of authority the product exists to prevent.
-4. **Validator isolation is policy plus process boundaries**, not a container or seccomp. The
+5. **Validator isolation is policy plus process boundaries**, not a container or seccomp. The
    architecture permits adding one without changing quest content.
-5. **Catalog filtering needs JavaScript.** A static page cannot filter itself. The routes
+6. **Catalog filtering needs JavaScript.** A static page cannot filter itself. The routes
    that work without it are real pages: regions and tags, linked from every card and quest.
-6. **No coverage reporting** and **no glossary content type** (D1, D2).
-7. **A screenshot is not scanned.** The secret scanner reads text; a token in a picture of a
+7. **No coverage reporting** and **no glossary content type** (D1, D2).
+8. **A screenshot is not scanned.** The secret scanner reads text; a token in a picture of a
    terminal is invisible to it. The `PROOF.md` template asks the participant to confirm the
    package carries nothing sensitive, and that confirmation is a person's judgment, not a
    gate.
-8. **Clean-clone installation is tested one step short of a real clone.** The `clean-export`
+9. **Clean-clone installation is tested one step short of a real clone.** The `clean-export`
    CI job runs `make verify-package`, which exports tracked files with `git archive`, then
    installs, validates and builds in a fresh virtual environment on every change. A true
    `git clone` from the remote followed by `make setup` was run by hand in round 4 and
    recorded in `docs/audits/round-04-independent-audit.md`; nothing runs it on a schedule.
-9. **Earlier quest versions are not kept.** An attempt records the quest version it was
-   started on, and the review page says when a newer one is published, but the quest page and
-   the review page show the current version's criteria. Git history holds the earlier text.
-10. **A validator's grandchild that starts a session of its own outlives the timeout.**
+10. **Earlier quest versions are not kept.** An attempt records the quest version it was
+    started on, and the review page says when a newer one is published, but the quest page and
+    the review page show the current version's criteria. Git history holds the earlier text.
+11. **A validator's grandchild that starts a session of its own outlives the timeout.**
     `docs/VALIDATOR-CONTRACT.md` covers the ordinary case: the run's process group is
     killed on exit and on timeout, which reaches anything a validator spawns normally.
     A descendant that calls `setsid()` (Python's `start_new_session`) leaves that group

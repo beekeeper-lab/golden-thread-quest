@@ -74,6 +74,11 @@ completion and verified XP.
 **Needs changes** and **reject** require at least one finding, with a severity and what you
 observed. A decision the participant cannot act on wastes both your time.
 
+`needs_changes` and `rejected` move the attempt to the same state and show the same badge to
+the participant — there is no separate "rejected" state. Use `rejected` when you mean the
+submission is not close, and `needs_changes` for a smaller correction; the difference is
+recorded for history, not enforced by the application.
+
 A superseded decision is archived rather than overwritten, so a participant can see that you
 changed your mind and not only the outcome.
 

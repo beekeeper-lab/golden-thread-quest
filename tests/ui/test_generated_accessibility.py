@@ -220,6 +220,18 @@ def test_the_content_security_policy_is_restrictive(generated: Path) -> None:
     assert "frame-ancestors" not in directives
 
 
+def test_the_referrer_meta_tag_is_same_origin(generated: Path) -> None:
+    """T6 (round 13): the header is asserted in `tests/security/test_service.py`, but a page
+    opened straight from disk has no server to send it — only this meta copy protects that
+    case (round 12, C1), and nothing asserted it was actually there.
+    """
+    for page in pages(generated):
+        html = page.read_text()
+        assert re.search(r'<meta\s+name="referrer"\s+content="same-origin">', html), (
+            f"{page.relative_to(generated)} has no same-origin referrer meta tag"
+        )
+
+
 def test_no_inline_script_or_style_would_be_blocked_by_that_policy(generated: Path) -> None:
     """A policy with no 'unsafe-inline' means an inline handler silently does nothing."""
     for page in pages(generated):
