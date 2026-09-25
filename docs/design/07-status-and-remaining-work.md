@@ -1,9 +1,9 @@
 # Part 7. Status and remaining work
 
 This part says what is finished, what is open, and what is deliberately left for later. It
-describes `main` at commit `16a0b03` (the merge of pull request 8, round 11), with the round
-12 findings taken from `docs/audits/round-12-independent-audit.md` on the branch
-`chore/round-12-audit` at `7a8cf7b`.
+describes `main` at commit `0018e2d` (the merge of pull request 10, round 12), with the round
+12 findings and their fixes taken from `docs/audits/round-12-independent-audit.md`, now merged
+to `main` alongside the code.
 
 ## 7.1 How the work was staged
 
@@ -58,45 +58,51 @@ finding is verified by reproduction or by reading the cited code before it is ac
 | 9 | `5248500` | 0 | 8 | `round-09-independent-audit.md` |
 | 10 | `8df0ac5` | 1 | 8 | `round-10-independent-audit.md` |
 | 11 | `ea36037` | 0 | 3 | `round-11-independent-audit.md` |
-| 12 | `16a0b03` | 2 | 4 | `round-12-independent-audit.md` (on `chore/round-12-audit`) |
+| 12 | `16a0b03` | 2 | 4 | `round-12-independent-audit.md`, merged to `main` at `0018e2d` (pull request 10) |
 
-Every accepted blocking and high finding from rounds 1 to 11 is fixed on `main`, each code
-fix with a test that fails without it. The round records say which lower findings were
-deferred or stated as limitations instead. The pattern the audits name is
-consistent: defects live in states no fixture occupied (no participant yet, a refused action,
-a second process, a hostile file, a real browser rather than a test client).
+Every accepted blocking and high finding from rounds 1 to 12 is fixed on `main`, each code fix
+with a test that fails without it, except round 12's E9 (Low, a validator grandchild that
+starts its own session survives cleanup), which is stated as known limitation 11 below rather
+than fixed. The round records say which lower findings were deferred or stated as limitations
+instead. The pattern the audits name is consistent: defects live in states no fixture occupied
+(no participant yet, a refused action, a second process, a hostile file, a real browser rather
+than a test client). Round 12 found the sharpest instance of that pattern yet: C1 (every
+browser action form refused) went unseen for eleven rounds because no lens had submitted a
+form in a real browser.
 
-## 7.4 Round 12: open findings
+## 7.4 Round 12: findings and their fixes
 
-Round 12 audited `16a0b03` and found two blocking and four high findings, so it does not close
-DH7. **None of the fixes is merged.** They are in progress on four branches: `fix/r12-web`,
-`fix/r12-io`, `fix/r12-integrity` and `fix/r12-runner`. Until they merge and a further round
-runs against the merge commit, the statements below describe the code as it is.
+Round 12 audited `16a0b03` and found two blocking and four high findings, so it did not close
+DH7. All eighteen findings are verified and accepted; seventeen are fixed on `main` at
+`0018e2d`, each with a test shown to fail with the fix reverted, and E9 is stated as known
+limitation 11 (Section 7.5). `make check` now runs 830 tests to completion and `make test-ui`
+runs 45 browser-driven ones, both up from 751 and 43 at round 11 (`docs/RELEASE-NOTES.md`). **DH7 is not closed by fixing a round's findings**, so round 13
+must still run against `0018e2d` before Stage 10 can close.
 
-| ID | Severity | Finding |
-|---|---|---|
-| C1 | Blocking | Every browser action form fails: pages send `Referrer-Policy: no-referrer`, Chromium then sends `Origin: null`, and the origin check refuses it. Only the CLI changes state |
-| E1 | Blocking | Three writes can follow a symbolic link out of `participant/`: the activity line, validation results in a linked `validation/` directory, and the review archive. A FIFO `ACTIVITY.md` hangs an action while it holds both locks |
-| C2 | High | CLI tests with `--participant-root` still build into the repository's own `generated/`, so `make check` replaces a participant's site with fixture data until the next build |
-| E2 | High | Validation result files are read without a size or file-type bound; a FIFO hangs `validate`, `build` and the service |
-| E3 | High | `review*.yaml` files are globbed and parsed without a bound or error handling; a stray bad `reviewer-notes.yaml` passes `validate` and crashes `build` |
-| E5 | High | A legitimate `locally_validated` attempt becomes a load error after an update that adds a validator to the quest, and every action is then refused |
-| C3 | Medium | A link leading outside the evidence package makes the review page say a secret was found |
-| C4 | Medium | After a pass, local validation and a failing re-run, the evidence page shows "passed" beside "Last run: fail" with nothing connecting them |
-| C5 | Medium | When a newer quest version renames a proof path, the review checklist marks the old item "Not detected" with no note that the version changed |
-| E4 | Medium | A hand-edited `state: submitted` with no `submission.yaml` loads and can be approved, skipping the secret-scan gate |
-| E6 | Medium | The runner caps the output excerpt and check count but not other check fields, so an oversize field discards the whole run |
-| E7 | Medium | Redaction runs after truncation, so a token cut at the boundary is stored in clear |
-| E8 | Medium | Evidence files have no size ceiling; a very large log makes every build slow while it holds the locks |
-| T1 | Medium | The documentation command test covers five documents and skips four guides |
-| E9 | Low | A validator grandchild that starts its own session survives cleanup |
-| E10 | Low | `make migrate` rewrites `progress.yaml` without an activity line |
-| E11 | Low | A validator that finishes but leaves a non-daemon thread running is reported `interrupted` |
-| T2 | Low | `PYTHON ?= python3` in the Makefile is never used |
+| ID | Severity | Finding | Fix |
+|---|---|---|---|
+| C1 | Blocking | Every browser action form failed: pages sent `Referrer-Policy: no-referrer`, Chromium then sent `Origin: null`, and the origin check refused it. Only the CLI changed state | The policy is `same-origin` in the header and the meta tag (Part 4, flow 4.8; Part 5, Section 5.2). Two browser tests submit real forms and check the files on disk |
+| E1 | Blocking | Three writes could follow a symbolic link out of `participant/`: the activity line, validation results in a linked `validation/` directory, and the review archive. A FIFO `ACTIVITY.md` hung an action while it held both locks | Every participant write goes through `safe_io`'s no-follow, non-blocking path (ADR-042; Part 2, Section 2.7; Part 5, Section 5.4). An unusable `ACTIVITY.md` skips its line with a warning instead |
+| C2 | High | CLI tests with `--participant-root` still built into the repository's own `generated/`, so `make check` replaced a participant's site with fixture data until the next build | `GTQ_GENERATED_ROOT` and `GTQ_LOCAL_DATA_ROOT` are configuration too (ADR-018, amended), with a test-suite session guard as backstop (Part 2, Section 2.7) |
+| E2 | High | Validation result files were read without a size or file-type bound; a FIFO hung `validate`, `build` and the service | Read through the same bounded reader as `progress.yaml`, up to 8 MB (Part 3, Section 3.2; Part 5, Section 5.9) |
+| E3 | High | `review*.yaml` files were globbed and parsed without a bound or error handling; a stray bad `reviewer-notes.yaml` passed `validate` and crashed `build` | One shared definition of a review record, read bounded, used by the loader, the review history and the evidence hash alike (Part 3, Section 3.4; Part 5, Section 5.9) |
+| E5 | High | A legitimate `locally_validated` attempt became a load error after an update that added a validator to the quest, and every action was then refused | ADR-017 amended: a version mismatch with at least one qualifying result warns instead of erroring (Part 3, Section 3.5) |
+| C3 | Medium | A link leading outside the evidence package made the review page say a secret was found | `evidence.scan_kinds` separates secret, link and oversize findings, worded separately (Part 4, flow 4.4; Part 5, Section 5.7) |
+| C4 | Medium | After a pass, local validation and a failing re-run, the evidence page showed "passed" beside "Last run: fail" with nothing connecting them | The evidence page notes when a declared validator's latest run does not match the state it earned; the state logic itself is unchanged (ADR-017) |
+| C5 | Medium | When a newer quest version renames a proof path, the review checklist marked the old item "Not detected" with no note that the version changed | Each missing checklist item on a version mismatch now notes that the list follows the published version |
+| E4 | Medium | A hand-edited `state: submitted` with no `submission.yaml` loaded and could be approved, skipping the secret-scan gate | A `submitted` attempt with no readable submission record is a load error, and `record_decision` refuses it too (Part 3, Section 3.5; Part 5, Section 5.8) |
+| E6 | Medium | The runner capped the output excerpt and check count but not other check fields, so an oversize field discarded the whole run | Check fields are truncated to their own schema limit; a check outside the schema's `id` or `outcome` is replaced and forces `environment_failure` (Part 2, Section 2.6; Part 4, flow 4.3) |
+| E7 | Medium | Redaction ran after truncation, so a token cut at the boundary was stored in clear | Redaction runs on the complete text first, then truncation (Part 4, flow 4.3; Part 5, Section 5.7) |
+| E8 | Medium | Evidence files had no size ceiling; a very large log made every build slow while it held the locks | Hashing streams a megabyte at a time; the scan reads at most 2 MB of a file and reports the rest as an oversize finding (Part 5, Section 5.4) |
+| T1 | Medium | The documentation command test covered five documents and skipped four guides | The test now checks every Markdown file at the root and under `docs/`, except audits and five named planning files |
+| E9 | Low | A validator grandchild that starts its own session survives cleanup | **Not fixed.** A reliable fix needs an isolation layer this release does not have. Known limitation 11 (Section 7.5) |
+| E10 | Low | `make migrate` rewrote `progress.yaml` without an activity line | `apply_migrations` writes an activity line after a migration it keeps (Part 4, flow 4.7) |
+| E11 | Low | A validator that finished but left a non-daemon thread running was reported `interrupted` | Kept and classified when the result channel has closed and the process is still alive a second later (Part 2, Section 2.6; Part 4, flow 4.3) |
+| T2 | Low | `PYTHON ?= python3` in the Makefile was never used | Removed; a test fails on any Makefile variable nothing references |
 
-**What this means for a reader of this document.** Parts 2 to 5 describe the design and the
-code at `16a0b03`. Where a round 12 finding shows the code falling short of the design, the
-relevant part says so next to the claim.
+**What this means for a reader of this document.** Parts 2 to 5 now describe the fixed
+behavior at `0018e2d`. Where round 12 found the code falling short of the design, the relevant
+part names the finding beside the fix rather than beside an open gap.
 
 ## 7.5 Known limitations
 
@@ -117,7 +123,17 @@ fixed before release; they are boundaries of release one.
    real `git clone`; a real clone was run by hand in round 4.
 10. Earlier quest versions are not kept. An attempt records its version, but pages show the
     current version's criteria; Git history holds the earlier text.
-11. Two builds are byte-identical only when `SOURCE_DATE_EPOCH` is set.
+11. A validator's grandchild that starts a session of its own outlives the timeout (round 12
+    finding E9). The runner kills the whole process group on exit and on timeout, which
+    reaches anything a validator spawns normally; a descendant that calls `setsid()` leaves
+    that group and is not reached by the same `killpg`. Making the service process a Linux
+    `PR_SET_CHILD_SUBREAPER` would catch a reparented orphan like that one, but only by
+    landing it on the service process itself, mixed in with every other run's, with no cheap
+    way to tell which run a reparented PID came from and nothing that ever kills the service
+    process the way a per-run child is killed. That trade swaps one unbounded-survivor case
+    for another, so this is recorded rather than fixed: every shipped validator is reviewed
+    code that does not do this, and the gap only matters against one that is not.
+12. Two builds are byte-identical only when `SOURCE_DATE_EPOCH` is set.
 
 ## 7.6 Deferred work
 
@@ -148,10 +164,16 @@ evaluation, and external-write previews.
 
 Stage 10 completes, and the project can make its release decision, when:
 
-1. the round 12 fixes are merged, each with a test that fails without it;
-2. a round runs against that merge commit and finds no blocking or high finding;
-3. DH7 is checked, `docs/audits/final-audit.md` records the decision (`release`,
+1. a round runs against `0018e2d` (the round 12 fixes are already merged, each with a test
+   that fails without it) and finds no blocking or high finding;
+2. DH7 is checked, `docs/audits/final-audit.md` records the decision (`release`,
    `release-with-advisories` or `do-not-release`), and the Stage 10 boxes in
    `docs/IMPLEMENTATION-PLAN.md` are checked.
+
+Round 13 should point at what round 12 named for it: every action through a real browser, not
+`curl`; `safe_io`'s write path against every write site; the `GTQ_GENERATED_ROOT` isolation
+and the session guard, by writing a test that forgets it; the runner's early-close rule
+against a validator that closes stdout before finishing; and the tests round 12 added,
+mutated the same way.
 
 This document then gets a minor version for the new status (see `REGENERATING.md`).

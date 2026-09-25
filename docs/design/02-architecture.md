@@ -233,9 +233,20 @@ by tests.
 - gives the validator a `Workspace` object whose read and write methods resolve symbolic
   links and re-check that the path is inside the registered roots, and that exposes the
   evidence package of *the attempt under validation* (ADR-039);
-- reads output as it arrives, stops a run that writes more than 1 MiB on a stream, kills
-  the whole process group on timeout or exit, and redacts secret-like values before the
-  result is stored or shown.
+- reads output as it arrives, stops a run that writes more than 1 MiB on a stream, kills the
+  whole process group on timeout, on exit, or a second after the child's result channel
+  (its `stdout`) has closed while the OS process is still alive — a non-daemon thread the
+  validator forgot to stop no longer costs the run its result (round 12, finding E11);
+- redacts the complete output and every check field *before* truncating them, never after:
+  cutting first can sever a secret-shaped token at the boundary, and the half that survives
+  matches no detector (round 12, finding E7).
+
+Every check a validator's process reports is also checked against the result schema's own
+`id` pattern and `outcome` enum before it is trusted: a check outside either is replaced with
+one reporting that a check was malformed, and the run's outcome is forced to
+`environment_failure`, because a validator that cannot describe its own check correctly has a
+defect in itself, not a fact about the participant's work — the same principle already
+applied to an uncaught exception or a nonzero exit (round 12, finding E6).
 
 **Outcomes.** A run ends in one of six outcomes: `pass`, `fail`, `warning`,
 `environment_failure`, `inconclusive`, `interrupted`. Only `pass` and `warning` are
@@ -260,10 +271,37 @@ write:
 1. validates the new document against `schemas/progress.schema.json` *before* writing, so
    the application never writes a file it would later refuse to load;
 2. writes to a temporary file in the same directory, flushes and `fsync`s it, then renames it
-   over the original (`atomic_write_text`). A rename within one filesystem is atomic, so an
-   interrupted write leaves the old file intact;
+   over the original (`atomic_write_text`, which calls `safe_io.atomic_write`). A rename
+   within one filesystem is atomic, so an interrupted write leaves the old file intact;
 3. appends a line to `participant/ACTIVITY.md` describing the change, so the participant can
    read everything the application did to their files.
+
+**Every participant write follows the same rule, not just this one (ADR-042).** Round 12
+found that the activity line was appended with a plain `open("a")`, which follows a symbolic
+link wherever it leads and blocks forever on a FIFO; that validation results were written
+into a `validation/` directory that could itself be a link out of the tree; and that the
+review archive used a plain `write_text`. `safe_io.atomic_write` and
+`safe_io.append_to_regular_file` now back every one of these: each walks from the participant
+root one component at a time with `O_NOFOLLOW`, refuses a component that is a link or not a
+directory, refuses a target that exists and is not a regular file, and never opens anything
+in a way that can block. When the unusable target is `ACTIVITY.md`, the line is skipped and a
+warning goes to stderr, because by the time it runs the change it describes is already on
+disk in `progress.yaml`; refusing the action at that point, or reporting a failure that did
+not happen, would cost the participant's trust in their own record for less reason than
+skipping one note. For every other target — `progress.yaml`, a validation result, a
+submission or review record — the write is refused before anything changes, like any other
+write failure.
+
+**Configuration, not just the participant root.** `GTQ_PARTICIPANT_ROOT`,
+`GTQ_GENERATED_ROOT` and `GTQ_LOCAL_DATA_ROOT` are all read by `AppConfig.from_environment`,
+and `_config_from_args` carries all three forward when `--participant-root` is passed on the
+command line (ADR-018, amended round 12). Before the amendment, only the participant root
+moved: a test that ran the CLI as a real subprocess — the only way an installed sandbox
+participant can act at all — rebuilt the repository's own `generated/` on every mutating
+action, overwriting a checked-in page with fixture data until the next `make build`. A
+session-scoped test fixture (`tests/conftest.py`) now fails the whole run if the repository's
+own `generated/`, `local-data/` or `participant/` changed anyway, as the backstop for a test
+that forgets to set one of the three.
 
 **Three locks.** Each one protects a different race:
 

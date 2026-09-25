@@ -1,6 +1,6 @@
 # Part 6. Key decisions
 
-`docs/DECISIONS.md` is the full log: forty-one architecture decision records (**ADRs**),
+`docs/DECISIONS.md` is the full log: forty-two architecture decision records (**ADRs**),
 appended rather than rewritten, several amended after an audit found the code and the
 decision disagreeing. This part groups them by the question each one answers and gives the
 reason in one or two sentences. Read the log for the evidence behind each.
@@ -50,14 +50,15 @@ reason in one or two sentences. Read the log for the evidence behind each.
 | ADR | Decision | Why |
 |---|---|---|
 | 014 | Only registered validators and named actions run | Arbitrary command execution on localhost is an avoidable boundary failure |
-| 017 | A validation run never changes attempt state; `locally_validated` is requested and guarded | A validator must not be an authority over participant state |
-| 018 | Participant paths keep the `participant/` prefix; the root is configuration | Tests use fixtures without touching live work; the contract does not move |
+| 017 | A validation run never changes attempt state; `locally_validated` is requested and guarded | A validator must not be an authority over participant state. Amended round 12: a version mismatch with at least one qualifying result warns instead of erroring when an update added a validator, because the application cannot tell that apart from the validator never having existed |
+| 018 | Participant paths keep the `participant/` prefix; the root is configuration | Tests use fixtures without touching live work; the contract does not move. Amended round 12: the generated and local-data roots are configuration the same way, so a test that shells out to the CLI cannot rebuild the repository's own `generated/` |
 | 030 | Reviewer provenance is conventional, and said so | A half-built signature scheme invites trust it has not earned |
 | 031 | The evidence hash covers the work, not the records; proof files outside the package are digested too | The application's bookkeeping must not read as a change to the work |
 | 032 | The application never pushes, opens a pull request or merges | Those are claims the participant makes, not the tool |
 | 033 | Every rule the browser shows is enforced in the action layer | A second caller turned a greyed-out button into a hole |
 | 039 | A validator judges the attempt it was given | Records connect by ID, never by modification time |
 | 041 | The service answers only to a loopback name, and every request gets a response | Defeats DNS rebinding; no traceback, no silent drop |
+| 042 | Every participant write walks the tree component by component with `O_NOFOLLOW`, and an unusable `ACTIVITY.md` skips its line | Following a link was the escape route; blocking forever while holding both locks was the outage |
 
 ## 6.5 Concurrency and failure
 

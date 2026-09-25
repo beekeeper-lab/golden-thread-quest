@@ -2,11 +2,11 @@
 
 | | |
 |---|---|
-| Version | 1.0.0 |
-| Date | 2026-09-24 |
-| Describes | `main` at `16a0b03`, the merge of pull request 8 (round 11) |
-| Audit status from | `chore/round-12-audit` at `7a8cf7b` (round 12 findings, fixes not merged) |
-| Rendered copies | `artifacts/html/design/golden-thread-system-design-v1.0.0.html`, `artifacts/pdf/design/golden-thread-system-design-v1.0.0.pdf` |
+| Version | 1.1.0 |
+| Date | 2026-09-25 |
+| Describes | `main` at `0018e2d`, the merge of pull request 10 (round 12) |
+| Audit status from | `main` at `0018e2d`: round 12 is complete and merged, eighteen findings all fixed except one (E9) stated as a known limitation. DH7 is still open; round 13 has not yet run against this commit |
+| Rendered copies | `artifacts/html/design/golden-thread-system-design-v1.1.0.html`, `artifacts/pdf/design/golden-thread-system-design-v1.1.0.pdf` |
 
 ## About this document
 
@@ -53,7 +53,7 @@ Also in this folder: `VERSION`, `CHANGELOG.md`, `REGENERATING.md`.
 - Every diagram is Mermaid, drawn from the code, with a numbered walkthrough beside it.
   GitHub renders the Mermaid blocks; the HTML carries them as inline SVG.
 - `ADR-nnn` refers to `docs/DECISIONS.md`. Round 12 finding IDs (C1, E1, T1 and so on) refer
-  to `docs/audits/round-12-independent-audit.md` on `chore/round-12-audit`. `Dn` refers to the
+  to `docs/audits/round-12-independent-audit.md`, now merged to `main`. `Dn` refers to the
   deferred-work register in `docs/IMPLEMENTATION-PLAN.md`.
 - Commands are run from the repository root. `quest-app` needs the virtual environment
   active: `make setup`, then `source .venv/bin/activate`.

@@ -17,7 +17,8 @@ the state machine an attempt moves through.
    of running services.
 4. The arrows show the only read and write paths. The application writes into `participant/` only
    through the store, the evidence code and the review code, and only inside the configured
-   participant root after symbolic links are resolved (ADR-018).
+   participant root (ADR-018). A read resolves symbolic links and re-checks the result; a
+   write refuses one outright, one path component at a time (ADR-042, Part 2, Section 2.7).
 
 ```mermaid
 ---
@@ -83,7 +84,11 @@ such as `participant/tests/`, as proof.
 | Generated site | `generated/` | Build | HTML pages, JSON indexes, build manifest. Never authoritative |
 
 Every participant-side record is validated against its schema before it is written and again
-when it is read.
+when it is read. Every one of them is also read bounded, and never through a symbolic link: a
+state file, a submission or a review record up to 2 MB, a validation result up to 8 MB
+(Part 5, Section 5.9). Round 12 found that only `progress.yaml` had that bound; a FIFO or a
+link to a device in place of a validation result or a stray `review*.yaml` could hang or crash
+`build` (findings E2 and E3).
 
 ## 3.3 Stable identifiers
 
@@ -139,12 +144,18 @@ Three fingerprints let the application notice change without trusting anyone's w
   (ADR-028). It is a warning because the hash also changes on a typo fix, and a typo fix
   must not revoke someone's approved work.
 - **Evidence hash** (`evidence_hash`) is a SHA-256 over the evidence package, excluding
-  `validation/`, `submission.yaml` and `review*.yaml` (ADR-031). It answers "has the
-  participant's work changed?", so the application's own bookkeeping stays out of it.
-  Because most quests declare proof outside the package, submissions and reviews also record
-  **proof_files**: a digest per declared proof path outside the package, `missing` when
-  nothing is there and `unresolvable` when the path leads outside `participant/`
-  (ADR-031, amended in round 11).
+  `validation/`, `submission.yaml` and the review records (ADR-031). It answers "has the
+  participant's work changed?", so the application's own bookkeeping stays out of it. Hashing
+  streams each file a megabyte at a time rather than holding it in memory, so a large log
+  costs the build time, not memory (round 12 finding E8). "The review records" is now one
+  definition, `progress.review_archive_paths`, shared by the loader, the evidence hash and
+  `review.review_history`; before round 12's finding E3 the loader checked `review-*.yaml`
+  and the history read the looser `review*.yaml`, so a participant's own file such as
+  `review-notes.yaml` was hashed by one and not the other, and a stray one with broken YAML
+  passed `validate` and then crashed `build`. Because most quests declare proof outside the
+  package, submissions and reviews also record **proof_files**: a digest per declared proof
+  path outside the package, `missing` when nothing is there and `unresolvable` when the path
+  leads outside `participant/` (ADR-031, amended in round 11).
 
 The submission records both fingerprints. The reviewer's approval is refused if either has
 changed since submission unless the reviewer acknowledges the change, and after approval the
@@ -219,7 +230,23 @@ integrity error `progress.unverified_verified_state`, when the attempt names no 
 review is missing, belongs to another attempt or quest, is not an approval, has no
 verification statement, or approves a different quest version. The same applies to a
 hand-written `locally_validated` without a qualifying result for each declared validator
-(`progress.unvalidated_locally_validated_state`, ADR-017 amended in round 11).
+(`progress.unvalidated_locally_validated_state`, ADR-017 amended in round 11), and to a
+hand-written `submitted` with no readable `submission.yaml` behind it
+(`progress.unsubmitted_submitted_state`, round 12 finding E4): `submitted` is the shadow of a
+request for review exactly as `verified` is the shadow of an approval, and without this check
+a reviewer could approve straight to `verified` without the record that submission is
+supposed to guarantee exists — including the secret scan `submit-for-review` runs before that
+record is ever written. `record-review` checks the same thing again for itself, so a
+`submitted` state built some other way than the loader cannot reach a decision either.
+
+`progress.unvalidated_locally_validated_state` has one exception, added by round 12's
+amendment to ADR-017: when the attempt's `quest_version` is not the quest's current version,
+an upstream update may have *added* a validator since the attempt validated, and the
+application keeps no record of what an earlier version required. A missing validator is then
+a warning, `progress.locally_validated_missing_new_validator`, naming the validator and
+inviting a re-run — but only when the attempt has at least one qualifying result already; an
+attempt with none at all, version mismatch or not, is exactly the forgery this check exists to
+catch, and stays an error.
 
 Verified XP and badges are computed only from attempts that pass this check. Claimed XP
 counts `evidence_ready` and every later state.
@@ -236,5 +263,10 @@ is deliberate unless marked open.
 | No step back from evidence-ready or submitted | `reopen-evidence` and `withdraw-submission` | Participant can correct work before a reviewer decides |
 | Decision `rejected` (`CONTENT-MODEL.md`) with no state of its own | `rejected` maps to the `needs_changes` state | `review._apply_decision` |
 | Spelling `needs-changes` (`CONTENT-MODEL.md`) | `needs_changes` everywhere | `models.Decision`, `models.AttemptState` |
-| A `submitted` attempt always has a submission | A hand-edited `submitted` with no `submission.yaml` loads and can be approved, skipping the secret-scan gate | **Open**: round 12 finding E4 (Medium) |
-| A legitimate `locally_validated` attempt survives an update | It becomes a load error when an update adds a validator to the quest, because the check reads the current quest's validators, not the attempt's version | **Open**: round 12 finding E5 (High) |
+
+Round 12 found two places the code fell short of its own design, both since fixed: a
+hand-edited `submitted` with no `submission.yaml` loaded and could be approved, skipping the
+secret-scan gate (finding E4, closed by `progress.unsubmitted_submitted_state` above), and a
+legitimate `locally_validated` attempt became a load error the moment an update added a
+validator to its quest (finding E5, closed by the ADR-017 amendment above). Neither is a
+disagreement any longer.

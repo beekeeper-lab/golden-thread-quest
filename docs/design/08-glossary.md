@@ -54,12 +54,13 @@ where the term maps to one.
 | **Region** | A group of quests on the map, such as Base Camp or Jira Jungle. Defined in `content/regions/` |
 | **Registry** | `validators/registry.yaml`: the complete list of programs the application may run, with their constraints |
 | **Request token** | A random value minted when the service starts, held in memory, substituted into served pages, and required on every state-changing request |
-| **Review record** | `review.yaml` in the evidence package: the reviewer's decision, findings, verification statement, evidence hash and proof files. Superseded records are archived as `review-<timestamp>.yaml` |
+| **Review record** | `review.yaml` in the evidence package, or one of its `review-<timestamp>.yaml` archives: the reviewer's decision, findings, verification statement, evidence hash and proof files. Enumerated by one shared definition, `progress.review_archive_paths`, used by the loader, the review history and the evidence hash alike (round 12, amended) |
 | **Reviewer** | The person who evaluates submitted evidence and records a decision. Also called Questmaster |
 | **Round** | One release audit pass against a specific commit, recorded under `docs/audits/` |
-| **Secret scan** | Detection of secret-like values: over tracked files by `tools/secret_scan.py`, and over an evidence package by `evidence.scan_evidence`, where it blocks marking evidence ready and submission |
+| **Secret scan** | Detection of secret-like values: over tracked files by `tools/secret_scan.py`, and over an evidence package by `evidence.scan_evidence`, where it blocks marking evidence ready and submission. A finding is one of three kinds — secret, link or oversize (`evidence.scan_kinds`) |
+| **Session guard** | A session-scoped test fixture (`tests/conftest.py`) that fails the whole test run if the repository's own `generated/`, `local-data/` or `participant/` changed, catching a test that forgot to isolate one of the three writable roots (round 12) |
 | **Stable ID** | A lowercase, hyphenated identifier that never changes when a title or filename does, and is never reused (ADR-012) |
-| **Submission record** | `submission.yaml` in the evidence package: what was submitted, with its evidence hash and proof files |
+| **Submission record** | `submission.yaml` in the evidence package: what was submitted, with its evidence hash and proof files. A `submitted` attempt with none readable is a load error, `progress.unsubmitted_submitted_state` (round 12) |
 | **Track** | An ordered or rule-based selection of quests, defined in `content/tracks/` |
 | **Upstream** | The canonical repository participants take curriculum updates from |
 | **Validator** | A program-owned Python function, registered by ID, that checks participant artifacts and returns structured findings. Never an authority over state (ADR-017) |

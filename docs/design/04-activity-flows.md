@@ -109,14 +109,24 @@ needs no confirmation, but it takes the lock and loads the world like every acti
    with a `Workspace` and an output collector. The validator's own prints are moved to
    standard error so they cannot corrupt the result, which is written as JSON on the
    original standard output.
-5. The parent reads both streams as they arrive. Four things can end the run: the child
-   exits; the timeout passes; a stream exceeds 1 MiB; or the child exits and one second
-   passes while grandchildren still hold a pipe. In every case the whole process group is
-   killed.
-6. The run is classified (next table). Every result carries at least one check, so an
-   `interrupted` or `environment_failure` run still tells the participant what happened.
-7. Output is truncated to the registered limit (at most 20,000 characters), redacted, and
-   every free-text field of every check is redacted.
+5. The parent reads both streams as they arrive. Five things can end the run: the child
+   exits; the timeout passes; a stream exceeds 1 MiB; the child exits and one second passes
+   while grandchildren still hold a pipe; or the child's result channel (its `stdout`) closes
+   while the OS process is still alive a second later, which means something the validator
+   left running — a non-daemon thread is the case this exists for — is holding the
+   interpreter open after it already returned its result (round 12 finding E11). In every case
+   the whole process group is killed.
+6. Each reported check is checked against the result schema's own `id` pattern and `outcome`
+   enum before it is trusted. One outside either is replaced with a check reporting that a
+   check was malformed, and the run's outcome is forced to `environment_failure`: a validator
+   that cannot describe its own check correctly has a defect in itself, not the participant's
+   work (round 12 finding E6). The run is then classified (next table). Every result carries
+   at least one check, so an `interrupted` or `environment_failure` run still tells the
+   participant what happened.
+7. The complete output and every check field are redacted *first*, then truncated: the
+   excerpt to the registered limit (at most 20,000 characters), each check field to its own
+   schema limit. Redacting before truncating, never after, means a secret-shaped token cannot
+   be cut in half at the boundary and stored in clear (round 12 finding E7).
 8. The result is validated against `validation-result.schema.json` and written atomically to
    `validation/<run-id>.json` in the attempt's package. The site is rebuilt. **The attempt's
    state does not change.**
@@ -126,11 +136,16 @@ needs no confirmation, but it takes the lock and loads the world like every acti
 | Outcome | How it is reached (`validator_runner.py`) | Qualifies? |
 |---|---|---|
 | `interrupted` | The timeout passed | No |
-| `environment_failure` | Output over 1 MiB; nonzero exit; empty output; unreadable JSON; the validator raised; the validator tried to leave its roots; or it reported an environment failure itself | No |
+| `environment_failure` | Output over 1 MiB; nonzero exit that the validator's own process produced; empty output; unreadable JSON; a check outside the schema's `id` or `outcome`; the validator raised; the validator tried to leave its roots; or it reported an environment failure itself | No |
 | `inconclusive` | No checks, every check skipped, or any check inconclusive (and none failed) | No |
 | `fail` | Any check failed | No |
 | `warning` | Any check warned, none failed or were inconclusive | Yes |
 | `pass` | Every check passed | Yes |
+
+A nonzero exit is trusted over anything printed, *except* when the runner produced it itself
+by killing a process whose result channel had already closed (step 5's fifth case): that exit
+status describes the runner's own cleanup, not a judgment the validator passed on itself, so
+the result it already wrote is kept rather than discarded (round 12 finding E11).
 
 ```bash
 quest-app action run-validator --quest base-camp-repository-safety \
@@ -153,8 +168,9 @@ flowchart TB
     r3{"Ended by?"}
     c1["interrupted"]
     c2["environment_failure"]
+    r4["Sanitize each check against<br/>the schema's id and outcome;<br/>a malformed one is replaced<br/>and forces environment_failure"]
     r5["Classify checks:<br/>fail, inconclusive, warning, pass"]
-    r6["Kill the process group<br/>truncate, redact output and checks"]
+    r6["Kill the process group;<br/>redact the complete output<br/>and checks, then truncate"]
     r7{"Valid result?"}
     r8["Atomic write validation/run-id.json<br/>rebuild; attempt state unchanged"]
     rB["Refused: run discarded"]
@@ -167,24 +183,25 @@ flowchart TB
   a2 -- no --> rA
   a2 -- yes --> r1 --> h1 --> r3
   r3 -- "timeout" --> c1
-  r3 -- "over 1 MiB, nonzero exit,<br/>unreadable output" --> c2
-  r3 -- "exit 0, JSON" --> r5
+  r3 -- "over 1 MiB, or a nonzero<br/>exit the process itself<br/>produced, unreadable output" --> c2
+  r3 -- "exit 0 with JSON; or its<br/>result channel closed and a<br/>leftover thread's process<br/>was killed a second later" --> r4
   c1 --> r6
   c2 --> r6
-  r5 --> r6 --> r7
+  r4 --> r5 --> r6 --> r7
   r7 -- no --> rB
   r7 -- yes --> r8 --> p9
 ```
 
 *Figure 7. Running a validator (`ActionRunner._run_validator`, `run_validator`, `_collect`,
-`classify`, `validator_child.main`, `evidence.store_result`).*
+`_sanitize_checks`, `classify`, `validator_child.main`, `evidence.store_result`).*
 
-**Open issues in this flow (round 12).** An oversize `summary`, `evidence` or other check
-field is not capped, so the schema check refuses the whole run instead of recording it (E6,
-Medium). Redaction runs after truncation, so a token cut at the boundary can be stored in
-clear (E7, Medium). A validator that finishes but leaves a non-daemon thread running is
-reported `interrupted` (E11, Low). A grandchild that starts its own session survives cleanup
-(E9, Low).
+**Fixed since round 12.** Findings E6, E7 and E11 above are what this diagram now shows:
+check sanitization forcing `environment_failure` on a malformed check (E6), redaction before
+truncation (E7), and a closed result channel with a killed leftover process no longer read as
+`interrupted` (E11). **Still open, as a known limitation, not a defect (E9, Low):** a
+grandchild that starts its own session survives cleanup, because nothing short of an
+operating-system sandbox reaches a process that has left the group `killpg` targets
+(`docs/VALIDATOR-CONTRACT.md`; deferred item D9).
 
 ## 4.4 Submitting for review
 
@@ -193,9 +210,11 @@ reported `interrupted` (E11, Low). A grandchild that starts its own session surv
 1. The participant confirms "Submit this evidence for review. A reviewer will read it".
 2. `review.readiness_problems` collects every problem at once, so the participant sees all
    of them together. **Blocking** problems: the attempt is not `evidence_ready` or
-   `locally_validated`; the secret scan found something; a link leads outside the package;
-   the package is missing. **Advisory** problems: a declared validator has not been run, or
-   its latest result does not qualify.
+   `locally_validated`; the package is missing; or the scan found a secret, a link leading
+   outside the package, or a file too large for the scan to read — three kinds of scan
+   finding, worded separately by `evidence.scan_kinds` so a participant is not sent looking
+   for a credential that was never there (round 12 finding C3). **Advisory** problems: a
+   declared validator has not been run, or its latest result does not qualify.
 3. Any blocking problem refuses the submission.
 4. Otherwise `create_submission` computes the evidence hash and the proof-file digests,
    writes `submission.yaml` (validated against its schema) into the package, moves the
@@ -224,7 +243,7 @@ flowchart TB
     direction TB
     a1{"Confirmed?"}
     a2["Lock, load, validate"]
-    a3["readiness_problems:<br/>state, secret scan, outside links,<br/>package present, validator results"]
+    a3["readiness_problems:<br/>state, package present, scan kinds<br/>(secret, link, oversize), validator results"]
     a4{"Any blocking problem?"}
     a5["Compute evidence hash<br/>and proof-file digests"]
     a6["Write submission.yaml<br/>validated, atomic"]
@@ -253,8 +272,11 @@ flowchart TB
 2. The reviewer chooses **approved**, **needs changes** or **rejected**, fills in the form,
    and confirms. The confirmation text depends on the decision; only the approval text says
    it produces verified XP.
-3. `record_decision` refuses a decision that is not one of the three values, and an attempt
-   that is not `submitted`.
+3. `record_decision` refuses a decision that is not one of the three values, an attempt that
+   is not `submitted`, and — since round 12 finding E4 — an attempt with no readable
+   `submission.yaml`. The loader already refuses a hand-edited `submitted` state with no
+   submission record at load (Part 3, Section 3.5); this check is `record_decision`'s own,
+   so a `submitted` state built or altered some other way cannot reach a decision either.
 4. An **approval** needs a verification statement of at least twenty characters saying what
    was checked and how. Then the **changed-since-submission gate**: the current evidence hash
    and each recorded proof-file digest are compared with `submission.yaml`. If anything
@@ -296,7 +318,7 @@ flowchart TB
     v3["Re-read what changed,<br/>tick acknowledge"]
   end
   subgraph AP["Application: review.py"]
-    a0["Check: confirmed,<br/>attempt is submitted"]
+    a0["Check: confirmed, attempt is<br/>submitted, submission record readable"]
     a1{"Statement of<br/>20+ characters?"}
     a2{"Changed since<br/>submission and not<br/>acknowledged?"}
     a4{"At least one<br/>finding?"}
@@ -346,7 +368,14 @@ reviewer page for their own work (deferred item D11).
    state is read only if content is valid, because an attempt cannot be judged against a
    curriculum that does not make sense. A missing `progress.yaml` is normal.
 3. Participant state is read with bounded reads: each file must be an ordinary file under a
-   size ceiling. `verified` and `locally_validated` claims are checked against their records.
+   size ceiling, 2 MB for `progress.yaml`, a submission or a review record, 8 MB for a
+   validation result. Round 12 found this bound applied only to `progress.yaml`: a FIFO or a
+   link to a device in place of a validation result, or a stray `review*.yaml` with broken
+   YAML, could hang or crash `build` (findings E2 and E3). Both record kinds are now read the
+   same bounded way, and review records are enumerated by one shared definition
+   (`progress.review_archive_paths`) instead of two globs that used to disagree. A
+   `validation/` directory that is itself a link is reported and nothing in it is read.
+   `verified` and `locally_validated` claims are checked against their records.
 4. **If anything is an error**, the build renders the error page (U11) to
    `local-data/build-errors/index.html`, prints its path, exits non-zero, and leaves the
    published site untouched.
@@ -394,10 +423,11 @@ flowchart TB
 *Figure 10. The build pipeline (`pipeline.load_world`, `content_loader.load_content`,
 `build.build_site`, `build._swap`, `build.render_error_page`).*
 
-**Open issues in this flow (round 12).** Validation result files and `review*.yaml` files are
-read without the size bound that protects `progress.yaml`, so a FIFO or a link to a device
-can hang or kill a build (E2, E3, High). Evidence files have no size ceiling, so a very large
-log slows every build (E8, Medium).
+**Fixed since round 12.** Findings E2 and E3 (bounded reads for validation results and review
+records, above) and E8 are closed: evidence files are hashed by streaming a megabyte at a
+time instead of holding each one in memory, and the secret scan reads at most 2 MB of a file
+before treating it as a scan finding rather than pattern-matching a file that used to take a
+build about a minute and hold both locks while it ran.
 
 ## 4.7 Taking an upstream curriculum update
 
@@ -419,7 +449,9 @@ log slows every build (E8, Medium).
 6. The migration refuses during a merge, takes the progress lock, reads the file with a
    bounded read, applies each step (never advancing an in-progress attempt's quest version,
    never dropping an unknown field), validates, writes atomically, reloads the whole world,
-   and restores the original bytes if the reload fails.
+   restores the original bytes if the reload fails, and — since round 12 finding E10 —
+   appends an activity line naming the migrations it kept, the same as every other writer of
+   `progress.yaml`.
 7. If the merge goes wrong: `git merge --abort`, or reset to the backup branch.
 
 ```bash
@@ -467,9 +499,11 @@ flowchart TB
 `update.apply_migrations`, `migrations.migrate`). The flow starts at `start` in the
 Participant lane.*
 
-**Open issues in this flow (round 12).** A `locally_validated` attempt becomes a load error
-after an update that adds a validator to its quest, and every action is then refused (E5,
-High). `make migrate` rewrites `progress.yaml` without an activity line (E10, Low).
+**Fixed since round 12.** A `locally_validated` attempt used to become a load error the
+moment an update added a validator to its quest, with every action then refused, including
+the `run-validator` that would have cleared it (finding E5); ADR-017's amendment (Part 3,
+Section 3.5) now warns instead when the attempt still has a qualifying result from before the
+update. `make migrate` now writes the activity line above (finding E10).
 
 ## 4.8 One browser action through the loopback service
 
@@ -531,9 +565,13 @@ sequenceDiagram
 `_handle_form_action`, `_host_is_acceptable`, `_origin_is_acceptable`, `_read_form_body`,
 `_token_matches`, `ActionRunner.perform`).*
 
-**Open issue: this flow does not work in a real browser at `16a0b03`.** Round 12 finding C1
-(Blocking): every page is served with `Referrer-Policy: no-referrer`, so Chromium sends
-`Origin: null` on a form post. `_origin_is_acceptable` parses `null` as a non-`http` origin
-and refuses the request as cross-origin at step 3. Only the CLI can change state at this
-commit. No test submitted a form end to end. A fix is in progress on `fix/r12-web` and is not
-merged.
+**Fixed since round 12.** Finding C1 (Blocking) was that every page was served with
+`Referrer-Policy: no-referrer` (both the header and the `<meta name="referrer">` tag), so
+Chromium sent `Origin: null` on a same-origin form POST, and `_origin_is_acceptable` at step 3
+parsed `null` as a non-`http` origin and refused it — only the CLI, which sends no `Origin` at
+all, could change state, and no test had submitted a form end to end. The policy is now
+`same-origin`: a same-origin POST carries its real origin and passes the check exactly as a
+CLI request does; a cross-origin POST still sends no `Origin` and is still refused, unchanged.
+Verified against real Chromium, not assumed. Two browser tests submit real forms (start-quest,
+record-review), accept the confirmation, and check the resulting files on disk; both fail with
+403 if the old policy is put back.
