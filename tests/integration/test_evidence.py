@@ -195,6 +195,32 @@ class TestEvidenceHash:
     def test_a_missing_directory_has_no_hash(self, config: AppConfig) -> None:
         assert evidence_hash(config, "participant/evidence/nothing/here") is None
 
+    def test_an_unreadable_file_is_named_relatively_not_by_a_traceback(
+        self, config: AppConfig
+    ) -> None:
+        """Round 13 E8.
+
+        An unreadable file used to crash the hash outright with an unhandled `OSError`, and
+        the traceback that reached the terminal carried this file's absolute path. It must
+        instead be reported through `UnreadableFileError`, naming the file by a path relative
+        to the evidence package.
+        """
+        from quest_app.hashing import UnreadableFileError
+
+        if os.geteuid() == 0:
+            pytest.skip("root can read a file whatever its mode")
+        target = config.resolve_participant_path(EVIDENCE) / "unreadable.md"
+        target.write_text("anything\n")
+        target.chmod(0)
+        try:
+            with pytest.raises(UnreadableFileError) as raised:
+                evidence_hash(config, EVIDENCE)
+        finally:
+            target.chmod(0o600)
+        assert raised.value.relative_path == "unreadable.md"
+        assert str(config.repo_root) not in str(raised.value)
+        assert str(config.participant_root) not in str(raised.value)
+
 
 def test_a_result_is_stored_by_its_attempt_not_by_its_own_claim(config: AppConfig) -> None:
     """The path comes from the attempt, so a record cannot file itself elsewhere."""

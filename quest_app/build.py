@@ -1106,6 +1106,31 @@ def git_summary_for(world: LoadedWorld, evidence_path: str | None) -> dict[str, 
     return summary_for(world.config.repo_root, evidence_path)
 
 
+def _changes_since_approval(config: Any, attempt: Any, review: Any) -> list[str]:
+    """What differs from what the reviewer decided on: the package, and each proof path.
+
+    Mirrors `quest_app.progress._check_stale_approval`, which the loader runs for every
+    verified attempt — same two comparisons, same "the approval stands" framing — so a
+    reviewer re-reading a decided attempt on its own page sees the identical signal a
+    `validate` run would have reported, not a second and possibly different one.
+    """
+    from quest_app.evidence import changed_proof_files, evidence_hash
+    from quest_app.hashing import UnreadableFileError
+
+    changes: list[str] = []
+    if review.proof_files is not None:
+        recorded = [{"path": path, "digest": digest} for path, digest in review.proof_files]
+        changes.extend(changed_proof_files(config, recorded))
+    try:
+        current = evidence_hash(config, attempt.evidence_path)
+    except UnreadableFileError as exc:
+        changes.append(exc.relative_path)
+    else:
+        if current is not None and current != review.evidence_hash:
+            changes.append(attempt.evidence_path)
+    return changes
+
+
 def _review_context(
     entry: QuestProgress, summary: Any, world: LoadedWorld, service: ServiceView
 ) -> dict[str, Any]:
@@ -1142,7 +1167,27 @@ def _review_context(
             for item in required
         )
     history = review_history(config, attempt)
-    changed = changes_since_submission(config, attempt)
+    # Round 13 C5: a decided attempt (verified, needs-changes or rejected) is not awaiting a
+    # decision, so what belongs on the page is not "here is what changed since the request
+    # you have not yet acted on" but "here is what the reviewer actually saw, and here is
+    # what has drifted since they decided" — the same question `_check_stale_approval`
+    # answers for the loader, in the same words, because a reviewer re-reading a decided
+    # attempt is asking exactly what that check is for.
+    # Scoped to an actual approval: a needs-changes or rejected attempt is not submitted
+    # either, but nothing was approved, so "the approval stands" would be describing
+    # something that never happened. That attempt keeps comparing against the submission,
+    # exactly as before.
+    review = entry.review
+    decision_made = (
+        review is not None and review.is_approval and entry.state.id is QuestState.VERIFIED
+    )
+    evidence_hash_value: str | None
+    if decision_made and review is not None:
+        evidence_hash_value = review.evidence_hash
+        changed = _changes_since_approval(config, attempt, review)
+    else:
+        evidence_hash_value = submission.get("evidence_hash")
+        changed = changes_since_submission(config, attempt)
 
     return {
         "quest": summary,
@@ -1160,11 +1205,13 @@ def _review_context(
         # fail the scan, and each needs its own words. See `scan_kinds`.
         "secret_scan_clean": not (scan_findings := scan_evidence(config, attempt.evidence_path)),
         "scan_kinds": scan_kinds(scan_findings),
-        "evidence_hash": submission.get("evidence_hash"),
+        "evidence_hash": evidence_hash_value,
         "evidence_changed": bool(changed),
+        "decision_made": decision_made,
         # Which of the package and the declared proof outside it changed, so the reviewer
-        # knows what to re-read rather than only that something moved.
-        "changed_since_submission": tuple(changed),
+        # knows what to re-read rather than only that something moved. Compared against the
+        # submission before a decision, and against the decision itself afterward.
+        "changed_paths": tuple(changed),
         "outcomes": entry.quest.outcomes,
         "acceptance_criteria": entry.quest.acceptance_criteria,
         "required_proof": required,
@@ -1232,7 +1279,8 @@ def _review_queue_context(
         "published_version": None,
         "evidence_hash": None,
         "evidence_changed": False,
-        "changed_since_submission": (),
+        "decision_made": False,
+        "changed_paths": (),
         "outcomes": (),
         "acceptance_criteria": (),
         "required_proof": (),

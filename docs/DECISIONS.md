@@ -378,6 +378,18 @@ appearing or disappearing is a change. The approval gate compares the submission
 (`progress.proof_changed_since_approval`) when an approved review's `proof_files` no longer
 match. The review records the paths the submission recorded, so both describe the same set.
 
+**Amended (round 13):** the exclusion was matching `validation`, `submission.yaml`,
+`review.yaml` and the review archive names at *any* depth, so a participant's own nested
+folder or file that happened to share one of those names — `logs/validation/notes.txt`, a
+`review.yaml` kept somewhere inside their own evidence for unrelated reasons — was silently
+left out of the hash, and editing it after submission or approval changed nothing anyone was
+told about (round 13 E6). Only a *top-level* name is now excluded: `validation/` directly
+under the package, and `submission.yaml`/`review.yaml`/a review archive name directly in it.
+The same name deeper in the tree is the participant's own content and is hashed like any
+other file. This means the evidence hash of a package that happens to contain a nested
+`validation/`, `submission.yaml` or `review.yaml` changes if it did not before — that package
+was never covered correctly, so nothing was lost that this ADR's guarantee ever promised.
+
 Old records lack the field. They are compared on `evidence_hash` alone, exactly as before,
 and never read as changed or forged for its absence. A review of an old submission computes
 its paths from the quest as it stands, so its approval can still go stale later. The paths
