@@ -55,6 +55,12 @@ The participant tree is untrusted input, so reads and writes there follow fixed 
 | 8 MB (`MAX_VALIDATION_RESULT_BYTES`) | a validation result | refused when written; reported by `validate` if found |
 | 2 MB (`MAX_EVIDENCE_FILE_BYTES`) | each evidence file the secret scan reads (not images, PDF or zip) | a scan finding that blocks submission and tells the participant to trim the file |
 
+The scan is not limited to the attempt's evidence package. A quest's declared proof commonly
+names files outside it (`participant/context/**`, `participant/skills/**`); `scan_declared_proof`
+(`quest_app/evidence.py`) scans those too, under the same rules, so that "no secret was found"
+on the mark-evidence-ready gate, the submission gate, and every page that reports the scan
+means the same thing everywhere.
+
 Validator output has its own limits: see `docs/VALIDATOR-CONTRACT.md`. Evidence is hashed
 by streaming, so a large image or archive costs time, not memory.
 

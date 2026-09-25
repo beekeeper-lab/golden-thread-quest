@@ -36,7 +36,7 @@ import time
 from dataclasses import asdict, dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 from quest_app.config import AppConfig
 from quest_app.secret_patterns import redact_text
@@ -70,6 +70,13 @@ MAX_CHECKS = 200
 # `outcome=None` used to fall through `classify()`'s set-membership checks and read as a
 # pass (round 12, E6).
 CHECK_OUTCOMES = ("pass", "fail", "warning", "skipped", "inconclusive")
+
+# `$defs.check`'s `severity` enum in the same schema. Round 13 E10: an entry naming anything
+# else (`"critical"`, `"Medium"`, a stray typo) was passed through unchanged, so the check
+# was otherwise valid and `store_result`'s schema validation still refused the whole
+# document over that one field — a passing run thrown away for a value nobody but
+# `severity` needed.
+CHECK_SEVERITIES = ("blocking", "high", "medium", "low", "information")
 
 # `$defs.id` in the same schema, which every check's `id` must match, exactly like a
 # validator or quest ID does everywhere else in this application.
@@ -172,10 +179,27 @@ class Workspace:
             return False
 
     def read_text(self, path: str, *, limit: int = 1_000_000) -> str:
+        text, _truncated = self.read_text_bounded(path, limit=limit)
+        return text
+
+    def read_text_bounded(self, path: str, *, limit: int = 1_000_000) -> tuple[str, bool]:
+        """`read_text`, plus whether the file held more than `limit` bytes.
+
+        The old `read_text` decoded the whole file before slicing to `limit`, so a large
+        file cost its full size in memory on every call, and a caller that only looked at
+        the truncated result had no way to know there was more it never saw (round 13 E9).
+        This reads at most `limit + 1` bytes from disk and tells the caller when there was
+        more, so a check built on a truncated read can say so instead of quietly passing.
+        """
         target = self._contained(Path(path), self.read_roots, "reading")
         if not target.is_file():
             raise WorkspaceError("no such file inside the registered read roots")
-        return target.read_text(encoding="utf-8", errors="replace")[:limit]
+        with target.open("rb") as stream:
+            raw = stream.read(limit + 1)
+        truncated = len(raw) > limit
+        if truncated:
+            raw = raw[:limit]
+        return raw.decode("utf-8", errors="replace"), truncated
 
     def iter_files(self, path: str, pattern: str = "*") -> list[Path]:
         root = self._contained(Path(path), self.read_roots, "reading")
@@ -380,7 +404,10 @@ def _sanitize_check(entry: Any, index: int) -> tuple[Check, bool]:
 
     Field lengths are handled later, uniformly for every check regardless of validity,
     alongside redaction (see `run_validator`) — truncation is not a reason to discard a
-    check, only a missing summary or a value outside the id/outcome constraints is.
+    check, only a missing summary or a value outside the id/outcome constraints is. `severity`
+    is normalized the same way the other optional fields already were: a value outside
+    `CHECK_SEVERITIES` is dropped to `None` here rather than surviving to fail schema
+    validation on the whole document later (round 13 E10), so it is never structural either.
     """
     check_id = entry.get("id") if isinstance(entry, dict) else None
     outcome = entry.get("outcome") if isinstance(entry, dict) else None
@@ -426,7 +453,7 @@ def _sanitize_check(entry: Any, index: int) -> tuple[Check, bool]:
         value = entry.get(name)
         fields[name] = value if isinstance(value, str) else None
     severity = entry.get("severity")
-    fields["severity"] = severity if isinstance(severity, str) else None
+    fields["severity"] = severity if severity in CHECK_SEVERITIES else None
     return Check(**fields), True
 
 
@@ -748,6 +775,20 @@ CHECK_TRUNCATION_SUFFIX = " …[truncated]"
 # memory. The result is a few kilobytes of JSON; a megabyte is far more than any needs.
 STREAM_LIMIT = 1024 * 1024
 
+# How long the result channel may sit closed, with the process not yet reaped, before that
+# process is treated as a leftover (round 12 E11) rather than one that is simply a little
+# slow to finish tearing down on its own. Round 13 E12: at the old bound of one second,
+# `process.poll()` — checked every iteration, and always ahead of this decision — could
+# still lose the race to a process that was genuinely on its way to exiting by itself, just
+# not quite there yet; killing it right then produced a signal-based exit status that was
+# then, wrongly, given the same exemption as an actual leftover thread, so a self-reported
+# nonzero exit was recorded as the validator's written verdict instead of `environment_
+# failure`. Giving it this much longer keeps that exemption for what it is for — a process
+# still alive well past any ordinary teardown — while a process that reaps itself before the
+# deadline is caught by the `process.poll()` check first and classified by its own exit
+# status, whatever that is.
+LEFTOVER_PROCESS_GRACE_SECONDS: Final = 3.0
+
 # How the child starts. `-c` rather than `-m`, so the import path's first entry is ours to
 # replace: the repository, never the working directory the validator runs in.
 CHILD_BOOTSTRAP = (
@@ -822,16 +863,24 @@ def _collect(process: subprocess.Popen[bytes], pgid: int, data: bytes, timeout: 
                 exited_at = now
                 # The child is done; anything it started is not part of the run.
                 _kill_group(pgid)
-            if exited_at is None and stdout_closed_at is not None and now - stdout_closed_at > 1:
-                # A full second past the result channel closing with the process still
-                # not reaped is long enough that this is not the ordinary scheduling gap
-                # above: something the validator left running — round 12 E11's non-daemon
-                # thread — is holding the interpreter open. Treat it like a self-reported
-                # exit for cleanup (kill now, do not wait out the rest of the timeout for
-                # a run whose result is already in hand), but record that we, not the
-                # validator, ended it: the return code `_terminate_tree` is about to
-                # produce describes our cleanup, not a verdict the validator passed on
-                # itself.
+            if (
+                exited_at is None
+                and stdout_closed_at is not None
+                and now - stdout_closed_at > LEFTOVER_PROCESS_GRACE_SECONDS
+            ):
+                # This long past the result channel closing with the process still not
+                # reaped is long enough that this is not the ordinary scheduling gap above:
+                # something the validator left running — round 12 E11's non-daemon thread —
+                # is holding the interpreter open. Treat it like a self-reported exit for
+                # cleanup (kill now, do not wait out the rest of the timeout for a run whose
+                # result is already in hand), but record that we, not the validator, ended
+                # it: the return code `_terminate_tree` is about to produce describes our
+                # cleanup, not a verdict the validator passed on itself.
+                #
+                # The `process.poll()` check above always runs first and takes priority, so
+                # a process that reaps itself before this deadline — even a little slowly,
+                # not stuck — is classified by its own exit status, never by this branch
+                # (round 13 E12).
                 exited_at = now
                 captured.result_closed_early = True
                 _kill_group(pgid)

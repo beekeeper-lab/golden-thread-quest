@@ -156,11 +156,51 @@ def _inside_the_package(item_path: str, evidence_path: str, package: Path) -> li
     return candidates
 
 
+def _scan_one(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
+    """Apply the fixed scan rules to one filesystem entry: link check, skip list, the 2 MB
+    ceiling, then decode and match.
+
+    `boundary` is the root a link may not resolve outside of. For an evidence package that
+    is the package itself; for a declared proof path that legitimately lives elsewhere in
+    the tree (`participant/context/**`, `participant/skills/**`) it is `participant/` as a
+    whole, since those locations are not inside any one package (round 13 C1).
+    """
+    # A link out of the boundary was skipped, so the scan vouched for a file it never read
+    # while the build rendered whatever the link led to. It is now a finding: the scan
+    # cannot clear what it may not read, and nothing renders through it.
+    if not resolves_inside(path, boundary):
+        return [SecretFinding(relative, 1, OUTSIDE_LINK_DESCRIPTION)]
+    if not path.is_file() or path.suffix.lower() in SKIP_SUFFIXES:
+        return []
+    try:
+        raw = read_bounded_bytes(path, max_bytes=MAX_EVIDENCE_FILE_BYTES)
+    except UnsafeStateFileError:
+        # Over the ceiling, or swapped for something that is not a file since `is_file`.
+        # Either way the scan did not read it, so it cannot vouch for it: a finding that
+        # blocks submission and says why, rather than a minute of pattern matching on
+        # every build while the locks are held (round 12 E8).
+        return [SecretFinding(relative, 1, OVERSIZE_DESCRIPTION)]
+    except OSError:
+        # A file the scan cannot read is a file it cannot vouch for, so it blocks.
+        return [SecretFinding(relative, 1, "could not be read to check it")]
+    # Decoded with replacement, not skipped: one byte that is not UTF-8 used to hide an
+    # entire file, credentials included, from the scan.
+    text = raw.decode("utf-8", errors="replace")
+    return [
+        SecretFinding(path=relative, line=match.line, description=match.description)
+        for match in scan_text(text)
+    ]
+
+
 def scan_evidence(config: AppConfig, evidence_path: str) -> list[SecretFinding]:
     """Every secret-like value in an evidence package.
 
     Uses `scan_text` directly, not the repository scanner, so a participant cannot switch
     the check off by writing an allow pragma into their own evidence.
+
+    This covers only the package. A quest's declared proof commonly names files outside it
+    (`participant/context/**`, `participant/skills/**`); `scan_declared_proof` covers those
+    too and is what every gate and page must call (round 13 C1).
     """
     try:
         root = config.resolve_participant_path(evidence_path)
@@ -169,39 +209,68 @@ def scan_evidence(config: AppConfig, evidence_path: str) -> list[SecretFinding]:
     findings: list[SecretFinding] = []
     for path in sorted(root.rglob("*")):
         relative = f"{evidence_path}/{path.relative_to(root).as_posix()}"
-        # A link out of the package was skipped, so the scan vouched for a file it never
-        # read while the build rendered whatever the link led to. It is now a finding: the
-        # scan cannot clear what it may not read, and nothing renders through it.
-        if not resolves_inside(path, root):
-            findings.append(SecretFinding(relative, 1, OUTSIDE_LINK_DESCRIPTION))
-            continue
-        if not path.is_file() or path.suffix.lower() in SKIP_SUFFIXES:
-            continue
-        try:
-            raw = read_bounded_bytes(path, max_bytes=MAX_EVIDENCE_FILE_BYTES)
-        except UnsafeStateFileError:
-            # Over the ceiling, or swapped for something that is not a file since `is_file`.
-            # Either way the scan did not read it, so it cannot vouch for it: a finding that
-            # blocks submission and says why, rather than a minute of pattern matching on
-            # every build while the locks are held (round 12 E8).
-            findings.append(SecretFinding(relative, 1, OVERSIZE_DESCRIPTION))
-            continue
-        except OSError:
-            # A file the scan cannot read is a file it cannot vouch for, so it blocks.
-            findings.append(SecretFinding(relative, 1, "could not be read to check it"))
-            continue
-        # Decoded with replacement, not skipped: one byte that is not UTF-8 used to hide an
-        # entire file, credentials included, from the scan.
-        text = raw.decode("utf-8", errors="replace")
-        findings.extend(
-            SecretFinding(
-                path=relative,
-                line=match.line,
-                description=match.description,
-            )
-            for match in scan_text(text)
-        )
+        findings.extend(_scan_one(path, relative, root))
     return findings
+
+
+def scan_declared_proof(config: AppConfig, quest: Quest, evidence_path: str) -> list[SecretFinding]:
+    """`scan_evidence`'s findings, plus the same scan over every declared proof path outside
+    the package.
+
+    `proof_paths_outside_package` already lists exactly those paths for change detection;
+    round 13 C1 found that the secret scan never looked at them, so a token planted in
+    `participant/context/**` or `participant/skills/**` passed every gate and every page
+    said the evidence was clean. This is the function every gate and page must call instead
+    of `scan_evidence` alone.
+    """
+    findings = list(scan_evidence(config, evidence_path))
+    boundary = config.participant_root.resolve()
+    for declared in proof_paths_outside_package(quest, evidence_path):
+        try:
+            target = config.resolve_participant_path(declared)
+        except ValueError:
+            continue
+        if not target.exists():
+            continue
+        if target.is_file():
+            findings.extend(_scan_one(target, declared, boundary))
+            continue
+        for path in sorted(target.rglob("*")):
+            relative = f"{declared}/{path.relative_to(target).as_posix()}"
+            findings.extend(_scan_one(path, relative, boundary))
+    return findings
+
+
+def describe_scan_findings(findings: list[SecretFinding]) -> list[str]:
+    """Participant-facing problem sentences, one per kind of scan finding present.
+
+    `secret`, `link` and `oversize` all fail the same gate but are not the same problem.
+    `readiness_problems` (submission) and `_require_clean_secret_scan` (mark-evidence-ready)
+    used to word this differently, and the earlier of the two called a link or an oversized
+    file "secret-like" (round 13 C2). Both now share this one function instead of
+    duplicating the text.
+    """
+    problems: list[str] = []
+    links = [f for f in findings if f.description == OUTSIDE_LINK_DESCRIPTION]
+    oversize = [f for f in findings if f.description == OVERSIZE_DESCRIPTION]
+    secret = [f for f in findings if f not in links and f not in oversize]
+    if links:
+        # Not a secret, and saying "secret-like" would send the participant hunting for one.
+        problems.append(
+            f"{links[0].path} is a link that leads outside the evidence package, so it cannot "
+            "be checked or shown. Replace it with a copy of the file."
+        )
+    if oversize:
+        # Not a secret either: a file too large for the scan to read (round 12 E8).
+        problems.append(
+            f"{oversize[0].path} {OVERSIZE_DESCRIPTION}. Trim it, or keep the full file out "
+            "of the evidence and include only the part that shows the result."
+        )
+    if secret:
+        problems.append(
+            f"Something secret-like is in the evidence ({secret[0].path}:{secret[0].line})."
+        )
+    return problems
 
 
 def links_outside_package(config: AppConfig, evidence_path: str) -> list[str]:

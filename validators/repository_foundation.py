@@ -224,13 +224,20 @@ def _check_no_secrets_in_evidence(workspace: Workspace, output: ValidatorOutput)
     from quest_app.secret_patterns import scan_text
 
     findings: list[str] = []
+    truncated: list[str] = []
     # This attempt's evidence. A secret in another attempt's package is that attempt's
     # failure: `submit-for-review` scans whichever package is being submitted, so nothing
     # goes unscanned, and no attempt is blocked by a file it does not own.
     for path in workspace.attempt_files():
         if path.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf"}:
             continue
-        for match in scan_text(workspace.read_text(str(path), limit=200_000)):
+        text, was_truncated = workspace.read_text_bounded(str(path), limit=200_000)
+        if was_truncated:
+            # Round 13 E9: this used to read the whole file and quietly check only the
+            # first 200,000 characters, so a secret past that point passed as clean. This
+            # check cannot vouch for what it never read, so it reports that instead.
+            truncated.append(workspace.relative(path))
+        for match in scan_text(text):
             findings.append(f"{workspace.relative(path)}:{match.line} ({match.description})")
 
     if findings:
@@ -244,6 +251,23 @@ def _check_no_secrets_in_evidence(workspace: Workspace, output: ValidatorOutput)
                 suggested_action=(
                     "Remove it and rotate the value. Evidence is committed and reviewed by other "
                     "people."
+                ),
+            )
+        )
+    elif truncated:
+        output.add(
+            Check(
+                id="evidence-carries-no-secrets",
+                outcome="inconclusive",
+                severity="medium",
+                summary="Part of the evidence is too large for this check to read in full.",
+                evidence=(
+                    "; ".join(truncated[:5]) + " exceeded the 200,000-character window this "
+                    "check reads. Nothing was found in the part that was read."
+                ),
+                suggested_action=(
+                    "This is a secondary check; submission's own secret scan still reads the "
+                    "whole file. Trim the file if you want this check to cover it completely."
                 ),
             )
         )

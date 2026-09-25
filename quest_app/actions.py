@@ -349,24 +349,26 @@ class ActionRunner:
         }
 
     def _require_clean_secret_scan(self, world: Any, quest_id: str) -> None:
-        """Refuse to prepare a submission that carries a credential.
+        """Refuse to mark evidence ready while the scan finds something wrong with it.
 
-        The asymmetry is the argument: a false positive costs a minute, and a missed
-        credential costs a rotation and an awkward conversation.
+        A secret, a link out of the package and a file too large to scan all fail the gate
+        but are not the same problem; `describe_scan_findings` is the one place that words
+        them, shared with the submission gate (`readiness_problems`) so the two cannot say
+        different things about the same finding (round 13 C2). The asymmetry for the secret
+        case is the argument for having a gate at all: a false positive costs a minute, and a
+        missed credential costs a rotation and an awkward conversation.
         """
-        from quest_app.evidence import scan_evidence
+        from quest_app.evidence import describe_scan_findings, scan_declared_proof
 
         participant = world.participant
         attempt = participant.progress.attempt_for(quest_id) if participant else None
         if attempt is None:
             return
-        findings = scan_evidence(self.config, attempt.evidence_path)
-        if findings:
-            locations = ", ".join(f"{f.path}:{f.line}" for f in findings[:3])
-            raise StoreError(
-                f"Something secret-like is in your evidence ({locations}). "
-                "Remove it before submitting; the scan never reports the value itself."
-            )
+        quest = world.content.quests[quest_id]
+        findings = scan_declared_proof(self.config, quest, attempt.evidence_path)
+        problems = describe_scan_findings(findings)
+        if problems:
+            raise StoreError(" ".join(problems))
 
     def _require_met_prerequisites(self, world: Any, quest_id: str) -> None:
         """A locked quest is locked on every surface, not only where a button can be greyed.
