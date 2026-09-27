@@ -74,7 +74,7 @@ Every finding was verified here by reproduction or by reading the code at the ci
 | `make test-ui` | pass — 56 passed |
 | `make validate-content` | pass — 8 quests, 8 regions, 4 badges, 1 track, 0 warnings |
 | `make verify-package` | pass |
-| Clean clone of `chore/round-13-audit`, with `make check` beside `make serve` | see below |
+| Clean clone of `chore/round-13-audit`, with `make check` beside `make serve` | pass at `8f5878b`: `make setup`, the server on a second port, and `make check` beside it (903 passed, 5 skipped without the UI extras), leaving the clone unchanged |
 | Each fix reverted one at a time | every new test failed with its fix reverted, by the branch that wrote it |
 | Round-12 guards mutated by the tooling lens | 10 mutations, 10 caught, apart from T6 |
 | CI on this branch | see the pull request |
