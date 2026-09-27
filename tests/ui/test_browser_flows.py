@@ -279,8 +279,16 @@ AUDITED_PAGES = [
 ]
 
 
+# C3 (round 13): axe rates `landmark-unique` and `region` "moderate", so the impact filter
+# below let a page with two identically-named landmarks, or content outside any landmark,
+# pass. Both are structural — a screen reader user cannot tell the two landmarks apart, or
+# never reaches the content at all — so they fail the build regardless of axe's own impact
+# rating, on every audited page including the quest page.
+ALWAYS_FAILING_RULES = {"landmark-unique", "region"}
+
+
 def axe_violations(page: object, tags: list[str] | None = None) -> list[dict[str, object]]:
-    """Serious and critical axe violations on the current page."""
+    """Serious and critical axe violations on the current page, plus ALWAYS_FAILING_RULES."""
     page.add_script_tag(path=str(AXE))  # type: ignore[attr-defined]
     result = page.evaluate(  # type: ignore[attr-defined]
         "async (tags) => await axe.run(document, {runOnly: {type: 'tag', values: tags}})",
@@ -289,7 +297,7 @@ def axe_violations(page: object, tags: list[str] | None = None) -> list[dict[str
     return [
         violation
         for violation in result["violations"]
-        if violation["impact"] in ("serious", "critical")
+        if violation["impact"] in ("serious", "critical") or violation["id"] in ALWAYS_FAILING_RULES
     ]
 
 
@@ -312,6 +320,30 @@ def test_no_serious_accessibility_violation(browser: object, served: str, route:
     violations = axe_violations(page)
     page.close()
     context.close()
+    assert violations == [], [
+        f"{v['id']}: {v['help']} ({len(v['nodes'])} node(s))" for v in violations
+    ]
+
+
+@pytest.mark.parametrize("route", AUDITED_PAGES)
+def test_no_region_violation_at_640px(browser: object, served: str, route: str) -> None:
+    """C4 (round 13): `.app-topbar` only shows below the 768px breakpoint, so none of the
+    four visual-acceptance viewports in `TestResponsive` (the narrowest is 390px, but the
+    accessibility sweep above runs at the default desktop viewport) ever exercised it. At
+    640px the bar is visible; its brand link must sit inside a landmark.
+    """
+    context = browser.new_context(  # type: ignore[attr-defined]
+        viewport={"width": 640, "height": 800}, bypass_csp=True
+    )
+    page = context.new_page()
+    page.goto(f"{served}{route}", wait_until="load")
+    page.add_script_tag(path=str(AXE))  # type: ignore[attr-defined]
+    result = page.evaluate(  # type: ignore[attr-defined]
+        "async () => await axe.run(document, {runOnly: {type: 'rule', values: ['region']}})"
+    )
+    page.close()
+    context.close()
+    violations = result["violations"]
     assert violations == [], [
         f"{v['id']}: {v['help']} ({len(v['nodes'])} node(s))" for v in violations
     ]

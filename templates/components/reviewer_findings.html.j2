@@ -21,6 +21,12 @@
     </li>
     {% endfor %}
   </ul>
+  {% if review.decision == 'rejected' %}
+  {# C6 (round 13) — `rejected` and `needs_changes` move the attempt to the same state; say
+     so here so a rejected participant does not read this as a dead end. #}
+  <p class="authority">A rejected decision leaves you in the same needs-changes state as any
+    other requested change: address what is listed above and resubmit.</p>
+  {% endif %}
 </section>
 {% endif %}
 {%- endmacro %}

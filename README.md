@@ -56,7 +56,7 @@ address. Open it.
 | `docs/guides/UPDATING.md` | Taking upstream curriculum changes without losing your work |
 | `docs/CONTENT-AUTHORING-GUIDE.md` | Writing a quest |
 | `docs/SETUP.md` | Installing, and troubleshooting when it will not start |
-| `docs/RELEASE-NOTES.md` | What works, and the ten known limitations |
+| `docs/RELEASE-NOTES.md` | What works, and the known limitations |
 | `docs/IMPLEMENTATION-DETAILS.md` | What was actually built, and where it diverges from the plan |
 | `docs/TRACEABILITY.md` | Which test holds which requirement |
 | `docs/audits/` | Every audit, including the four that failed and the external review |
@@ -66,7 +66,7 @@ address. Open it.
 
 | | |
 |---|---|
-| Tests | 875 — 830 under `make check`, 45 driving a real browser. The line `make check` prints counts skips too, so it can read one or two higher where an optional dependency is missing. |
+| Tests | 961 — 905 under `make check`, 56 driving a real browser. The line `make check` prints counts skips too, and it can read higher than the total above: a module that skips itself as a whole because an optional dependency is missing (`pytest.importorskip`) counts as one skip, not one per test it would have contained. |
 | Screens | 13 page templates, 11 reusable components |
 | Schemas | 10, validating content, progress, reviews, validation results and the validator registry |
 | Sample curriculum | 8 regions, 8 quests, 4 badges, 1 track |
@@ -109,11 +109,11 @@ application code. A test fails if one does.
 ## Status
 
 Stages 0 to 9 of `docs/IMPLEMENTATION-PLAN.md` are complete. The Stage 10 release decision is
-open. Three release audits and one external review have run, each found something, and every
-finding is fixed. The external review left the engine a release candidate and the participant
-journey short: three quests across eight regions was a demonstration rather than a journey.
-Since then every region has a quest — eight quests, one per region — and round 4 has audited
-that work in `docs/audits/round-04-independent-audit.md`.
+open: `docs/ACCEPTANCE-CRITERIA.md`'s **DH7** is the criterion tracking it, and `docs/audits/`
+holds the full history of rounds, findings and fixes. An external review, early in that
+history, left the engine a release candidate and the participant journey short: three quests
+across eight regions was a demonstration rather than a journey. Since then every region has a
+quest — eight quests, one per region.
 
 The application works end to end today. What is not signed off is putting it in front of a
 cohort. Curriculum depth is no longer zero anywhere, but one quest per region is a first

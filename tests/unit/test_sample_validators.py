@@ -13,7 +13,7 @@ from pathlib import Path
 from quest_app.validator_runner import ValidatorOutput, Workspace
 from validators.jira_read_assigned import _check_disappearances_reported
 from validators.playwright_quality import BRITTLE_SELECTORS
-from validators.repository_foundation import _check_ignore_rules
+from validators.repository_foundation import _check_ignore_rules, _check_no_secrets_in_evidence
 
 STALE_FIXTURE = json.loads(Path("validators/fixtures/jira/stale-item.json").read_text())
 
@@ -140,3 +140,45 @@ class TestDisappearancesAreReported:
 
     def test_a_separate_removal_list_passes(self) -> None:
         assert self._run([], removed=[{"key": "GTQ-100"}]) == "pass"
+
+
+class TestNoSecretsCheckReportsWhatItCouldNotRead:
+    """Round 13 E9: this check reads each evidence file through a 200,000-character window.
+
+    A file over that window used to be read and decoded in full, then silently sliced, so a
+    secret past character 200,000 was never seen and the check still said "no secret-like
+    value was found." The check must not pass on evidence it could not read completely.
+    """
+
+    def _workspace_over(self, tmp_path: Path) -> Workspace:
+        evidence = tmp_path / "participant" / "evidence" / "quest" / "attempt-001"
+        evidence.mkdir(parents=True)
+        return Workspace(
+            read_roots=(tmp_path.resolve(),),
+            write_roots=(),
+            repo_root=tmp_path.resolve(),
+            participant_root=(tmp_path / "participant").resolve(),
+            parameters={},
+            evidence_root=evidence.resolve(),
+        )
+
+    def test_a_secret_past_the_read_window_is_not_a_clean_pass(self, tmp_path: Path) -> None:
+        workspace = self._workspace_over(tmp_path)
+        secret = "ghp_" + "A" * 36
+        (workspace.evidence_root / "run.log").write_text(  # type: ignore[union-attr]
+            ("x" * 200_000) + f"\ntoken={secret}\n"
+        )
+        output = ValidatorOutput()
+        _check_no_secrets_in_evidence(workspace, output)
+        (check,) = output.checks
+        assert check.id == "evidence-carries-no-secrets"
+        assert check.outcome != "pass", check
+        assert "too large" in check.summary.lower() or "could not" in check.summary.lower()
+
+    def test_a_file_inside_the_window_still_passes(self, tmp_path: Path) -> None:
+        workspace = self._workspace_over(tmp_path)
+        (workspace.evidence_root / "notes.md").write_text("nothing sensitive here\n")  # type: ignore[union-attr]
+        output = ValidatorOutput()
+        _check_no_secrets_in_evidence(workspace, output)
+        (check,) = output.checks
+        assert check.outcome == "pass", check

@@ -45,15 +45,37 @@ The participant tree is untrusted input, so reads and writes there follow fixed 
 (`quest_app/safe_io.py`, ADR-042):
 
 - A state file, record or validation result is read only if it is a regular file, and only
-  up to a ceiling. A FIFO, a device or a link to either is reported, never read.
+  up to a ceiling. A FIFO, a device or a link to either is reported, never read. A
+  state record (`progress.yaml`, `submission.yaml`, `review.yaml`, a review archive) that is
+  itself a link is reported and never read, wherever it leads (ADR-043).
 - Nothing is written through a symbolic link, into a directory reached through one, or onto
   a target that is not a regular file. Nothing is opened in a way that can block.
+
+### The application's own roots
+
+`generated/`, its `.building`, `.previous` and `.lock` siblings, and `local-data/` are
+written by the application and never resolved through links (ADR-043):
+
+- A build refuses, deleting nothing, when any of the four generated paths is a link; when
+  the generated root, staging or previous directory is, contains or lies inside a source
+  folder, the participant root or local data, or is or contains the repository; and when
+  one of them already exists as a non-empty directory with neither the
+  `.golden-thread-output` marker nor `build-manifest.json`.
+- The build error page and the service port file are written with the same no-follow walk
+  as participant files, starting at `local-data/`, which is itself refused if it is a link.
+  The build lock is opened with `O_NOFOLLOW | O_NONBLOCK`.
 
 | Ceiling | Applies to | Over it |
 |---|---|---|
 | 2 MB (`MAX_STATE_BYTES`) | `progress.yaml`, `review.yaml`, review archives, `submission.yaml` | reported by `validate`; not read |
 | 8 MB (`MAX_VALIDATION_RESULT_BYTES`) | a validation result | refused when written; reported by `validate` if found |
 | 2 MB (`MAX_EVIDENCE_FILE_BYTES`) | each evidence file the secret scan reads (not images, PDF or zip) | a scan finding that blocks submission and tells the participant to trim the file |
+
+The scan is not limited to the attempt's evidence package. A quest's declared proof commonly
+names files outside it (`participant/context/**`, `participant/skills/**`); `scan_declared_proof`
+(`quest_app/evidence.py`) scans those too, under the same rules, so that "no secret was found"
+on the mark-evidence-ready gate, the submission gate, and every page that reports the scan
+means the same thing everywhere.
 
 Validator output has its own limits: see `docs/VALIDATOR-CONTRACT.md`. Evidence is hashed
 by streaming, so a large image or archive costs time, not memory.

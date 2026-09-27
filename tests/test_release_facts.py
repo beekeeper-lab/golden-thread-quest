@@ -157,3 +157,18 @@ def test_release_one_ships_no_external_write() -> None:
     registry = yaml.safe_load((ROOT / "validators" / "registry.yaml").read_text())
     for entry in registry["validators"]:
         assert entry["network"] == "denied", f"{entry['id']} is registered with network access"
+
+
+def test_known_limitations_are_numbered_from_one_with_no_gaps() -> None:
+    """Round 13, T4: the list was numbered from 0, so README's prose count of it (once
+    "ten") was off by one against the eleven items actually there. Numbering from 1 keeps
+    the ordinal a reader sees matching the one used to talk about an item, with no fixed
+    count anywhere in README that has to be kept in step as items are added or removed.
+    """
+    text = (ROOT / "docs" / "RELEASE-NOTES.md").read_text()
+    section = text.split("## Known limitations", 1)[1].split("\n## ", 1)[0]
+    numbers = [int(n) for n in re.findall(r"(?m)^(\d+)\.\s", section)]
+    assert numbers, "docs/RELEASE-NOTES.md's Known limitations section has no numbered items"
+    assert numbers == list(range(1, len(numbers) + 1)), (
+        f"docs/RELEASE-NOTES.md's Known limitations are numbered {numbers}, not 1..{len(numbers)}"
+    )

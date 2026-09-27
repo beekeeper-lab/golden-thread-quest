@@ -102,6 +102,51 @@ def test_overlapping_patterns_report_the_most_specific_name() -> None:
     assert match.pattern_id == "github-token"
 
 
+@pytest.mark.parametrize(
+    ("pattern_id", "text"),
+    [
+        ("github-token", f"nnn{GITHUB}"),
+        ("aws-access-key-id", f"x{AWS}"),
+        ("gitlab-token", f"id{GITLAB}"),
+        ("slack-token", f"key{SLACK}"),
+        ("google-api-key", f"k{GOOGLE}"),
+        ("anthropic-key", f"v{ANTHROPIC}"),
+        ("npm-token", f"a{NPM}"),
+        ("stripe-key", f"z{STRIPE}"),
+        ("jwt", f"q{JWT}"),
+    ],
+)
+def test_a_token_directly_preceded_by_a_letter_is_still_detected(
+    pattern_id: str, text: str
+) -> None:
+    """Round 13 E11: the leading `\\b` these patterns used to require meant a token with no
+    separator before it — `nnnghp_…`, `xAKIA…` — was invisible to the scan and to
+    redaction. The literal prefixes are specific enough that dropping the leading boundary
+    does not need one."""
+    matches = scan_text(text)
+    assert matches, f"expected {pattern_id} to be detected in {text!r}"
+    assert matches[0].pattern_id == pattern_id
+
+
+def test_redaction_still_removes_a_token_with_no_separator_before_it() -> None:
+    redacted, changed = redact_text(f"nnn{GITHUB} end")
+    assert changed
+    assert GITHUB not in redacted
+    assert redacted == f"nnn{REDACTION_PLACEHOLDER} end"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "This week's task-force meeting covers the desktop rollout schedule.",
+        "The risk-taking assessment for this quarter is still in draft form.",
+    ],
+)
+def test_ordinary_prose_with_a_hyphenated_word_is_not_a_false_positive(text: str) -> None:
+    """Dropping the leading boundary must not turn common hyphenated English into a finding."""
+    assert scan_text(text) == []
+
+
 def test_anthropic_key_is_not_reported_as_an_openai_key() -> None:
     """`sk-` is a prefix of `sk-ant-`; ordering in PATTERNS is what keeps the name right."""
     (match,) = scan_text(ANTHROPIC)

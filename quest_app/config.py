@@ -58,8 +58,12 @@ class AppConfig:
             templates_root=root / "templates",
             assets_root=root / "assets",
             participant_root=(participant_root or root / "participant").resolve(),
-            generated_root=(generated_root or root / "generated").resolve(),
-            local_data_root=(local_data_root or root / "local-data").resolve(),
+            # Lexical, never resolved (ADR-043). Resolving turned a committed
+            # `generated -> ..` into the repository's parent, which the build then renamed and
+            # deleted, and turned a linked `local-data` into wherever it led, so the check
+            # that refuses a link never saw one.
+            generated_root=_absolute(generated_root or root / "generated"),
+            local_data_root=_absolute(local_data_root or root / "local-data"),
             validators_root=root / "validators",
             service_host=service_host or DEFAULT_SERVICE_HOST,
             service_port=service_port if service_port is not None else DEFAULT_SERVICE_PORT,
@@ -136,6 +140,11 @@ class AppConfig:
         if not declared.startswith(prefix):
             raise ValueError(f"participant path must start with {prefix!r}, got {declared!r}")
         return self.participant_root / PurePosixCheck(declared[len(prefix) :]).checked()
+
+
+def _absolute(path: Path) -> Path:
+    """`path` made absolute and normalized as text, with no link followed."""
+    return Path(os.path.abspath(path))  # noqa: PTH100 - `resolve()` follows links
 
 
 @dataclass(frozen=True, slots=True)

@@ -211,6 +211,38 @@ class TestApprovalGuards:
                 schemas=schemas,
             )
 
+    def test_deciding_a_submitted_attempt_with_a_mismatched_submission_record_is_refused(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Round 13 E3.
+
+        A `submission.yaml` copied wholesale from another quest or attempt is perfectly
+        valid on its own — schema validation checks only its shape — so it read as "there is
+        a readable submission record" and a decision was recorded against a request that was
+        never actually made for this attempt.
+        """
+        submit(setup, config)
+        world, attempt = reload_attempt(config)
+        path = config.resolve_participant_path(attempt.evidence_path) / "submission.yaml"
+        data = yaml.safe_load(path.read_text())
+        data["attempt_id"] = "a-different-attempt"
+        path.write_text(yaml.safe_dump(data, sort_keys=False))
+
+        _, schemas, store, quest, _ = setup
+        with pytest.raises(ReviewError, match="does not describe this attempt"):
+            record_decision(
+                config,
+                store,
+                quest=quest,
+                attempt=attempt,
+                participant=world.participant,
+                decision="approved",
+                reviewer_name="A Reviewer",
+                verification_statement=STATEMENT,
+                findings=[],
+                schemas=schemas,
+            )
+
     def test_approving_evidence_that_changed_since_submission_is_refused(
         self, setup, config: AppConfig
     ) -> None:  # type: ignore[no-untyped-def]
@@ -259,6 +291,40 @@ class TestApprovalGuards:
             acknowledge_changed_evidence=True,
         )
         assert decision.is_approval
+
+    def test_deciding_over_an_unreadable_file_is_refused_cleanly(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Round 13 E8: `record_decision` hashes the evidence itself to stamp the review."""
+        import os
+
+        if os.geteuid() == 0:
+            pytest.skip("root can read a file whatever its mode")
+        submit(setup, config)
+        world, attempt = reload_attempt(config)
+        target = config.resolve_participant_path(attempt.evidence_path) / "unreadable.md"
+        target.write_text("anything\n")
+        target.chmod(0)
+        _, schemas, store, quest, _ = setup
+        try:
+            with pytest.raises(ReviewError, match="could not be read") as raised:
+                record_decision(
+                    config,
+                    store,
+                    quest=quest,
+                    attempt=attempt,
+                    participant=world.participant,
+                    decision="approved",
+                    reviewer_name="A Reviewer",
+                    verification_statement=STATEMENT,
+                    findings=[],
+                    schemas=schemas,
+                    acknowledge_changed_evidence=True,
+                )
+        finally:
+            target.chmod(0o600)
+        assert "unreadable.md" in str(raised.value)
+        assert str(config.repo_root) not in str(raised.value)
 
 
 class TestWhatApprovalProduces:
@@ -435,6 +501,84 @@ class TestForgery:
         assert load_world(config, report) is None
         assert "progress.unsubmitted_submitted_state" in {p.code for p in report.errors}
 
+    def test_a_submission_record_copied_from_another_attempt_is_refused(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Round 13 E3.
+
+        Schema validation only checks the record's own shape, never where it was found, so a
+        `submission.yaml` copied from another quest or attempt — still perfectly valid on its
+        own — was accepted as this attempt's own request for review.
+        """
+        submit(setup, config)
+        path = config.participant_root / "evidence" / QUEST / "jira-attempt-001" / "submission.yaml"
+        data = yaml.safe_load(path.read_text())
+        data["quest_id"] = "base-camp-repository-safety"
+        data["attempt_id"] = "base-camp-attempt-001"
+        path.write_text(yaml.safe_dump(data, sort_keys=False))
+
+        report = ProblemReport()
+        assert load_world(config, report) is None
+        assert "progress.record_identity_mismatch" in {p.code for p in report.errors}
+
+    def test_a_review_archive_copied_from_another_attempt_is_refused(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """The same forgery against a superseded decision, not the live one.
+
+        A second decision archives the first, so this attempt needs two: `needs_changes`,
+        then resubmit and `approved`. The archive left behind by the first is then the one
+        forged.
+        """
+        from quest_app.store import no_guard, transition_attempt
+
+        submit(setup, config)
+        world, attempt = reload_attempt(config)
+        _, schemas, store, quest, _ = setup
+        record_decision(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            decision="needs_changes",
+            reviewer_name="A Reviewer",
+            verification_statement=None,
+            findings=[FINDING],
+            schemas=schemas,
+        )
+        transition_attempt(
+            store, quest_id=QUEST, action="resume-quest", schemas=schemas, guard=no_guard
+        )
+        transition_attempt(
+            store, quest_id=QUEST, action="mark-evidence-ready", schemas=schemas, guard=no_guard
+        )
+        submit(setup, config)
+        world, attempt = reload_attempt(config)
+        record_decision(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            decision="approved",
+            reviewer_name="A Reviewer",
+            verification_statement=STATEMENT,
+            findings=[],
+            schemas=schemas,
+        )
+
+        directory = config.resolve_participant_path(attempt.evidence_path)
+        archives = list(directory.glob("review-*.yaml"))
+        assert len(archives) == 1, "the first decision must have been archived by the second"
+        data = yaml.safe_load(archives[0].read_text())
+        data["attempt_id"] = "a-different-attempt"
+        archives[0].write_text(yaml.safe_dump(data, sort_keys=False))
+
+        report = ProblemReport()
+        assert load_world(config, report) is None
+        assert "progress.record_identity_mismatch" in {p.code for p in report.errors}
+
     def test_a_legitimate_submission_still_loads_clean(self, setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
         """The other side of the fix: a real `submit-for-review` must not start erroring."""
         submit(setup, config)
@@ -563,6 +707,71 @@ class TestEvidenceChangedAfterApproval:
         report = ProblemReport()
         assert load_world(config, report) is not None
         assert "progress.evidence_changed_since_approval" not in {p.code for p in report.problems}
+
+    def test_editing_a_nested_validation_or_record_named_file_is_surfaced(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Round 13 E6.
+
+        `evidence_hash` is only meant to skip the package's own top-level `validation/`,
+        `submission.yaml` and `review.yaml` (ADR-031). It was skipping any path component or
+        file name matching those at *any* depth, so a participant's own nested folder or
+        file that happened to share one of those names was silently left out of the hash —
+        editing it after approval changed nothing anyone was told about.
+        """
+        world, _, _, _, attempt = setup
+        directory = config.resolve_participant_path(attempt.evidence_path)
+        nested = directory / "logs" / "validation"
+        nested.mkdir(parents=True)
+        (nested / "x.txt").write_text("first run\n")
+
+        approved = self.approve(setup, config)
+
+        report = ProblemReport()
+        assert load_world(config, report) is not None, report.to_text()
+        assert "progress.evidence_changed_since_approval" not in {p.code for p in report.warnings}
+
+        nested_after = (
+            config.resolve_participant_path(approved.evidence_path) / "logs" / "validation"
+        )
+        (nested_after / "x.txt").write_text("edited after approval\n")
+
+        report = ProblemReport()
+        world = load_world(config, report)
+        assert world is not None, report.to_text()
+        assert "progress.evidence_changed_since_approval" in {p.code for p in report.warnings}
+
+    def test_an_unreadable_file_after_approval_is_a_warning_not_a_crash(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Round 13 E8.
+
+        A file the process cannot read used to raise a bare `OSError` out of `evidence_hash`,
+        which `_check_stale_approval` never caught, so `validate` and `build` crashed with a
+        traceback carrying an absolute path. Unreadable is unverifiable, which is exactly
+        this check's business: it must be reported the same way a genuine change is.
+        """
+        import os
+
+        if os.geteuid() == 0:
+            pytest.skip("root can read a file whatever its mode")
+        attempt = self.approve(setup, config)
+        target = config.resolve_participant_path(attempt.evidence_path) / "unreadable.md"
+        target.write_text("anything\n")
+        target.chmod(0)
+        try:
+            report = ProblemReport()
+            world = load_world(config, report)
+        finally:
+            target.chmod(0o600)
+
+        assert world is not None, report.to_text()
+        warnings = [
+            p for p in report.warnings if p.code == "progress.evidence_changed_since_approval"
+        ]
+        assert len(warnings) == 1, report.to_text()
+        assert "unreadable.md" in warnings[0].public_message
+        assert str(config.repo_root) not in warnings[0].public_message
 
     def test_the_approval_still_stands(self, setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
         """A warning, not a revocation: CONTENT-MODEL.md keeps verified attempts verified."""

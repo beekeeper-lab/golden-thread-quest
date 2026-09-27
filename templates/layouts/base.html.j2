@@ -31,7 +31,10 @@
 <a class="skip-link" href="#main">Skip to main content</a>
 
 <div class="app">
-  <div class="app-topbar">
+  {# C4 (round 13) — a plain div here left the brand link outside any landmark once the
+     narrow layout shows this bar. A top-level <header> carries the implicit "banner"
+     landmark, so the link is always inside one. #}
+  <header class="app-topbar">
     <a class="app-brand" href="{{ url('/') }}">
       <strong>{{ site.title }}</strong>
       <span>{{ site.curriculum }}</span>
@@ -41,7 +44,7 @@
     <button type="button" class="button" data-nav-toggle aria-expanded="false" aria-controls="primary-navigation" hidden>
       Menu
     </button>
-  </div>
+  </header>
 
   <aside class="app-sidebar" data-nav-drawer id="primary-navigation">
     <a class="app-brand" href="{{ url('/') }}">

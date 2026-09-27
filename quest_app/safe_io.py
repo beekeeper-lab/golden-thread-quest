@@ -69,10 +69,11 @@ class UnsafeStateFileError(RuntimeError):
 
 
 class UnsafeWriteTargetError(RuntimeError):
-    """A write inside `participant/` that would have gone through a link or special file.
+    """A write inside an application root that would have gone through a link or special file.
 
-    The message names the path relative to the participant root and never an absolute one,
-    so it is safe to show in a browser or a terminal.
+    The roots are `participant/` and the application-owned `local-data/` (ADR-043). The
+    message names the path relative to its root and never an absolute one, so it is safe to
+    show in a browser or a terminal.
     """
 
 
@@ -131,32 +132,62 @@ def read_bounded_text(
     )
 
 
-def _label(root: Path, path: Path) -> str:
+# The label a path below each kind of root is shown with. `participant` is the default
+# everywhere because every write that existed before ADR-043 was below `participant/`.
+PARTICIPANT = "participant"
+LOCAL_DATA = "local-data"
+
+
+def _label(root: Path, path: Path, prefix: str = PARTICIPANT) -> str:
     try:
-        return "participant/" + path.relative_to(root).as_posix()
+        relative = path.relative_to(root).as_posix()
     except ValueError:
         return path.name
+    return prefix if relative == "." else f"{prefix}/{relative}"
 
 
 @contextmanager
-def _participant_directory(root: Path, directory: Path, *, create: bool) -> Iterator[int]:
+def _participant_directory(
+    root: Path, directory: Path, *, create: bool, prefix: str = PARTICIPANT
+) -> Iterator[int]:
     """A descriptor for `directory`, reached from `root` without following a single link.
 
-    `root` itself is trusted: it is the configured participant root, and a participant may
-    keep it anywhere. Every component below it must be a real directory. With `create`, a
-    missing component is made, and then opened like any other, so a component created by
-    someone else in the meantime is still checked.
+    The participant root itself is trusted: it is the configured participant root, and a
+    participant may keep it anywhere (and `AppConfig` resolves it, so it is never a link).
+    An application-owned root (`prefix` other than `participant`, ADR-043) is not: it is a
+    fixed name inside the clone, and a committed link at that name is exactly the escape
+    this refuses, so the root is opened with `O_NOFOLLOW` too. Every component below the
+    root must be a real directory. With `create`, a missing component is made, and then
+    opened like any other, so a component created by someone else in the meantime is still
+    checked.
     """
     try:
         relative = directory.relative_to(root)
     except ValueError as exc:
         raise UnsafeWriteTargetError(
-            f"{directory.name} is not inside the participant directory."
+            f"{directory.name} is not inside the {prefix} directory."
         ) from exc
-    if create:
-        root.mkdir(parents=True, exist_ok=True)
     flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NONBLOCK | getattr(os, "O_CLOEXEC", 0)
-    descriptor = os.open(root, flags)
+    root_flags = flags
+    if prefix != PARTICIPANT:
+        root_flags |= os.O_NOFOLLOW
+        # Created one level at a time from its parent, never through a link at its own name:
+        # `mkdir(parents=True, exist_ok=True)` succeeds on a link to a directory.
+        if create and not root.is_symlink():
+            root.parent.mkdir(parents=True, exist_ok=True)
+            with contextlib.suppress(FileExistsError):
+                root.mkdir()
+    elif create:
+        root.mkdir(parents=True, exist_ok=True)
+    try:
+        descriptor = os.open(root, root_flags)
+    except OSError as exc:
+        if exc.errno in (errno.ELOOP, errno.ENOTDIR):
+            raise UnsafeWriteTargetError(
+                f"{prefix} is a link or not a directory, so nothing is written through it. "
+                "Replace it with an ordinary directory."
+            ) from exc
+        raise
     try:
         walked = root
         for part in relative.parts:
@@ -169,8 +200,8 @@ def _participant_directory(root: Path, directory: Path, *, create: bool) -> Iter
             except OSError as exc:
                 if exc.errno in (errno.ELOOP, errno.ENOTDIR):
                     raise UnsafeWriteTargetError(
-                        f"{_label(root, walked)} is a link or not a directory, so nothing is "
-                        "written through it. Replace it with an ordinary directory."
+                        f"{_label(root, walked, prefix)} is a link or not a directory, so "
+                        "nothing is written through it. Replace it with an ordinary directory."
                     ) from exc
                 raise
             os.close(descriptor)
@@ -184,6 +215,25 @@ def ensure_directory(root: Path, directory: Path) -> None:
     """Create `directory` and every missing parent below `root`, refusing a link on the way."""
     with _participant_directory(root, directory, create=True):
         pass
+
+
+def unlink_regular_file(root: Path, path: Path, *, prefix: str = PARTICIPANT) -> None:
+    """Remove the regular file at `path`, reached without following a link; absent is fine.
+
+    A link or special file at `path` is left alone and refused: removing it is not this
+    application's business, and an `unlink` of a path string follows every link above it.
+    """
+    with _participant_directory(root, path.parent, create=False, prefix=prefix) as directory:
+        try:
+            status = os.lstat(path.name, dir_fd=directory)
+        except FileNotFoundError:
+            return
+        if not stat.S_ISREG(status.st_mode):
+            raise UnsafeWriteTargetError(
+                f"{_label(root, path, prefix)} is a link or special file, so it was not removed."
+            )
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(path.name, dir_fd=directory)
 
 
 def open_lock_file(path: Path) -> int:
@@ -203,7 +253,9 @@ def open_lock_file(path: Path) -> int:
     return descriptor
 
 
-def _refuse_unless_regular(root: Path, path: Path, directory: int) -> None:
+def _refuse_unless_regular(
+    root: Path, path: Path, directory: int, prefix: str = PARTICIPANT
+) -> None:
     """Refuse an existing `path` that is anything but a regular file. Absent is fine."""
     try:
         status = os.lstat(path.name, dir_fd=directory)
@@ -211,12 +263,12 @@ def _refuse_unless_regular(root: Path, path: Path, directory: int) -> None:
         return
     if not stat.S_ISREG(status.st_mode):
         raise UnsafeWriteTargetError(
-            f"{_label(root, path)} is a link or special file, not an ordinary file, so it was "
-            "not written. Replace it with an ordinary file, or remove it."
+            f"{_label(root, path, prefix)} is a link or special file, not an ordinary file, "
+            "so it was not written. Replace it with an ordinary file, or remove it."
         )
 
 
-def atomic_write(root: Path, path: Path, data: bytes) -> None:
+def atomic_write(root: Path, path: Path, data: bytes, *, prefix: str = PARTICIPANT) -> None:
     """Replace `path` with `data`, or leave it exactly as it was; never through a link.
 
     `path` is the lexical location under `root` — not one with links resolved, which would
@@ -226,9 +278,12 @@ def atomic_write(root: Path, path: Path, data: bytes) -> None:
     not. `os.replace` on a name replaces that name, never what a link at it points to, but a
     link or special file at the target is refused anyway rather than silently replaced: it is
     not something this application put there.
+
+    `prefix` names the kind of root (`participant`, or `local-data` for an application-owned
+    root whose own name is refused as a link too, ADR-043).
     """
-    with _participant_directory(root, path.parent, create=True) as directory:
-        _refuse_unless_regular(root, path, directory)
+    with _participant_directory(root, path.parent, create=True, prefix=prefix) as directory:
+        _refuse_unless_regular(root, path, directory, prefix)
         temporary = f".{path.name}.{secrets.token_hex(6)}.tmp"
         flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
         descriptor = os.open(temporary, flags, 0o600, dir_fd=directory)

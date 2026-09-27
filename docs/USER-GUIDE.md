@@ -161,6 +161,9 @@ This is the part worth understanding properly, because the whole product turns o
 
 ![Eight quest states in three columns by who sets them: the application sets locked and available; you set in progress, evidence ready, locally validated and submitted; only a reviewer sets needs changes and verified.](media/images/02-state-authority-v2.png)
 
+A reviewer decision recorded as `rejected` lands in this same **Needs changes** state and
+badge, not a separate one — fix what the reviewer listed and resubmit.
+
 Two totals appear everywhere and are **never added together**:
 
 - **Claimed XP** — your own record of what you finished.

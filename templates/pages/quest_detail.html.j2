@@ -65,7 +65,11 @@
       </ol>
     </section>
 
-    {{ proof_list(required_proof, 'Required evidence', slug='quest-required') }}
+    {# C3 (round 13) — the narrative loop above may already render an authored "Required
+       evidence" section; this generated checklist gets its own accessible name so the
+       two regions are distinguishable (axe landmark-unique), without touching quest
+       content or its visible heading text. #}
+    {{ proof_list(required_proof, 'Required evidence', slug='quest-required', landmark_label='Required evidence checklist') }}
     {{ proof_list(optional_proof, 'Optional evidence', 'No optional evidence for this quest.', slug='quest-optional') }}
 
     {% if prerequisites %}

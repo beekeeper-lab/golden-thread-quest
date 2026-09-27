@@ -1161,6 +1161,50 @@ class TestTheReadPathAnswersItsOwnFailures:
         assert statuses[0].startswith("HTTP/1.1 500")
 
 
+class TestAReadFailureIsNotReportedAsAWriteFailure:
+    """Round 13 E8.
+
+    Hashing the evidence to submit it is a read; the participant directory is not being
+    written to at all yet. An unreadable file inside the evidence package used to escape as
+    a bare `OSError`, and this service's action handlers turn any `OSError` from a mutating
+    action into "the change could not be written to your participant directory" — wording
+    that would have been actively wrong here, and worse, a crash and a traceback never even
+    reached the participant to be wrong at.
+    """
+
+    def test_an_unreadable_evidence_file_blocks_submission_cleanly(
+        self, service: tuple[str, str], config: AppConfig
+    ) -> None:
+        import os
+
+        if os.geteuid() == 0:
+            pytest.skip("root reads a mode-000 file, so there is no failure to answer")
+        base, token = service
+        evidence = config.resolve_participant_path(
+            "participant/evidence/jira-read-assigned-stories/jira-attempt-001"
+        )
+        target = evidence / "unreadable.md"
+        target.write_text("anything\n")
+        target.chmod(0)
+        try:
+            status, body = post(
+                base,
+                {
+                    "action": "submit-for-review",
+                    "quest_id": "jira-read-assigned-stories",
+                    "token": token,
+                    "confirm": True,
+                },
+            )
+        finally:
+            target.chmod(0o600)
+
+        assert status == 409, body
+        assert "could not be read" in body["error"], body
+        assert "could not be written" not in body["error"], body
+        assert str(config.repo_root) not in body["error"]
+
+
 class TestASecondContentLengthIsNotAWayIn:
     """`get` returns the first header; the body hides behind the second."""
 

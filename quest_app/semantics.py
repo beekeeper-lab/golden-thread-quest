@@ -597,7 +597,16 @@ def validate_local_validation_claims(
         missing = [validator for validator in quest.validators if validator not in passed]
         if not missing:
             continue
-        if attempt.quest_version != quest.version and passed:
+        # Round 13 E7: `quest_version` alone was trusted to mean "an older version of the
+        # quest, which may have declared fewer validators". Lowering it by hand, with
+        # everything else left as it was, got the same excuse for free — a forged
+        # `locally_validated` for the *current* version read as a legitimate one for an
+        # older version, and the error below became a warning. `content_hash` is what the
+        # attempt actually validated against; if it still matches the published quest, the
+        # claimed version number is not describing a different quest text, whatever it
+        # says, so this is the same-version case and stays an error.
+        content_matches_current = attempt.content_hash == quest.content_hash
+        if attempt.quest_version != quest.version and passed and not content_matches_current:
             for validator in missing:
                 report.add(
                     ContentProblem.build(

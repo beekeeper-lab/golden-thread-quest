@@ -173,3 +173,53 @@ def test_a_version_mismatch_with_no_qualifying_result_at_all_is_still_refused(
     report = ProblemReport()
     assert load_world(config, report) is None
     assert CODE in {p.code for p in report.errors}
+
+
+def _set_attempt_quest_version(config: AppConfig, version: int) -> None:
+    path = config.participant_root / "progress.yaml"
+    data = yaml.safe_load(path.read_text())
+    for attempt in data["attempts"]:
+        if attempt["quest_id"] == QUEST:
+            attempt["quest_version"] = version
+    path.write_text(yaml.safe_dump(data, sort_keys=False))
+
+
+def test_a_hand_lowered_version_does_not_excuse_a_missing_validator(config: AppConfig) -> None:
+    """Round 13 E7.
+
+    Lowering `quest_version` by hand, with the quest's text untouched, used to earn the same
+    excuse a genuine upstream update earns: "this may predate the validator". It should not,
+    because `content_hash` still names the *current* text of the quest — nothing about what
+    this attempt validated against actually changed, only the number claiming it did.
+
+    `passed` has to be non-empty for the excuse to even be considered (round 12 E5's own
+    guard), so this attempt keeps a qualifying result — from a validator the quest does not
+    even declare, so it proves nothing about `validate-jira-read-assigned`, which stays
+    missing throughout.
+    """
+    original = next(iter(_results(config).glob("*.json")))
+    stray = json.loads(original.read_text())
+    stray["result_path"] = stray["result_path"].replace(original.stem, "stray-run-001")
+    stray.update(run_id="stray-run-001", validator_id="validate-something-else", outcome="pass")
+    (_results(config) / "stray-run-001.json").write_text(json.dumps(stray))
+    original.unlink()
+    _set_state(config, "locally_validated")
+    _set_attempt_quest_version(config, 1)  # the published quest is version 2; content untouched
+
+    report = ProblemReport()
+    assert load_world(config, report) is None, "content_hash matches the current version"
+    assert CODE in {p.code for p in report.errors}
+    assert NEW_VALIDATOR_CODE not in {p.code for p in report.problems}
+
+
+def test_a_genuinely_older_version_still_gets_the_warning(config: AppConfig) -> None:
+    """The legitimate case E7 must not break: content actually changed, so the excuse holds."""
+    _set_state(config, "locally_validated")
+    _add_validator_in_a_newer_quest_version(config, "validate-playwright-quality")
+
+    report = ProblemReport()
+    world = load_world(config, report)
+
+    assert world is not None, report.to_text()
+    assert CODE not in {p.code for p in report.problems}
+    assert NEW_VALIDATOR_CODE in {p.code for p in report.warnings}

@@ -96,14 +96,27 @@
 </section>
 {% endif %}
 
-{% if evidence_changed %}
+{# Round 13 C5: a decided attempt is not awaiting a decision, so the "acknowledge before
+   approving" banner and the submission's hash no longer describe it — the reviewer already
+   acted, on whatever they saw at the time, and what matters now is drift since *that*,
+   worded the way `_check_stale_approval` already words it for the loader. #}
+{% if evidence_changed and not decision_made %}
 <div class="alert alert-warning" role="status">
   <h2>The evidence changed since it was submitted</h2>
-  {% if changed_since_submission %}
+  {% if changed_paths %}
   <p>Changed since submission:</p>
-  <ul>{% for path in changed_since_submission %}<li><code>{{ path }}</code></li>{% endfor %}</ul>
+  <ul>{% for path in changed_paths %}<li><code>{{ path }}</code></li>{% endfor %}</ul>
   {% endif %}
   <p>Acknowledge this before approving. A decision must apply to the evidence in front of you.</p>
+</div>
+{% elif evidence_changed and decision_made %}
+<div class="alert alert-warning" role="status">
+  <h2>The evidence changed since it was approved</h2>
+  {% if changed_paths %}
+  <p>Changed since the decision:</p>
+  <ul>{% for path in changed_paths %}<li><code>{{ path }}</code></li>{% endfor %}</ul>
+  {% endif %}
+  <p>The approval stands until a reviewer revokes it. Ask for re-review if the change was material.</p>
 </div>
 {% endif %}
 
