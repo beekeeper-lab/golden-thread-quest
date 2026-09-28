@@ -35,6 +35,10 @@
     "reviewed_at": { "type": "string", "format": "date-time" },
     "decision": { "type": "string", "enum": ["approved", "needs_changes", "rejected"] },
     "verification_statement": { "type": "string", "minLength": 20, "maxLength": 2000 },
+    "acknowledged_changed_evidence": {
+      "type": "boolean",
+      "description": "Present, and true, only when this approval crossed the changed-evidence gate: the evidence (or a declared proof path outside the package) differed from what the submission recorded, and the reviewer re-read it and acknowledged the change rather than the gate refusing the decision. Absent for a review that never faced the gate, and for one recorded before this field existed. Optional so an old record stays valid; ADR-031 (round 15)."
+    },
     "validation_result_ids": {
       "type": "array",
       "uniqueItems": true,

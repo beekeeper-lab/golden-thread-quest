@@ -110,6 +110,52 @@ class TestProofDetection:
         hostile = dataclasses.replace(quest, proof=(item,))
         assert detect_proof(hostile, config, None, ())[item.id] == "missing"
 
+    def test_an_empty_declared_directory_is_not_detected(self, world, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        """Round 15 T4: `target.is_dir() and any(target.iterdir())` is what tells an empty
+        directory from a populated one. Removing the `any(...)` half passed the entire
+        997-test non-UI suite with zero failures — a participant who created the required
+        directory but never put anything in it would be shown "detected" rather than
+        "missing"."""
+        import dataclasses
+
+        quest = world.content.quests["base-camp-repository-safety"]
+        directory_path = "participant/context/round15-t4-empty-dir"
+        config.resolve_participant_path(directory_path).mkdir(parents=True, exist_ok=True)
+        item = dataclasses.replace(quest.proof[0], type="directory", path=directory_path)
+        hostile = dataclasses.replace(quest, proof=(item,))
+
+        assert detect_proof(hostile, config, None, ())[item.id] == "missing"
+
+    def test_an_environment_failure_result_is_a_warning_not_missing(
+        self, world, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Round 15 T6: the `("inconclusive", "environment_failure")` tuple in `_detect_one`
+        had no test naming `environment_failure` specifically. Dropping it from the tuple
+        passed every test file that references `environment_failure` or the proof/validator
+        views, with zero failures."""
+        from quest_app.progress import ValidationResult
+
+        quest = world.content.quests["base-camp-repository-safety"]
+        attempt = world.participant.progress.attempt_for(quest.id)
+        item = next(i for i in quest.proof if i.type == "validator")
+        result = ValidationResult(
+            run_id="round15-t6-run",
+            validator_id=item.validator,
+            validator_version=1,
+            quest_id=quest.id,
+            attempt_id=attempt.attempt_id,
+            started_at="2026-09-16T10:00:00Z",
+            completed_at="2026-09-16T10:00:01Z",
+            duration_ms=500,
+            outcome="environment_failure",
+            checks=(),
+            redaction_applied=False,
+            source="participant/evidence/x/y/validation/round15-t6-run.json",
+        )
+
+        states = detect_proof(quest, config, attempt.evidence_path, (result,))
+        assert states[item.id] == "warning"
+
 
 class TestSecretScanning:
     def test_clean_evidence_produces_no_findings(self, config: AppConfig) -> None:

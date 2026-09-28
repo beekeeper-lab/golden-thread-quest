@@ -292,6 +292,97 @@ class TestApprovalGuards:
         )
         assert decision.is_approval
 
+    def test_an_acknowledged_change_is_recorded_as_data_not_only_as_prose(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Round 15 L2.
+
+        Before this, the only trace that an approval crossed the changed-evidence gate was
+        whatever the reviewer happened to write in the free-text `verification_statement`.
+        `acknowledged_changed_evidence` now persists the fact itself.
+        """
+        submit(setup, config)
+        world, attempt = reload_attempt(config)
+        directory = config.resolve_participant_path(attempt.evidence_path)
+        (directory / "PROOF.md").write_text("# Rewritten, and the reviewer has re-read it\n")
+        _, schemas, store, quest, _ = setup
+
+        decision = record_decision(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            decision="approved",
+            reviewer_name="A Reviewer",
+            verification_statement=STATEMENT,
+            findings=[],
+            schemas=schemas,
+            acknowledge_changed_evidence=True,
+        )
+
+        assert decision.acknowledged_changed_evidence is True
+        review_path = config.resolve_participant_path(attempt.evidence_path) / "review.yaml"
+        assert yaml.safe_load(review_path.read_text())["acknowledged_changed_evidence"] is True
+
+        # And it round-trips back through the loader, not just through the writer's return value.
+        reloaded, reloaded_attempt = reload_attempt(config)
+        review = reloaded.participant.latest_review_for(reloaded_attempt)
+        assert review is not None
+        assert review.acknowledged_changed_evidence is True
+
+    def test_an_ordinary_approval_does_not_claim_an_acknowledged_change(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """The field names something that actually happened, not the shape of every approval:
+        an approval of untouched evidence never faced the gate, so it stays unset."""
+        submit(setup, config)
+        world, attempt = reload_attempt(config)
+        _, schemas, store, quest, _ = setup
+
+        decision = record_decision(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            decision="approved",
+            reviewer_name="A Reviewer",
+            verification_statement=STATEMENT,
+            findings=[],
+            schemas=schemas,
+        )
+
+        assert decision.acknowledged_changed_evidence is False
+        review_path = config.resolve_participant_path(attempt.evidence_path) / "review.yaml"
+        assert "acknowledged_changed_evidence" not in yaml.safe_load(review_path.read_text())
+
+    def test_a_review_recorded_before_this_field_existed_still_validates(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """`additionalProperties: false` on the review schema means adding a required field
+        would break every review recorded before it existed. `acknowledged_changed_evidence`
+        is optional for exactly that reason: a hand-built document with no opinion on it,
+        shaped like a record from before round 15, must still validate."""
+        schemas = SchemaSet(config.schemas_root)
+        pre_round_15_document = {
+            "schema_version": 1,
+            "review_id": "review-20260101000000-abc123",
+            "quest_id": "jira-read-assigned-stories",
+            "quest_version": 1,
+            "attempt_id": "jira-attempt-001",
+            "evidence_hash": "sha256:" + "0" * 64,
+            "reviewer": {"display_name": "A Reviewer"},
+            "reviewed_at": "2026-01-01T00:00:00Z",
+            "decision": "approved",
+            "findings": [],
+            "verification_statement": STATEMENT,
+        }
+        report = ProblemReport()
+        assert schemas.validate("review", pre_round_15_document, "review.yaml", report), (
+            report.to_text()
+        )
+
     def test_deciding_over_an_unreadable_file_is_refused_cleanly(
         self, setup, config: AppConfig
     ) -> None:  # type: ignore[no-untyped-def]
@@ -467,6 +558,66 @@ class TestForgery:
         data = yaml.safe_load(path.read_text())
         data["attempt_id"] = "a-different-attempt"
         path.write_text(yaml.safe_dump(data, sort_keys=False))
+
+        report = ProblemReport()
+        assert load_world(config, report) is None
+        assert "progress.unverified_verified_state" in {p.code for p in report.errors}
+
+    def test_a_review_recorded_for_a_different_attempt_of_the_same_quest_does_not_verify(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Round 15 T5.
+
+        `progress.py::_check_integrity` has one `elif` branch per way a `verified` state's
+        approval can fail to actually back it: missing review, wrong decision, missing
+        statement, quest-version mismatch, quest-ID mismatch, and — the one branch with no
+        dedicated test before this — a review that approves a *different* attempt of the
+        same quest. Deleting that one `elif review.attempt_id != attempt.attempt_id: ...`
+        block passed the entire non-UI suite, including every other test in this file, with
+        zero failures.
+
+        `test_a_review_for_another_attempt_does_not_verify_this_one` above forges the review
+        record's own `attempt_id` field, which the loader already refuses to attach to any
+        attempt at all (`progress.record_identity_mismatch`, checked while the record is
+        read from the evidence directory it lives in) — so that test never reaches this
+        branch. This one leaves the real, legitimately recorded approval of attempt one
+        untouched and instead points a *second, later* attempt of the same quest at it: a
+        rejected-and-retried attempt claiming the earlier attempt's real approval as its own.
+        """
+        submit(setup, config)
+        world, attempt = reload_attempt(config)
+        _, schemas, store, quest, _ = setup
+        decision = record_decision(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            decision="approved",
+            reviewer_name="A Reviewer",
+            verification_statement=STATEMENT,
+            findings=[],
+            schemas=schemas,
+        )
+
+        second_evidence = f"participant/evidence/{quest.id}/jira-attempt-002"
+        config.resolve_participant_path(second_evidence).mkdir(parents=True, exist_ok=True)
+
+        progress_path = config.participant_root / "progress.yaml"
+        data = yaml.safe_load(progress_path.read_text())
+        original = next(a for a in data["attempts"] if a["quest_id"] == quest.id)
+        second_attempt = {
+            **original,
+            "attempt_id": "jira-attempt-002",
+            "evidence_path": second_evidence,
+            "state": "verified",
+            "review_id": decision.review_id,
+            "updated_at": "2026-09-20T00:00:00Z",
+        }
+        second_attempt.pop("submission_id", None)
+        second_attempt.pop("validation_result_ids", None)
+        data["attempts"].append(second_attempt)
+        progress_path.write_text(yaml.safe_dump(data, sort_keys=False))
 
         report = ProblemReport()
         assert load_world(config, report) is None
