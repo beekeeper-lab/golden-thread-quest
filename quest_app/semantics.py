@@ -605,8 +605,23 @@ def validate_local_validation_claims(
         # attempt actually validated against; if it still matches the published quest, the
         # claimed version number is not describing a different quest text, whatever it
         # says, so this is the same-version case and stays an error.
+        #
+        # Round 15 E10: `content_hash` is exactly as participant-writable as `quest_version`
+        # is, and the check above only ever asked whether it *disagreed* with the current
+        # hash — which any string that is not the current hash does, whether it is a real
+        # earlier digest or something invented for the occasion. A forger who edits both
+        # fields together still earns the warning. This application keeps no record of an
+        # earlier version's real hash, so there is nothing here to check a claimed one
+        # against; closing that fully needs a place to keep that record, which is future
+        # work, not this fix. What *is* fixed: `quest_version` must actually be older, not
+        # merely different, since a claimed version at or past what is published now can
+        # never legitimately predate a validator. ADR-030 already scopes a forger with
+        # write access to their own repository out of this release's threat model, and
+        # `locally_validated` gates nothing external (submission is allowed straight from
+        # `evidence_ready`) — the residual gap is a mislabeled state, not a bypassed control.
         content_matches_current = attempt.content_hash == quest.content_hash
-        if attempt.quest_version != quest.version and passed and not content_matches_current:
+        claims_a_real_predecessor = attempt.quest_version < quest.version
+        if claims_a_real_predecessor and passed and not content_matches_current:
             for validator in missing:
                 report.add(
                     ContentProblem.build(

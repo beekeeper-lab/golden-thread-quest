@@ -223,3 +223,96 @@ def test_a_genuinely_older_version_still_gets_the_warning(config: AppConfig) -> 
     assert world is not None, report.to_text()
     assert CODE not in {p.code for p in report.problems}
     assert NEW_VALIDATOR_CODE in {p.code for p in report.warnings}
+
+
+def _set_attempt_content_hash(config: AppConfig, content_hash: str) -> None:
+    path = config.participant_root / "progress.yaml"
+    data = yaml.safe_load(path.read_text())
+    for attempt in data["attempts"]:
+        if attempt["quest_id"] == QUEST:
+            attempt["content_hash"] = content_hash
+    path.write_text(yaml.safe_dump(data, sort_keys=False))
+
+
+def _add_a_second_validator_at_the_current_version(config: AppConfig, new_validator: str) -> None:
+    """A quest that has always declared two validators, at whatever version is published now
+    — unlike `_add_validator_in_a_newer_quest_version`, nothing about the quest's text or
+    version changes. A participant who ran only one of the two is exactly the shape of a
+    forged `locally_validated`, not a legitimate predates-the-validator excuse."""
+    quest_path = config.repo_root / QUEST_CONTENT_PATH
+    text = quest_path.read_text()
+    text = text.replace(
+        "validators:\n  - validate-jira-read-assigned\n",
+        f"validators:\n  - validate-jira-read-assigned\n  - {new_validator}\n",
+        1,
+    )
+    quest_path.write_text(text)
+
+    registry_path = config.repo_root / REGISTRY_PATH
+    registry = yaml.safe_load(registry_path.read_text())
+    for entry in registry["validators"]:
+        if entry["id"] == new_validator:
+            entry["quest_ids"].append(QUEST)
+    registry_path.write_text(yaml.safe_dump(registry, sort_keys=False))
+
+
+def test_a_forged_content_hash_no_longer_excuses_a_claimed_future_version(
+    config: AppConfig,
+) -> None:
+    """Round 15 E10 (partial close — see the comment above `claims_a_real_predecessor` in
+    `semantics.py`).
+
+    `content_hash` is exactly as participant-writable as `quest_version`: round 13 E7 only
+    ever checked whether it *disagreed* with the current hash, and any invented string does
+    that as well as a real earlier one would, with nothing here to tell the two apart (this
+    application keeps no record of an earlier version's real hash). What round 15 closes is
+    narrower but real: `quest_version` must actually be *older* than what is published now,
+    not merely different from it. A claimed version at or past the one published cannot
+    legitimately predate a validator that already exists at the published version, whatever
+    `content_hash` says. `validate_progress_against_content`'s own, separate
+    `progress.future_quest_version` check already refuses a quest_version this far ahead on
+    its own, so the load fails either way — but before this fix, this check's *own* verdict
+    on the missing validator was a misleading "may predate the validator" warning sitting
+    next to that real error, rather than the hard error the missing validator actually is.
+    """
+    _add_a_second_validator_at_the_current_version(config, "validate-playwright-quality")
+    _set_state(config, "locally_validated")
+    _set_attempt_quest_version(config, 99)  # never published; not a predecessor of anything
+    _set_attempt_content_hash(config, "sha256:" + "ab" * 32)  # invented, not the real digest
+
+    report = ProblemReport()
+    assert load_world(config, report) is None
+    assert CODE in {p.code for p in report.errors}
+    assert NEW_VALIDATOR_CODE not in {p.code for p in report.problems}
+
+
+def test_a_forged_content_hash_still_excuses_a_claimed_real_predecessor(
+    config: AppConfig,
+) -> None:
+    """Round 15 E10, residual and documented rather than silently left to drift further.
+
+    A forger who claims an *actually older* version number (`quest_version < quest.version`,
+    which is not on its own suspicious — every legitimate case looks exactly like this) and
+    also invents a `content_hash` that is merely different from the current one, rather than
+    leaving it untouched (round 13 E7's own catch), still earns the warning. There is no
+    record of what an earlier version's real hash was to check the claimed one against, so
+    nothing here can tell "a real earlier digest" from "a plausible-looking invented one" —
+    closing this fully needs a place to keep that record, which does not exist yet.
+
+    ADR-030 already scopes a participant with write access to their own repository, willing
+    to forge two fields together, out of this release's threat model, and `locally_validated`
+    gates nothing external on its own (submission is allowed straight from `evidence_ready`
+    either way) — so this pins the accepted, documented shape of the gap rather than treating
+    it as untested.
+    """
+    _add_a_second_validator_at_the_current_version(config, "validate-playwright-quality")
+    _set_state(config, "locally_validated")
+    _set_attempt_quest_version(config, 1)  # the published quest is version 2: a real predecessor
+    _set_attempt_content_hash(config, "sha256:" + "ab" * 32)  # invented, not the real digest
+
+    report = ProblemReport()
+    world = load_world(config, report)
+
+    assert world is not None, report.to_text()
+    assert CODE not in {p.code for p in report.problems}
+    assert NEW_VALIDATOR_CODE in {p.code for p in report.warnings}

@@ -282,6 +282,10 @@ def record_decision(
             "The submission record does not describe this attempt, so there is nothing to decide."
         )
 
+    # Set only when the approval actually crossed the changed-evidence gate below, so the
+    # record shows whether this specific approval needed and got the acknowledgement rather
+    # than whether the caller happened to pass the flag (round 15 L2).
+    acknowledged_change = False
     if decision == Decision.APPROVED:
         if not verification_statement or len(verification_statement.strip()) < 20:
             raise ReviewError(
@@ -293,6 +297,7 @@ def record_decision(
                 f"The evidence has changed since it was submitted ({', '.join(changed)}). "
                 "Re-read it and acknowledge the change before approving."
             )
+        acknowledged_change = bool(changed)
     elif not findings:
         raise ReviewError(
             f"{decision.replace('_', ' ').capitalize()} requires at least one finding, so the "
@@ -332,6 +337,8 @@ def record_decision(
     }
     if verification_statement:
         document["verification_statement"] = verification_statement.strip()
+    if acknowledged_change:
+        document["acknowledged_changed_evidence"] = True
     results = participant.results_for(attempt)
     if results:
         document["validation_result_ids"] = [result.run_id for result in results]
@@ -366,6 +373,7 @@ def record_decision(
         source=f"{attempt.evidence_path}/{REVIEW_FILENAME}",
         verification_statement=verification_statement,
         proof_files=tuple((item["path"], item["digest"]) for item in proof_files),
+        acknowledged_changed_evidence=acknowledged_change,
     )
 
 
