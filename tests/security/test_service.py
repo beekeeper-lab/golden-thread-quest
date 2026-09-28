@@ -1662,6 +1662,104 @@ class TestTheTokenPlaceholderIsNeutralizedInRenderedContent:
         return after_heading.split("</section>", 1)[0]
 
 
+class TestTheTokenPlaceholderIsNeutralizedInAcceptanceCriteria:
+    """Round 16 E8.
+
+    Round 15 E7 (above) neutralized the placeholder in `render_markdown`, the function
+    behind a rendered PROOF.md. Acceptance criteria render through the sibling function
+    `render_inline` instead (`content_loader.py`'s `safe_rendered_html=render_inline(item
+    .text)`), which the round 15 fix never touched. A code span in an authored acceptance
+    criterion — content that arrives through pull requests, quoting ticket text and
+    transcripts, per `SECURITY-AND-PRIVACY.md` — reproduced the app's own substitution
+    shape on the served quest page, live request token and all.
+    """
+
+    # A quest with no attempt in `fixtures/participant`, so its quest page's primary action
+    # is "start-quest" — a consequential, POST-method action, which is the one shape that
+    # renders a live-token form on this page (`action.html.j2` only emits the hidden input
+    # for a `post` action, and only one that is `enabled`).
+    QUEST_ID = "trello-read-board"
+    QUEST_PATH = Path("content/quests/trello-islands/read-board.md")
+    ORIGINAL_CRITERION = (
+        "1. The authenticated Trello member is resolved from the API rather than written "
+        "into the skill as a name or member ID."
+    )
+    PLANTED_CRITERION = ORIGINAL_CRITERION + ' Debug: `value="__GTQ_REQUEST_TOKEN__"`.'
+
+    @pytest.fixture
+    def service_with_a_planted_criterion(self, config: AppConfig) -> Iterator[tuple[str, str]]:
+        quest_file = config.repo_root / self.QUEST_PATH
+        text = quest_file.read_text(encoding="utf-8")
+        marked = text.replace(self.ORIGINAL_CRITERION, self.PLANTED_CRITERION, 1)
+        assert marked != text, "the criterion text to mutate was not found"
+        quest_file.write_text(marked, encoding="utf-8")
+
+        bound = AppConfig.for_repo(
+            config.repo_root, participant_root=config.participant_root, service_port=0
+        )
+        report = ProblemReport()
+        world = load_world(bound, report)
+        assert world is not None, report.to_text()
+        # `online_service_view()` so the page renders a real form (a live token field) to
+        # check the fix did not also break the one place the placeholder must still work.
+        build_site(world, service=online_service_view())
+
+        server, state = create_server(bound)
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            yield f"http://127.0.0.1:{port}", state.token
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+
+    def test_an_acceptance_criterion_code_span_does_not_carry_the_live_token(
+        self, service_with_a_planted_criterion: tuple[str, str]
+    ) -> None:
+        base, token = service_with_a_planted_criterion  # secret-scan: allow
+        with urllib.request.urlopen(  # noqa: S310 - fixed loopback URL built in this test
+            f"{base}/quests/{self.QUEST_ID}/", timeout=10
+        ) as response:
+            body = response.read().decode()
+        criteria_html = self._criteria_html(body)
+
+        assert f'value="{token}"' in body, "the service's own start-quest form must still carry it"
+        assert token not in criteria_html, (
+            "the live token must appear nowhere in the rendered acceptance criteria"
+        )
+
+    def test_the_code_span_renders_as_inert_neutralized_text(
+        self, service_with_a_planted_criterion: tuple[str, str]
+    ) -> None:
+        """The exact placeholder shape must not survive rendering, in any markup."""
+        base, _ = service_with_a_planted_criterion
+        with urllib.request.urlopen(  # noqa: S310 - fixed loopback URL built in this test
+            f"{base}/quests/{self.QUEST_ID}/", timeout=10
+        ) as response:
+            body = response.read().decode()
+        criteria_html = self._criteria_html(body)
+
+        assert 'value="__GTQ_REQUEST_TOKEN__"' not in criteria_html, (
+            "the criterion's code span must not reproduce the app's own substitution shape"
+        )
+        assert "__GTQ_REQUEST_TOKEN__" not in criteria_html, (
+            "no rendered criterion may carry the bare placeholder either"
+        )
+        assert "&#95;&#95;GTQ&#95;REQUEST&#95;TOKEN&#95;&#95;" in criteria_html, (
+            "it must still be shown, just neutralized, not silently stripped"
+        )
+
+    @staticmethod
+    def _criteria_html(body: str) -> str:
+        """Just the rendered acceptance-criteria list — the page also carries the
+        start-quest form, with the app's own live token field, which a whole-page search
+        would wrongly flag."""
+        after_heading = body.split('id="quest-criteria"', 1)[1]
+        return after_heading.split("</section>", 1)[0]
+
+
 class TestTheFormPathParsesAcknowledgeChangedEvidenceStrictly:
     """Round 15 E8, the browser-form half.
 
@@ -1740,6 +1838,38 @@ class TestTheFormPathParsesAcknowledgeChangedEvidenceStrictly:
                 "verification_statement": self.STATEMENT,
                 "confirm": "yes",
                 "acknowledge_changed_evidence": "false",
+            },
+        )
+        problem = _flash_on(base, location)
+        assert "changed" in problem, problem
+        assert self._state_of(config) == "submitted"
+
+    def test_an_omitted_key_does_not_approve_changed_evidence(
+        self, service_with_changed_evidence: tuple[str, str], config: AppConfig
+    ) -> None:
+        """Round 16 F2.
+
+        `templates/pages/review.html.j2`'s checkbox has no hidden fallback field, so an
+        unchecked box does not post `acknowledge_changed_evidence=false` — the key is
+        entirely absent from the form body, exactly like a real browser leaving a real
+        checkbox unchecked. `_review_fields`'s default (`fields.get(..., [""])[0]`) has to
+        read that absence as "no" on its own; nothing upstream turns a missing key into an
+        explicit `false` for it to parse. This is the one shape neither
+        `test_an_explicit_false_does_not_approve_changed_evidence` above (which posts an
+        explicit `"false"`) nor the JSON path exercises, and the one a flipped default
+        (`[""]` to `["true"]`) would pass silently.
+        """
+        base, token = service_with_changed_evidence  # secret-scan: allow
+        location = TestTheAdvisoryReachesTheBrowser._redirect_of(
+            base,
+            f"/api/action/record-review/{self.QUEST}",
+            {
+                "token": token,
+                "decision": "approved",
+                "reviewer_name": "Real Reviewer",
+                "verification_statement": self.STATEMENT,
+                "confirm": "yes",
+                # No "acknowledge_changed_evidence" key at all — the real unchecked-box shape.
             },
         )
         problem = _flash_on(base, location)

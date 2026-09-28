@@ -564,6 +564,37 @@ def test_a_secret_in_evidence_is_redacted_from_the_generated_preview(config: App
     assert "[REDACTED]" in preview, "the preview should show that something was removed"
 
 
+@pytest.mark.slow
+def test_a_utf16_secret_in_proof_is_redacted_from_the_generated_preview(config: AppConfig) -> None:
+    """Round 16 E3: the preview used to decode PROOF.md as UTF-8 only.
+
+    The secret scan tries several decodings of the same bytes (round 15 E6/E7), so a
+    UTF-16 PROOF.md holding a token was refused by `mark-evidence-ready`. But the preview
+    decoded it as UTF-8 with replacement, which turns every other byte of ASCII-range
+    UTF-16 into U+FFFD without raising anything — the token survived that, readable again
+    once the replacement characters were stripped back out. The preview now decodes with
+    the same candidate logic the scan uses, so the same bytes redact the same way.
+    """
+    leaked = "ghp_abcdefghijklmnopqrstuvwxyz0123456789"  # secret-scan: allow
+    evidence = (
+        config.participant_root / "evidence" / "jira-read-assigned-stories" / "jira-attempt-001"
+    )
+    (evidence / "PROOF.md").write_bytes(f"# Proof\n\ntoken={leaked}\n".encode("utf-16"))
+
+    build(config)
+
+    for page in config.generated_root.rglob("*.html"):
+        text = page.read_text()
+        assert leaked not in text, f"{page.name} reproduces a secret"
+        assert leaked not in text.replace("�", ""), (
+            f"{page.name} reproduces a secret once U+FFFD is stripped"
+        )
+    preview = (
+        config.generated_root / "evidence" / "jira-read-assigned-stories" / "index.html"
+    ).read_text()
+    assert "[REDACTED]" in preview, "the preview should show that something was removed"
+
+
 def test_built_pages_show_no_internal_placeholder(built: AppConfig) -> None:
     """A page opened straight from disk must not display an internal marker.
 

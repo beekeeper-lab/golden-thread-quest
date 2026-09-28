@@ -13,6 +13,7 @@ can drift, and the product's whole claim is that those rules cannot be gone arou
 
 from __future__ import annotations
 
+import shlex
 from typing import Any
 
 from quest_app.build import build_site
@@ -98,7 +99,12 @@ def _next_steps_for_submission(quest: Any, attempt: Any) -> str:
     if package_add not in instructions:
         # The message's wording moved; better an unwidened suggestion than a garbled one.
         return instructions
-    return instructions.replace(package_add, package_add + " " + " ".join(outside), 1)
+    # `relativePath` in the quest schema allows a space or a shell metacharacter, and
+    # `outside` is authored, not generated, so a proof path is not something this text can
+    # trust to appear unquoted in a command meant to be pasted into a shell (round 16 E9):
+    # unquoted, a space adds the wrong pathspecs and `$(...)` runs whatever it names.
+    quoted_outside = " ".join(shlex.quote(path) for path in outside)
+    return instructions.replace(package_add, package_add + " " + quoted_outside, 1)
 
 
 class ActionRunner:
