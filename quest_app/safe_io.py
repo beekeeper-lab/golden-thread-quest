@@ -153,13 +153,16 @@ def _participant_directory(
     """A descriptor for `directory`, reached from `root` without following a single link.
 
     The participant root itself is trusted: it is the configured participant root, and a
-    participant may keep it anywhere (and `AppConfig` resolves it, so it is never a link).
-    An application-owned root (`prefix` other than `participant`, ADR-043) is not: it is a
-    fixed name inside the clone, and a committed link at that name is exactly the escape
-    this refuses, so the root is opened with `O_NOFOLLOW` too. Every component below the
-    root must be a real directory. With `create`, a missing component is made, and then
-    opened like any other, so a component created by someone else in the meantime is still
-    checked.
+    participant may keep it anywhere (and `AppConfig` resolves it, so it is never a link). A
+    participant root nobody configured, the fixed default name `participant/`, is not: a
+    committed link there is the same escape as one at an application-owned root, so
+    `AppConfig.for_repo` refuses it before this ever runs (round 14 E6, `ADR-043`
+    amendment) rather than trusting it here. An application-owned root (`prefix` other than
+    `participant`, ADR-043) is not: it is a fixed name inside the clone, and a committed link
+    at that name is exactly the escape this refuses, so the root is opened with `O_NOFOLLOW`
+    too. Every component below the root must be a real directory. With `create`, a missing
+    component is made, and then opened like any other, so a component created by someone
+    else in the meantime is still checked.
     """
     try:
         relative = directory.relative_to(root)

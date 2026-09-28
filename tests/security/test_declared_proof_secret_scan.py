@@ -143,3 +143,93 @@ class TestMarkEvidenceReadyDescribesEachKindOfFinding:
         message = self._reopen_and_mark_ready(config)
         assert "secret-like" not in message, message
         assert "cannot be checked" in message or "MB" in message, message
+
+
+class TestScanDeclaredProofUsesTheDeclaredPathAsItsOwnBoundary:
+    """Round 14 E4 and E10.
+
+    E4: `scan_declared_proof` used to scan a declared directory with the whole participant
+    root as its link boundary while `proof_file_digests` hashes it with the directory
+    itself as the boundary (`hash_directory`'s root). A link out of the declared directory
+    but still inside `participant/` passed the scan silently while the digest either
+    recorded it as an outside link (a directory) or captured only the link text (a file).
+    Using the declared path as the boundary here makes the two agree, and a declared path
+    that does not resolve inside `participant/` at all is now a finding instead of a
+    silent skip.
+
+    E10: the finding path for something inside a declared directory used to carry a double
+    slash, because the declared path (`participant/context/trello/cards/`) already ends in
+    one.
+
+    `trello-read-board` is the quest with a directory-typed declared proof
+    (`card-records`, `participant/context/trello/cards/`); no attempt needs to exist for it,
+    since `scan_declared_proof` only needs the quest object and an evidence path string.
+    """
+
+    QUEST = "trello-read-board"
+    EVIDENCE = "participant/evidence/trello-read-board/attempt-001"
+
+    def _quest(self, config: AppConfig):  # type: ignore[no-untyped-def]
+        return _world(config).content.quests[self.QUEST]
+
+    def _cards_dir(self, config: AppConfig) -> Path:
+        cards = config.resolve_participant_path("participant/context/trello/cards")
+        cards.mkdir(parents=True, exist_ok=True)
+        return cards
+
+    def test_a_link_out_of_the_declared_directory_is_a_finding_even_inside_participant(
+        self, config: AppConfig
+    ) -> None:
+        cards = self._cards_dir(config)
+        elsewhere = config.resolve_participant_path("participant/context/trello")
+        (elsewhere / "note-src.md").write_text("nothing secret\n")
+        (cards / "note.md").symlink_to(Path("../note-src.md"))
+
+        findings = scan_declared_proof(config, self._quest(config), self.EVIDENCE)
+        matching = [f for f in findings if f.path.endswith("cards/note.md")]
+        assert matching, findings
+        assert "leads outside" in matching[0].description
+        assert "//" not in matching[0].path, matching[0].path
+
+    def test_a_declared_path_that_resolves_outside_participant_is_a_finding_not_a_skip(
+        self, config: AppConfig, tmp_path: Path
+    ) -> None:
+        outside = tmp_path / "outside-board-index.md"
+        outside.write_text("nothing secret\n")
+        board_index = config.resolve_participant_path("participant/context/trello/board-index.md")
+        board_index.parent.mkdir(parents=True, exist_ok=True)
+        board_index.symlink_to(outside)
+
+        findings = scan_declared_proof(config, self._quest(config), self.EVIDENCE)
+        matching = [f for f in findings if f.path == "participant/context/trello/board-index.md"]
+        assert matching, findings
+        assert "leads outside" in matching[0].description
+
+    def test_a_directory_symlink_inside_a_declared_directory_is_a_finding(
+        self, config: AppConfig, tmp_path: Path
+    ) -> None:
+        """Its contents are never walked into either way; a directory link used to read as
+        clean instead of as something the scan could not see behind."""
+        cards = self._cards_dir(config)
+        outside_dir = tmp_path / "cards-extra"
+        outside_dir.mkdir()
+        (outside_dir / "leak.md").write_text(f"token={LEAKED}\n")
+        (cards / "extra").symlink_to(outside_dir, target_is_directory=True)
+
+        findings = scan_declared_proof(config, self._quest(config), self.EVIDENCE)
+        matching = [f for f in findings if f.path.endswith("cards/extra")]
+        assert matching, findings
+        assert "leads outside" in matching[0].description
+        # And nothing from behind the link leaked into the findings unnoticed.
+        assert not any(LEAKED in f.path for f in findings)
+
+    def test_no_double_slash_in_a_finding_under_a_declared_directory(
+        self, config: AppConfig
+    ) -> None:
+        cards = self._cards_dir(config)
+        (cards / "leak.md").write_text(f"token={LEAKED}\n")
+
+        findings = scan_declared_proof(config, self._quest(config), self.EVIDENCE)
+        matching = [f for f in findings if f.path.endswith("leak.md")]
+        assert matching, findings
+        assert matching[0].path == "participant/context/trello/cards/leak.md"

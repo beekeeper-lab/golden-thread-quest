@@ -863,8 +863,21 @@ def _quest_detail_context(
     world: LoadedWorld,
     service: ServiceView,
 ) -> dict[str, Any]:
+    from quest_app.evidence import detect_proof
+
     quest = entry.quest
-    required, optional = build_proof_views(quest)
+    results = _results_for(entry, world)
+    # C3 (round 14): before an attempt exists, `build_proof_views` with no detection is
+    # right — nothing has been produced yet. Once one does, the evidence workspace already
+    # calls `detect_proof` for this same quest; a quest page that never does told a
+    # submitted, even verified, attempt "Not detected" for evidence a reviewer had already
+    # approved.
+    detected = (
+        detect_proof(quest, world.config, entry.attempt.evidence_path, results)
+        if entry.attempt is not None
+        else None
+    )
+    required, optional = build_proof_views(quest, detected)
     prerequisites = tuple(
         PrerequisiteView(
             id=pid,
@@ -876,7 +889,6 @@ def _quest_detail_context(
         for pid in quest.prerequisites
         if pid in bundle.quests
     )
-    results = _results_for(entry, world)
     latest: dict[str, Any] = {}
     for result in results:
         latest[result.validator_id] = result
@@ -889,8 +901,12 @@ def _quest_detail_context(
             latest_run_id=latest[vid].run_id if vid in latest else None,
             latest_completed_at=latest[vid].completed_at if vid in latest else None,
             result_route=routes.validation(quest.id, latest[vid].run_id) if vid in latest else None,
-            available=False,
-            unavailable_reason="Start the local service to run checks from this page.",
+            available=service.available,
+            unavailable_reason=(
+                None
+                if service.available
+                else "Start the local service to run checks from this page."
+            ),
         )
         for vid in quest.validators
     )
@@ -994,8 +1010,10 @@ def _evidence_context(
             latest_run_id=latest[vid].run_id if vid in latest else None,
             latest_completed_at=latest[vid].completed_at if vid in latest else None,
             result_route=routes.validation(quest.id, latest[vid].run_id) if vid in latest else None,
-            available=False,
-            unavailable_reason="Start the local service to run this check.",
+            available=service.available,
+            unavailable_reason=None
+            if service.available
+            else "Start the local service to run this check.",
         )
         for vid in quest.validators
     )

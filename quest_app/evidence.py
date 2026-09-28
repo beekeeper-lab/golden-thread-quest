@@ -12,6 +12,7 @@ participant a minute, and a missed credential costs them a rotation and a conver
 from __future__ import annotations
 
 import json
+import os
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -156,6 +157,29 @@ def _inside_the_package(item_path: str, evidence_path: str, package: Path) -> li
     return candidates
 
 
+def _decode_evidence_text(raw: bytes) -> str:
+    """Decode evidence bytes for scanning, guessing UTF-16 before falling back to UTF-8.
+
+    A PowerShell `>` redirection (and other Windows tooling) writes UTF-16 by default.
+    Decoded as UTF-8 with replacement, every other byte of ASCII-range UTF-16 becomes
+    U+FFFD, which breaks every pattern in `secret_patterns` without raising anything, so a
+    token in such a file passed the scan clean (round 14 E7). A byte-order mark says so
+    outright; without one, a file that is mostly NUL bytes is UTF-16 in all but name, and the
+    NUL's position in each pair says which endianness.
+    """
+    if raw.startswith(b"\xff\xfe"):
+        return raw.decode("utf-16-le", errors="replace")
+    if raw.startswith(b"\xfe\xff"):
+        return raw.decode("utf-16-be", errors="replace")
+    if raw and raw.count(b"\0") / len(raw) > 0.3:
+        odd_nuls = raw[1::2].count(0)
+        even_nuls = raw[0::2].count(0)
+        return raw.decode("utf-16-le" if odd_nuls >= even_nuls else "utf-16-be", errors="replace")
+    # Decoded with replacement, not skipped: one byte that is not UTF-8 used to hide an
+    # entire file, credentials included, from the scan.
+    return raw.decode("utf-8", errors="replace")
+
+
 def _scan_one(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
     """Apply the fixed scan rules to one filesystem entry: link check, skip list, the 2 MB
     ceiling, then decode and match.
@@ -183,9 +207,7 @@ def _scan_one(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
     except OSError:
         # A file the scan cannot read is a file it cannot vouch for, so it blocks.
         return [SecretFinding(relative, 1, "could not be read to check it")]
-    # Decoded with replacement, not skipped: one byte that is not UTF-8 used to hide an
-    # entire file, credentials included, from the scan.
-    text = raw.decode("utf-8", errors="replace")
+    text = _decode_evidence_text(raw)
     return [
         SecretFinding(path=relative, line=match.line, description=match.description)
         for match in scan_text(text)
@@ -206,11 +228,41 @@ def scan_evidence(config: AppConfig, evidence_path: str) -> list[SecretFinding]:
         root = config.resolve_participant_path(evidence_path)
     except ValueError:
         return []
+    entries, unreadable = _walk(root)
     findings: list[SecretFinding] = []
-    for path in sorted(root.rglob("*")):
+    for path in entries:
         relative = f"{evidence_path}/{path.relative_to(root).as_posix()}"
         findings.extend(_scan_one(path, relative, root))
+    for path in unreadable:
+        # Same wording as an unreadable file (round 14 E5): `rglob` silently drops a
+        # directory it cannot list instead of raising, so a token behind one was submitted
+        # with a clean scan. This is what `hash_directory` now fails on too, so a directory
+        # that changes readability changes both the scan and the hash the same way.
+        relative = f"{evidence_path}/{path.relative_to(root).as_posix()}"
+        findings.append(SecretFinding(relative, 1, "could not be read to check it"))
     return findings
+
+
+def _walk(root: Path) -> tuple[list[Path], list[Path]]:
+    """Every entry under `root`, sorted, plus any directory that could not be listed.
+
+    `Path.rglob` walks with `os.scandir` underneath and swallows a `PermissionError` from a
+    directory it cannot list rather than raising or reporting it, so the directory itself
+    still appears (its parent could list *it*) but nothing behind it ever does — the same
+    gap `hash_directory` had (round 14 E5). `os.walk(onerror=...)` is used so that failure is
+    collected instead of hidden.
+    """
+    entries: list[Path] = []
+    unreadable: list[Path] = []
+    for dirpath, dirnames, filenames in os.walk(
+        root, onerror=lambda exc: unreadable.append(Path(exc.filename) if exc.filename else root)
+    ):
+        current = Path(dirpath)
+        for name in (*dirnames, *filenames):
+            entries.append(current / name)
+    entries.sort(key=lambda p: p.relative_to(root).as_posix())
+    unreadable.sort(key=lambda p: p.relative_to(root).as_posix())
+    return entries, unreadable
 
 
 def scan_declared_proof(config: AppConfig, quest: Quest, evidence_path: str) -> list[SecretFinding]:
@@ -224,21 +276,64 @@ def scan_declared_proof(config: AppConfig, quest: Quest, evidence_path: str) -> 
     of `scan_evidence` alone.
     """
     findings = list(scan_evidence(config, evidence_path))
-    boundary = config.participant_root.resolve()
     for declared in proof_paths_outside_package(quest, evidence_path):
-        try:
-            target = config.resolve_participant_path(declared)
-        except ValueError:
-            continue
-        if not target.exists():
-            continue
-        if target.is_file():
-            findings.extend(_scan_one(target, declared, boundary))
-            continue
-        for path in sorted(target.rglob("*")):
-            relative = f"{declared}/{path.relative_to(target).as_posix()}"
-            findings.extend(_scan_one(path, relative, boundary))
+        findings.extend(_scan_declared_path(config, declared))
     return findings
+
+
+def _scan_declared_path(config: AppConfig, declared: str) -> list[SecretFinding]:
+    """Scan one declared proof path outside the package, bounded by the path itself.
+
+    Round 14 E4: this used to scan with the whole participant root as the boundary while
+    `proof_file_digests` hashes a declared directory with `hash_directory`, whose boundary is
+    the directory itself. A link out of the declared directory but still inside
+    `participant/` therefore passed this scan silently while the digest either treated it as
+    an outside link (a directory) or recorded only the link text (a file) — so rewriting what
+    it pointed at after approval changed the rendered proof without changing the digest.
+    Using the declared path as the boundary here makes the two agree.
+
+    A declared path that does not resolve inside `participant/` at all used to be silently
+    skipped (`continue`); it is now the same `OUTSIDE_LINK_DESCRIPTION` finding a link found
+    during the walk gets, rather than nothing.
+    """
+    stripped = declared.rstrip("/")
+    try:
+        target = config.resolve_participant_path(declared)
+    except ValueError:
+        return [SecretFinding(stripped, 1, OUTSIDE_LINK_DESCRIPTION)]
+    if not target.exists():
+        return []
+    if target.is_file():
+        return _scan_one(target, stripped, target)
+    findings: list[SecretFinding] = []
+    unreadable: list[Path] = []
+
+    def _onerror(exc: OSError) -> None:
+        unreadable.append(Path(exc.filename) if exc.filename else target)
+
+    for dirpath, dirnames, filenames in os.walk(target, onerror=_onerror, followlinks=False):
+        current = Path(dirpath)
+        # A directory link is never descended into (`followlinks=False`), whether it
+        # resolves inside the declared path or not, so whatever it hides is never scanned
+        # either way. That used to read as a clean directory; it is a finding instead of a
+        # silent gap (round 14 E4).
+        kept_dirnames = []
+        for name in dirnames:
+            child = current / name
+            if child.is_symlink():
+                relative = f"{stripped}/{child.relative_to(target).as_posix()}"
+                findings.append(SecretFinding(relative, 1, OUTSIDE_LINK_DESCRIPTION))
+            else:
+                kept_dirnames.append(name)
+        dirnames[:] = kept_dirnames
+        for name in filenames:
+            path = current / name
+            relative = f"{stripped}/{path.relative_to(target).as_posix()}"
+            findings.extend(_scan_one(path, relative, target))
+    for path in sorted(unreadable, key=lambda p: p.relative_to(target).as_posix()):
+        relative = f"{stripped}/{path.relative_to(target).as_posix()}"
+        findings.append(SecretFinding(relative, 1, "could not be read to check it"))
+    return sorted(findings, key=lambda f: f.path)
 
 
 def describe_scan_findings(findings: list[SecretFinding]) -> list[str]:

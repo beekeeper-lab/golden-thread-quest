@@ -100,6 +100,12 @@
    approving" banner and the submission's hash no longer describe it — the reviewer already
    acted, on whatever they saw at the time, and what matters now is drift since *that*,
    worded the way `_check_stale_approval` already words it for the loader. #}
+{# C4 (round 14): this page is static once built, so every sentence in this block is a
+   report of what a build found, not a live read of the participant's files — including
+   the absence of a warning below. Recording a decision does re-check the files at that
+   moment and refuses an unacknowledged change (`review.py`'s `changes_since_submission`),
+   so nothing unsafe gets approved; what was missing was the page saying so, since a
+   reviewer who only reads pages has no other way to know. #}
 {% if evidence_changed and not decision_made %}
 <div class="alert alert-warning" role="status">
   <h2>The evidence changed since it was submitted</h2>
@@ -108,6 +114,7 @@
   <ul>{% for path in changed_paths %}<li><code>{{ path }}</code></li>{% endfor %}</ul>
   {% endif %}
   <p>Acknowledge this before approving. A decision must apply to the evidence in front of you.</p>
+  <p class="authority">This is what this page's build, <time datetime="{{ build.built_at }}" data-format>{{ build.built_at }}</time>, found. Recording your decision checks the files again at that moment and will refuse an approval that does not acknowledge a further change.</p>
 </div>
 {% elif evidence_changed and decision_made %}
 <div class="alert alert-warning" role="status">
@@ -117,7 +124,10 @@
   <ul>{% for path in changed_paths %}<li><code>{{ path }}</code></li>{% endfor %}</ul>
   {% endif %}
   <p>The approval stands until a reviewer revokes it. Ask for re-review if the change was material.</p>
+  <p class="authority">This is what this page's build, <time datetime="{{ build.built_at }}" data-format>{{ build.built_at }}</time>, found.</p>
 </div>
+{% elif not decision_made %}
+<p class="authority">As of this page's build, <time datetime="{{ build.built_at }}" data-format>{{ build.built_at }}</time>, the evidence had not changed since submission. That is not a live read — if anything changed after this build, this page will not show it until the next one. Recording your decision re-checks the files at that moment regardless of what this page says.</p>
 {% endif %}
 
 <section class="stack" aria-labelledby="criteria-heading">

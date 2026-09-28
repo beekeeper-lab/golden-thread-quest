@@ -162,6 +162,31 @@ class TestSecretScanning:
     def test_a_traversing_evidence_path_scans_nothing(self, config: AppConfig) -> None:
         assert scan_evidence(config, "participant/evidence/../../etc") == []
 
+    def test_a_utf16_file_does_not_hide_the_token(self, config: AppConfig) -> None:
+        """Round 14 E7: a PowerShell `>` redirection writes UTF-16LE by default. Decoded as
+        UTF-8 with replacement, every other byte becomes U+FFFD and the token vanished."""
+        target = config.resolve_participant_path(EVIDENCE) / "logs" / "transcript.txt"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(f"connected\r\ntoken={LEAKED}\r\n".encode("utf-16"))
+        findings = scan_evidence(config, EVIDENCE)
+        assert [finding.path.rsplit("/", 1)[-1] for finding in findings] == ["transcript.txt"]
+
+    def test_an_unreadable_directory_blocks_rather_than_passing(self, config: AppConfig) -> None:
+        """Round 14 E5: `rglob` silently drops a directory it cannot list instead of raising,
+        so a token behind one used to pass with `secret_scan_clean: true`."""
+        if os.geteuid() == 0:
+            pytest.skip("root can read a directory whatever its mode")
+        private = config.resolve_participant_path(EVIDENCE) / "logs" / "private"
+        private.mkdir(parents=True, exist_ok=True)
+        (private / "leak.md").write_text(f"token={LEAKED}\n")
+        private.chmod(0)
+        try:
+            findings = scan_evidence(config, EVIDENCE)
+        finally:
+            private.chmod(0o700)
+        assert [finding.description for finding in findings] == ["could not be read to check it"]
+        assert findings[0].path.endswith("logs/private")
+
 
 class TestEvidenceHash:
     def test_the_hash_changes_when_the_evidence_changes(self, config: AppConfig) -> None:
@@ -218,6 +243,28 @@ class TestEvidenceHash:
         finally:
             target.chmod(0o600)
         assert raised.value.relative_path == "unreadable.md"
+        assert str(config.repo_root) not in str(raised.value)
+        assert str(config.participant_root) not in str(raised.value)
+
+    def test_an_unreadable_directory_raises_the_same_error_the_file_case_does(
+        self, config: AppConfig
+    ) -> None:
+        """Round 14 E5: `rglob` silently drops a directory it cannot list, so the hash used
+        to stay stable across a change nobody could see (round 13 E8 covered only files)."""
+        from quest_app.hashing import UnreadableFileError
+
+        if os.geteuid() == 0:
+            pytest.skip("root can read a directory whatever its mode")
+        private = config.resolve_participant_path(EVIDENCE) / "logs" / "private"
+        private.mkdir(parents=True, exist_ok=True)
+        (private / "leak.md").write_text("anything\n")
+        private.chmod(0)
+        try:
+            with pytest.raises(UnreadableFileError) as raised:
+                evidence_hash(config, EVIDENCE)
+        finally:
+            private.chmod(0o700)
+        assert raised.value.relative_path == "logs/private"
         assert str(config.repo_root) not in str(raised.value)
         assert str(config.participant_root) not in str(raised.value)
 
