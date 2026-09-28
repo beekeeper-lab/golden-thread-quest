@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 from quest_app.build import UnsafeOutputRootError, _exclusive_output, build_site
-from quest_app.config import AppConfig
+from quest_app.config import AppConfig, UnsafeParticipantRootError
 from quest_app.content_loader import SchemaSet
 from quest_app.errors import ProblemReport
 from quest_app.pipeline import load_world
@@ -499,3 +499,102 @@ def test_an_explicitly_configured_participant_symlink_stays_trusted(tmp_path: Pa
 
     config = AppConfig.for_repo(clone, participant_root=real_participant)
     assert config.participant_root == elsewhere.resolve()
+
+
+# ---------------------------------------------------------------------------------- E13
+
+
+@pytest.mark.parametrize(
+    "folder", ["content", "schemas", "templates", "assets", "validators", "quest_app"]
+)
+def test_a_configured_participant_root_equal_to_a_program_owned_folder_is_refused(
+    tmp_path: Path, folder: str
+) -> None:
+    """Round 15 E13. ADR-042 trusts an explicitly configured root "because the
+    participant chose it" — that stopped being a reason once what they chose is one of the
+    application's own folders, which every other participant who pulls this content shares.
+    """
+    clone = _clone(tmp_path / "clone")
+    with pytest.raises(UnsafeParticipantRootError, match=f"{folder}/"):
+        AppConfig.for_repo(clone, participant_root=clone / folder)
+
+
+@pytest.mark.parametrize("folder", ["generated", "local-data"])
+def test_a_configured_participant_root_equal_to_generated_or_local_data_is_refused(
+    tmp_path: Path, folder: str
+) -> None:
+    """Named separately from content/schemas/templates/assets/validators/quest_app: these
+    two are also configurable in their own right (`GTQ_GENERATED_ROOT`,
+    `GTQ_LOCAL_DATA_ROOT`), but their fixed, conventional names are refused for the
+    participant root regardless of where either is actually redirected to for this run.
+    """
+    clone = _clone(tmp_path / "clone")
+    with pytest.raises(UnsafeParticipantRootError, match=f"{folder}/"):
+        AppConfig.for_repo(clone, participant_root=clone / folder)
+
+
+def test_a_configured_participant_root_nested_inside_a_program_owned_folder_is_refused(
+    tmp_path: Path,
+) -> None:
+    clone = _clone(tmp_path / "clone")
+    with pytest.raises(UnsafeParticipantRootError, match="content/"):
+        AppConfig.for_repo(clone, participant_root=clone / "content" / "quests")
+
+
+def test_a_configured_participant_root_containing_a_program_owned_folder_is_refused(
+    tmp_path: Path,
+) -> None:
+    """The repository root itself contains every program-owned folder there is."""
+    clone = _clone(tmp_path / "clone")
+    with pytest.raises(UnsafeParticipantRootError):
+        AppConfig.for_repo(clone, participant_root=clone)
+
+
+def test_a_configured_participant_root_elsewhere_stays_trusted(tmp_path: Path) -> None:
+    """ADR-042 still holds for a root that does not overlap anything program-owned."""
+    clone = _clone(tmp_path / "clone")
+    elsewhere = tmp_path / "elsewhere-participant"
+    elsewhere.mkdir()
+
+    config = AppConfig.for_repo(clone, participant_root=elsewhere)
+    assert config.participant_root == elsewhere.resolve()
+
+
+def test_a_participant_root_pointed_at_content_writes_nothing_into_content(
+    tmp_path: Path,
+) -> None:
+    """End to end, the way round 15's E13 was actually reproduced: `GTQ_PARTICIPANT_ROOT`
+    pointed at `content/` through the CLI, not `AppConfig` called directly."""
+    clone = _clone(tmp_path / "clone")
+    sentinel = _sentinel(clone / "content")
+    before = sorted(str(path) for path in (clone / "content").rglob("*"))
+
+    environment = {key: value for key, value in os.environ.items() if not key.startswith("GTQ_")}
+    environment["GTQ_PARTICIPANT_ROOT"] = str(clone / "content")
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "quest_app.cli",
+            "action",
+            "start-quest",
+            "--quest",
+            "base-camp-repository-safety",
+            "--confirm",
+            "--repo-root",
+            str(clone),
+        ],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
+    )
+
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert "content/" in result.stderr, result.stderr
+    assert "Traceback" not in result.stderr, result.stderr
+    assert sentinel.read_text() == SENTINEL_TEXT
+    assert sorted(str(path) for path in (clone / "content").rglob("*")) == before
+    assert not (clone / "content" / "progress.yaml").exists()

@@ -53,19 +53,52 @@ READ_ACTIONS = frozenset({"health", "git-status", "actions"})
 __all__ = ["CONFIRMATIONS", "MUTATING_ACTIONS", "READ_ACTIONS", "ActionRunner"]
 
 
-def _is_confirmed(payload: dict[str, Any]) -> bool:
-    """Whether the caller said, in this request, that it meant this action.
+def is_affirmed(value: Any) -> bool:
+    """Whether a value affirmatively says yes to something this application asks.
 
     A browser sends the checkbox value, a JSON client sends `true`, and a CLI caller passes
-    `--confirm`. Anything else — absent, empty, or a word that denies it — is not a
-    confirmation.
+    `--confirm`. Anything else — absent, empty, or a word that denies it — does not say yes.
+    Every caller that has to tell "the caller affirmed this" from "the caller did not"
+    parses it through here (round 15 E8): a second, looser parse of the same shape of
+    question is how `bool("false")` — truthy — got mistaken for a caller's answer before.
     """
-    value = payload.get("confirm")
     if isinstance(value, bool):
         return value
     if isinstance(value, str):
         return value.strip().lower() in {"yes", "on", "true", "1", "confirm", "confirmed"}
     return False
+
+
+def _is_confirmed(payload: dict[str, Any]) -> bool:
+    """Whether the caller said, in this request, that it meant this action."""
+    return is_affirmed(payload.get("confirm"))
+
+
+def _next_steps_for_submission(quest: Any, attempt: Any) -> str:
+    """`submission_instructions`'s `git add`, widened to every declared proof path.
+
+    `submission_instructions` (round 6) only ever named the evidence package and
+    `progress.yaml` — right when every proof a quest asked for lived inside the package,
+    but most quests also declare proof at `participant/context/**` or
+    `participant/skills/**`, which `proof_paths_outside_package` already exists to find (it
+    is what the changed-evidence check reads). Left out of the suggested `git add`, that
+    proof never reached the branch a reviewer's clone checked out, and their review then
+    reported it `missing` with nothing to read (round 15 E9).
+    """
+    from quest_app.evidence import proof_paths_outside_package
+    from quest_app.review import submission_instructions
+
+    instructions = submission_instructions(quest.id, attempt.attempt_id, None)
+    outside = proof_paths_outside_package(quest, attempt.evidence_path)
+    if not outside:
+        return instructions
+    package_add = (
+        f"git add participant/evidence/{quest.id}/{attempt.attempt_id} participant/progress.yaml"
+    )
+    if package_add not in instructions:
+        # The message's wording moved; better an unwidened suggestion than a garbled one.
+        return instructions
+    return instructions.replace(package_add, package_add + " " + " ".join(outside), 1)
 
 
 class ActionRunner:
@@ -209,7 +242,7 @@ class ActionRunner:
         The record captures the evidence hash at this moment, which is the only thing that
         later makes "has this changed since I reviewed it?" answerable.
         """
-        from quest_app.review import ReviewError, create_submission, submission_instructions
+        from quest_app.review import ReviewError, create_submission
 
         participant = world.participant
         attempt = participant.progress.attempt_for(quest.id) if participant else None
@@ -239,7 +272,7 @@ class ActionRunner:
             "advisories": list(record.advisories) + rebuild_advisories,
             # The application never pushes and never opens a pull request. Those are claims
             # on the participant's behalf that the work is finished.
-            "next_steps": submission_instructions(quest.id, attempt.attempt_id, None),
+            "next_steps": _next_steps_for_submission(quest, attempt),
         }
 
     def _record_review(self, world: Any, quest_id: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -271,7 +304,9 @@ class ActionRunner:
                 verification_statement=payload.get("verification_statement"),
                 findings=findings,
                 schemas=self.schemas,
-                acknowledge_changed_evidence=bool(payload.get("acknowledge_changed_evidence")),
+                acknowledge_changed_evidence=is_affirmed(
+                    payload.get("acknowledge_changed_evidence")
+                ),
             )
         except ReviewError as exc:
             raise StoreError(str(exc)) from exc

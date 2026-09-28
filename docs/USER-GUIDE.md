@@ -365,6 +365,10 @@ reasons, is in `docs/RELEASE-NOTES.md`.
    CI job runs `make verify-package`, which exports tracked files with `git archive`, then
    installs, validates, and builds in a fresh virtual environment on every change. See DH1 in
    `docs/TRACEABILITY.md`.
+9. **The evidence page's Repository panel is also build-time, not live.** Branch, changed and
+   untracked counts, and "Evidence committed" reflect the moment this page was last built. A
+   commit, edit, or revert made afterward will not show here until the site is rebuilt — any
+   action rebuilds it, or run `make build`.
 
 ---
 
