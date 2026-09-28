@@ -78,10 +78,11 @@ TOKEN_PLACEHOLDER = REQUEST_TOKEN_PLACEHOLDER
 # Round 15 E7: that narrowing was still not enough — a code span or autolink in
 # participant-authored Markdown (` `` `value="__GTQ_REQUEST_TOKEN__"` `` `) renders that
 # exact byte sequence as literal, unescaped text, which still matched this substitution.
-# `quest_app.markdown_render.render_markdown` now neutralizes the placeholder in every
-# rendered Markdown document at build time, so no sanitized content can carry this shape at
-# all; only this application's own template markup still can, and that is what is
-# substituted below.
+# `quest_app.markdown_render.render_markdown` and `render_inline` now neutralize the
+# placeholder in every rendered Markdown document at build time (round 16 E8 closed the gap
+# in the inline path — acceptance criteria render through it, not `render_markdown`), so no
+# sanitized content can carry this shape at all; only this application's own template markup
+# still can, and that is what is substituted below.
 TOKEN_FIELD_PLACEHOLDER = f'value="{TOKEN_PLACEHOLDER}"'
 # Where a refusal message is rendered into a served page. Substituted at request time from
 # the `problem` query parameter, so it works with no JavaScript and survives a redirect.

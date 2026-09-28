@@ -66,7 +66,12 @@ submission and the evidence hash at the moment it was submitted. Check:
    verdicts about the work. `inconclusive` means nobody could tell, which is not a pass.
 3. **Can you reproduce it?** The proof document should let you, from a clean clone.
 4. **Was the secret scan clean?** It is a safety net, not a guarantee. Read the evidence as
-   though it might still contain something.
+   though it might still contain something. It is also a participant-side gate, not a
+   reviewer-side one: it runs before submission and its banner on this page reflects the
+   last build, but recording your decision does not re-run it, and a live finding shown here
+   does not by itself block an approval. If you see the banner, do not approve until the
+   value is gone from the evidence and rotated — the application will not stop you, so this
+   check is yours to make.
 
 ## Deciding
 

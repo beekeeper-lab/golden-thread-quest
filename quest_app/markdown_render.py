@@ -77,8 +77,9 @@ _EXTERNAL = re.compile(r'<a\s+([^>]*?)href="(https?://[^"]+)"([^>]*)>', re.IGNOR
 # (quoting the marker verbatim, as a debugging aside might) reproduces the exact bytes as
 # literal text — neither `markdown-it` nor `nh3` escapes an underscore or a quote character
 # in text content. Breaking the byte sequence here keeps every caller of `render_markdown`
-# covered, without touching the app's own real substitution point: a Jinja-rendered hidden
-# input, which never passes through this function.
+# and `render_inline` (round 16 E8) covered, without touching the app's own real
+# substitution point: a Jinja-rendered hidden input, which never passes through either
+# function.
 _NEUTRALIZED_TOKEN_PLACEHOLDER: Final = REQUEST_TOKEN_PLACEHOLDER.replace("_", "&#95;")
 
 
@@ -129,7 +130,7 @@ def _mark_external_links(html: str) -> str:
 def render_inline(text: str) -> str:
     """Render a single line without wrapping it in a paragraph — for list items and titles."""
     rendered = _PARSER.renderInline(text)
-    return nh3.clean(
+    cleaned = nh3.clean(
         rendered,
         # Block-level tags are dropped whole, table parts included: keeping `td` without
         # `table` would emit orphaned cells into a list item.
@@ -154,6 +155,14 @@ def render_inline(text: str) -> str:
         link_rel="noopener noreferrer",
         strip_comments=True,
     )
+    # Round 16 E8: this is the other caller acceptance criteria render through
+    # (`content_loader.py`'s `safe_rendered_html=render_inline(item.text)`), and the round 15
+    # E7 fix below was only ever added to `render_markdown`. A code span quoting
+    # `value="__GTQ_REQUEST_TOKEN__"` in an authored acceptance criterion reached this
+    # function, not that one, and came out as the exact byte sequence `serve.py` substitutes
+    # the live per-run token into — the live token, disclosed on the served quest page to
+    # anyone who could read the source. Same neutralization, same reasoning.
+    return cleaned.replace(REQUEST_TOKEN_PLACEHOLDER, _NEUTRALIZED_TOKEN_PLACEHOLDER)
 
 
 def strip_markdown(text: str) -> str:

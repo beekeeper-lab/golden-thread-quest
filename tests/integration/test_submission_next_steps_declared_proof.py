@@ -16,6 +16,7 @@ the one surface a Cowork sandbox has no browser to fall back on.
 from __future__ import annotations
 
 import dataclasses
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -24,6 +25,7 @@ from quest_app.actions import ActionRunner
 from quest_app.config import AppConfig
 from quest_app.content_loader import SchemaSet
 from quest_app.errors import ProblemReport
+from quest_app.models import ProofRequirement
 from quest_app.pipeline import load_world
 
 JIRA = "jira-read-assigned-stories"
@@ -83,6 +85,45 @@ def test_a_quest_declaring_no_proof_outside_the_package_keeps_the_original_wordi
 
     unwidened = submission_instructions(quest.id, attempt.attempt_id, None)
     assert _next_steps_for_submission(quest, attempt) == unwidened
+
+
+def test_the_suggested_git_add_shell_quotes_a_proof_path_with_a_space(config: AppConfig) -> None:
+    """Round 16 E9.
+
+    `relativePath` in `schemas/quest.schema.json` allows a space or a shell metacharacter,
+    so a declared proof path is authored, not generated, and this text is not something
+    that can trust it to appear unquoted in a command meant to be pasted into a shell.
+    Unquoted, a space adds the wrong pathspecs to `git add`, and `$(...)` runs whatever it
+    names the moment the suggestion is pasted.
+    """
+    from quest_app.actions import _next_steps_for_submission
+
+    report = ProblemReport()
+    world = load_world(config, report)
+    assert world is not None, report.to_text()
+    planted_path = "participant/context/notes $(touch /tmp/pwn).md"
+    quest = dataclasses.replace(
+        world.content.quests[JIRA],
+        proof=(
+            ProofRequirement(
+                id="ac-planted",
+                type="file",
+                description="planted for this test",
+                path=planted_path,
+            ),
+        ),
+    )
+    attempt = world.participant.progress.attempt_for(JIRA)
+
+    add_line = _git_add_line(_next_steps_for_submission(quest, attempt))
+
+    assert add_line == (
+        f"git add participant/evidence/{JIRA}/{attempt.attempt_id} participant/progress.yaml "
+        f"{shlex.quote(planted_path)}"
+    ), add_line
+    assert add_line.count(planted_path) == 1, (
+        "the path must appear exactly once, as a single shell-quoted token, not also bare"
+    )
 
 
 def test_the_text_cli_prints_the_next_steps(tmp_path: Path) -> None:

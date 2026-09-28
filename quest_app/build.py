@@ -1093,7 +1093,7 @@ def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None
     """
     if not evidence_path:
         return None
-    from quest_app.evidence import package_file
+    from quest_app.evidence import _decode_evidence_text, package_file
     from quest_app.markdown_render import render_markdown
     from quest_app.safe_io import MAX_EVIDENCE_FILE_BYTES, UnsafeStateFileError, read_bounded_bytes
     from quest_app.secret_patterns import redact_text
@@ -1114,7 +1114,13 @@ def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None
         raw = read_bounded_bytes(path, max_bytes=MAX_EVIDENCE_FILE_BYTES)
     except (UnsafeStateFileError, OSError):
         return None
-    text, _ = redact_text(raw.decode("utf-8", errors="replace"))
+    # The scan reads a UTF-16 or mixed-encoding PROOF.md through `_decode_evidence_text`'s
+    # candidate decodings (round 15 E6/E7), not a single UTF-8 guess. A UTF-8-only decode
+    # here turned every other byte of such a file into U+FFFD, which broke every secret
+    # pattern below without raising anything — the token was still there, readable once the
+    # replacement characters were stripped back out (round 16 E3). Its best-guess candidate
+    # (the first one, chosen the same way the scan chooses it) is redacted the same way.
+    text, _ = redact_text(_decode_evidence_text(raw)[0])
     return render_markdown(text)
 
 
