@@ -662,3 +662,15 @@ check alone, which would still delete an empty-looking folder named by a link. R
 regular file at `.building`, which the round-6 debris fix deliberately removes and which a
 single `unlink` cannot turn into a recursive deletion.
 
+**Amended (round 14, E6):** "the participant root stays trusted as configured" was read as
+"the participant root stays trusted," and the default participant root — `<repo>/participant`,
+used whenever `GTQ_PARTICIPANT_ROOT`/`--participant-root` is absent — is not configured by
+anyone. It is exactly the fixed name inside a clone this ADR already refuses for `generated`
+and `local-data`: a committed `participant -> /somewhere/else` was followed with no warning,
+and `start-quest` wrote `progress.yaml`, `.progress.lock` and an evidence package there,
+appending to whatever `ACTIVITY.md` it found. `AppConfig.for_repo` now refuses with
+`UnsafeParticipantRootError` when `participant_root` is not supplied and the default
+`participant/` is a symbolic link, before any root is resolved and before anything is
+written. A root supplied explicitly — by a participant who chose where their own work lives —
+is unaffected and stays trusted at whatever it resolves to, exactly as ADR-042 already says.
+

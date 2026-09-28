@@ -435,3 +435,67 @@ def test_the_progress_store_refuses_a_linked_progress_file(
 
     with pytest.raises(StoreError, match="symbolic link"):
         ProgressStore(config).read()
+
+
+# ---------------------------------------------------------------------------------- E6
+
+
+def test_a_committed_participant_symlink_is_refused_without_a_configured_root(
+    tmp_path: Path,
+) -> None:
+    """The default `participant/` is a fixed name inside the clone that nobody configured —
+    the same shape of escape ADR-043 already refuses for `generated` and `local-data`. With
+    no `GTQ_PARTICIPANT_ROOT`/`--participant-root`, a committed link there used to be
+    followed: `start-quest` wrote `progress.yaml`, `.progress.lock` and an evidence package
+    wherever it led, and appended to a pre-existing `ACTIVITY.md` there.
+    """
+    clone = _clone(tmp_path / "clone")
+    shutil.rmtree(clone / "participant")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    sentinel = outside / "ACTIVITY.md"
+    sentinel.write_text(SENTINEL_TEXT)
+    (clone / "participant").symlink_to(outside)
+
+    environment = {key: value for key, value in os.environ.items() if not key.startswith("GTQ_")}
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "quest_app.cli",
+            "action",
+            "start-quest",
+            "--quest",
+            "base-camp-repository-safety",
+            "--confirm",
+            "--repo-root",
+            str(clone),
+        ],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
+    )
+
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert "symbolic link" in result.stderr, result.stderr
+    assert "Traceback" not in result.stderr, result.stderr
+    assert sorted(path.name for path in outside.iterdir()) == ["ACTIVITY.md"]
+    assert sentinel.read_text() == SENTINEL_TEXT
+    assert (clone / "participant").is_symlink()
+
+
+def test_an_explicitly_configured_participant_symlink_stays_trusted(tmp_path: Path) -> None:
+    """ADR-042: a root the participant chose is trusted wherever it points, unlike the
+    default nobody chose (the test above). The link is followed and the write lands there.
+    """
+    clone = _clone(tmp_path / "clone")
+    real_participant = clone / "participant"
+    elsewhere = tmp_path / "elsewhere-participant"
+    shutil.move(str(real_participant), str(elsewhere))
+    real_participant.symlink_to(elsewhere)
+
+    config = AppConfig.for_repo(clone, participant_root=real_participant)
+    assert config.participant_root == elsewhere.resolve()

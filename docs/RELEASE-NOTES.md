@@ -56,7 +56,7 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 905 under `make check`, plus 56 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
+| Tests | 958 under `make check`, plus 56 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3 quest-facing, plus 2 registered environment probes and one unregistered slow probe used only to prove the timeout |
@@ -74,7 +74,11 @@ here.
 2. **Reviewer provenance is conventional, not cryptographic** (ADR-030). A reviewer is
    identified by the display name in the record and by Git history. A participant with write
    access to their own repository could author a record naming someone else. Every
-   *internally inconsistent* claim is refused; the remaining gap is social. If your program
+   *internally inconsistent* claim is refused; the remaining gap is social. A genuine
+   approval, evidence package included, copied whole from another participant's repository
+   verifies with no warning: attempt IDs are not unique across participants by default, so
+   the copy names the same attempt, quest and version the original did. That copy is
+   indistinguishable from a forged record inside the repository itself. If your program
    needs more, review through pull requests so the Git history carries the identity.
 3. **Environment Health reports build-time facts, not live ones.** A generated page cannot
    inspect the machine at the moment it is read. Live checks arrive with the service.

@@ -47,8 +47,20 @@ class GitStatus:
         return self.changed == 0 and self.untracked == 0
 
     def contains_uncommitted(self, prefix: str) -> bool:
-        """Whether anything under `prefix` is uncommitted — used to advise, never to act."""
-        return any(path.startswith(prefix) for path in self.changed_paths)
+        """Whether anything under `prefix` is uncommitted — used to advise, never to act.
+
+        Porcelain reports a whole new directory as one untracked entry ending in `/`
+        (`participant/`), never one line per file below it, so a brand-new evidence package
+        is `prefix` extending a shorter recorded path rather than the other way round. Only
+        checking `path.startswith(prefix)` (round 14 E3) never matched that shorter entry, so
+        a package Git had never seen was reported as committed — worse than the round-7 bug
+        this module's docstring already describes, because it is the normal state of every
+        first attempt. Checking both directions catches a new directory above `prefix`, a new
+        directory at `prefix` itself, and a changed file below it.
+        """
+        return any(
+            path.startswith(prefix) or prefix.startswith(path) for path in self.changed_paths
+        )
 
 
 def _run(repo_root: Path, arguments: tuple[str, ...], *, raw: bool = False) -> str | None:
@@ -90,6 +102,9 @@ def inspect(repo_root: Path) -> GitStatus:
     )
     changed: list[str] = []
     untracked = 0
+    # Every path Git reports as not-yet-committed, changed or untracked alike, so
+    # `contains_uncommitted` has something to match against either way (round 14 E3, below).
+    paths: list[str] = []
     for line in porcelain.splitlines():
         if not line:
             continue
@@ -106,8 +121,16 @@ def inspect(repo_root: Path) -> GitStatus:
         path = name.strip().strip('"')
         if line.startswith("??"):
             untracked += 1
+            # A brand-new package is one line, the directory itself (`participant/`), not a
+            # line per file below it. Counted here and only here — the untracked count in
+            # `summary_for` still means what it always meant — but the path is still recorded,
+            # or a new attempt's evidence never appeared in `changed_paths` at all and every
+            # first attempt was reported as already committed.
+            if path:
+                paths.append(path)
         elif path:
             changed.append(path)
+            paths.append(path)
 
     return GitStatus(
         available=True,
@@ -119,7 +142,7 @@ def inspect(repo_root: Path) -> GitStatus:
         head=_run(repo_root, ("log", "-1", "--format=%H")),
         changed=len(changed),
         untracked=untracked,
-        changed_paths=tuple(sorted(changed)),
+        changed_paths=tuple(sorted(paths)),
     )
 
 
@@ -128,6 +151,14 @@ def summary_for(repo_root: Path, evidence_path: str | None) -> dict[str, object]
     status = inspect(repo_root)
     if not status.available:
         return {"available": False, "reason": status.reason}
+    # `evidence_path` is always a `participant/...` contract path (ADR-018), never one this
+    # module resolves through the configured participant root — it has no other root to
+    # resolve it against. With `GTQ_PARTICIPANT_ROOT` pointed outside the repository, the
+    # evidence this names lives somewhere `git status` on `repo_root` says nothing about, and
+    # every check below silently found no match for it and reported it as committed. Whether
+    # the package Git actually knows about sits where the contract path says, under
+    # `repo_root`, is the one thing checkable without that root.
+    known = evidence_path is not None and (repo_root / evidence_path).is_dir()
     return {
         "available": True,
         "branch": status.branch,
@@ -135,11 +166,11 @@ def summary_for(repo_root: Path, evidence_path: str | None) -> dict[str, object]
         "changed": status.changed,
         "untracked": status.untracked,
         "evidence_committed": (
-            not status.contains_uncommitted(evidence_path) if evidence_path else None
+            not status.contains_uncommitted(evidence_path) if known and evidence_path else None
         ),
         "advice": (
             "Commit your evidence before submitting so a reviewer sees what you did."
-            if evidence_path and status.contains_uncommitted(evidence_path)
+            if known and evidence_path and status.contains_uncommitted(evidence_path)
             else None
         ),
     }
