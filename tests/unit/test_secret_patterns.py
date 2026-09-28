@@ -11,6 +11,9 @@ so the detectors under test here are the real ones.
 
 from __future__ import annotations
 
+import base64
+import time
+
 import pytest
 from quest_app.secret_patterns import REDACTION_PLACEHOLDER, redact_text, scan_text
 
@@ -248,3 +251,172 @@ def test_redaction_handles_several_secrets_on_one_line() -> None:
     assert redacted.count(REDACTION_PLACEHOLDER) == 2
     assert GITHUB not in redacted
     assert AWS not in redacted
+
+
+# Round 15 E1: `redact_text`'s own output must never be a fresh finding. The unquoted
+# value class used to stop at a closing `]`, so `TOKEN=[REDACTED]` redacted to a value
+# missing its own bracket, which `_is_placeholder` did not recognize as the marker it is —
+# a participant who redacted with this application's own placeholder was refused for a
+# secret that was never there.
+@pytest.mark.parametrize(
+    ("pattern_id", "text"), DETECTED, ids=[f"{i:02d}-{p}" for i, (p, _) in enumerate(DETECTED)]
+)
+def test_redaction_is_a_fixed_point_of_the_scan(pattern_id: str, text: str) -> None:
+    redacted, changed = redact_text(text)
+    assert changed, f"expected {pattern_id} to redact {text!r}"
+    assert scan_text(redacted) == [], f"redacting {text!r} left something the scan still flags"
+
+
+def test_this_applications_own_redaction_marker_is_never_a_finding() -> None:
+    assert scan_text(f"JIRA_API_TOKEN={REDACTION_PLACEHOLDER}") == []
+    assert scan_text(f"password: {REDACTION_PLACEHOLDER}") == []
+    assert scan_text(f"?key={REDACTION_PLACEHOLDER}&token={REDACTION_PLACEHOLDER}") == []
+
+
+def test_a_gh_cli_masked_token_is_not_a_finding() -> None:
+    """`gh auth status` prints exactly this shape: a real prefix, then all mask characters."""
+    assert scan_text("  - Token: gho_************************************") == []
+    assert scan_text("Token: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx") == []
+
+
+# Round 15 E2: Jira Cloud's documented script authentication is HTTP Basic with
+# `email:api_token`; a `curl -v` transcript — the exact command-record proof the Jira,
+# Trello and GitHub quests ask for — shows the header verbatim, and base64 hid the
+# `ATATT3…` prefix from every other pattern.
+JIRA_BASIC_CREDENTIAL = (
+    b"gregg@example.com:ATATT3xFfGF0T4n2pqrANotherLongJiraToken"  # secret-scan: allow
+)
+
+
+def test_a_basic_auth_header_in_a_curl_v_transcript_is_detected() -> None:
+    credential = base64.b64encode(JIRA_BASIC_CREDENTIAL).decode()
+    transcript = (
+        "* Connected to example.atlassian.net (203.0.113.9) port 443\n"
+        f"> Authorization: Basic {credential}\n"  # secret-scan: allow
+        "> User-Agent: curl/8.4.0\n"
+        "< HTTP/1.1 200 OK\n"
+    )
+    (match,) = scan_text(transcript)
+    assert match.pattern_id == "basic-auth-header"
+
+
+def test_a_proxy_authorization_basic_header_is_detected() -> None:
+    credential = base64.b64encode(b"user:hunter2hunter2longenough").decode()  # secret-scan: allow
+    (match,) = scan_text(f"Proxy-Authorization: Basic {credential}")  # secret-scan: allow
+    assert match.pattern_id == "basic-auth-header"
+
+
+def test_an_authorization_token_scheme_header_is_detected() -> None:
+    """GitHub's and Django REST Framework's APIs both accept this scheme."""
+    (match,) = scan_text(f"Authorization: token {GITHUB}")  # secret-scan: allow
+    assert match.pattern_id == "github-token"
+    forty_hex = "0123456789abcdef0123456789abcdef01234567"  # secret-scan: allow
+    (match,) = scan_text(f"Authorization: token {forty_hex}")  # secret-scan: allow
+    assert match.pattern_id == "basic-auth-header"
+
+
+# Round 15 E5: `basic-auth-url` and `jwt` used unbounded quantifiers ahead of a literal that
+# a pathological input never supplies, which is quadratic — every starting offset rescans
+# the rest of the text. A 120 KB adversarial file took 36s; 2 MB would take hours, all under
+# the store, generated and service locks `redact_text`/`scan_text` run inside of.
+@pytest.mark.parametrize("unit", ["a.", "a-", "eyJ"])
+def test_scan_text_stays_fast_on_a_two_megabyte_adversarial_file(unit: str) -> None:
+    text = unit * (2_000_000 // len(unit))
+    started = time.monotonic()
+    scan_text(text)
+    elapsed = time.monotonic() - started
+    assert elapsed < 5, f"{unit!r} * ~2MB took {elapsed:.2f}s, expected well under 5s"
+
+
+# Round 15 E12: the OpenPGP armor marker is "...PRIVATE KEY BLOCK-----", not
+# "...PRIVATE KEY-----" like an RSA or OpenSSH block.
+def test_a_pgp_private_key_block_is_detected() -> None:
+    pgp_marker = "-----BEGIN PGP PRIVATE KEY BLOCK-----"  # secret-scan: allow
+    (match,) = scan_text(pgp_marker)
+    assert match.pattern_id == "private-key-block"
+
+
+# Round 15 E12: a bare paren or brace anywhere in a value used to mark it a placeholder
+# outright, which dropped real passwords that happen to contain one.
+PASSWORD_WITH_PAREN = "Tr0ub4dor(3)x"  # secret-scan: allow
+PASSWORD_WITH_BRACE = "s3cr{t}Passw0rd"  # secret-scan: allow
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        f'password: "{PASSWORD_WITH_PAREN}"',
+        f'password = "{PASSWORD_WITH_BRACE}"',
+    ],
+)
+def test_a_password_containing_a_paren_or_brace_is_still_detected(text: str) -> None:
+    matches = scan_text(text)
+    assert matches, f"expected {text!r} to be detected"
+    assert matches[0].pattern_id == "secret-assignment"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        'secret = "{{ secret_value }}"',
+        "note = (redacted)",
+        "note = (see vault)",
+    ],
+)
+def test_real_template_and_parenthetical_placeholders_stay_ignored(text: str) -> None:
+    assert scan_text(text) == []
+
+
+def test_a_source_code_call_expression_is_still_not_a_finding() -> None:
+    """The unquoted pattern has no closing delimiter, so it captures straight into a real
+    call expression — this module's own source among the files `tools/secret_scan.py`
+    reads — whenever a keyword-named variable is assigned one."""
+    assert scan_text('token = payload.get("token")') == []
+    assert scan_text("token=secrets.token_urlsafe(32),") == []
+    assert scan_text('api_key = load_api_key(config["provider"], project_root)') == []
+
+
+# Round 15 E12: Jira's own pagination fields are named `nextPageToken`/`pageToken`; the
+# keyword `token` has no left boundary of its own and used to match their tail, so the
+# opaque continuation cursor the Jira quest asks participants to page through and document
+# was flagged as a credential.
+@pytest.mark.parametrize(
+    "text",
+    [
+        '{"issues": [], "nextPageToken": "CAEaAggDIgQIARAB", "isLast": false}',
+        '{"pageToken": "CAEaAggDIgQIARAB"}',
+    ],
+)
+def test_jira_pagination_token_fields_are_not_false_positives(text: str) -> None:
+    assert scan_text(text) == []
+
+
+# Round 15 T1: every fixed-prefix pattern is compiled case-sensitively (`SECURITY-AND-
+# PRIVACY.md` states this as a deliberate property), but nothing defended it — every
+# `DETECTED` fixture above happens to already be written in the pattern's real case.
+@pytest.mark.parametrize(
+    ("pattern_id", "real_case", "wrong_case"),
+    [
+        ("aws-access-key-id", AWS, AWS.lower()),
+        ("github-fine-grained-token", GITHUB_FINE, GITHUB_FINE.upper()),
+        ("slack-app-token", SLACK_APP, SLACK_APP.upper()),
+        ("google-oauth-token", GOOGLE_OAUTH, GOOGLE_OAUTH.upper()),
+        ("trello-token", TRELLO, TRELLO.lower()),
+    ],
+)
+def test_distinctive_prefixes_match_only_their_real_case(
+    pattern_id: str, real_case: str, wrong_case: str
+) -> None:
+    (match,) = scan_text(real_case)
+    assert match.pattern_id == pattern_id
+    assert not any(m.pattern_id == pattern_id for m in scan_text(wrong_case)), (
+        f"{pattern_id} matched a case it should have refused: {wrong_case!r}"
+    )
+
+
+# Round 15 T2: `url-query-credential`'s `token=` alternative had no fixture of its own —
+# only `?key=` was ever exercised, so a regression that silently dropped `|token` would let
+# a real credential in a query string pass the scan clean.
+def test_url_query_credential_detects_the_token_parameter() -> None:
+    (match,) = scan_text(f"GET /1/members/me/boards?token={QUERY_CREDENTIAL}")
+    assert match.pattern_id == "url-query-credential"

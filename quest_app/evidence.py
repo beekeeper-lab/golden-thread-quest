@@ -157,8 +157,8 @@ def _inside_the_package(item_path: str, evidence_path: str, package: Path) -> li
     return candidates
 
 
-def _decode_evidence_text(raw: bytes) -> str:
-    """Decode evidence bytes for scanning, guessing UTF-16 before falling back to UTF-8.
+def _decode_evidence_text(raw: bytes) -> list[str]:
+    """Every decoding of `raw` worth scanning, not just the single best guess.
 
     A PowerShell `>` redirection (and other Windows tooling) writes UTF-16 by default.
     Decoded as UTF-8 with replacement, every other byte of ASCII-range UTF-16 becomes
@@ -166,18 +166,52 @@ def _decode_evidence_text(raw: bytes) -> str:
     token in such a file passed the scan clean (round 14 E7). A byte-order mark says so
     outright; without one, a file that is mostly NUL bytes is UTF-16 in all but name, and the
     NUL's position in each pair says which endianness.
+
+    Round 15 E6: that single best guess is still all-or-nothing for one file, and a whole
+    file is not always one encoding. A PowerShell 5.1 `>>` append writes UTF-16 after a
+    UTF-8 head that a previous run already created. A NUL ratio measured over the whole file
+    is diluted below the 30% trigger by wide CJK characters, which fill both bytes of a
+    UTF-16 pair and so contribute no NUL of their own, while an ASCII-range token nearby is
+    half NUL and gets no separate say in the average. Rather than pick one encoding for the
+    whole file, every candidate below is decoded and scanned, and the first candidate to
+    report a given finding keeps it (`_scan_one` dedupes); a wrong guess costs nothing but a
+    finding no other candidate also produced, and every real case here is one some candidate
+    still reads correctly.
     """
-    if raw.startswith(b"\xff\xfe"):
-        return raw.decode("utf-16-le", errors="replace")
-    if raw.startswith(b"\xfe\xff"):
-        return raw.decode("utf-16-be", errors="replace")
-    if raw and raw.count(b"\0") / len(raw) > 0.3:
+    candidates: list[str] = []
+
+    def add(text: str) -> None:
+        if text not in candidates:
+            candidates.append(text)
+
+    # A 4-byte UTF-32 BOM starts with the same two bytes as a 2-byte UTF-16LE BOM
+    # (`\xff\xfe`), so it must be checked first or a UTF-32 file is silently misread as
+    # UTF-16 and every character comes out wrong.
+    if raw.startswith(b"\xff\xfe\x00\x00"):
+        add(raw.decode("utf-32-le", errors="replace"))
+    elif raw.startswith(b"\x00\x00\xfe\xff"):
+        add(raw.decode("utf-32-be", errors="replace"))
+    elif raw.startswith(b"\xff\xfe"):
+        add(raw.decode("utf-16-le", errors="replace"))
+    elif raw.startswith(b"\xfe\xff"):
+        add(raw.decode("utf-16-be", errors="replace"))
+    elif raw and raw.count(b"\0") / len(raw) > 0.3:
         odd_nuls = raw[1::2].count(0)
         even_nuls = raw[0::2].count(0)
-        return raw.decode("utf-16-le" if odd_nuls >= even_nuls else "utf-16-be", errors="replace")
-    # Decoded with replacement, not skipped: one byte that is not UTF-8 used to hide an
-    # entire file, credentials included, from the scan.
-    return raw.decode("utf-8", errors="replace")
+        add(raw.decode("utf-16-le" if odd_nuls >= even_nuls else "utf-16-be", errors="replace"))
+
+    # Always try the plain UTF-8 decode: the guess above may be wrong, the file may be
+    # UTF-8 all along, or — the mixed-encoding case — only part of it is.
+    add(raw.decode("utf-8", errors="replace"))
+
+    # Any NUL byte at all is worth a NUL-stripped pass. Stripping every NUL and decoding
+    # what remains as UTF-8 recovers an ASCII-range token wherever it happened to be
+    # encoded two-bytes-per-character, without having to first decide which encoding, or
+    # which region of a mixed file, produced it.
+    if b"\0" in raw:
+        add(raw.replace(b"\0", b"").decode("utf-8", errors="replace"))
+
+    return candidates
 
 
 def _scan_one(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
@@ -207,11 +241,24 @@ def _scan_one(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
     except OSError:
         # A file the scan cannot read is a file it cannot vouch for, so it blocks.
         return [SecretFinding(relative, 1, "could not be read to check it")]
-    text = _decode_evidence_text(raw)
-    return [
-        SecretFinding(path=relative, line=match.line, description=match.description)
-        for match in scan_text(text)
-    ]
+    # Round 15 E6: several candidate decodings of the same bytes are scanned (mixed
+    # encodings, a NUL-diluted ratio), so the same secret can legitimately turn up correctly
+    # decoded more than once. `(pattern_id, excerpt)` identifies the same underlying value
+    # regardless of which candidate decoded it, or at what line — line numbers are not even
+    # comparable across candidates decoded at a different character width — so a repeat is
+    # dropped rather than reported once per candidate that happened to read it correctly.
+    seen: set[tuple[str, str]] = set()
+    findings: list[SecretFinding] = []
+    for text in _decode_evidence_text(raw):
+        for match in scan_text(text):
+            key = (match.pattern_id, match.excerpt)
+            if key in seen:
+                continue
+            seen.add(key)
+            findings.append(
+                SecretFinding(path=relative, line=match.line, description=match.description)
+            )
+    return findings
 
 
 def scan_evidence(config: AppConfig, evidence_path: str) -> list[SecretFinding]:

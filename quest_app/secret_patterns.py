@@ -61,7 +61,13 @@ _KEYWORDS = "|".join(
         r"refresh[_-]?token",
         r"private[_-]?key",
         r"credential",
-        r"token",
+        # Round 15 E12: bare "token" has no left boundary of its own, so it used to match
+        # the tail of a pagination field name — Jira's `nextPageToken`/`pageToken`, the exact
+        # shape the Jira quest asks participants to page through and document — as if the
+        # field name itself were an assignment keyword. Jira's own docs name that field
+        # `nextPageToken` or `pageToken`; a real credential field is never called that, so
+        # the lookbehind costs no detection.
+        r"(?<!page)token",
         r"bearer",
     )
 )
@@ -102,7 +108,10 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     SecretPattern(
         "private-key-block",
         "PEM private key block",
-        _c(r"-----BEGIN [A-Z ]*PRIVATE KEY-----", case_sensitive=True),
+        # Round 15 E12: the OpenPGP armor marker is "...PRIVATE KEY BLOCK-----", not
+        # "...PRIVATE KEY-----" — the optional " BLOCK" was missing, so a PGP private key
+        # was never caught even though an RSA/OpenSSH block was.
+        _c(r"-----BEGIN [A-Z ]*PRIVATE KEY(?: BLOCK)?-----", case_sensitive=True),
     ),
     SecretPattern(
         "aws-access-key-id",
@@ -174,15 +183,26 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     SecretPattern(
         "jwt",
         "JSON Web Token",
+        # Round 15 E5: each of the three unbounded `{10,}` segments let the engine retry a
+        # failed match at every offset of a long run of `eyJ`-like or `.`-heavy text, which is
+        # quadratic in input length (a 120 KB adversarial file took 36s; 2 MB would take
+        # hours, all under the store and service locks). Real JWT segments are a few hundred
+        # characters at most; bounding each one at 4096 caps the work per starting offset
+        # without narrowing what a real token looks like.
         _c(
-            r"(eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})\b",
+            r"(eyJ[A-Za-z0-9_-]{10,4096}\.[A-Za-z0-9_-]{10,4096}\.[A-Za-z0-9_-]{10,4096})\b",
             case_sensitive=True,
         ),
     ),
     SecretPattern(
         "basic-auth-url",
         "Credentials embedded in a URL",
-        _c(r"\b[a-z][a-z0-9+.-]*://[^/\s:@]+:([^/\s:@]{3,})@"),
+        # Round 15 E5: the unbounded scheme (`[a-z0-9+.-]*`) made this quadratic the same
+        # way — every starting position re-scanned the rest of the text looking for `://`
+        # that never came. No real URL scheme is anywhere near 32 characters; bounding it
+        # (and the username/password spans, which were already implicitly bounded by their
+        # excluded characters but had no explicit ceiling) keeps the work per offset constant.
+        _c(r"\b[a-z][a-z0-9+.-]{0,31}://[^/\s:@]{1,255}:([^/\s:@]{3,255})@"),
     ),
     SecretPattern(
         "stripe-key",
@@ -209,7 +229,18 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     SecretPattern(
         "bearer-header",
         "Bearer credential in a header",
-        _c(r"authorization\s*:\s*bearer\s+([A-Za-z0-9._~+/=-]{12,})"),
+        _c(r"(?:proxy-)?authorization\s*:\s*bearer\s+([A-Za-z0-9._~+/=-]{12,})"),
+    ),
+    # Round 15 E2: Jira Cloud's documented script authentication is HTTP Basic with
+    # `email:api_token`, which base64 hides the `ATATT3…` prefix from the pattern above. A
+    # `curl -v` transcript — exactly the command-record proof the Jira, Trello and GitHub
+    # quests ask for — shows the header verbatim, so any Basic (or "Authorization: token …",
+    # the scheme GitHub's and Django's APIs also accept) credential in transit is itself
+    # sensitive, whether or not its decoded contents match a known prefix.
+    SecretPattern(
+        "basic-auth-header",
+        "Basic credential in an Authorization header",
+        _c(r"(?:proxy-)?authorization\s*:\s*(?:basic|token)\s+(\S{8,})"),
     ),
     # Quoted assignment first, so a quoted value keeps its exact span even when it contains
     # characters the unquoted form would stop at.
@@ -219,11 +250,23 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
         _c(r"[\"']?(?:" + _KEYWORDS + r")[\"']?\s*[=:]\s*[\"']([^\"'\n]{8,})[\"']"),
     ),
     # Unquoted: `.env` lines, shell transcripts and YAML. Stops at whitespace and at the
-    # punctuation that ends a value in JSON, YAML flow style or a shell command.
+    # punctuation that ends a value in JSON, YAML flow style or a shell command. The
+    # bracketed alternative is tried first: round 15 E1 found that this application's own
+    # `REDACTION_PLACEHOLDER` (`[REDACTED]`) was not a fixed point of `scan_text` — the plain
+    # class below stops at the closing `]`, so `TOKEN=[REDACTED]` captured `[REDACTED`
+    # (without its bracket), which `_is_placeholder` did not recognize. No whitespace, quote
+    # or comma is allowed inside the brackets: a real placeholder or token has none of these,
+    # and this is also what stops the bracket branch from capturing a Python list literal or
+    # comprehension assigned to a keyword-named variable in this repository's own source
+    # (`secret = [f for f in findings ...]`) or a minified JSON array value
+    # (`"current-password":["text","search","password"]`, from `vendor/axe.min.js`).
     SecretPattern(
         "secret-assignment-unquoted",
         "Secret-like assignment",
-        _c(r"[\"']?(?:" + _KEYWORDS + r")[\"']?\s*[=:]\s*([^\s\"',;}\]]{8,})"),
+        _c(
+            r"[\"']?(?:" + _KEYWORDS + r")[\"']?\s*[=:]\s*"
+            r"(\[[^\]\n\s,\"']{3,80}\]|[^\s\"',;}\]]{8,})"
+        ),
     ),
 )
 
@@ -253,7 +296,21 @@ PLACEHOLDERS: Final[frozenset[str]] = frozenset(
 )
 
 
-def _is_placeholder(value: str) -> bool:
+def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
+    """`value` is documentation, a template, a mask, or code — not a live credential.
+
+    `allow_call_expression` is set only for the unquoted assignment pattern (round 15 E12):
+    it has no closing delimiter of its own, so scanning this module's own source (or any
+    Python file `tools/secret_scan.py` reads) captures straight into a real call expression
+    whenever a keyword-named variable holds one — `token = payload.get(`,
+    `token=secrets.token_urlsafe(32)`. A real credential is never written unquoted with that
+    shape, and the quoted pattern already covers a deliberately-quoted value on its own, so
+    the cost of allowing a paren or brace through here is paid only by that one pattern
+    rather than by every value this module inspects. Deliberately not extended to a square
+    bracket: that is the one punctuation mark round 15 E1's `[REDACTED]` fix depends on
+    being scanned like any other character, and `load_api_key(config[` still has a `(` of
+    its own to be excused by.
+    """
     lowered = value.strip().lower()
     if lowered in PLACEHOLDERS:
         return True
@@ -262,10 +319,20 @@ def _is_placeholder(value: str) -> bool:
     # placeholders that appear wherever this scanner reads its own source or a template.
     if lowered.startswith(("<", "${", "$(", "{{")) or lowered.endswith(">"):
         return True
-    # Parentheses mean source code, not a credential: `token=secrets.token_urlsafe(32)` and
-    # `token = payload.get("token")` are both assignments whose value is a call. No real
-    # token, key, JWT or base64 blob contains one.
-    if "(" in lowered or ")" in lowered:
+    # Round 15 E12: a bare paren or brace ANYWHERE in the value used to mark it a
+    # placeholder outright, which dropped real passwords that happen to contain one
+    # (`Tr0ub4dor(3)x`, `s3cr{t}Passw0rd`). Only a value that IS entirely one of the real
+    # template shapes below — a Jinja expression, a bare `{name}` format-string/f-string
+    # placeholder (this module's own test fixtures are full of exactly that shape, reading
+    # their own source: `f'token = "{GITHUB}"'`), or a parenthetical annotation like
+    # `(redacted)` or `(see vault)` — is a placeholder now.
+    if (
+        re.fullmatch(r"\{\{\s*[^{}]*\s*\}\}", lowered)
+        or re.fullmatch(r"\{[a-z_][a-z0-9_]*\}", lowered)
+        or re.fullmatch(r"\([a-z][a-z0-9 _-]*\)", lowered)
+    ):
+        return True
+    if allow_call_expression and any(ch in lowered for ch in "(){}"):
         return True
     # A short dotted identifier chain is an attribute path, not a secret. The length bounds
     # matter: without them this also matches a JWT, whose three base64 segments are exactly
@@ -276,10 +343,12 @@ def _is_placeholder(value: str) -> bool:
         and all(len(segment) <= 20 for segment in lowered.split("."))
     ):
         return True
-    # Any brace at all means a template fragment. Real credentials — tokens, keys, JWTs,
-    # base64 — do not contain braces, so this costs no detection and removes a whole class
-    # of false positive from source code, Jinja templates and CI configuration.
-    if "{" in lowered or "}" in lowered:
+    # Round 15 E1: `gh auth status` and this application's own redaction print a value that
+    # is mostly mask characters after a real-looking prefix (`gho_************************
+    # ************`) — a distinctive prefix alone no longer proves a live credential once
+    # the rest of it has been starred, x'd or dotted out.
+    mask_chars = sum(1 for ch in lowered if ch in "*x•")
+    if lowered and mask_chars / len(lowered) >= 0.6:
         return True
     # A run of a single repeated character is a mask, not a secret.
     return len(set(lowered)) <= 2
@@ -311,7 +380,9 @@ def scan_text(text: str) -> list[SecretMatch]:
     for pattern in PATTERNS:
         for match in pattern.regex.finditer(text):
             captured = match.group(1) if match.re.groups else match.group(0)
-            if _is_placeholder(captured):
+            if _is_placeholder(
+                captured, allow_call_expression=pattern.id == "secret-assignment-unquoted"
+            ):
                 continue
             span = match.span(1) if match.re.groups else match.span(0)
             if any(span[0] < end and start < span[1] for start, end in claimed):
@@ -349,7 +420,9 @@ def redact_text(text: str) -> tuple[str, bool]:
     for pattern in PATTERNS:
         for match in pattern.regex.finditer(text):
             captured = match.group(1) if match.re.groups else match.group(0)
-            if _is_placeholder(captured):
+            if _is_placeholder(
+                captured, allow_call_expression=pattern.id == "secret-assignment-unquoted"
+            ):
                 continue
             spans.append(match.span(1) if match.re.groups else match.span(0))
     if not spans:

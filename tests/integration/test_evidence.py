@@ -10,6 +10,7 @@ import pytest
 from quest_app.config import AppConfig
 from quest_app.errors import ProblemReport
 from quest_app.evidence import (
+    _decode_evidence_text,
     detect_proof,
     evidence_hash,
     new_run_id,
@@ -170,6 +171,97 @@ class TestSecretScanning:
         target.write_bytes(f"connected\r\ntoken={LEAKED}\r\n".encode("utf-16"))
         findings = scan_evidence(config, EVIDENCE)
         assert [finding.path.rsplit("/", 1)[-1] for finding in findings] == ["transcript.txt"]
+
+    def test_a_bom_less_utf16le_file_does_not_hide_the_token(self, config: AppConfig) -> None:
+        """Round 15 T3: without a byte-order mark, `_decode_evidence_text` guesses
+        endianness from which byte position of each pair carries more NUL bytes. The only
+        UTF-16 regression test before this one always writes with `.encode("utf-16")`, which
+        always emits a BOM, so a backwards guess in that heuristic branch never showed up in
+        the suite (it would byte-swap real text into garbage no pattern matches)."""
+        target = config.resolve_participant_path(EVIDENCE) / "logs" / "le-no-bom.txt"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        raw = f"connected\r\ntoken={LEAKED}\r\n".encode("utf-16-le")
+        assert not raw.startswith((b"\xff\xfe", b"\xfe\xff")), "this test needs no BOM"
+        target.write_bytes(raw)
+        findings = scan_evidence(config, EVIDENCE)
+        assert [finding.path.rsplit("/", 1)[-1] for finding in findings] == ["le-no-bom.txt"]
+
+    def test_a_bom_less_utf16be_file_does_not_hide_the_token(self, config: AppConfig) -> None:
+        """Round 15 T3: the big-endian half of the same heuristic."""
+        target = config.resolve_participant_path(EVIDENCE) / "logs" / "be-no-bom.txt"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        raw = f"connected\r\ntoken={LEAKED}\r\n".encode("utf-16-be")
+        assert not raw.startswith((b"\xff\xfe", b"\xfe\xff")), "this test needs no BOM"
+        target.write_bytes(raw)
+        findings = scan_evidence(config, EVIDENCE)
+        assert [finding.path.rsplit("/", 1)[-1] for finding in findings] == ["be-no-bom.txt"]
+
+    @pytest.mark.parametrize("codec", ["utf-16-le", "utf-16-be"])
+    def test_the_bom_less_endianness_guess_reads_multibyte_text_correctly(self, codec: str) -> None:
+        """Round 15 T3, isolated from the fallback candidates: an ASCII-only token, like the
+        two tests above use, is reconstructed by the NUL-stripped candidate regardless of
+        which endianness the heuristic guesses, so those two tests alone would not catch the
+        heuristic's ternary getting flipped (round 14's mutation-testing round found exactly
+        that: swapping it passed every other test in this file). A non-ASCII character does
+        not survive NUL-stripping intact, and comes out as a different character entirely
+        under the wrong endianness, so it is what actually proves the guess itself is right."""
+        text = "connected: café ok\r\n" * 20
+        raw = text.encode(codec)
+        assert not raw.startswith((b"\xff\xfe", b"\xfe\xff")), "this test needs no BOM"
+        assert raw.count(b"\0") / len(raw) > 0.3, "this test needs the heuristic branch"
+        assert any("café" in candidate for candidate in _decode_evidence_text(raw))
+
+    def test_a_utf8_file_with_an_appended_utf16_tail_does_not_hide_the_token(
+        self, config: AppConfig
+    ) -> None:
+        """Round 15 E6: PowerShell 5.1's `>>` append writes UTF-16LE onto a file a previous
+        run already created in UTF-8. A single whole-file decoding guess cannot read both
+        halves correctly, and the large UTF-8 head dilutes the NUL ratio well under the
+        heuristic's 30% trigger, so the file was decoded as UTF-8 and the tail became
+        replacement characters — invisible to every pattern."""
+        target = config.resolve_participant_path(EVIDENCE) / "logs" / "mixed-encoding.txt"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        utf8_head = ("Run 1 output: synchronized 42 cards, nothing changed.\n" * 200).encode()
+        utf16_tail = f"PS> gh auth token >> run.log\r\ntoken={LEAKED}\r\n".encode("utf-16-le")
+        raw = utf8_head + utf16_tail
+        assert raw.count(b"\0") / len(raw) < 0.3, "this test needs a ratio under the old trigger"
+        target.write_bytes(raw)
+        findings = scan_evidence(config, EVIDENCE)
+        assert [finding.path.rsplit("/", 1)[-1] for finding in findings] == ["mixed-encoding.txt"]
+
+    def test_bom_less_utf16_cjk_text_does_not_hide_the_token(self, config: AppConfig) -> None:
+        """Round 15 E6: a wide CJK character fills both bytes of its UTF-16 pair and
+        contributes no NUL of its own, so a file that is genuinely UTF-16 throughout can
+        still dilute the whole-file NUL ratio under the 30% trigger."""
+        target = config.resolve_participant_path(EVIDENCE) / "logs" / "cjk.txt"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        text = "同步完成。卡片已更新。" * 300 + f"token={LEAKED}"
+        raw = text.encode("utf-16-le")
+        assert raw.count(b"\0") / len(raw) < 0.3, "this test needs a ratio under the old trigger"
+        target.write_bytes(raw)
+        findings = scan_evidence(config, EVIDENCE)
+        assert [finding.path.rsplit("/", 1)[-1] for finding in findings] == ["cjk.txt"]
+
+    def test_a_bom_marked_utf32_file_does_not_hide_the_token(self, config: AppConfig) -> None:
+        """Round 15 E6: a UTF-32 byte-order mark starts with the same two bytes as a
+        UTF-16LE one (`\\xff\\xfe`), so it must be checked before the UTF-16 checks or a
+        UTF-32 file is silently misread as UTF-16 and every character comes out wrong."""
+        target = config.resolve_participant_path(EVIDENCE) / "logs" / "utf32.txt"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(("﻿" + f"token={LEAKED}").encode("utf-32"))
+        findings = scan_evidence(config, EVIDENCE)
+        assert [finding.path.rsplit("/", 1)[-1] for finding in findings] == ["utf32.txt"]
+
+    def test_utf32_bom_decodes_correctly_rather_than_as_utf16(self) -> None:
+        """Round 15 E6, isolated from the fallback candidates: `scan_evidence` still finds a
+        lone ASCII token in a misread UTF-32 file because the NUL-stripped candidate happens
+        to reconstruct any single-byte-per-character run regardless of format, which would
+        mask a regression in the BOM check order. A multi-byte character does not survive
+        that fallback, so it is what actually proves the UTF-32 branch fired: misread as
+        UTF-16, every character comes out followed by a stray NUL character (`c\\x00a\\x00
+        f\\x00é\\x00`), and NUL-stripping a multi-byte character garbles it too."""
+        raw = ("﻿café").encode("utf-32")
+        assert any("café" in candidate for candidate in _decode_evidence_text(raw))
 
     def test_an_unreadable_directory_blocks_rather_than_passing(self, config: AppConfig) -> None:
         """Round 14 E5: `rglob` silently drops a directory it cannot list instead of raising,
