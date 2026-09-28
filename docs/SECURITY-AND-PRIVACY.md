@@ -107,12 +107,20 @@ Validators should run with the least available privileges. The architecture shou
 - A secret scanner runs before submission preparation.
 - Logs redact configured keys and token-like values.
 - Raw external-system responses are stored only under Gitignored `local-data/` and are opt-in.
-- Screenshots are the one kind of evidence the scanner cannot read: it scans text, and a
-  token in a picture of a terminal is invisible to it. The `PROOF.md` template every
+- A screenshot is not the only kind of evidence the scanner cannot usefully read (round 15
+  E11 corrected this: it previously named screenshots as the one blind spot). It scans
+  text, and every image format (`.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`), plus `.pdf` and
+  `.zip`, is skipped outright rather than opened (`SKIP_SUFFIXES`, `quest_app/evidence.py`).
+  A compressed or container format that is *not* on that skip list — `.docx`, `.xlsx`,
+  `.pptx`, `.gz`, `.7z`, `.tar` and similar — is not skipped, but its bytes are not text
+  either: the scanner decodes and pattern-matches them anyway, and a real secret inside a
+  compressed stream does not survive decompression into a shape any pattern recognizes, so
+  it passes with the same silence a skipped file would. The `PROOF.md` template every
   attempt is given ends with a **Sensitive values** section asking the participant to
   confirm the package carries no secret, customer name or private ticket content, and
-  redacting an image before it goes in is their judgment. There is no automated gate
-  here, and release one does not claim one.
+  clearing an image, archive or office document before it goes in is their judgment. There
+  is no automated gate over any binary or compressed format, and release one does not claim
+  one.
 
 ### Secret-scan patterns (`quest_app/secret_patterns.py`)
 
@@ -128,11 +136,49 @@ Validators should run with the least available privileges. The architecture shou
   ordinary evidence (a Trello card URL, a test name, a branch name) and a real key of this
   shape always has a digit in it.
 - Detected formats also include a GitHub fine-grained personal access token, a Trello API
-  token, a Slack app-level token, a Google OAuth access token, and a credential passed as a
-  `key=`/`token=` URL query parameter.
-- A file is decoded as UTF-16 (by byte-order mark, or by a high NUL-byte ratio with
-  endianness inferred from where the NULs fall) before UTF-8, so a file written by a
-  Windows `>` redirection is scanned as text rather than as noise.
+  token, a Slack app-level token, a Google OAuth access token, a PGP private key block, and
+  a credential passed as a `key=`/`token=` URL query parameter.
+- A file is decoded several ways and every decoding is scanned, since a whole file is not
+  always one encoding (round 15 E6): by byte-order mark (a 4-byte UTF-32 mark is checked
+  before the 2-byte UTF-16 marks it starts with the same two bytes as); by a high NUL-byte
+  ratio with endianness inferred from where the NULs fall, for a file with no mark at all; a
+  plain UTF-8 decode always; and, whenever any NUL byte is present, that file's bytes with
+  every NUL stripped, decoded as UTF-8. The last two together are what let a file mixing
+  encodings — a UTF-8 head with a UTF-16 tail a Windows `>>` append wrote after it, or a
+  UTF-16 file whose NUL ratio a run of wide CJK characters dilutes under the whole-file
+  trigger — still give up an ASCII-range token, without the scanner having to first decide
+  which encoding, or which region of the file, produced it.
+- An `Authorization` (or `Proxy-Authorization`) header is a finding whether it carries a
+  Bearer credential, a Basic credential, or the `token` scheme GitHub's and Django's APIs
+  also accept — a Basic value is flagged without decoding it, since Jira Cloud's documented
+  script authentication is exactly `email:api_token` in Basic form, and a `curl -v`
+  transcript (the command-record proof the Jira, Trello and GitHub quests ask for) shows the
+  header verbatim regardless of what the base64 decodes to.
+- `_is_placeholder` recognizes a value that is mostly mask characters (`*`, `x`, `•`) after
+  a real-looking prefix — what `gh auth status` prints, and what this scanner's own
+  `redact_text` produces — as a placeholder rather than a live credential, and a value
+  entirely wrapped in one of the real template shapes (`${VAR}`, `{{ var }}`, `(redacted)`)
+  the same way. A paren or brace elsewhere in a value no longer suppresses it on its own, so
+  a real password that happens to contain one (`Tr0ub4dor(3)x`) is still detected; that
+  broader allowance is kept only for the unquoted assignment pattern, which has no closing
+  delimiter of its own and so captures straight into this module's own source wherever a
+  keyword-named variable is assigned a call expression (`token = payload.get(`).
+- The keyword `token` does not fire immediately after `page` (case-insensitively), so
+  Jira's own pagination fields — `nextPageToken`, `pageToken` — are not a credential just
+  because the quest that asks participants to page through them also asks them to keep
+  submitting the value as text.
+- **Known gap, not fixed:** a token glued on its right to `_` or to a letter outside its
+  character class (`x_ghp_<36 chars>_y`, `ATTA<64 hex>XYZ`) is still missed. The trailing
+  `\b` after each distinctive-prefix pattern requires a transition between a word and a
+  non-word character; loosening it risks matching into an ordinary longer identifier or hex
+  run the same way the leading boundary once did (round 13 E11 / round 14 E1), and no
+  corpus here demonstrates that trade is safe yet.
+- Every pattern with an unbounded quantifier ahead of a literal that a pathological input
+  never supplies used to be quadratic in the input length (round 15 E5): `basic-auth-url`'s
+  scheme and `jwt`'s three segments are now bounded (a scheme cannot be longer than 32
+  characters; a JWT segment cannot be longer than 4096), which keeps a 2 MB adversarial file
+  under a few seconds rather than the hours an unbounded scan of one would cost, all of it
+  held under the store, `generated` and service locks.
 
 ### Scan and hash boundaries for declared proof outside the package
 

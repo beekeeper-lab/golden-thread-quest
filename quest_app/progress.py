@@ -79,6 +79,11 @@ class ReviewDecision:
     # `(path, digest)` for each declared proof outside the package, as approved. None for a
     # review recorded before these were, which is then compared on the package hash alone.
     proof_files: tuple[tuple[str, str], ...] | None = None
+    # Whether this approval crossed the changed-evidence gate and was recorded with the
+    # reviewer's acknowledgement. False for a review that never faced the gate and for one
+    # recorded before this field existed, exactly as an absent field in the record itself
+    # means (round 15 L2) — never `None`, since "we don't know" is not a value this answers.
+    acknowledged_changed_evidence: bool = False
 
     @property
     def is_approval(self) -> bool:
@@ -463,6 +468,7 @@ def _load_review(
             if "proof_files" in data
             else None
         ),
+        acknowledged_changed_evidence=bool(data.get("acknowledged_changed_evidence", False)),
     )
 
 

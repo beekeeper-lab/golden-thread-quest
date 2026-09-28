@@ -405,6 +405,31 @@ inside the package is hashed by the content it shows, because that is what the b
 renders. A package holding such a link hashes differently from before this change; a
 package with no links hashes the same.
 
+**Amended (round 15, E4/S1):** "the participant's work changed" was answered by hashing raw
+bytes and raw file names, and that was not actually machine-independent. Git converts line
+endings between a Windows participant's checkout (`core.autocrlf=true` by default on Git for
+Windows) and a Linux or macOS reviewer's, in both directions, so an unmodified text file
+hashed differently the moment either side checked it out — every such submission read as
+"changed since submitted" for a reviewer who had touched nothing, and the same mismatch fired
+again on the participant's machine the moment an approval landed. Separately, the same file
+name built from precomposed or decomposed Unicode code points (NFC vs. NFD — the form macOS
+commonly writes) hashed as two different names. Both are now normalized before hashing: a
+file with no NUL byte in it is hashed with every `\r\n` and lone `\r` folded to `\n`, and every
+name is NFC-normalized first. A file name that is not valid UTF-8 (an unzip of a Windows
+archive is one ordinary way to get one) is now encoded losslessly instead of crashing the
+hash outright.
+
+A package hashed before this change reads as changed once the first time it is hashed again,
+whether or not a byte of the participant's actual work moved, because the *rule* for turning
+bytes into a digest changed, not just the bytes. This is a one-time reset, not a repeating
+problem: once a package has been hashed under this rule, it stays stable under it exactly as
+before. A reviewer who sees "the evidence has changed since it was submitted" on an otherwise
+untouched attempt around the time this shipped should re-read the evidence (unaffected either
+way, since only the *encoding* of what did not change was ever the difference) and approve
+with the acknowledgement, the same action ADR-030 already asks for when evidence changes for
+any other reason. It is not evidence of a real edit, and treating it as one would be a false
+alarm this ADR exists to prevent, not enable.
+
 ## ADR-032 — The application never pushes, opens a pull request, or merges
 
 **Decision:** Submission prints the exact Git commands and stops. `git_status.py` runs only
@@ -673,4 +698,22 @@ appending to whatever `ACTIVITY.md` it found. `AppConfig.for_repo` now refuses w
 `participant/` is a symbolic link, before any root is resolved and before anything is
 written. A root supplied explicitly — by a participant who chose where their own work lives —
 is unaffected and stays trusted at whatever it resolves to, exactly as ADR-042 already says.
+
+**Amended (round 15, E13):** "trusted at whatever it resolves to" went unqualified far enough
+that `GTQ_PARTICIPANT_ROOT=<repo>/content` (or `templates/`, `schemas/`, `quest_app/`,
+`validators/`, `assets/`, `generated/` or `local-data/`) was accepted with no warning, and
+every write a participant makes — `progress.yaml`, an evidence package, `ACTIVITY.md` —
+landed inside the application's own folders instead of a place that is theirs. "The
+participant chose it" is a reason to trust where a root points; it stops being one once what
+they chose is a folder the participant does not own, which every other participant who pulls
+that content or clones that code then inherits as if it were their own evidence.
+`AppConfig.for_repo` now also refuses, with the same `UnsafeParticipantRootError`, a
+configured (or default) participant root that equals, contains, or lies inside `content/`,
+`schemas/`, `templates/`, `assets/`, `validators/`, `quest_app/`, `generated/` or
+`local-data/` — checked lexically against those folders' fixed, conventional names, not
+against wherever `GTQ_GENERATED_ROOT`/`GTQ_LOCAL_DATA_ROOT` happen to be redirected to for a
+given run (`refuse_unsafe_output_root`, above, already checks those against the participant
+root from the other direction, at build time). A configured root anywhere else — including
+one reached through a symbolic link, since the participant root is resolved before this
+check runs — stays trusted exactly as ADR-042 already says.
 
