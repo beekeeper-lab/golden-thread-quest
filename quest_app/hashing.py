@@ -144,12 +144,30 @@ def hash_directory(
     """
     chunks: list[bytes | Path] = []
     resolved_root = root.resolve()
-    try:
-        entries = sorted(root.rglob("*"), key=lambda p: p.relative_to(root).as_posix())
-    except OSError as exc:
+    # `rglob` walks with `os.scandir` underneath and quietly drops a directory it cannot
+    # list — it neither raises nor yields anything for what is behind it — so a directory
+    # `chmod 000`'d after being populated used to vanish from the hash instead of failing it
+    # (round 14 E5). `os.walk(onerror=...)` is used instead so that failure is caught rather
+    # than swallowed; the first one found (by name, for a stable error across runs) is what
+    # is raised, in the same `UnreadableFileError` shape as an unreadable file already gets.
+    walk_errors: list[OSError] = []
+    entries: list[Path] = []
+    for dirpath, dirnames, filenames in os.walk(root, onerror=walk_errors.append):
+        current = Path(dirpath)
+        if current == root:
+            # A `skip_names` directory is never part of the hash (round 13 E6), so it must
+            # not be able to fail one either: pruned here, `os.walk` never descends into it
+            # and an unreadable one raises nothing.
+            dirnames[:] = [name for name in dirnames if name not in skip_names]
+        for name in (*dirnames, *filenames):
+            entries.append(current / name)
+    if walk_errors:
+        failing = min(walk_errors, key=lambda exc: exc.filename or "")
         raise UnreadableFileError(
-            _relative_to_root(Path(exc.filename), resolved_root) if exc.filename else ".", exc
-        ) from exc
+            _relative_to_root(Path(failing.filename), resolved_root) if failing.filename else ".",
+            failing,
+        ) from failing
+    entries.sort(key=lambda p: p.relative_to(root).as_posix())
     for path in entries:
         relative = path.relative_to(root).as_posix()
         parts = path.relative_to(root).parts

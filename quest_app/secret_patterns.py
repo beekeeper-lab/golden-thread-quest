@@ -41,8 +41,8 @@ class SecretMatch:
     excerpt: str
 
 
-def _c(pattern: str) -> re.Pattern[str]:
-    return re.compile(pattern, re.IGNORECASE)
+def _c(pattern: str, *, case_sensitive: bool = False) -> re.Pattern[str]:
+    return re.compile(pattern, 0 if case_sensitive else re.IGNORECASE)
 
 
 # Field names whose value is a credential. Deliberately broader than the obvious three:
@@ -70,45 +70,114 @@ _KEYWORDS = "|".join(
 # Ordered most specific first: a GitHub token should be reported as a GitHub token, not as
 # a generic high-entropy assignment.
 #
-# None of the fixed-prefix patterns below (`AKIA…`, `ghp_…`, `glpat-…`, `xox[abposr]-…`,
-# `AIza…`, `sk-ant-…`, `sk-…`, `ATATT3…`, `eyJ…`, `sk_`/`rk_…`, `npm_…`) anchor on a leading
-# `\b` any more. `\b` requires a transition between a word and a non-word character, and
-# every one of these prefixes starts with a letter — itself a word character — so a token
-# immediately preceded by any other letter or digit, with nothing between them, silently
-# failed to match at all: `nnnghp_…` and `xAKIA…` were invisible to both the scan and
-# redaction (round 13 E11). The literal prefixes are specific enough on their own — none is
-# a fragment that turns up inside ordinary words or identifiers at the required length — so
-# dropping the leading boundary catches a token wherever it appears without a meaningful
-# increase in false positives, which is the trade this scanner is built to take (a false
-# positive costs a minute; a missed credential costs a rotation). The trailing `\b` is
-# unaffected: it is not what this finding is about.
+# Round 13 E11 dropped the leading `\b` from every fixed-prefix pattern so that a token
+# glued directly to a preceding letter or digit (`nnnghp_…`, `xAKIA…`) would still match —
+# `\b` requires a transition between a word and a non-word character, and every one of these
+# prefixes starts with a letter, so nothing preceded it without one. Round 14 E1 found the
+# other half of that trade was never checked: with no leading boundary at all and every
+# pattern case-insensitive, `sk-[A-Za-z0-9_-]{20,}` matched the tail of "ta-SK-review-…" in
+# an ordinary hyphenated slug, and `(?:sk|rk)_(?:live|test)_…` matched "network_TEST_…" in a
+# log line — both real strings from evidence a participant is asked to submit (Trello card
+# URLs, test names, branch names).
+#
+# The two constraints do not need the same answer for every prefix:
+#
+# * A **distinctive** prefix (`AKIA`/`ASIA`/…, `gh[pousr]_`, `glpat-`, `xox[abposr]-`,
+#   `xapp-`, `AIza`, `sk-ant-`, `ATATT3`, `ATTA`, `github_pat_`, `ya29.`, `eyJ`) is long and
+#   specific enough that it does not turn up inside ordinary words or identifiers, so it
+#   keeps no leading boundary — the round 13 E11 cases stay caught.
+# * A **short generic** prefix (`sk-`, `sk_`/`rk_live|test_`, `npm_`) is exactly the kind of
+#   fragment that does turn up mid-word, so it requires `(?<![A-Za-z0-9])` before it *and*
+#   at least one digit in the body — a real key of this shape has one; "review-onboarding-
+#   checklist" and "test_connectivity" do not. A token of this kind glued to a preceding
+#   letter is no longer detected; that trade is what this round makes.
+#
+# Every fixed-prefix pattern is also compiled case-sensitively now: a real prefix has a
+# fixed case (`AKIA`, `sk-`, `ghp_`), so matching either case only bought false positives
+# from ordinary uppercase text (`RISK-ASSESSMENT-…`). Keyword-driven patterns (an
+# assignment, a bearer header, a URL scheme) stay case-insensitive, because the keyword
+# itself — not a literal credential prefix — is what identifies them, and a keyword can
+# legitimately appear in any case.
 PATTERNS: Final[tuple[SecretPattern, ...]] = (
     SecretPattern(
-        "private-key-block", "PEM private key block", _c(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")
+        "private-key-block",
+        "PEM private key block",
+        _c(r"-----BEGIN [A-Z ]*PRIVATE KEY-----", case_sensitive=True),
     ),
     SecretPattern(
         "aws-access-key-id",
         "AWS access key id",
-        _c(r"((?:AKIA|ASIA|AGPA|AIDA|AROA)[A-Z0-9]{16})\b"),
+        _c(r"((?:AKIA|ASIA|AGPA|AIDA|AROA)[A-Z0-9]{16})\b", case_sensitive=True),
     ),
     SecretPattern(
         "aws-secret-key",
         "AWS secret access key assignment",
         _c(r"aws_secret_access_key\s*[=:]\s*['\"]?([A-Za-z0-9/+=]{40})"),
     ),
-    SecretPattern("github-token", "GitHub token", _c(r"(gh[pousr]_[A-Za-z0-9]{36,})\b")),
     SecretPattern(
-        "gitlab-token", "GitLab personal access token", _c(r"(glpat-[A-Za-z0-9_-]{20,})\b")
+        "github-token", "GitHub token", _c(r"(gh[pousr]_[A-Za-z0-9]{36,})\b", case_sensitive=True)
     ),
-    SecretPattern("slack-token", "Slack token", _c(r"(xox[abposr]-[A-Za-z0-9-]{10,})\b")),
-    SecretPattern("google-api-key", "Google API key", _c(r"(AIza[0-9A-Za-z_-]{35})\b")),
-    SecretPattern("anthropic-key", "Anthropic API key", _c(r"(sk-ant-[A-Za-z0-9_-]{20,})\b")),
-    SecretPattern("openai-key", "OpenAI API key", _c(r"(sk-[A-Za-z0-9_-]{20,})\b")),
-    SecretPattern("atlassian-token", "Atlassian API token", _c(r"(ATATT3[A-Za-z0-9_=-]{20,})\b")),
+    SecretPattern(
+        "github-fine-grained-token",
+        "GitHub fine-grained personal access token",
+        _c(r"(github_pat_[A-Za-z0-9_]{80,})\b", case_sensitive=True),
+    ),
+    SecretPattern(
+        "gitlab-token",
+        "GitLab personal access token",
+        _c(r"(glpat-[A-Za-z0-9_-]{20,})\b", case_sensitive=True),
+    ),
+    SecretPattern(
+        "slack-token",
+        "Slack token",
+        _c(r"(xox[abposr]-[A-Za-z0-9-]{10,})\b", case_sensitive=True),
+    ),
+    SecretPattern(
+        "slack-app-token",
+        "Slack app-level token",
+        _c(r"(xapp-[A-Za-z0-9-]{10,})\b", case_sensitive=True),
+    ),
+    SecretPattern(
+        "google-api-key", "Google API key", _c(r"(AIza[0-9A-Za-z_-]{35})\b", case_sensitive=True)
+    ),
+    SecretPattern(
+        "google-oauth-token",
+        "Google OAuth access token",
+        _c(r"(ya29\.[A-Za-z0-9_-]{20,})\b", case_sensitive=True),
+    ),
+    SecretPattern(
+        "anthropic-key",
+        "Anthropic API key",
+        _c(r"(sk-ant-[A-Za-z0-9_-]{20,})\b", case_sensitive=True),
+    ),
+    SecretPattern(
+        "openai-key",
+        "OpenAI API key",
+        # A short generic prefix (see the comment above `PATTERNS`): blocked from matching
+        # mid-word by the leading lookbehind, and required to contain a digit like a real
+        # key does, so "review-onboarding-checklist" glued to a preceding "sk-" is not one.
+        _c(
+            r"(?<![A-Za-z0-9])(sk-(?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]{20,})\b",
+            case_sensitive=True,
+        ),
+    ),
+    SecretPattern(
+        "trello-token",
+        "Trello API token",
+        _c(r"(ATTA[A-Fa-f0-9]{60,})\b", case_sensitive=True),
+    ),
+    SecretPattern(
+        "atlassian-token",
+        "Atlassian API token",
+        _c(r"(ATATT3[A-Za-z0-9_=-]{20,})\b", case_sensitive=True),
+    ),
     SecretPattern(
         "jwt",
         "JSON Web Token",
-        _c(r"(eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})\b"),
+        _c(
+            r"(eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})\b",
+            case_sensitive=True,
+        ),
     ),
     SecretPattern(
         "basic-auth-url",
@@ -116,18 +185,31 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
         _c(r"\b[a-z][a-z0-9+.-]*://[^/\s:@]+:([^/\s:@]{3,})@"),
     ),
     SecretPattern(
-        "stripe-key", "Stripe secret key", _c(r"((?:sk|rk)_(?:live|test)_[A-Za-z0-9]{10,})\b")
+        "stripe-key",
+        "Stripe secret key",
+        # Short generic prefix: same lookbehind-plus-digit treatment as openai-key.
+        _c(
+            r"(?<![A-Za-z0-9])((?:sk|rk)_(?:live|test)_(?=[A-Za-z0-9]*\d)[A-Za-z0-9]{10,})\b",
+            case_sensitive=True,
+        ),
     ),
-    SecretPattern("npm-token", "npm access token", _c(r"(npm_[A-Za-z0-9]{20,})\b")),
+    SecretPattern(
+        "npm-token",
+        "npm access token",
+        _c(
+            r"(?<![A-Za-z0-9])(npm_(?=[A-Za-z0-9]*\d)[A-Za-z0-9]{20,})\b",
+            case_sensitive=True,
+        ),
+    ),
+    SecretPattern(
+        "url-query-credential",
+        "Credential in a URL query parameter",
+        _c(r"[?&](?:key|token)=([A-Za-z0-9_-]{16,})"),
+    ),
     SecretPattern(
         "bearer-header",
         "Bearer credential in a header",
         _c(r"authorization\s*:\s*bearer\s+([A-Za-z0-9._~+/=-]{12,})"),
-    ),
-    SecretPattern(
-        "basic-auth-url",
-        "Credentials embedded in a URL",
-        _c(r"\b[a-z][a-z0-9+.-]*://[^/\s:@]+:([^/\s:@]{3,})@"),
     ),
     # Quoted assignment first, so a quoted value keeps its exact span even when it contains
     # characters the unquoted form would stop at.

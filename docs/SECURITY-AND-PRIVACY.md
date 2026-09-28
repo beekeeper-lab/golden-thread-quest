@@ -114,6 +114,46 @@ Validators should run with the least available privileges. The architecture shou
   redacting an image before it goes in is their judgment. There is no automated gate
   here, and release one does not claim one.
 
+### Secret-scan patterns (`quest_app/secret_patterns.py`)
+
+- Every fixed-prefix pattern (`ghp_`, `AKIA…`, `glpat-`, `xox[abposr]-`, `xapp-`, `AIza`,
+  `sk-ant-`, `ATATT3`, `ATTA`, `github_pat_`, `ya29.`, a JWT's `eyJ`, plus the generic
+  `sk-`/`sk_`/`rk_`/`npm_`) is matched case-sensitively: a real credential has a fixed case,
+  and matching either case only invited false positives from ordinary uppercase text.
+- A **distinctive** prefix (long and specific enough that it does not occur inside an
+  ordinary word or identifier) keeps no leading word boundary, so a token glued directly to
+  a preceding letter or digit is still caught. A **short generic** prefix (`sk-`,
+  `sk_`/`rk_live|test_`, `npm_`) requires a value that is not directly preceded by a letter
+  or digit *and* contains at least one digit, because these fragments do turn up mid-word in
+  ordinary evidence (a Trello card URL, a test name, a branch name) and a real key of this
+  shape always has a digit in it.
+- Detected formats also include a GitHub fine-grained personal access token, a Trello API
+  token, a Slack app-level token, a Google OAuth access token, and a credential passed as a
+  `key=`/`token=` URL query parameter.
+- A file is decoded as UTF-16 (by byte-order mark, or by a high NUL-byte ratio with
+  endianness inferred from where the NULs fall) before UTF-8, so a file written by a
+  Windows `>` redirection is scanned as text rather than as noise.
+
+### Scan and hash boundaries for declared proof outside the package
+
+A quest's declared proof commonly names files outside the attempt's evidence package
+(`participant/context/**`, `participant/skills/**`); `scan_declared_proof`
+(`quest_app/evidence.py`) scans those too, under the same rules, so that "no secret was
+found" on the mark-evidence-ready gate, the submission gate, and every page that reports the
+scan means the same thing everywhere. For a declared directory, the scan and the evidence
+digest (`proof_file_digests`) use the same boundary — the declared path itself — so a link
+that leaves that path is refused identically by both: it is an "outside the evidence
+package" scan finding, not something that scans clean while the digest silently stops
+covering it. A declared path that does not resolve inside `participant/` at all is reported
+the same way, rather than skipped, and a directory reached through a symbolic link is a
+finding rather than a silently unscanned subtree, since neither the scan nor the digest
+descends into one.
+
+An evidence directory or a declared directory that cannot be listed (permission denied) is a
+blocking "could not be read to check it" finding from the scan and an `UnreadableFileError`
+from the hash — the same treatment an unreadable file already gets — rather than being
+silently absent from both.
+
 ## External-system writes
 
 **Release one performs none.** Every quest declares `risk.external_write: false`, every
