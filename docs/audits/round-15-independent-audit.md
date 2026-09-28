@@ -72,6 +72,7 @@ reproduced. S3 is within the threat model: the service trusts the local user.
 | `make validate-content` | pass — 8 quests, 8 regions, 4 badges, 1 track, 0 warnings |
 | `make verify-package` | pass |
 | Clean clone at `3692502`, by the tooling lens | pass: `make setup`, `make check`, and `make check` beside a running server |
+| Clean clone of `chore/round-15-audit`, with `make check` beside a running server | pass at `b0eff43`: `make setup`, the server on a second port, and `make check` beside it (1107 passed, 5 skipped without the UI extras), leaving the clone unchanged |
 | A new quest added by following the authoring guide | picked up by the catalog, region page, prerequisite link, evidence page and search index, with no template or code change |
 | Each fix reverted one at a time | every new test failed with its fix reverted, by the branch that wrote it |
 | Guards mutated by the tooling lens | 20 mutations of 15 guards, 14 caught, apart from T1 to T6 |
