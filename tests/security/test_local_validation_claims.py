@@ -225,6 +225,30 @@ def test_a_genuinely_older_version_still_gets_the_warning(config: AppConfig) -> 
     assert NEW_VALIDATOR_CODE in {p.code for p in report.warnings}
 
 
+def test_a_forged_content_hash_at_the_exact_same_version_is_still_refused(
+    config: AppConfig,
+) -> None:
+    """Round 16 F1: `claims_a_real_predecessor` is `attempt.quest_version < quest.version`,
+    a strict inequality, but nothing in this file exercised the exact boundary — every case
+    above uses a genuinely older version (`1 < 2`) or an implausible future one (`99`), never
+    `quest_version == quest.version`. Mutating `<` to `<=` passed the whole file: at the
+    boundary, `attempt.quest_version` is not *older* than the published quest at all (it is
+    the fixture's own default, already equal to it), so a forged `content_hash` here is a
+    same-version forgery — exactly what round 13 E7 and round 15 E10 both closed — not a
+    legitimate predates-the-validator claim, and must stay the hard error.
+    """
+    _add_a_second_validator_at_the_current_version(config, "validate-playwright-quality")
+    _set_state(config, "locally_validated")
+    _set_attempt_content_hash(config, "sha256:" + "ab" * 32)  # invented, not the real digest
+    # quest_version is left at the fixture's default (2), exactly equal to quest.version (2):
+    # not lowered, so this is the boundary itself, not the already-covered older-version case.
+
+    report = ProblemReport()
+    assert load_world(config, report) is None
+    assert CODE in {p.code for p in report.errors}
+    assert NEW_VALIDATOR_CODE not in {p.code for p in report.problems}
+
+
 def _set_attempt_content_hash(config: AppConfig, content_hash: str) -> None:
     path = config.participant_root / "progress.yaml"
     data = yaml.safe_load(path.read_text())

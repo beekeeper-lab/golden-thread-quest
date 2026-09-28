@@ -2,11 +2,11 @@
 
 | | |
 |---|---|
-| Version | 1.1.0 |
-| Date | 2026-09-25 |
-| Describes | `main` at `0018e2d`, the merge of pull request 10 (round 12) |
-| Audit status from | `main` at `0018e2d`: round 12 is complete and merged, eighteen findings all fixed except one (E9) stated as a known limitation. DH7 is still open; round 13 has not yet run against this commit |
-| Rendered copies | `artifacts/html/design/golden-thread-system-design-v1.1.0.html`, `artifacts/pdf/design/golden-thread-system-design-v1.1.0.pdf` |
+| Version | 1.2.0 |
+| Date | 2026-09-28 |
+| Describes | `main` at `95b173e` (round 15's merge commit), amended by the round 16 integrity-lens fixes (secret scanner, hash normalization, participant-root refusal, review-archive naming) landing in this pull request |
+| Audit status from | `PLANNING-STATUS.md`: fifteen rounds have run and each found something; round 16 is in progress against `95b173e`. DH7 is still open (Part 7, Section 7.2) |
+| Rendered copies | `artifacts/html/design/golden-thread-system-design-v1.2.0.html`, `artifacts/pdf/design/golden-thread-system-design-v1.2.0.pdf` |
 
 ## About this document
 

@@ -550,6 +550,22 @@ def test_a_configured_participant_root_containing_a_program_owned_folder_is_refu
         AppConfig.for_repo(clone, participant_root=clone)
 
 
+def test_a_configured_participant_root_matching_a_program_owned_folder_by_case_only_is_refused(
+    tmp_path: Path,
+) -> None:
+    """Round 16 S1: the comparison used to be exact-case `Path` equality, so
+    `GTQ_PARTICIPANT_ROOT=./Content` slipped past it wherever the filesystem itself folds
+    case (macOS's default APFS, Windows) and landed a participant's writes inside authored
+    curriculum content again — the exact outcome round 15 E13 closed. Refusing a mixed-case
+    match everywhere, not only on a case-insensitive filesystem, is what makes this safe: it
+    costs a same-name-different-case path nobody legitimately wants as a participant root,
+    even on a case-sensitive one.
+    """
+    clone = _clone(tmp_path / "clone")
+    with pytest.raises(UnsafeParticipantRootError, match="content/"):
+        AppConfig.for_repo(clone, participant_root=clone / "Content")
+
+
 def test_a_configured_participant_root_elsewhere_stays_trusted(tmp_path: Path) -> None:
     """ADR-042 still holds for a root that does not overlap anything program-owned."""
     clone = _clone(tmp_path / "clone")

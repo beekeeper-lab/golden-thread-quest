@@ -430,6 +430,20 @@ with the acknowledgement, the same action ADR-030 already asks for when evidence
 any other reason. It is not evidence of a real edit, and treating it as one would be a false
 alarm this ADR exists to prevent, not enable.
 
+**Amended (round 16, E10):** "no NUL byte in it" was not actually a safe test for "may fold
+`\r` to `\n`". A NUL-free UTF-16 file holding no ASCII at all — a CJK-only document, encoded
+the way Windows commonly writes one — passed it, and one of a character's own two bytes can
+itself be `\r` without being a line ending: folding it changed 不 (U+4E0D) into 上 (U+4E0A)
+without moving the hash, so a real edit raised no changed-since-approval warning. Text now
+also has to decode as UTF-8 (checked in full, the same as the NUL-byte check, without ever
+buffering the file to do it) before it is folded at all; everything else — binary content,
+and now also UTF-16/UTF-32 and any other non-UTF-8 encoding — is hashed exactly as it sits on
+disk. Content that was already valid UTF-8 hashes exactly as it did before this change; only
+NUL-free content that is not valid UTF-8 (which round 15 folded and round 16 does not) hashes
+differently, the same one-time reset the round 15 amendment above describes, for the same
+reason: the *rule* moved, not the participant's work. A reviewer who sees a changed-since
+warning on such a file around the time this shipped should re-read the evidence the same way.
+
 ## ADR-032 — The application never pushes, opens a pull request, or merges
 
 **Decision:** Submission prints the exact Git commands and stops. `git_status.py` runs only

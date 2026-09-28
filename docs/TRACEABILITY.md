@@ -40,7 +40,7 @@ is itself the finding.
 | **RE3** A reviewer can see validator results and reproduction instructions | `_review_context` results table and PROOF.md render | `test_a_reviewer_page_exists_for_every_attempt`; `submission_instructions` covered by `TestSubmission` |
 | **RE4** Approve, request changes, or reject with findings | `review.record_decision` | `TestApprovalGuards` (five guards) |
 | **RE5** Only approval changes the attempt to verified | `review._apply_decision` | `TestWhatApprovalProduces`, `TestForgery` |
-| **RE6** Evidence changes after approval are detected and surfaced | `progress._check_stale_approval` | `TestEvidenceChangedAfterApproval` (four tests, including a tampered review hash) |
+| **RE6** Evidence changes after approval are detected and surfaced | `progress._check_stale_approval` | `TestEvidenceChangedAfterApproval` (including a tampered review hash) |
 
 ## Filesystem and Git safety
 

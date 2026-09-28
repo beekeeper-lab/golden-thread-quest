@@ -36,6 +36,13 @@ The project reads DH7 strictly: it closes only on an audit round that **finds no
 blocking or high. Fixing a round's findings does not close it, because the fixes are
 themselves unaudited; the next round runs against the merge commit that contains them.
 
+**Current status (past this document's round 12 baseline; see `PLANNING-STATUS.md`).**
+Fifteen rounds have run and each has found something. Round 16 is in progress against the
+round 15 merge commit. Sections 7.3 and 7.4 below describe round 12 in full; rounds 13
+through 15 are recorded in the audit history table (Section 7.3) with their commit and
+finding counts, but do not yet have a round-12-style findings table here — that is deferred
+to a future regeneration of this document, per `REGENERATING.md`.
+
 **Method of a round.** Three independent review **lenses**, each in its own worktree at the
 commit under audit with `docs/audits/` removed, each given only paths, a commit and areas to
 probe, none shown the author's beliefs or another lens's findings. The lenses cover the
@@ -59,6 +66,9 @@ finding is verified by reproduction or by reading the cited code before it is ac
 | 10 | `8df0ac5` | 1 | 8 | `round-10-independent-audit.md` |
 | 11 | `ea36037` | 0 | 3 | `round-11-independent-audit.md` |
 | 12 | `16a0b03` | 2 | 4 | `round-12-independent-audit.md`, merged to `main` at `0018e2d` (pull request 10) |
+| 13 | `a942237` | 2 | 3 | `round-13-independent-audit.md`, merged to `main` at `3b9b7c2` (round 14's predecessor commit) |
+| 14 | `3b9b7c2` | 0 | 3 | `round-14-independent-audit.md`, merged to `main` at `95b173e` (round 15's predecessor commit) |
+| 15 | `95b173e` | 0 | 3 | `round-15-independent-audit.md`, merged to `main` (round 16's predecessor commit; see `PLANNING-STATUS.md`) |
 
 Every accepted blocking and high finding from rounds 1 to 12 is fixed on `main`, each code fix
 with a test that fails without it, except round 12's E9 (Low, a validator grandchild that
@@ -68,7 +78,10 @@ instead. The pattern the audits name is consistent: defects live in states no fi
 (no participant yet, a refused action, a second process, a hostile file, a real browser rather
 than a test client). Round 12 found the sharpest instance of that pattern yet: C1 (every
 browser action form refused) went unseen for eleven rounds because no lens had submitted a
-form in a real browser.
+form in a real browser. Rounds 13 through 15 kept finding high-severity issues past round 12's
+fixes — `docs/audits/round-13-independent-audit.md`, `round-14-independent-audit.md` and
+`round-15-independent-audit.md` record what and why — so DH7 remained open into round 16; this
+document's Section 7.4 below has not yet been extended past round 12's findings (see 7.2).
 
 ## 7.4 Round 12: findings and their fixes
 
