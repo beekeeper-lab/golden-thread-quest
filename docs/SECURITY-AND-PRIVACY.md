@@ -110,17 +110,25 @@ Validators should run with the least available privileges. The architecture shou
 - A screenshot is not the only kind of evidence the scanner cannot usefully read (round 15
   E11 corrected this: it previously named screenshots as the one blind spot). It scans
   text, and every image format (`.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`), plus `.pdf` and
-  `.zip`, is skipped outright rather than opened (`SKIP_SUFFIXES`, `quest_app/evidence.py`).
-  A compressed or container format that is *not* on that skip list — `.docx`, `.xlsx`,
-  `.pptx`, `.gz`, `.7z`, `.tar` and similar — is not skipped, but its bytes are not text
-  either: the scanner decodes and pattern-matches them anyway, and a real secret inside a
-  compressed stream does not survive decompression into a shape any pattern recognizes, so
-  it passes with the same silence a skipped file would. The `PROOF.md` template every
-  attempt is given ends with a **Sensitive values** section asking the participant to
-  confirm the package carries no secret, customer name or private ticket content, and
-  clearing an image, archive or office document before it goes in is their judgment. There
-  is no automated gate over any binary or compressed format, and release one does not claim
-  one.
+  `.zip`, is skipped outright rather than opened. Round 16 E12 found that this used to be
+  decided by the file's *extension* alone (`SKIP_SUFFIXES`), so a plain-text secret saved
+  as `logs/terminal.pdf` or `logs/env-backup.zip` passed the scan clean on the filename's
+  say-so. The decision is now made from the file's own magic bytes
+  (`_looks_like_a_skippable_binary_format`, `quest_app/evidence.py`), read from the file's
+  header only — never the whole file, so a legitimate multi-megabyte screenshot is still
+  skipped whatever its size, rather than being read in full first and then reported too
+  large to check. `.docx`/`.xlsx`/`.pptx` share the plain zip signature and there is no
+  cheap, reliable way to tell them apart by header bytes alone; since neither is read as
+  text either way, this scan treats every zip-signed file the same rather than claiming a
+  distinction it cannot make. A compressed or container format that carries none of these
+  signatures — `.gz`, `.7z`, `.tar` and similar — is not skipped, but its bytes are not text
+  either: the scanner decodes and pattern-matches them anyway, and a real secret inside such
+  a stream does not survive decompression into a shape any pattern recognizes, so it passes
+  with the same silence a skipped file would. The `PROOF.md` template every attempt is given
+  ends with a **Sensitive values** section asking the participant to confirm the package
+  carries no secret, customer name or private ticket content, and clearing an image,
+  archive or office document before it goes in is their judgment. There is no automated
+  gate over any binary or compressed format, and release one does not claim one.
 
 ### Secret-scan patterns (`quest_app/secret_patterns.py`)
 
@@ -134,10 +142,21 @@ Validators should run with the least available privileges. The architecture shou
   `sk_`/`rk_live|test_`, `npm_`) requires a value that is not directly preceded by a letter
   or digit *and* contains at least one digit, because these fragments do turn up mid-word in
   ordinary evidence (a Trello card URL, a test name, a branch name) and a real key of this
-  shape always has a digit in it.
+  shape always has a digit in it. `openai-key`'s digit check used to be an unbounded
+  lookahead sharing its own character class, so a run of nothing but `sk-` (no digit
+  anywhere) failed that lookahead from every occurrence, each failure re-scanning to the end
+  of the string: quadratic (round 16 E1; 80 KB took 6.3s, a 2 MB file never finished under
+  the locks this runs inside of). The lookahead is now bounded — a real key is nowhere near
+  200 characters long, so nothing genuine stops matching.
 - Detected formats also include a GitHub fine-grained personal access token, a Trello API
-  token, a Slack app-level token, a Google OAuth access token, a PGP private key block, and
-  a credential passed as a `key=`/`token=` URL query parameter.
+  token, a Slack app-level token, a Google OAuth access token, a PGP private key block, a
+  credential passed as a `key=`/`token=` URL query parameter, a credential passed to curl's
+  `-u`/`--user` flag (round 16 E11; the scan requires the literal word "curl" earlier on the
+  same line, so an unrelated colon-separated flag argument, such as a container runtime's
+  numeric user:group, is not a false positive), a credential held in an XML element
+  (`<password>...</password>`, Maven's `settings.xml` and similar tooling), and a credential
+  held in a YAML block scalar (`password: >-` / `password: |`, followed by an indented value
+  the flow-style unquoted pattern below never reaches on its own).
 - A file is decoded several ways and every decoding is scanned, since a whole file is not
   always one encoding (round 15 E6): by byte-order mark (a 4-byte UTF-32 mark is checked
   before the 2-byte UTF-16 marks it starts with the same two bytes as); by a high NUL-byte
@@ -158,15 +177,45 @@ Validators should run with the least available privileges. The architecture shou
   a real-looking prefix — what `gh auth status` prints, and what this scanner's own
   `redact_text` produces — as a placeholder rather than a live credential, and a value
   entirely wrapped in one of the real template shapes (`${VAR}`, `{{ var }}`, `(redacted)`)
-  the same way. A paren or brace elsewhere in a value no longer suppresses it on its own, so
-  a real password that happens to contain one (`Tr0ub4dor(3)x`) is still detected; that
-  broader allowance is kept only for the unquoted assignment pattern, which has no closing
-  delimiter of its own and so captures straight into this module's own source wherever a
-  keyword-named variable is assigned a call expression (`token = payload.get(`).
+  the same way. Round 16 narrowed several of these checks that used to be broader than the
+  real template shape they were named for:
+  - A paren or brace elsewhere in a value no longer suppresses it on its own (round 16 E6
+    narrowed this further than round 15 E12 had): a real password that happens to contain
+    one (`Tr0ub4dor(3)x`) is detected. The remaining allowance — a real call or subscript
+    shape (an identifier, optionally dotted, immediately followed by `(` or `[`, with
+    nothing after the matching close but what the value class already stopped at) — is kept
+    only for the unquoted assignment pattern, which has no closing delimiter of its own and
+    so captures straight into this module's own source wherever a keyword-named variable is
+    assigned a call expression (`token = payload.get(`) or is itself passed as another
+    call's own argument (`OpenAI(api_key=api_key)`).
+  - `${VAR:-default}`/`${VAR-default}` is a shell or compose *default* — a real value the
+    moment the variable is unset (an env file's `DB_PASSWORD=${DB_PASSWORD:-Sup3rS3cretValue9}`  <!-- # secret-scan: allow -->
+    is the ordinary docker-compose/.env shape) — and round 16 E5 found it was being waved
+    through as a placeholder just like a bare `${VAR}`. Only a value that is entirely `${NAME}`,
+    optionally with a `:?message` clause (an error string shown when unset, never a
+    default), refers to the environment rather than holding one now.
+  - A dotted identifier chain is an attribute path, not a secret, only when it starts from
+    one of the names this codebase's own source and its docs' own examples use for the
+    object being accessed (`self`, `config`, `os`, and similar). Before round 16 E7, any
+    short dotted chain qualified, so a dotted passphrase (`correct.horse.battery.staple`,
+    `Welcome.To.Acme`) read exactly like an attribute path and was never reported.
+  - A lone `<` or `>` at one end of a value used to be enough on its own to call it a
+    template; round 16 E11 found that a real value merely starting with a stray `<` or
+    ending with a stray `>` was waved through the same way. Only a matched `<...>` pair,
+    start to end, is a documentation placeholder now.
+  - The bracket-shaped unquoted value (`[REDACTED]`, `[Pr0d]`) used to stop at the closing
+    `]`, so a placeholder glued to a real value (`[Pr0d]Sup3rS3cretValue`) captured only the
+    bracket — a finding, but the wrong span, and redacting it left the real value in clear
+    text, itself scanning clean (round 16 E4). A placeholder is only ever a value that is
+    *entirely* one bracketed token; anything glued after the bracket is part of the value
+    now, so it is captured, reported and redacted along with it.
 - The keyword `token` does not fire immediately after `page` (case-insensitively), so
   Jira's own pagination fields — `nextPageToken`, `pageToken` — are not a credential just
   because the quest that asks participants to page through them also asks them to keep
-  submitting the value as text.
+  submitting the value as text. Round 16 E11 added `DB_PASS`/`PWD`-style keywords too: a
+  bare `pass` is not safe to add on its own (this repository's own test-result vocabulary
+  uses it as a plain field name, and English has "bypass"), so it requires a leading
+  underscore (`DB_PASS`, `ADMIN_PASS`); `pwd` has no such restriction.
 - **Known gap, not fixed:** a token glued on its right to `_` or to a letter outside its
   character class (`x_ghp_<36 chars>_y`, `ATTA<64 hex>XYZ`) is still missed. The trailing
   `\b` after each distinctive-prefix pattern requires a transition between a word and a
@@ -176,9 +225,17 @@ Validators should run with the least available privileges. The architecture shou
 - Every pattern with an unbounded quantifier ahead of a literal that a pathological input
   never supplies used to be quadratic in the input length (round 15 E5): `basic-auth-url`'s
   scheme and `jwt`'s three segments are now bounded (a scheme cannot be longer than 32
-  characters; a JWT segment cannot be longer than 4096), which keeps a 2 MB adversarial file
-  under a few seconds rather than the hours an unbounded scan of one would cost, all of it
-  held under the store, `generated` and service locks.
+  characters; a JWT segment cannot be longer than 4096, its header segment cannot be longer
+  than 512), which keeps a 2 MB adversarial file under a few seconds rather than the hours
+  an unbounded scan of one would cost, all of it held under the store, `generated` and
+  service locks. `scan_text`'s own overlap bookkeeping had the same shape of problem one
+  level up (round 16 E2): it used to scan every already-claimed span for every new match, an
+  `O(matches^2)` cost that took 497s for 95k distinct AWS keys in a 2 MB file even though the
+  AWS pattern itself is linear. Each pattern's own matches arrive left to right and
+  non-overlapping, and the accepted set stays sorted and disjoint by construction, so a
+  whole pattern's batch of new claims is now folded into the existing set with one merge of
+  two already-sorted sequences, the same `O(a + b)` step a merge sort's merge is, rather
+  than a fresh scan per match.
 
 ### Scan and hash boundaries for declared proof outside the package
 

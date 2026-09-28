@@ -224,14 +224,31 @@ def _refuse_participant_root_inside_program_owned_folders(
     `participant_root` is resolved already (`AppConfig.for_repo` resolves it), so a
     participant root that is itself a link to one of these folders is still caught. Equal
     to, containing, or inside one of these refuses; anywhere else stays trusted.
+
+    Round 16 S1: the comparison used to be exact-case `Path` equality, which never matches
+    on a case-sensitive filesystem but silently stops matching on a case-insensitive one
+    (macOS's default APFS, or Windows) — `GTQ_PARTICIPANT_ROOT=./Content` resolves to a path
+    string that is not `repo_root / "content"` by `==`, even though both names the same
+    directory to the filesystem underneath. Comparing `casefold()`-ed POSIX strings instead
+    means this refuses a same-name-different-case path everywhere, including on a
+    case-sensitive system where the two are actually different, unowned directories — a
+    handful of extra refusals there, never a missed one on the filesystems this exists to
+    protect.
     """
     candidates = {repo_root / name: name for name in _PROGRAM_OWNED_FOLDER_NAMES}
 
+    def _casefolded(path: Path) -> str:
+        return path.as_posix().casefold()
+
+    participant_key = _casefolded(participant_root)
+    participant_parent_keys = {_casefolded(parent) for parent in participant_root.parents}
     for candidate, name in candidates.items():
+        candidate_key = _casefolded(candidate)
+        candidate_parent_keys = {_casefolded(parent) for parent in candidate.parents}
         if (
-            participant_root == candidate
-            or candidate in participant_root.parents
-            or participant_root in candidate.parents
+            participant_key == candidate_key
+            or candidate_key in participant_parent_keys
+            or participant_key in candidate_parent_keys
         ):
             raise UnsafeParticipantRootError(
                 f"Refusing to use {participant_root} as the participant root: it is, is "

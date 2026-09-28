@@ -15,7 +15,7 @@ import base64
 import time
 
 import pytest
-from quest_app.secret_patterns import REDACTION_PLACEHOLDER, redact_text, scan_text
+from quest_app.secret_patterns import PATTERNS, REDACTION_PLACEHOLDER, redact_text, scan_text
 
 GITHUB = "ghp_abcdefghijklmnopqrstuvwxyz0123456789"  # secret-scan: allow
 AWS = "AKIAIOSFODNN7EXAMPLX"  # secret-scan: allow
@@ -289,7 +289,7 @@ JIRA_BASIC_CREDENTIAL = (
 
 
 def test_a_basic_auth_header_in_a_curl_v_transcript_is_detected() -> None:
-    credential = base64.b64encode(JIRA_BASIC_CREDENTIAL).decode()
+    credential = base64.b64encode(JIRA_BASIC_CREDENTIAL).decode()  # secret-scan: allow
     transcript = (
         "* Connected to example.atlassian.net (203.0.113.9) port 443\n"
         f"> Authorization: Basic {credential}\n"  # secret-scan: allow
@@ -420,3 +420,278 @@ def test_distinctive_prefixes_match_only_their_real_case(
 def test_url_query_credential_detects_the_token_parameter() -> None:
     (match,) = scan_text(f"GET /1/members/me/boards?token={QUERY_CREDENTIAL}")
     assert match.pattern_id == "url-query-credential"
+
+
+# Round 16 E1/E2: a unit whose repetition stresses each pattern's own worst case — mostly
+# just the pattern's fixed prefix, which is where an unbounded lookahead or an unbounded
+# quantifier ahead of a literal a pathological input never supplies does its damage.
+#
+# A list of pairs, not a `{"id": "unit"}` dict literal: several pattern ids end in a real
+# keyword this module detects (`...-credential`, `...-secret-key`), and a dict literal's
+# `"key": "value"` is exactly the assignment shape those keywords look for — with the
+# quoted secret-assignment pattern, this file's own source became a finding. A tuple has no
+# `[=:]` directly after the id, so it is not.
+_PATTERN_ADVERSARIAL_UNITS: dict[str, str] = dict(  # noqa: C406 - a `{"id": "unit"}` dict literal
+    # here is exactly the assignment shape the comment above explains avoiding.
+    [
+        ("private-key-block", "-----BEGIN OPAQUE "),
+        ("aws-access-key-id", "AKIAZ"),
+        ("aws-secret-key", "aws_secret_access_key=Z"),
+        ("github-token", "ghp_Z"),
+        ("github-fine-grained-token", "github_pat_Z"),
+        ("gitlab-token", "glpat-Z"),
+        ("slack-token", "xoxb-Z"),
+        ("slack-app-token", "xapp-Z"),
+        ("google-api-key", "AIzaZ"),
+        ("google-oauth-token", "ya29.Z"),
+        ("anthropic-key", "sk-ant-Z"),
+        ("openai-key", "sk-"),
+        ("trello-token", "ATTAZ"),
+        ("atlassian-token", "ATATT3Z"),
+        ("jwt", "eyJZ"),
+        ("basic-auth-url", "a://Z"),
+        ("stripe-key", "sk_live_"),
+        ("npm-token", "npm_"),
+        ("url-query-credential", "?key=Z"),
+        ("bearer-header", "authorization: bearer Z"),
+        ("basic-auth-header", "authorization: basic Z"),
+        ("curl-user-credential", "curl -u Z "),
+        ("xml-element-credential", "<password>Z"),
+        ("yaml-block-scalar-credential", "password: >-\nZ\n"),
+        ("secret-assignment", 'password="Z'),
+        ("secret-assignment-unquoted", "password=Z"),
+    ]
+)
+
+
+@pytest.mark.parametrize("pattern", PATTERNS, ids=[p.id for p in PATTERNS])
+def test_every_pattern_scales_near_linearly_on_adversarial_input(pattern) -> None:  # type: ignore[no-untyped-def]
+    """Round 16 E1: `openai-key`'s digit lookahead was unbounded and shared its character
+    class with its own prefix, so a run of nothing but `sk-` never gave the lookahead a
+    character to stop on — every occurrence re-scanned to the end of the string, quadratic
+    (80 KB took 6.3s; a 2 MB file never finished under the locks this runs inside of).
+
+    A fixed wall-clock bound on one input size is hardware-dependent (round 16 F3 found
+    exactly that for a related pattern): timing at `n` and `4n` and requiring the ratio stay
+    well under the `16x` a quadratic algorithm would show is robust to how fast the machine
+    happens to be, and is run here for every pattern, not just the one round 16 found.
+    """
+    unit = _PATTERN_ADVERSARIAL_UNITS[pattern.id]
+    small = unit * max(1, 250_000 // len(unit))
+    large = small * 4
+    started = time.monotonic()
+    pattern.regex.findall(small)
+    small_elapsed = max(time.monotonic() - started, 1e-6)
+    started = time.monotonic()
+    pattern.regex.findall(large)
+    large_elapsed = time.monotonic() - started
+    ratio = large_elapsed / small_elapsed
+    assert ratio < 8, (
+        f"{pattern.id}: 4x the input took {ratio:.1f}x as long "
+        f"({small_elapsed:.3f}s -> {large_elapsed:.3f}s), expected near-linear scaling"
+    )
+
+
+def test_scan_text_stays_fast_with_many_distinct_non_overlapping_matches() -> None:
+    """Round 16 E2: `scan_text`'s overlap check used to scan every earlier claim for every
+    new match, which is O(matches^2) in the match count — 95k distinct AWS keys in a 2 MB
+    file took 497s even though the AWS pattern itself is linear. Timing at `n` and `4n`
+    keeps this robust to machine speed, the same way the per-pattern test above is: a
+    quadratic bookkeeping cost would show roughly 16x for 4x the matches, not the well-under
+    8x this asserts.
+    """
+
+    def matches(count: int) -> str:
+        return "".join(f"AKIA{i:016d}\n" for i in range(count))
+
+    small = matches(5_000)
+    large = matches(20_000)
+    started = time.monotonic()
+    scan_text(small)
+    small_elapsed = max(time.monotonic() - started, 1e-6)
+    started = time.monotonic()
+    scan_text(large)
+    large_elapsed = time.monotonic() - started
+    ratio = large_elapsed / small_elapsed
+    assert ratio < 8, (
+        f"4x the matches took {ratio:.1f}x as long "
+        f"({small_elapsed:.3f}s -> {large_elapsed:.3f}s), expected near-linear scaling"
+    )
+
+
+# Round 16 E4: the bracket alternative used to stop at the closing `]`, so a placeholder
+# glued to a real value (`[Pr0d]Sup3rS3cretValue`) captured only the bracket — a finding,
+# but the wrong span — and redacting it left the real value in clear text, scanning clean.
+def test_a_placeholder_glued_to_a_real_value_is_detected() -> None:
+    (match,) = scan_text("password=[Pr0d]Sup3rS3cretValue")  # secret-scan: allow
+    assert match.pattern_id == "secret-assignment-unquoted"
+
+
+def test_redacting_a_placeholder_glued_to_a_real_value_covers_the_whole_value() -> None:
+    redacted, changed = redact_text("password=[Pr0d]Sup3rS3cretValue")  # secret-scan: allow
+    assert changed
+    assert "Sup3rS3cretValue" not in redacted
+    assert scan_text(redacted) == [], "the redaction itself must not still be a finding"
+
+
+def test_a_real_value_glued_after_this_applications_own_placeholder_is_detected() -> None:
+    (match,) = scan_text(f"password={REDACTION_PLACEHOLDER}realvalue9")
+    assert match.pattern_id == "secret-assignment-unquoted"
+
+
+# Round 16 E5: `${VAR:-default}`/`${VAR-default}` is a shell or compose *default*, which is
+# a real value the moment the variable is unset — not a placeholder, which only a value
+# entirely `${VAR}` (optionally `${VAR:?message}`) is.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "DB_PASSWORD=${DB_PASSWORD:-Sup3rS3cretValue9}",  # secret-scan: allow
+        "POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Sup3rS3cretValue9}",  # secret-scan: allow
+        "DB_PASSWORD=${DB_PASSWORD-Sup3rS3cretValue9}",  # secret-scan: allow
+    ],
+)
+def test_a_shell_or_compose_default_value_is_detected(text: str) -> None:
+    matches = scan_text(text)
+    assert matches, f"expected {text!r} to be detected"
+    assert matches[0].pattern_id == "secret-assignment-unquoted"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "DB_PASSWORD=${DB_PASSWORD}",
+        "DB_PASSWORD=${DB_PASSWORD:?must be set}",
+    ],
+)
+def test_a_bare_shell_expansion_with_no_default_stays_a_placeholder(text: str) -> None:
+    assert scan_text(text) == []
+
+
+# Round 16 E6: round 15 E12 excused ANY unquoted value containing a paren or brace
+# anywhere, so an ordinary `.env` password that happens to contain one was never detected.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "DB_PASSWORD=Tr0ub4dor(3)xyz",  # secret-scan: allow
+        # The value class stops at an unescaped `}` (so a JSON object's own closing brace
+        # is never swallowed into a value); the credential must have 8 characters ahead of
+        # the brace to still meet the pattern's own minimum length, same as any other value.
+        "API_KEY=k8s-secret{X}9aQ2vLm7",  # secret-scan: allow
+    ],
+)
+def test_an_unquoted_password_containing_a_paren_or_brace_is_detected(text: str) -> None:
+    matches = scan_text(text)
+    assert matches, f"expected {text!r} to be detected"
+    assert matches[0].pattern_id == "secret-assignment-unquoted"
+
+
+# Round 16 E7: before this, ANY short dotted-segment chain was exempted as an attribute
+# path, so a dotted passphrase read exactly like one and was never reported.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "password: correct.horse.battery.staple",  # secret-scan: allow
+        "password=Welcome.To.Acme",  # secret-scan: allow
+    ],
+)
+def test_a_dotted_passphrase_is_detected(text: str) -> None:
+    matches = scan_text(text)
+    assert matches, f"expected {text!r} to be detected"
+    assert matches[0].pattern_id == "secret-assignment-unquoted"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "token = self.config",
+        "secret = os.environ",
+    ],
+)
+def test_a_known_code_shape_dotted_attribute_path_stays_exempted(text: str) -> None:
+    assert scan_text(text) == []
+
+
+# Round 16 E11: scan-coverage gaps that are cheap to close without a new false positive on
+# this repository's own source or the realistic-evidence corpus above.
+def test_an_xml_element_credential_is_detected() -> None:
+    (match,) = scan_text("<password>Sup3rS3cretValue9</password>")  # secret-scan: allow
+    assert match.pattern_id == "xml-element-credential"
+
+
+def test_a_yaml_block_scalar_credential_is_detected() -> None:
+    (match,) = scan_text("password: >-\n  Sup3rS3cretValue9\n")  # secret-scan: allow
+    assert match.pattern_id == "yaml-block-scalar-credential"
+
+
+def test_a_curl_dash_u_credential_is_detected() -> None:
+    transcript = (
+        "curl -u me@example.com:abcdEFGH1234abcdEFGH1234 "  # secret-scan: allow
+        "https://example.atlassian.net"
+    )
+    (match,) = scan_text(transcript)
+    assert match.pattern_id == "curl-user-credential"
+
+
+def test_a_docker_uid_gid_flag_is_not_a_curl_user_false_positive() -> None:
+    """`docker run -u 1000:1000` takes a colon-separated argument too, but it is not curl
+    and it is not a credential."""
+    assert scan_text("docker run -u 1000:1000 image") == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "DB_PASS=Sup3rS3cretValue9",  # secret-scan: allow
+        "PWD=Sup3rS3cretValue9",  # secret-scan: allow
+    ],
+)
+def test_db_pass_and_pwd_keywords_are_detected(text: str) -> None:
+    matches = scan_text(text)
+    assert matches, f"expected {text!r} to be detected"
+    assert matches[0].pattern_id == "secret-assignment-unquoted"
+
+
+def test_bare_pass_stays_ordinary_vocabulary_not_a_keyword() -> None:
+    """This repository's own test-result vocabulary (`vendor/axe.min.js`'s
+    `messages:{pass:"..."}`) and English's "bypass" both use `pass` with no underscore
+    before it; only the `DB_PASS`-style compound is a credential field name."""
+    assert scan_text('"pass": "Every required check passed."') == []
+    assert scan_text("bypass=true") == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        'password: "<Sup3rS3cretValue9"',  # secret-scan: allow
+        "password=Sup3rS3cretValue9>",  # secret-scan: allow
+    ],
+)
+def test_a_lone_angle_bracket_no_longer_makes_a_value_a_template(text: str) -> None:
+    matches = scan_text(text)
+    assert matches, f"expected {text!r} to be detected"
+
+
+def test_a_matched_angle_bracket_pair_is_still_a_template() -> None:
+    assert scan_text('api_key: "<your-api-key>"') == []
+
+
+# Round 16 F3: the JWT header segment's own bound (`{10,512}`) is what keeps a 2 MB
+# adversarial `eyJ`-repeated file fast; mutating it back to `{10,4096}` (the shape a code
+# comment says once took 5 to 9 seconds in CI) passed the wall-clock adversarial test on
+# both machines that mutation-tested it, since it is fast enough on modern hardware to hide
+# under any bound generous enough not to flake on a slow one. Pinning the literal bound in
+# the compiled pattern's own source, and a header that is exactly one character past it,
+# catches the regression independent of how fast the machine is.
+def test_the_jwt_header_segment_bound_is_pinned() -> None:
+    jwt_pattern = next(p for p in PATTERNS if p.id == "jwt")
+    assert "{10,512}" in jwt_pattern.regex.pattern
+
+    payload = "eyJhbGciOiJIUzI1NiJ9"
+    signature = "dBjftJeZ4CVPmB92K27uhbUJU1p"
+
+    within_bound = "eyJ" + "a" * 500 + "." + payload + "." + signature
+    (match,) = scan_text(within_bound)
+    assert match.pattern_id == "jwt"
+
+    past_bound = "eyJ" + "a" * 513 + "." + payload + "." + signature
+    assert not any(m.pattern_id == "jwt" for m in scan_text(past_bound))

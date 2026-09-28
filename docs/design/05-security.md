@@ -64,6 +64,15 @@ browser tests submit real forms and check the resulting files on disk.
   the result is exactly what would hide a link a write should refuse (ADR-042, Section 5.4).
 - **Deletion.** `tools/clean.py` (behind `make clean`) removes an exact allowlist of
   machine-owned paths and refuses anything reached through a symbolic link.
+- **Participant root.** A configured participant root that is, is inside, or contains one of
+  the application's own folders (`content`, `schemas`, `templates`, `assets`, `validators`,
+  `quest_app`, `generated`, `local-data`) is refused before anything is written there
+  (`_refuse_participant_root_inside_program_owned_folders`, ADR-042 amended round 15 finding
+  E13): `GTQ_PARTICIPANT_ROOT=./content` used to land every participant write inside authored
+  curriculum instead. The comparison folds case (round 16 finding S1): a plain `Path`
+  comparison missed that `./Content` names the same directory `content/` does on a
+  case-insensitive filesystem (macOS's default APFS, Windows), which reopened the same gap
+  there.
 
 ## 5.4 Allowlisted writes
 
@@ -129,10 +138,18 @@ Validators are program-owned and reviewed like application code.
 
 ## 5.7 Secret scan and redaction
 
-- **The detectors.** `quest_app/secret_patterns.py` holds one set of patterns (AWS keys,
-  GitHub, Slack, Google, Anthropic, OpenAI, Atlassian, Stripe and npm tokens, JSON web
-  tokens, private-key blocks, bearer headers, credentials in URLs, and keyword assignments
-  such as a `password` or `secret` field with a value). Every scan and every redaction uses it.
+- **The detectors.** `quest_app/secret_patterns.py` holds one set of patterns (AWS, GitHub,
+  GitLab and Trello tokens, Slack, Google, Anthropic, OpenAI, Atlassian, Stripe and npm
+  tokens, JSON web tokens, PGP private-key blocks, Basic- and token-scheme `Authorization`
+  headers, credentials in URLs, and keyword assignments such as a `password` or `secret`
+  field with a value). Every scan and every redaction uses it. Past this document's round 12
+  baseline: the GitLab and Trello patterns and the Basic/token-scheme header (round 15
+  finding E2 — "bearer headers" alone missed a Jira script's Basic-auth header) were added,
+  and a pagination-field exemption and a PGP block-marker fix landed the same round (finding
+  E12). The JWT and `basic-auth-url` patterns now bound how far their quantifiers can scan
+  (round 15 finding E5): unbounded, either could make one scan of an adversarial multi-
+  megabyte file take minutes to hours, held under the store, generated and service locks the
+  whole time.
 - **Repository hygiene.** `tools/secret_scan.py` (`make secret-scan`, part of `make check`)
   scans every tracked text file and prints `path:line:column` and the pattern, never the
   value. A line ending in an allow pragma is skipped; this is how the scanner's own test
@@ -187,8 +204,11 @@ treated as hostile input:
   (`MAX_VALIDATION_RESULT_BYTES`), and a `validation/` directory that is itself a link is
   reported and nothing in it is read;
 - review records are exactly the files one shared definition, `progress.review_archive_paths`,
-  enumerates — `review.yaml` and its `review-<timestamp>.yaml` archives — used by the loader,
-  `review.review_history` and the evidence hash alike;
+  enumerates — `review.yaml` and its `review-<timestamp>-<6 hex>.yaml` archives (the random
+  suffix is round 16 finding S2: a timestamp alone named the same archive file for two
+  decisions recorded in the same second, and the second silently overwrote the first; an
+  archive written before this fix, timestamp alone, is still recognized) — used by the
+  loader, `review.review_history` and the evidence hash alike;
 - YAML is parsed with `StrictSafeLoader`: safe constructors, duplicate keys refused, deep
   nesting reported (ADR-025, ADR-029);
 - the service-port files are read with a 16-byte bound.

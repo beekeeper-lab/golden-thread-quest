@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from pathlib import Path
 
 import pytest
 from quest_app.config import AppConfig
 from quest_app.errors import ProblemReport
 from quest_app.evidence import (
+    MAX_EVIDENCE_FILE_BYTES,
     _decode_evidence_text,
     detect_proof,
     evidence_hash,
@@ -208,6 +210,75 @@ class TestSecretScanning:
 
     def test_a_traversing_evidence_path_scans_nothing(self, config: AppConfig) -> None:
         assert scan_evidence(config, "participant/evidence/../../etc") == []
+
+    # Round 16 E12: the skip list used to go by extension alone, so a plain-text secret
+    # saved under a name claiming to be one of these formats passed the scan clean and
+    # `mark-evidence-ready` waved the package through.
+    def test_a_plaintext_secret_saved_with_a_pdf_extension_is_still_found(
+        self, config: AppConfig
+    ) -> None:
+        target = config.resolve_participant_path(EVIDENCE) / "terminal.pdf"
+        target.write_text(f"export GITHUB_TOKEN={LEAKED}\n")
+        findings = scan_evidence(config, EVIDENCE)
+        assert [finding.path.rsplit("/", 1)[-1] for finding in findings] == ["terminal.pdf"]
+
+    def test_a_plaintext_secret_saved_with_a_zip_extension_is_still_found(
+        self, config: AppConfig
+    ) -> None:
+        target = config.resolve_participant_path(EVIDENCE) / "env-backup.zip"
+        target.write_text(f"token={LEAKED}\n")
+        findings = scan_evidence(config, EVIDENCE)
+        assert [finding.path.rsplit("/", 1)[-1] for finding in findings] == ["env-backup.zip"]
+
+    @pytest.mark.parametrize(
+        ("name", "header"),
+        [
+            ("screenshot.txt", b"\x89PNG\r\n\x1a\n"),
+            ("notes.txt", b"%PDF-1.4\n"),
+            ("archive.log", b"PK\x03\x04"),
+            ("photo.md", b"\xff\xd8\xff"),
+            ("frame.dat", b"GIF89a"),
+            ("image.out", b"RIFF\x00\x00\x00\x00WEBP"),
+        ],
+    )
+    def test_a_real_binary_format_is_skipped_by_content_whatever_its_name(
+        self, config: AppConfig, name: str, header: bytes
+    ) -> None:
+        target = config.resolve_participant_path(EVIDENCE) / name
+        target.write_bytes(header + f"token={LEAKED}".encode())
+        assert scan_evidence(config, EVIDENCE) == []
+
+    def test_an_oversize_real_image_is_skipped_rather_than_flagged_oversize(
+        self, config: AppConfig
+    ) -> None:
+        """The skip decision reads only the header, so a legitimate multi-megabyte
+        screenshot is still skipped whatever its size, rather than reading the whole file
+        first and then reporting it too large to check."""
+        target = config.resolve_participant_path(EVIDENCE) / "big.png"
+        target.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * (MAX_EVIDENCE_FILE_BYTES + 1000))
+        assert scan_evidence(config, EVIDENCE) == []
+
+    def test_the_full_file_scan_path_stays_fast_on_a_two_megabyte_adversarial_file(
+        self, config: AppConfig
+    ) -> None:
+        """Round 16 E1/E2, through the real call path a build and `mark-evidence-ready`
+        use rather than the bare regex or `scan_text` in isolation: `scan_evidence` decodes
+        every candidate encoding (round 15 E6) and runs the full pattern set over each one.
+        A single NUL byte is enough to add the NUL-stripped candidate alongside the plain
+        UTF-8 one, so this exercises decoding as well as matching. A generous absolute
+        bound is used rather than a tight one, since this is one combined path rather than
+        an isolated regex and a slow CI runner should not flake it (round 16's own audit
+        found a 5-second bound fail on GitHub runners for a related test)."""
+        target = config.resolve_participant_path(EVIDENCE) / "adversarial.log"
+        unit = "sk-"
+        body = unit * (MAX_EVIDENCE_FILE_BYTES // len(unit))
+        raw = body.encode()[: MAX_EVIDENCE_FILE_BYTES - 1] + b"\x00"
+        target.write_bytes(raw)
+        started = time.monotonic()
+        findings = scan_evidence(config, EVIDENCE)
+        elapsed = time.monotonic() - started
+        assert elapsed < 20, f"a 2 MB adversarial evidence file took {elapsed:.1f}s to scan"
+        assert findings == []
 
     def test_a_utf16_file_does_not_hide_the_token(self, config: AppConfig) -> None:
         """Round 14 E7: a PowerShell `>` redirection writes UTF-16LE by default. Decoded as

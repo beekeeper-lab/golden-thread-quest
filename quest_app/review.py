@@ -533,8 +533,15 @@ def _write_yaml(
             raise ReviewError(
                 f"{config.relative(path)} is not an ordinary file, so it cannot be archived: {exc}"
             ) from exc
+        # Round 16 S2: the archive name used to be the timestamp alone, at second precision.
+        # Two decisions recorded in the same second named the same archive file, and
+        # `atomic_write_bytes` replaces whatever is already there — the older superseded
+        # decision was silently lost rather than archived. A random suffix, the same shape
+        # `review_id` and `submission_id` below already use for the same reason, makes every
+        # archive name unique regardless of how close together two decisions land.
         archive = path.with_name(
-            f"review-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.yaml"
+            f"review-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
+            f"-{secrets.token_hex(3)}.yaml"
         )
         atomic_write_bytes(root, archive, previous)
     atomic_write_bytes(

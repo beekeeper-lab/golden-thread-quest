@@ -6,6 +6,8 @@ actually made a judgment about this attempt's evidence.
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import pytest
 import yaml
 from quest_app.config import AppConfig
@@ -530,6 +532,111 @@ class TestWhatApprovalProduces:
         archived = list(directory.glob("review-*.yaml"))
         assert archived, "the superseded decision was overwritten"
         assert "needs_changes" in archived[0].read_text()
+        assert "approved" in (directory / "review.yaml").read_text()
+
+    def test_two_archives_in_the_same_second_do_not_overwrite_each_other(
+        self, setup, config: AppConfig, monkeypatch: pytest.MonkeyPatch
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Round 16 S2. The archive name used to be the timestamp alone, at second
+        precision, and `atomic_write_bytes` replaces whatever is already at that name — two
+        decisions superseded within the same wall-clock second (a reviewer working through a
+        script, or simply a fast reviewer) named the same archive file, and the older
+        superseded decision was silently lost rather than kept. The clock is frozen here so
+        every decision below lands in the same second on any machine, however fast.
+        """
+        import quest_app.review as review_module
+        from quest_app.store import transition_attempt
+
+        frozen_finding = {**FINDING, "id": "finding-frozen"}
+
+        class _FrozenClock(datetime):
+            @classmethod
+            def now(cls, tz=None):  # type: ignore[override]
+                return datetime(2026, 1, 1, 12, 0, 0, tzinfo=tz)
+
+        monkeypatch.setattr(review_module, "datetime", _FrozenClock)
+
+        submit(setup, config)
+        world, attempt = reload_attempt(config)
+        _, schemas, store, quest, _ = setup
+        record_decision(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            decision="needs_changes",
+            reviewer_name="A Reviewer",
+            verification_statement=None,
+            findings=[FINDING],
+            schemas=schemas,
+        )
+        directory = config.resolve_participant_path(attempt.evidence_path)
+
+        for action in ("resume-quest", "mark-evidence-ready"):
+            transition_attempt(
+                store, quest_id=QUEST, action=action, schemas=schemas, guard=lambda _action: None
+            )
+        world, attempt = reload_attempt(config)
+        create_submission(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            schemas=schemas,
+        )
+        world, attempt = reload_attempt(config)
+        record_decision(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            decision="needs_changes",
+            reviewer_name="A Reviewer",
+            verification_statement=None,
+            findings=[frozen_finding],
+            schemas=schemas,
+        )
+
+        for action in ("resume-quest", "mark-evidence-ready"):
+            transition_attempt(
+                store, quest_id=QUEST, action=action, schemas=schemas, guard=lambda _action: None
+            )
+        world, attempt = reload_attempt(config)
+        create_submission(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            schemas=schemas,
+        )
+        world, attempt = reload_attempt(config)
+        record_decision(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            decision="approved",
+            reviewer_name="A Reviewer",
+            verification_statement="I read the evidence and it does what it claims.",
+            findings=[],
+            schemas=schemas,
+        )
+
+        archived = list(directory.glob("review-*.yaml"))
+        assert len(archived) == 2, (
+            "both superseded decisions must be archived, not just the more recent one: "
+            f"{[path.name for path in archived]}"
+        )
+        archived_text = [path.read_text() for path in archived]
+        assert any("finding-1" in text for text in archived_text), (
+            "the first superseded decision (finding-1) was overwritten by the second"
+        )
+        assert any("finding-frozen" in text for text in archived_text)
         assert "approved" in (directory / "review.yaml").read_text()
 
 

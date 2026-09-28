@@ -69,6 +69,16 @@ _KEYWORDS = "|".join(
         # the lookbehind costs no detection.
         r"(?<!page)token",
         r"bearer",
+        # Round 16 E11: `passw(?:or)?d` only ever matched "password"/"passwd" — `DB_PASS=`
+        # and `PWD=` (the shell's own working-directory variable name, reused constantly as
+        # a field name for "password") had no keyword of their own. A bare `pass` is not
+        # safe to add on its own: this repository's own test-result vocabulary uses it
+        # constantly as a plain field name (`"pass": "Every required check passed."`,
+        # `messages:{pass:"..."}` in `vendor/axe.min.js`), and English has "bypass". Real
+        # env-var-style names compound it behind an underscore instead (`DB_PASS`,
+        # `ADMIN_PASS`), which none of those do, so the lookbehind requires one.
+        r"(?<=_)pass\b",
+        r"pwd",
     )
 )
 
@@ -165,8 +175,20 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
         # A short generic prefix (see the comment above `PATTERNS`): blocked from matching
         # mid-word by the leading lookbehind, and required to contain a digit like a real
         # key does, so "review-onboarding-checklist" glued to a preceding "sk-" is not one.
+        #
+        # Round 16 E1: the digit lookahead used to be `(?=[A-Za-z0-9_-]*\d)` — unbounded,
+        # and its class is the same one the body uses, so a run of nothing but "sk-" has no
+        # character outside that class to stop the lookahead early. Every "sk-" in the run
+        # is a legal start position (the lookbehind's class excludes the hyphen that
+        # precedes each one), so a text of nothing but "sk-" repeated failed the lookahead
+        # from every one of those positions, each failure re-scanning to the end of the
+        # string: quadratic (80 KB took 6.3s; a 2 MB file never finished under the store,
+        # generated and service locks this runs inside of). Bounding the lookahead's reach
+        # keeps every attempt's cost constant regardless of how far away — or how absent —
+        # the nearest digit is; a real key is nowhere near 200 characters long, so nothing
+        # genuine stops matching.
         _c(
-            r"(?<![A-Za-z0-9])(sk-(?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]{20,})\b",
+            r"(?<![A-Za-z0-9])(sk-(?=[A-Za-z0-9_-]{0,200}\d)[A-Za-z0-9_-]{20,})\b",
             case_sensitive=True,
         ),
     ),
@@ -247,6 +269,36 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
         "Basic credential in an Authorization header",
         _c(r"(?:proxy-)?authorization\s*:\s*(?:basic|token)\s+(\S{8,})"),
     ),
+    # Round 16 E11: curl's own manual documents this flag as how it takes HTTP Basic
+    # authentication on the command line, and it is exactly the shape the Jira, Trello and
+    # GitHub quests' own `curl -v` proof asks participants to run. The scan requires the
+    # literal word "curl" earlier on the same line, so an unrelated flag that happens to
+    # take a colon-separated argument on some other line of a transcript (a container
+    # runtime's own numeric-identifiers flag, which is not a credential) is not a false
+    # positive. The scan-ahead to find the flag is bounded (round 15 E5's lesson: an
+    # unbounded `[^\n]*?` ahead of a literal a pathological line never supplies is quadratic
+    # across many `curl` occurrences on one huge line), since a real invocation puts the
+    # flag well within the first couple hundred characters of the command.
+    SecretPattern(
+        "curl-user-credential",
+        "Credential passed to curl's -u/--user flag",
+        _c(r"curl\b[^\n]{0,200}?(?:-u|--user)[= ]([^\s'\"]{3,}:[^\s'\"]{3,})"),
+    ),
+    # Round 16 E11: a credential is not only ever assigned with `=`/`:` — Maven's
+    # `settings.xml` and similar tooling write it as an XML element, and a YAML block
+    # scalar (`password: >-` / `password: |`, followed by an indented value on its own
+    # line) is valid YAML the flow-style unquoted pattern below never reaches, since it
+    # requires the value on the same line as the keyword.
+    SecretPattern(
+        "xml-element-credential",
+        "Secret-like value in an XML element",
+        _c(r"<(?:" + _KEYWORDS + r")>([^<>\n]{8,})</(?:" + _KEYWORDS + r")>"),
+    ),
+    SecretPattern(
+        "yaml-block-scalar-credential",
+        "Secret-like value in a YAML block scalar",
+        _c(r"(?:" + _KEYWORDS + r")\s*:\s*[|>][+-]?\s*\n[ \t]+(\S[^\n]{7,})"),
+    ),
     # Quoted assignment first, so a quoted value keeps its exact span even when it contains
     # characters the unquoted form would stop at.
     SecretPattern(
@@ -265,12 +317,26 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     # comprehension assigned to a keyword-named variable in this repository's own source
     # (`secret = [f for f in findings ...]`) or a minified JSON array value
     # (`"current-password":["text","search","password"]`, from `vendor/axe.min.js`).
+    #
+    # Round 16 E4: the bracket alternative used to stop at the closing `]`, so a value that
+    # is a placeholder glued to a real one (`[Pr0d]Sup3rS3cretValue`) captured only the
+    # bracket, leaving the rest of the value uncaptured — never scanned, never redacted. A
+    # placeholder is only ever a value that is *entirely* one bracketed token; anything
+    # glued after the bracket is part of the value, so the trailing suffix (the same
+    # character class the plain unquoted branch stops at) is captured too. `_is_placeholder`
+    # already refuses anything but an exact `[redacted]` match for the bracket shape, so a
+    # bare placeholder alone is unaffected and a value with a real suffix is now reported —
+    # and redacted — in full. Both classes now also exclude a backtick: without that, this
+    # very module's own prose — a markdown code span closing right after a keyword-shaped
+    # example, `` `TOKEN=[REDACTED]` `` — captured the backtick along with it, so the exact
+    # `[redacted]` placeholder match no longer held and the sentence became a finding. A
+    # real value is never written with a backtick in it.
     SecretPattern(
         "secret-assignment-unquoted",
         "Secret-like assignment",
         _c(
             r"[\"']?(?:" + _KEYWORDS + r")[\"']?\s*[=:]\s*"
-            r"(\[[^\]\n\s,\"']{3,80}\]|[^\s\"',;}\]]{8,})"
+            r"(\[[^\]\n\s,\"']{3,80}\][^\s\"',;}`\]]*|[^\s\"',;}`\]]{8,})"
         ),
     ),
 )
@@ -301,6 +367,15 @@ PLACEHOLDERS: Final[frozenset[str]] = frozenset(
 )
 
 
+# Round 16 E7: the names a genuine attribute-path exemption is allowed to start from — the
+# object names this codebase's own source, and the config/environment shapes its docs give
+# as examples (`self.x`, `config.x`, `os.environ...`), actually use. A passphrase never
+# starts with one of these, which is what lets the exemption stay narrow.
+_CODE_ATTRIBUTE_ROOTS: Final = frozenset(
+    {"self", "cls", "config", "os", "ctx", "context", "app", "request", "response", "settings"}
+)
+
+
 def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     """`value` is documentation, a template, a mask, or code — not a live credential.
 
@@ -310,11 +385,11 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     whenever a keyword-named variable holds one — `token = payload.get(`,
     `token=secrets.token_urlsafe(32)`. A real credential is never written unquoted with that
     shape, and the quoted pattern already covers a deliberately-quoted value on its own, so
-    the cost of allowing a paren or brace through here is paid only by that one pattern
-    rather than by every value this module inspects. Deliberately not extended to a square
-    bracket: that is the one punctuation mark round 15 E1's `[REDACTED]` fix depends on
-    being scanned like any other character, and `load_api_key(config[` still has a `(` of
-    its own to be excused by.
+    the cost of allowing this through is paid only by that one pattern rather than by every
+    value this module inspects. Round 16 E6 narrowed what "this" is from any value
+    containing a paren or brace anywhere to the specific call/subscript shape below, so a
+    real password that happens to contain one (`Tr0ub4dor(3)xyz`) is caught instead of
+    excused.
     """
     lowered = value.strip().lower()
     if lowered in PLACEHOLDERS:
@@ -322,30 +397,66 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # Templates are instructions to the reader, not values: shell and CI expansions
     # (`${VAR}`, `$(cmd)`), documentation placeholders (`<your-token>`), and the format
     # placeholders that appear wherever this scanner reads its own source or a template.
-    if lowered.startswith(("<", "${", "$(", "{{")) or lowered.endswith(">"):
+    # Round 16 E11: a lone `<` or `>` at one end used to be enough on its own, so a real
+    # value that merely started with a stray `<` (`"<Sup3rS3cretValue9"`, a quote typed
+    # where a closing angle bracket should have gone) or ended with a stray `>`
+    # (`Sup3rS3cretValue9>`) was waved through as a template. Only a value that is a matched
+    # `<...>` pair, start to end, is a documentation placeholder now.
+    if lowered.startswith(("$(", "{{")) or re.fullmatch(r"<[^<>]*>", lowered):
         return True
-    # Round 15 E12: a bare paren or brace ANYWHERE in the value used to mark it a
-    # placeholder outright, which dropped real passwords that happen to contain one
-    # (`Tr0ub4dor(3)x`, `s3cr{t}Passw0rd`). Only a value that IS entirely one of the real
-    # template shapes below — a Jinja expression, a bare `{name}` format-string/f-string
-    # placeholder (this module's own test fixtures are full of exactly that shape, reading
-    # their own source: `f'token = "{GITHUB}"'`), or a parenthetical annotation like
-    # `(redacted)` or `(see vault)` — is a placeholder now.
+    # Round 16 E5: this used to be `lowered.startswith("${")`, so anything shaped like a
+    # shell or compose expansion was exempted regardless of what followed — including a
+    # `${VAR:-default}`/`${VAR-default}` *default*, which is a real value the moment the
+    # variable is unset (`DB_PASSWORD=${DB_PASSWORD:-Sup3rS3cretValue9}`)  # secret-scan: allow
+    # is the ordinary docker-compose/.env shape. Only a value that is entirely
+    # `${NAME}`, optionally with a `:?message` clause (an error string shown when unset,
+    # never a default value), refers to the environment rather than holding one. The
+    # unquoted pattern's value class excludes `}`, so a bare wrap is captured with its
+    # closing brace already stripped off by the regex — the trailing `\}?` here accounts
+    # for that, and for the quoted pattern, which does capture the closing brace.
+    if re.fullmatch(r"\$\{[a-z_][a-z0-9_]*(?::\?[^{}]*)?\}?", lowered):
+        return True
+    # A value that IS entirely one of the real template shapes below — a Jinja expression, a
+    # bare `{name}` format-string/f-string placeholder (this module's own test fixtures are
+    # full of exactly that shape, reading their own source: `f'token = "{GITHUB}"'`), or a
+    # parenthetical annotation like `(redacted)` or `(see vault)` — is a placeholder.
     if (
         re.fullmatch(r"\{\{\s*[^{}]*\s*\}\}", lowered)
         or re.fullmatch(r"\{[a-z_][a-z0-9_]*\}", lowered)
         or re.fullmatch(r"\([a-z][a-z0-9 _-]*\)", lowered)
     ):
         return True
-    if allow_call_expression and any(ch in lowered for ch in "(){}"):
+    # Round 16 E6: round 15 E12 excused ANY value containing a paren or brace ANYWHERE, so
+    # `Tr0ub4dor(3)xyz` and `k8s{X}9aQ2vLm7` — ordinary unquoted `.env` passwords that
+    # happen to contain one — were excused right along with a real call expression. A real
+    # call or subscript this module's own source contains has a specific shape: an
+    # identifier (optionally dotted) immediately followed by `(` or `[`, with nothing after
+    # the matching close but what the value class already stopped at — or, when the
+    # keyword-named value is itself just a bare identifier passed as another call's own
+    # argument (`OpenAI(api_key=api_key)`, this repository's own source), a single
+    # unmatched closing `)`/`]` left over once the value class stops at the *enclosing*
+    # call's own close. The fourth alternative is this module's own f-string test fixtures
+    # (`f"token = {GITHUB}"`): read as source text rather than evaluated, `{GITHUB}` is a
+    # bare format placeholder in exactly the shape `_is_placeholder`'s own dedicated check a
+    # few lines below recognizes, truncated the same way the unquoted class always
+    # truncates before a closing brace. `Tr0ub4dor(3)xyz` has a *closed* paren with more
+    # value after it — not how any of these shapes read — so it fails every alternative
+    # below and stays a finding.
+    if allow_call_expression and re.fullmatch(
+        r"[a-z_][a-z0-9_.]*(?:\([^()]*\)?|\[[^\[\]]*\]?|[)\]])|\{[a-z_][a-z0-9_]*\}?", lowered
+    ):
         return True
-    # A short dotted identifier chain is an attribute path, not a secret. The length bounds
-    # matter: without them this also matches a JWT, whose three base64 segments are exactly
-    # a long dotted chain.
+    # A short dotted identifier chain is an attribute path, not a secret — but only when it
+    # actually starts from one of the names this codebase's own source uses for the object
+    # being accessed (round 16 E7). Before this, ANY short dotted chain qualified, so a
+    # dotted passphrase (`correct.horse.battery.staple`, `Welcome.To.Acme`) read exactly like
+    # one and was never reported. The length bounds still matter too: without them this also
+    # matches a JWT, whose three base64 segments are exactly a long dotted chain.
     if (
         len(lowered) <= 40
         and re.fullmatch(r"[a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)+", lowered)
         and all(len(segment) <= 20 for segment in lowered.split("."))
+        and lowered.split(".", 1)[0] in _CODE_ATTRIBUTE_ROOTS
     ):
         return True
     # Round 15 E1: `gh auth status` and this application's own redaction print a value that
@@ -365,7 +476,6 @@ def scan_text(text: str) -> list[SecretMatch]:
     Overlapping matches from different patterns are reported once, by the first pattern in
     `PATTERNS` that claims the span, so the most specific name wins.
     """
-    claimed: set[tuple[int, int]] = set()
     matches: list[SecretMatch] = []
     line_starts = [0]
     for index, char in enumerate(text):
@@ -382,27 +492,60 @@ def scan_text(text: str) -> list[SecretMatch]:
                 high = mid - 1
         return low + 1, offset - line_starts[low] + 1
 
+    # Round 16 E2: `claimed` used to be a set scanned end to end for every new match — a
+    # match count of `m` costs O(m) to check, and there were `m` of them, so a file of 95k
+    # distinct AWS keys (2 MB) took 497s just in this bookkeeping, with every per-pattern
+    # regex itself staying linear. `finditer` already returns one pattern's own matches
+    # left to right and non-overlapping, and the accepted set stays disjoint and sorted by
+    # construction, so each pattern's whole batch of new claims can be folded into the
+    # existing sorted set with a single merge of two already-sorted sequences — the same
+    # `O(a + b)` step a merge sort's merge is — rather than a fresh membership scan per match.
+    # `PATTERNS` has a fixed, small length, so the handful of merges this performs (one per
+    # pattern) costs `O(n)` overall, not `O(n^2)`.
+    claimed: list[tuple[int, int]] = []
     for pattern in PATTERNS:
+        allow_call_expression = pattern.id == "secret-assignment-unquoted"
+        batch: list[tuple[int, int, SecretMatch]] = []
+        claim_index = 0
         for match in pattern.regex.finditer(text):
             captured = match.group(1) if match.re.groups else match.group(0)
-            if _is_placeholder(
-                captured, allow_call_expression=pattern.id == "secret-assignment-unquoted"
-            ):
+            if _is_placeholder(captured, allow_call_expression=allow_call_expression):
                 continue
-            span = match.span(1) if match.re.groups else match.span(0)
-            if any(span[0] < end and start < span[1] for start, end in claimed):
-                continue
-            claimed.add(span)
-            line, column = position(span[0])
-            matches.append(
-                SecretMatch(
-                    pattern_id=pattern.id,
-                    description=pattern.description,
-                    line=line,
-                    column=column,
-                    excerpt=_excerpt(captured),
+            start, end = match.span(1) if match.re.groups else match.span(0)
+            while claim_index < len(claimed) and claimed[claim_index][1] <= start:
+                claim_index += 1
+            if claim_index < len(claimed) and claimed[claim_index][0] < end:
+                continue  # overlaps a span an earlier, more specific pattern already claimed
+            line, column = position(start)
+            batch.append(
+                (
+                    start,
+                    end,
+                    SecretMatch(
+                        pattern_id=pattern.id,
+                        description=pattern.description,
+                        line=line,
+                        column=column,
+                        excerpt=_excerpt(captured),
+                    ),
                 )
             )
+        if not batch:
+            continue
+        matches.extend(item[2] for item in batch)
+        merged: list[tuple[int, int]] = []
+        old_index = new_index = 0
+        while old_index < len(claimed) or new_index < len(batch):
+            take_old = new_index >= len(batch) or (
+                old_index < len(claimed) and claimed[old_index][0] <= batch[new_index][0]
+            )
+            if take_old:
+                merged.append(claimed[old_index])
+                old_index += 1
+            else:
+                merged.append(batch[new_index][:2])
+                new_index += 1
+        claimed = merged
     return sorted(matches, key=lambda m: (m.line, m.column))
 
 

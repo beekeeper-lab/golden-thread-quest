@@ -114,6 +114,37 @@ def test_nfc_and_nfd_file_names_hash_the_same(tmp_path: Path) -> None:
     assert hash_directory(nfc_dir) == hash_directory(nfd_dir)
 
 
+def test_utf16_content_with_no_ascii_is_not_folded_by_cr_byte(tmp_path: Path) -> None:
+    """Round 16 E10.
+
+    A NUL-free UTF-16LE file with no ASCII in it (a CJK-only document, encoded the way
+    Windows commonly writes one) used to count as "text" the same way an ASCII file does,
+    because the old rule was only "holds no NUL byte anywhere". Folding every `\\r` byte to
+    `\\n` then treated a byte that was half of a character's own UTF-16 code unit as a line
+    ending: changing "不" (U+4E0D, LE bytes `0D 4E`) to "上" (U+4E0A, LE bytes `0A 4E`) folds
+    the leading `0D` to `0A` and produces the exact same folded bytes as "上" already has, so
+    the hash could not tell the two texts apart.
+    """
+    not_agree = tmp_path / "not_agree.txt"
+    agree = tmp_path / "agree.txt"
+    not_agree.write_bytes("我们不同意这个方案。".encode("utf-16-le"))
+    agree.write_bytes("我们上同意这个方案。".encode("utf-16-le"))
+
+    assert b"\x00" not in not_agree.read_bytes(), "the case must actually be NUL-free"
+    assert hash_file(not_agree) != hash_file(agree)
+
+
+def test_utf8_text_is_still_normalized_across_line_endings(tmp_path: Path) -> None:
+    """The round 16 E10 fix (fold only content that decodes as UTF-8) must not stop folding
+    genuine UTF-8 text: CRLF and LF must still hash the same."""
+    crlf = tmp_path / "crlf.txt"
+    lf = tmp_path / "lf.txt"
+    crlf.write_bytes("café — 我们同意\r\nline two\r\n".encode())
+    lf.write_bytes("café — 我们同意\nline two\n".encode())
+
+    assert hash_file(crlf) == hash_file(lf)
+
+
 def test_a_genuinely_different_name_still_differs(tmp_path: Path) -> None:
     """NFC-normalizing names must not make two different names collide."""
     one = tmp_path / "one"

@@ -18,10 +18,18 @@ ways. A file is now hashed by its normalized text when it looks like text — no
 it, checked in full rather than guessed from a prefix — and a name is NFC-normalized before
 it is hashed. A package hashed before this change reads as changed once; ADR-031 says what a
 reviewer does about that.
+
+Round 16 (E10): "looks like text" was "holds no NUL byte anywhere", which folded every `\r`
+byte to `\n` even in content that was never text at all. A NUL-free UTF-16 file with no ASCII
+in it (a CJK-only document, encoded the way Windows commonly writes one) is exactly such a
+case: one of a character's two bytes can itself be `\r`, and folding it changed the character
+without moving the hash — the edit that mattered was invisible to it. Text now also has to
+decode as UTF-8, not merely have no NUL byte in it; see `_text_shape`.
 """
 
 from __future__ import annotations
 
+import codecs
 import errno
 import hashlib
 import json
@@ -85,13 +93,14 @@ def _update_with_file(hasher: Any, path: Path) -> None:
 
     Round 15 E4: text content is hashed with every `\\r\\n` and lone `\\r` folded to `\\n`
     first, the way `normalize_text` already does for a quest's body, so a checkout's line
-    endings are not a change. A file counts as text when it holds no NUL byte anywhere, which
-    is read in full to decide (round 12 E8 is why that read is still streamed rather than
-    buffered) — a screenshot, a zip, or any other binary format carries one within its first
-    few bytes in practice, so this rarely costs a binary file more than the one pass it always
-    took. Normalizing changes a file's byte length, so the length prefix cannot come from
-    `fstat` for a text file the way it does for a binary one; it is computed in the same pass
-    that checks for a NUL byte, before anything is fed to `hasher`.
+    endings are not a change. Round 16 E10: a file counts as text when it holds no NUL byte
+    *and* decodes as UTF-8, which is read in full to decide (round 12 E8 is why that read is
+    still streamed rather than buffered) — a screenshot, a zip, a UTF-16/32 export, or any
+    other binary or non-UTF-8 format fails one of those checks within its first few bytes in
+    practice, so this rarely costs such a file more than the one pass it always took.
+    Normalizing changes a file's byte length, so the length prefix cannot come from `fstat`
+    for a text file the way it does for a binary one; it is computed in the same pass that
+    checks it, before anything is fed to `hasher`.
     """
     flags = os.O_RDONLY | os.O_NONBLOCK | getattr(os, "O_CLOEXEC", 0)
     try:
@@ -130,15 +139,32 @@ def _feed_raw(hasher: Any, stream: Any, size: int) -> None:
 
 
 def _text_shape(stream: Any, size: int) -> tuple[bool, int]:
-    """Whether `stream`'s first `size` bytes hold no NUL byte, and their length once every
-    `\\r\\n` pair collapses to one `\\n` (a lone `\\r` keeps the byte count the same).
+    """Whether `stream`'s first `size` bytes hold no NUL byte and decode as UTF-8 (strict),
+    and their length once every `\\r\\n` pair collapses to one `\\n` (a lone `\\r` keeps the
+    byte count the same).
 
-    A NUL byte ends the read the moment one is seen: binary content is never normalized, so
-    nothing here needs its transformed length, and the caller re-reads it raw from the start.
-    A `\\r` at the very end of a chunk is not decided yet — the next chunk might open with
-    the `\\n` that makes it a pair — so it is carried into the count made from that chunk
-    instead of this one.
+    Round 16 E10: "text" used to mean only "holds no NUL byte anywhere", which folds every
+    `\\r` byte to `\\n` even in content that is not text at all. A NUL-free UTF-16 file with no
+    ASCII in it (a CJK-only document, encoded the way Windows commonly writes one) is exactly
+    such a case: one of a character's own two bytes can be `\\r` without being a line ending,
+    and folding it changed the character without moving the hash. A UTF-8 decode check catches
+    that (those bytes are not valid UTF-8), and it is required in *addition* to the NUL-byte
+    check, not instead of it: content can be NUL-free and valid UTF-8 while still being
+    something nobody wants normalized — deliberate NUL bytes inside otherwise-ASCII binary
+    data, say, which decode as UTF-8 (NUL is a valid single-byte code point) and which the
+    NUL-byte check alone continues to catch. Decoding is checked with the same incremental
+    decoder Python's own streaming input uses, so nothing here ever buffers the whole file to
+    decode it, and it fails on the first invalid byte — which a binary format, or a UTF-16/32
+    file's leading BOM, produces immediately in practice, so this rarely costs such a file more
+    than the one pass it always took.
+
+    A NUL byte, or an invalid byte, ends the read the moment it is seen: content that will not
+    be normalized needs no transformed length, and the caller re-reads it raw from the start.
+    A `\\r` at the very end of a chunk is not decided yet — the next chunk might open with the
+    `\\n` that makes it a pair — so it is carried into the count made from that chunk instead
+    of this one.
     """
+    decoder = codecs.getincrementaldecoder("utf-8")()
     consumed = 0
     crlf_pairs = 0
     trailing_cr = False
@@ -149,10 +175,18 @@ def _text_shape(stream: Any, size: int) -> tuple[bool, int]:
         consumed += len(block)
         if b"\0" in block:
             return False, 0
+        try:
+            decoder.decode(block)
+        except UnicodeDecodeError:
+            return False, 0
         if trailing_cr and block[:1] == b"\n":
             crlf_pairs += 1
         crlf_pairs += block.count(b"\r\n")
         trailing_cr = block[-1:] == b"\r"
+    try:
+        decoder.decode(b"", final=True)
+    except UnicodeDecodeError:
+        return False, 0
     return True, size - crlf_pairs
 
 

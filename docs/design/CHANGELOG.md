@@ -3,6 +3,31 @@
 The version rule is in `REGENERATING.md`: major for a restructure, minor for new content or a
 new audit round's status, patch for corrections.
 
+## 1.2.0 (2026-09-28)
+
+Describes `main` at `95b173e` (round 15's merge commit), amended by the round 16
+integrity-lens fixes landing in this pull request. DH7 is still open; round 16 is in
+progress against `95b173e` (`PLANNING-STATUS.md`).
+
+- Brought the security part's secret-scanner description up to date past this document's
+  round 12 baseline: the GitLab and Trello patterns and the Basic/token-scheme
+  `Authorization` header (round 15 E2), the pagination exemption and PGP block-marker fix
+  (round 15 E12), and the ReDoS bound on the JWT and `basic-auth-url` patterns (round 15 E5).
+- Documented the participant-root refusal for a configured root that is, is inside, or
+  contains a program-owned folder (ADR-042 amended round 15 E13), and its case-folded
+  comparison (round 16 S1).
+- Documented that both the content and evidence hashes normalize a file's bytes only when it
+  decodes as UTF-8, and its name always by NFC, across a Windows/Linux/macOS checkout
+  (ADR-031 amended round 15 E4/S1, narrowed round 16 E10).
+- Documented the review archive's random-suffixed name, which keeps two decisions recorded in
+  the same second from overwriting each other's archive (round 16 S2).
+- Noted where DH7 stands: rounds 13 through 15 are in the audit history table (Part 7,
+  Section 7.3) with their commit and finding counts; round 16 is in progress. This revision
+  does not extend Part 7 Section 7.4's round-12-style findings-and-fixes table past round 12
+  — that is deferred to a future regeneration.
+- Rendered as `artifacts/html/design/golden-thread-system-design-v1.2.0.html` and
+  `artifacts/pdf/design/golden-thread-system-design-v1.2.0.pdf`.
+
 ## 1.1.0 (2026-09-25)
 
 Describes `main` at `0018e2d`, the merge of pull request 10 (round 12). Round 12's fixes are
