@@ -51,13 +51,17 @@ make it, and the application will not let them.
 The reviewer page shows the participant, the quest and its version, the attempt, the
 submission and the evidence hash at the moment it was submitted. Check:
 
-1. **Has the evidence changed since submission?** The page says so plainly and lists what
-   changed: the evidence package, and each declared proof file outside it (a test under
-   `participant/tests/`, a document under `participant/context/`). If anything has, re-read
-   it. Approving changed evidence means approving something you have not seen, and the
-   application refuses unless you acknowledge the change. After you approve, `validate`
-   warns if the package or any of those files changes. Submissions and reviews recorded
-   before proof files were tracked are checked on the package alone.
+1. **Has the evidence changed since submission?** The page says what a build found, not what
+   your working tree holds right now — it is a static page, generated once, and browsing it
+   never rebuilds it. It lists what changed as of that build: the evidence package, and each
+   declared proof file outside it (a test under `participant/tests/`, a document under
+   `participant/context/`). No banner means nothing had changed as of the last build, not
+   that nothing has changed since — if you suspect otherwise, rebuild (`make build`, or run
+   any action, which rebuilds as a side effect) before trusting the silence. Recording your
+   decision re-checks the files at that moment regardless of what the page showed, and
+   approving changed evidence you have not acknowledged is refused either way. After you
+   approve, `validate` warns if the package or any of those files changes. Submissions and
+   reviews recorded before proof files were tracked are checked on the package alone.
 2. **What did the validators establish?** Their results are facts about artifacts, not
    verdicts about the work. `inconclusive` means nobody could tell, which is not a pass.
 3. **Can you reproduce it?** The proof document should let you, from a clean clone.

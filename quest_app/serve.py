@@ -67,6 +67,14 @@ FORM_CONTENT_TYPE = "application/x-www-form-urlencoded"
 # Replaced in served HTML so a form can carry the token without it ever being written to a
 # file. A page built by `quest build` keeps the placeholder, and the service refuses it.
 TOKEN_PLACEHOLDER = "__GTQ_REQUEST_TOKEN__"  # noqa: S105 - a marker to replace, not a secret
+# Round 14 E8: the placeholder above was substituted anywhere it appeared in served HTML,
+# including inside sanitized, participant-authored text (a link's href in PROOF.md quoting
+# it verbatim). That put the live token in front-end content a reviewer could click,
+# leaking it off the machine. The only place this application itself ever emits the
+# placeholder is this exact hidden-input attribute (`templates/components/action.html.j2`,
+# `templates/pages/review.html.j2`), so only that shape is substituted; the same string
+# anywhere else in the page is left as the inert placeholder it is.
+TOKEN_FIELD_PLACEHOLDER = f'value="{TOKEN_PLACEHOLDER}"'
 # Where a refusal message is rendered into a served page. Substituted at request time from
 # the `problem` query parameter, so it works with no JavaScript and survives a redirect.
 # It is an HTML comment so that a statically built page opened from disk shows nothing rather
@@ -909,8 +917,14 @@ class ActionHandler(BaseHTTPRequestHandler):
         content_type = mimetypes.guess_type(candidate.name)[0] or "application/octet-stream"
         if content_type == "text/html":
             # Substituted as the page is served, so the token reaches a form without ever
-            # being written to a file.
-            body = body.replace(TOKEN_PLACEHOLDER.encode(), self.state.token.encode())
+            # being written to a file. Scoped to the application's own hidden-input
+            # attribute (round 14 E8) rather than the bare placeholder, so the same string
+            # sitting inert in rendered participant content (a link quoting it in PROOF.md)
+            # is never turned into the live token.
+            body = body.replace(
+                TOKEN_FIELD_PLACEHOLDER.encode(),
+                f'value="{self.state.token}"'.encode(),
+            )
             body = body.replace(FLASH_PLACEHOLDER.encode(), self._flash_html(path).encode())
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
