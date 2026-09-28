@@ -80,7 +80,11 @@ reproduced. S3 is within the threat model: the service trusts the local user.
 
 The three fix branches (`fix/r15-scan`, `fix/r15-integrity`, `fix/r15-web`) merged without a
 conflict. The test counts in `README.md` and `docs/RELEASE-NOTES.md` were recounted once after
-the merge.
+the merge. CI then failed the E5 timing test on all three Python versions (5 to 9 seconds for 2 MB
+of `eyJ`): the JWT pattern still read up to 4096 characters from every `eyJ` in a run. Its
+header segment is now bounded at 512 characters, which a real header never approaches, and
+the same input takes under a second here. A leading lookbehind was tried first and
+rejected, because it stopped round 13's E11 test for a JWT glued to a letter.
 
 ## Verdict
 

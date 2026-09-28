@@ -188,9 +188,14 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
         # quadratic in input length (a 120 KB adversarial file took 36s; 2 MB would take
         # hours, all under the store and service locks). Real JWT segments are a few hundred
         # characters at most; bounding each one at 4096 caps the work per starting offset
-        # without narrowing what a real token looks like.
+        # without narrowing what a real token looks like. That still left one attempt per
+        # `eyJ` in a run of them, each reading up to 4096 characters before failing on the
+        # missing `.`, which took 5 to 9 seconds on 2 MB in CI. The header segment is where
+        # that work happens, and a real header (`alg`, `typ`, `kid`, `x5t`) encodes to well
+        # under 512 characters, so it is bounded there; the payload keeps 4096. No leading
+        # lookbehind: a JWT glued to a preceding letter must still match (round 13 E11).
         _c(
-            r"(eyJ[A-Za-z0-9_-]{10,4096}\.[A-Za-z0-9_-]{10,4096}\.[A-Za-z0-9_-]{10,4096})\b",
+            r"(eyJ[A-Za-z0-9_-]{10,512}\.[A-Za-z0-9_-]{10,4096}\.[A-Za-z0-9_-]{10,4096})\b",
             case_sensitive=True,
         ),
     ),
