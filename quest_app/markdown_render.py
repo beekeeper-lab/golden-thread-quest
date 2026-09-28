@@ -18,6 +18,8 @@ from typing import Final
 import nh3
 from markdown_it import MarkdownIt
 
+from quest_app.config import REQUEST_TOKEN_PLACEHOLDER
+
 # Structural and emphasis tags only. No <img> (a remote image is a network request and a
 # tracking pixel), no <style>, no <iframe>, no form elements.
 ALLOWED_TAGS: Final[frozenset[str]] = frozenset(
@@ -69,6 +71,16 @@ ALLOWED_URL_SCHEMES: Final[frozenset[str]] = frozenset({"http", "https", "mailto
 
 _EXTERNAL = re.compile(r'<a\s+([^>]*?)href="(https?://[^"]+)"([^>]*)>', re.IGNORECASE)
 
+# Round 15 E7: `serve.py` substitutes the live per-run request token into any
+# `value="__GTQ_REQUEST_TOKEN__"` it finds in a served page. That is meant to catch only the
+# app's own hidden input, but a code span or autolink in participant-authored Markdown
+# (quoting the marker verbatim, as a debugging aside might) reproduces the exact bytes as
+# literal text — neither `markdown-it` nor `nh3` escapes an underscore or a quote character
+# in text content. Breaking the byte sequence here keeps every caller of `render_markdown`
+# covered, without touching the app's own real substitution point: a Jinja-rendered hidden
+# input, which never passes through this function.
+_NEUTRALIZED_TOKEN_PLACEHOLDER: Final = REQUEST_TOKEN_PLACEHOLDER.replace("_", "&#95;")
+
 
 def _markdown() -> MarkdownIt:
     # `html=False` is the renderer refusing to pass raw HTML through; `linkify=False` keeps
@@ -92,6 +104,9 @@ def render_markdown(text: str) -> str:
         link_rel="noopener noreferrer",
         strip_comments=True,
     )
+    # Round 15 E7. Renders identically (the entity is an underscore), but no longer matches
+    # the literal bytes `serve.py` substitutes the live request token into.
+    cleaned = cleaned.replace(REQUEST_TOKEN_PLACEHOLDER, _NEUTRALIZED_TOKEN_PLACEHOLDER)
     return _mark_external_links(cleaned)
 
 

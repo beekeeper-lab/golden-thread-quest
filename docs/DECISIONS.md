@@ -699,3 +699,21 @@ appending to whatever `ACTIVITY.md` it found. `AppConfig.for_repo` now refuses w
 written. A root supplied explicitly — by a participant who chose where their own work lives —
 is unaffected and stays trusted at whatever it resolves to, exactly as ADR-042 already says.
 
+**Amended (round 15, E13):** "trusted at whatever it resolves to" went unqualified far enough
+that `GTQ_PARTICIPANT_ROOT=<repo>/content` (or `templates/`, `schemas/`, `quest_app/`,
+`validators/`, `assets/`, `generated/` or `local-data/`) was accepted with no warning, and
+every write a participant makes — `progress.yaml`, an evidence package, `ACTIVITY.md` —
+landed inside the application's own folders instead of a place that is theirs. "The
+participant chose it" is a reason to trust where a root points; it stops being one once what
+they chose is a folder the participant does not own, which every other participant who pulls
+that content or clones that code then inherits as if it were their own evidence.
+`AppConfig.for_repo` now also refuses, with the same `UnsafeParticipantRootError`, a
+configured (or default) participant root that equals, contains, or lies inside `content/`,
+`schemas/`, `templates/`, `assets/`, `validators/`, `quest_app/`, `generated/` or
+`local-data/` — checked lexically against those folders' fixed, conventional names, not
+against wherever `GTQ_GENERATED_ROOT`/`GTQ_LOCAL_DATA_ROOT` happen to be redirected to for a
+given run (`refuse_unsafe_output_root`, above, already checks those against the participant
+root from the other direction, at build time). A configured root anywhere else — including
+one reached through a symbolic link, since the participant root is resolved before this
+check runs — stays trusted exactly as ADR-042 already says.
+

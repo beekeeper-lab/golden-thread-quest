@@ -37,7 +37,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlparse
 
-from quest_app.actions import CONFIRMATIONS, MUTATING_ACTIONS, ActionRunner
+from quest_app.actions import CONFIRMATIONS, MUTATING_ACTIONS, ActionRunner, is_affirmed
 from quest_app.build import (
     OUTPUT_SUFFIX_NEW,
     OUTPUT_SUFFIX_OLD,
@@ -45,7 +45,7 @@ from quest_app.build import (
     build_site,
     output_sibling,
 )
-from quest_app.config import APPLICATION_VERSION, AppConfig
+from quest_app.config import APPLICATION_VERSION, REQUEST_TOKEN_PLACEHOLDER, AppConfig
 from quest_app.content_loader import SchemaSet
 from quest_app.errors import ProblemReport, filesystem_message, read_failure_message
 from quest_app.git_status import summary_for
@@ -66,14 +66,22 @@ MAX_BODY_BYTES = 64 * 1024
 FORM_CONTENT_TYPE = "application/x-www-form-urlencoded"
 # Replaced in served HTML so a form can carry the token without it ever being written to a
 # file. A page built by `quest build` keeps the placeholder, and the service refuses it.
-TOKEN_PLACEHOLDER = "__GTQ_REQUEST_TOKEN__"  # noqa: S105 - a marker to replace, not a secret
+# Defined in `quest_app.config` so `quest_app.markdown_render` can neutralize the same
+# string in sanitized content without importing this module (round 15 E7).
+TOKEN_PLACEHOLDER = REQUEST_TOKEN_PLACEHOLDER
 # Round 14 E8: the placeholder above was substituted anywhere it appeared in served HTML,
 # including inside sanitized, participant-authored text (a link's href in PROOF.md quoting
 # it verbatim). That put the live token in front-end content a reviewer could click,
 # leaking it off the machine. The only place this application itself ever emits the
 # placeholder is this exact hidden-input attribute (`templates/components/action.html.j2`,
-# `templates/pages/review.html.j2`), so only that shape is substituted; the same string
-# anywhere else in the page is left as the inert placeholder it is.
+# `templates/pages/review.html.j2`), so only that shape is substituted.
+# Round 15 E7: that narrowing was still not enough — a code span or autolink in
+# participant-authored Markdown (` `` `value="__GTQ_REQUEST_TOKEN__"` `` `) renders that
+# exact byte sequence as literal, unescaped text, which still matched this substitution.
+# `quest_app.markdown_render.render_markdown` now neutralizes the placeholder in every
+# rendered Markdown document at build time, so no sanitized content can carry this shape at
+# all; only this application's own template markup still can, and that is what is
+# substituted below.
 TOKEN_FIELD_PLACEHOLDER = f'value="{TOKEN_PLACEHOLDER}"'
 # Where a refusal message is rendered into a served page. Substituted at request time from
 # the `problem` query parameter, so it works with no JavaScript and survives a redirect.
@@ -739,7 +747,14 @@ class ActionHandler(BaseHTTPRequestHandler):
             extra["reviewer_name"] = fields.get("reviewer_name", ["Reviewer"])[0]
             extra["verification_statement"] = fields.get("verification_statement", [""])[0]
             extra["findings"] = findings
-            extra["acknowledge_changed_evidence"] = bool(fields.get("acknowledge_changed_evidence"))
+            # Round 15 E8: `bool(fields.get(...))` was true for *any* value present at all —
+            # a list with one string in it is truthy regardless of the string — so a hidden
+            # field carrying the word "false" acknowledged changed evidence. Parsed through
+            # the same allowlist `confirm` is (`is_affirmed`), on the one string value the
+            # field actually carried.
+            extra["acknowledge_changed_evidence"] = is_affirmed(
+                fields.get("acknowledge_changed_evidence", [""])[0]
+            )
         return extra
 
     def _read_form_body(self) -> dict[str, list[str]] | None:

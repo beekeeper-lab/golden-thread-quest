@@ -1550,7 +1550,12 @@ class TestTheTokenSubstitutionIsScopedToOwnFormMarkup:
             body = response.read().decode()
 
         assert f"collect?t={token}" not in body, "the live token leaked into rendered content"
-        assert "collect?t=__GTQ_REQUEST_TOKEN__" in body, (
+        # Round 15 E7 neutralizes the placeholder itself in every rendered document (see
+        # TestTheTokenPlaceholderIsNeutralizedInRenderedContent below), so the raw bytes here
+        # are no longer the literal placeholder — but the link still resolves to what the
+        # participant wrote, once a browser decodes the entities, so nothing was stripped.
+        assert "collect?t=__GTQ_REQUEST_TOKEN__" not in body
+        assert "collect?t=&#95;&#95;GTQ&#95;REQUEST&#95;TOKEN&#95;&#95;" in body, (
             "the placeholder should be left inert in participant content, not stripped"
         )
 
@@ -1566,3 +1571,196 @@ class TestTheTokenSubstitutionIsScopedToOwnFormMarkup:
 
         assert f'value="{token}"' in body
         assert 'value="__GTQ_REQUEST_TOKEN__"' not in body
+
+
+class TestTheTokenPlaceholderIsNeutralizedInRenderedContent:
+    """Round 15 E7.
+
+    Round 14 (above) scoped substitution to the one shape the app's own hidden input takes,
+    `value="__GTQ_REQUEST_TOKEN__"`, on the theory that sanitized participant content could
+    not reproduce that exact shape. It can: a code span renders the placeholder as literal,
+    unescaped text — neither `markdown-it` nor `nh3` escapes an underscore or a quote
+    character in text content — which still matches the substitution byte-for-byte.
+    `render_markdown` now neutralizes the placeholder in every document it renders, so no
+    sanitized content can carry the exact shape at all, regardless of which markup produced
+    it.
+    """
+
+    PROOF_PATH = "evidence/jira-read-assigned-stories/jira-attempt-001/PROOF.md"
+
+    @pytest.fixture
+    def service_with_a_planted_code_span(self, config: AppConfig) -> Iterator[tuple[str, str]]:
+        proof = config.participant_root / self.PROOF_PATH
+        proof.write_text(
+            proof.read_text(encoding="utf-8") + '\n\nDebug: `value="__GTQ_REQUEST_TOKEN__"` and '
+            "<http://example.invalid/__GTQ_REQUEST_TOKEN__>.\n",
+            encoding="utf-8",
+        )
+
+        bound = AppConfig.for_repo(
+            config.repo_root, participant_root=config.participant_root, service_port=0
+        )
+        report = ProblemReport()
+        world = load_world(bound, report)
+        assert world is not None, report.to_text()
+        # `online_service_view()` so the page renders a real form (a live token field) to
+        # check the fix did not also break the one place the placeholder must still work.
+        build_site(world, service=online_service_view())
+
+        server, state = create_server(bound)
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            yield f"http://127.0.0.1:{port}", state.token
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+
+    def test_a_code_span_and_an_autolink_do_not_carry_the_live_token(
+        self, service_with_a_planted_code_span: tuple[str, str]
+    ) -> None:
+        base, token = service_with_a_planted_code_span  # secret-scan: allow
+        with urllib.request.urlopen(  # noqa: S310 - fixed loopback URL built in this test
+            f"{base}/evidence/jira-read-assigned-stories/", timeout=10
+        ) as response:
+            body = response.read().decode()
+
+        assert f'value="{token}"' in body, "the service's own form must still carry it"
+        assert token not in self._proof_document_html(body), (
+            "the live token must appear nowhere in the participant's rendered content"
+        )
+
+    def test_the_code_span_and_autolink_render_as_inert_neutralized_text(
+        self, service_with_a_planted_code_span: tuple[str, str]
+    ) -> None:
+        """The exact placeholder shape must not survive rendering, in any markup."""
+        base, _ = service_with_a_planted_code_span
+        with urllib.request.urlopen(  # noqa: S310 - fixed loopback URL built in this test
+            f"{base}/evidence/jira-read-assigned-stories/", timeout=10
+        ) as response:
+            body = response.read().decode()
+        proof_html = self._proof_document_html(body)
+
+        assert 'value="__GTQ_REQUEST_TOKEN__"' not in proof_html, (
+            "the participant's code span must not reproduce the app's own substitution shape"
+        )
+        assert "__GTQ_REQUEST_TOKEN__" not in proof_html, (
+            "no rendered participant content may carry the bare placeholder either"
+        )
+        assert "&#95;&#95;GTQ&#95;REQUEST&#95;TOKEN&#95;&#95;" in proof_html, (
+            "it must still be shown, just neutralized, not silently stripped"
+        )
+
+    @staticmethod
+    def _proof_document_html(body: str) -> str:
+        """Just the rendered `PROOF.md` panel — the page also carries several legitimate
+        action forms, each with the app's own live token field, which a whole-page search
+        would wrongly flag."""
+        after_heading = body.split('id="proof-doc-heading"', 1)[1]
+        return after_heading.split("</section>", 1)[0]
+
+
+class TestTheFormPathParsesAcknowledgeChangedEvidenceStrictly:
+    """Round 15 E8, the browser-form half.
+
+    `bool(fields.get("acknowledge_changed_evidence"))` was true whenever the field was
+    present at all — `parse_qs` hands back a one-item list, and a non-empty list is truthy
+    regardless of what string is in it. A caller posting straight to this endpoint (not
+    through the checkbox, which can only ever send `"yes"` or nothing) with an explicit
+    denial got it read as an acknowledgement. Now parsed through the same
+    `quest_app.actions.is_affirmed` allowlist `confirm` uses.
+    """
+
+    QUEST = "jira-read-assigned-stories"
+    STATEMENT = "I re-read the assigned-issue export and matched it against every criterion."
+
+    @pytest.fixture
+    def service_with_changed_evidence(self, config: AppConfig) -> Iterator[tuple[str, str]]:
+        """`jira-read-assigned-stories`, submitted and then edited — the exact state
+        `acknowledge_changed_evidence` exists to gate an approval of."""
+        from quest_app.content_loader import SchemaSet
+        from quest_app.review import create_submission
+        from quest_app.store import ProgressStore
+
+        bound = AppConfig.for_repo(
+            config.repo_root, participant_root=config.participant_root, service_port=0
+        )
+        report = ProblemReport()
+        world = load_world(bound, report)
+        assert world is not None, report.to_text()
+        create_submission(
+            bound,
+            ProgressStore(bound),
+            quest=world.content.quests[self.QUEST],
+            attempt=world.participant.progress.attempt_for(self.QUEST),
+            participant=world.participant,
+            schemas=SchemaSet(bound.schemas_root),
+        )
+        proof = next((bound.participant_root / "evidence" / self.QUEST).glob("*/PROOF.md"))
+        proof.write_text(proof.read_text() + "\nEdited after submitting.\n", encoding="utf-8")
+
+        report = ProblemReport()
+        world = load_world(bound, report)
+        assert world is not None, report.to_text()
+        build_site(world)
+
+        server, state = create_server(bound)
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            yield f"http://127.0.0.1:{port}", state.token
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+
+    def _state_of(self, config: AppConfig) -> str:
+        import yaml
+
+        data = yaml.safe_load((config.participant_root / "progress.yaml").read_text())
+        for attempt in data["attempts"]:
+            if attempt["quest_id"] == self.QUEST:
+                return str(attempt["state"])
+        raise AssertionError(f"{self.QUEST} has no recorded attempt")
+
+    def test_an_explicit_false_does_not_approve_changed_evidence(
+        self, service_with_changed_evidence: tuple[str, str], config: AppConfig
+    ) -> None:
+        base, token = service_with_changed_evidence  # secret-scan: allow
+        location = TestTheAdvisoryReachesTheBrowser._redirect_of(
+            base,
+            f"/api/action/record-review/{self.QUEST}",
+            {
+                "token": token,
+                "decision": "approved",
+                "reviewer_name": "Real Reviewer",
+                "verification_statement": self.STATEMENT,
+                "confirm": "yes",
+                "acknowledge_changed_evidence": "false",
+            },
+        )
+        problem = _flash_on(base, location)
+        assert "changed" in problem, problem
+        assert self._state_of(config) == "submitted"
+
+    def test_the_checkbox_s_own_value_still_lets_approval_through(
+        self, service_with_changed_evidence: tuple[str, str], config: AppConfig
+    ) -> None:
+        """The strict parse must not have broken the one value the real checkbox sends."""
+        base, token = service_with_changed_evidence  # secret-scan: allow
+        post_form(
+            base,
+            f"/api/action/record-review/{self.QUEST}",
+            {
+                "token": token,
+                "decision": "approved",
+                "reviewer_name": "Real Reviewer",
+                "verification_statement": self.STATEMENT,
+                "confirm": "yes",
+                "acknowledge_changed_evidence": "yes",
+            },
+        )
+        assert self._state_of(config) == "verified"

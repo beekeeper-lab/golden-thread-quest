@@ -346,8 +346,11 @@ def action_command(args: argparse.Namespace) -> int:
             # Printed, not raised: it did not stop the submission and must not read as if
             # it had. Saying nothing is what left the participant to hear it from a reviewer.
             print(f"advisory: {advisory}")
-        if result.get("next"):
-            print(f"next: {result['next']}")
+        # Round 15 E9: this read `result["next"]`, a key `submit-for-review` never sets —
+        # the key is `next_steps` — so the text CLI, the only surface a Cowork sandbox
+        # reviewer or participant can reach, printed nothing here at all.
+        if result.get("next_steps"):
+            print(f"next steps:\n{result['next_steps']}")
     return EXIT_OK
 
 

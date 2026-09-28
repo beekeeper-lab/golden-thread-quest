@@ -24,15 +24,30 @@ APPLICATION_VERSION: Final = "0.1.0"
 DEFAULT_SERVICE_HOST: Final = "127.0.0.1"
 DEFAULT_SERVICE_PORT: Final = 8765
 
+# The marker `quest_app.serve` substitutes the live, per-run request token into. Defined
+# here rather than in `serve.py` so `quest_app.markdown_render` can neutralize any occurrence
+# that sanitized, participant-authored content reproduces (round 15 E7) without importing
+# the service module — `serve.py` already imports from here, and this way the builder does
+# not have to import the service to know what to guard against.
+REQUEST_TOKEN_PLACEHOLDER: Final = "__GTQ_REQUEST_TOKEN__"  # noqa: S105 - a marker, not a secret
+
 
 class UnsafeParticipantRootError(RuntimeError):
-    """The default `participant/` is a symbolic link, and nobody configured a root.
+    """The participant root is not safe to write participant state into.
 
-    `participant/` is a fixed name inside a clone, exactly like `generated` and `local-data`
-    (ADR-043) — anyone can commit a link at that name. A participant who points
-    `GTQ_PARTICIPANT_ROOT` or `--participant-root` somewhere themselves is trusted there
-    (ADR-042: they chose it); nobody chose this one, so it is not trusted merely for being
-    where the default happens to look (round 14 E6 amends ADR-043).
+    Two distinct reasons raise this:
+
+    - The default `participant/` is a symbolic link, and nobody configured a root.
+      `participant/` is a fixed name inside a clone, exactly like `generated` and
+      `local-data` (ADR-043) — anyone can commit a link at that name. A participant who
+      points `GTQ_PARTICIPANT_ROOT` or `--participant-root` somewhere themselves is trusted
+      there (ADR-042: they chose it); nobody chose this one, so it is not trusted merely
+      for being where the default happens to look (round 14 E6 amends ADR-043).
+    - A configured root — default or explicit — is, is inside, or contains one of the
+      repository's own program-owned folders (round 15 E13 amends ADR-042 again: "they
+      chose it" stops being a reason to trust it once what they chose is content, schemas,
+      templates, quest_app, validators, generated or local-data — no participant meant to
+      write their state into the curriculum every other participant pulls).
     """
 
 
@@ -74,19 +89,23 @@ class AppConfig:
                 "was configured. Replace it with an ordinary directory, or set "
                 "GTQ_PARTICIPANT_ROOT (or --participant-root) to where your work lives."
             )
+        resolved_participant_root = (participant_root or default_participant_root).resolve()
+        resolved_generated_root = _absolute(generated_root or root / "generated")
+        resolved_local_data_root = _absolute(local_data_root or root / "local-data")
+        _refuse_participant_root_inside_program_owned_folders(root, resolved_participant_root)
         return cls(
             repo_root=root,
             content_root=root / "content",
             schemas_root=root / "schemas",
             templates_root=root / "templates",
             assets_root=root / "assets",
-            participant_root=(participant_root or default_participant_root).resolve(),
+            participant_root=resolved_participant_root,
             # Lexical, never resolved (ADR-043). Resolving turned a committed
             # `generated -> ..` into the repository's parent, which the build then renamed and
             # deleted, and turned a linked `local-data` into wherever it led, so the check
             # that refuses a link never saw one.
-            generated_root=_absolute(generated_root or root / "generated"),
-            local_data_root=_absolute(local_data_root or root / "local-data"),
+            generated_root=resolved_generated_root,
+            local_data_root=resolved_local_data_root,
             validators_root=root / "validators",
             service_host=service_host or DEFAULT_SERVICE_HOST,
             service_port=service_port if service_port is not None else DEFAULT_SERVICE_PORT,
@@ -168,6 +187,58 @@ class AppConfig:
 def _absolute(path: Path) -> Path:
     """`path` made absolute and normalized as text, with no link followed."""
     return Path(os.path.abspath(path))  # noqa: PTH100 - `resolve()` follows links
+
+
+# The repository's own folders, none of them the participant's to write state into. Not
+# `docs`, `fixtures`, `prototype`, `scripts`, `tests`, `tools` or `.git`: those are source
+# too, but a participant root landing there is a much odder mistake than the one round 15
+# E13 actually found (a path meant for one of these), and refusing more than the report
+# asked for risks a false refusal `refuse_unsafe_output_root` (`build.py`) does not carry.
+_PROGRAM_OWNED_FOLDER_NAMES = (
+    "content",
+    "schemas",
+    "templates",
+    "assets",
+    "validators",
+    "quest_app",
+    "generated",
+    "local-data",
+)
+
+
+def _refuse_participant_root_inside_program_owned_folders(
+    repo_root: Path, participant_root: Path
+) -> None:
+    """Round 15 E13: `GTQ_PARTICIPANT_ROOT=./content` was accepted with 0 warnings, and
+    every write a participant makes — `progress.yaml`, evidence, `ACTIVITY.md` — landed
+    inside authored curriculum content instead. ADR-042 trusts an explicitly configured
+    root "because the participant chose it"; that reasoning does not extend to a folder the
+    participant does not own regardless of who pointed at it.
+
+    Checked against these folders' fixed, conventional names, lexically — not against
+    whatever `GTQ_GENERATED_ROOT`/`GTQ_LOCAL_DATA_ROOT` happen to be set to for this run
+    (`refuse_unsafe_output_root` in `build.py` already checks those against the participant
+    root, at build time), and not through a symbolic link at one of these names: a link at
+    `generated` or `local-data` pointing somewhere unrelated is `refuse_unsafe_output_root`'s
+    finding to make, not this one's to chase and misreport as the participant root's fault.
+    `participant_root` is resolved already (`AppConfig.for_repo` resolves it), so a
+    participant root that is itself a link to one of these folders is still caught. Equal
+    to, containing, or inside one of these refuses; anywhere else stays trusted.
+    """
+    candidates = {repo_root / name: name for name in _PROGRAM_OWNED_FOLDER_NAMES}
+
+    for candidate, name in candidates.items():
+        if (
+            participant_root == candidate
+            or candidate in participant_root.parents
+            or participant_root in candidate.parents
+        ):
+            raise UnsafeParticipantRootError(
+                f"Refusing to use {participant_root} as the participant root: it is, is "
+                f"inside, or contains {name}/, which this application owns, not the "
+                "participant. Set GTQ_PARTICIPANT_ROOT (or --participant-root) to a "
+                "directory that is only yours."
+            )
 
 
 @dataclass(frozen=True, slots=True)
