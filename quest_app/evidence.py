@@ -17,6 +17,7 @@ import secrets
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Final
 
 from quest_app.config import AppConfig
 from quest_app.hashing import hash_directory, hash_file, resolves_inside
@@ -56,7 +57,37 @@ def scan_kinds(findings: list[SecretFinding]) -> frozenset[str]:
     return frozenset(kinds)
 
 
-SKIP_SUFFIXES = frozenset({".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf", ".zip"})
+# Round 16 E12: this used to gate on the file's extension alone (`SKIP_SUFFIXES`), so a
+# plain-text secret saved as `logs/terminal.pdf` or `logs/env-backup.zip` — the filename
+# lying about what the bytes are — passed the scan clean, and `mark-evidence-ready` waved
+# the package through. None of these formats can be produced by writing arbitrary text, so
+# the real question is what the bytes start with, not what the participant named the file.
+# `PK\x03\x04` is also how a `.docx`/`.xlsx`/`.pptx` file opens (they are zip containers
+# too), and there is no cheap, reliable way to tell "a zip" from "an office document" by
+# header bytes alone — both are read as opaque compressed bytes either way and neither
+# produces a finding a pattern recognizes, so this check does not try to split that hair:
+# anything opening with the zip signature is skipped, and `docs/SECURITY-AND-PRIVACY.md`
+# says so plainly rather than claiming a distinction this check cannot make.
+_MAGIC_SIGNATURES: Final[tuple[bytes, ...]] = (
+    b"\x89PNG\r\n\x1a\n",
+    b"\xff\xd8\xff",  # JPEG
+    b"GIF87a",
+    b"GIF89a",
+    b"%PDF-",
+    b"PK\x03\x04",  # zip, and any zip-based container format (docx, xlsx, pptx, ...)
+)
+_MAGIC_HEADER_BYTES = 16  # enough for every signature above, and for the WebP check below
+
+
+def _looks_like_a_skippable_binary_format(header: bytes) -> bool:
+    """`header` (the file's first `_MAGIC_HEADER_BYTES`) opens with the magic bytes of a
+    format the secret scan cannot usefully read as text — a real screenshot, a real PDF, a
+    real zip — regardless of what the file is named.
+    """
+    if header.startswith(_MAGIC_SIGNATURES):
+        return True
+    # WebP is a RIFF container: "RIFF", 4 bytes of little-endian chunk size, then "WEBP".
+    return len(header) >= 12 and header[:4] == b"RIFF" and header[8:12] == b"WEBP"
 
 
 @dataclass(frozen=True, slots=True)
@@ -215,8 +246,8 @@ def _decode_evidence_text(raw: bytes) -> list[str]:
 
 
 def _scan_one(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
-    """Apply the fixed scan rules to one filesystem entry: link check, skip list, the 2 MB
-    ceiling, then decode and match.
+    """Apply the fixed scan rules to one filesystem entry: link check, binary-format check,
+    the 2 MB ceiling, then decode and match.
 
     `boundary` is the root a link may not resolve outside of. For an evidence package that
     is the package itself; for a declared proof path that legitimately lives elsewhere in
@@ -228,7 +259,19 @@ def _scan_one(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
     # cannot clear what it may not read, and nothing renders through it.
     if not resolves_inside(path, boundary):
         return [SecretFinding(relative, 1, OUTSIDE_LINK_DESCRIPTION)]
-    if not path.is_file() or path.suffix.lower() in SKIP_SUFFIXES:
+    if not path.is_file():
+        return []
+    # Round 16 E12: read only the header to decide skippability, not the whole file. A real
+    # multi-megabyte screenshot or PDF must still be skipped regardless of its size — reading
+    # it in full first (to then discard it) would make a legitimate large image fail with the
+    # oversize finding below, which is exactly the silent-vs-blocked distinction this scan is
+    # supposed to preserve.
+    try:
+        with path.open("rb") as handle:
+            header = handle.read(_MAGIC_HEADER_BYTES)
+    except OSError:
+        return [SecretFinding(relative, 1, "could not be read to check it")]
+    if _looks_like_a_skippable_binary_format(header):
         return []
     try:
         raw = read_bounded_bytes(path, max_bytes=MAX_EVIDENCE_FILE_BYTES)

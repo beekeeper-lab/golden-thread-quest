@@ -88,17 +88,21 @@ here.
 7. **No coverage reporting** and **no glossary content type** (D1, D2).
 8. **The secret scanner cannot usefully read a binary or compressed file** (round 15
    corrected this from naming a screenshot as the one exception). Every image format
-   (`.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`), plus `.pdf` and `.zip`, is skipped outright.
-   A compressed or container format that is not on that skip list — `.docx`, `.xlsx`,
-   `.pptx`, `.gz`, `.7z`, `.tar` and similar — is not skipped, but is read as opaque
-   compressed bytes that decompress into nothing any pattern recognizes, so it passes with
-   the same silence a skipped file would. The `PROOF.md` template asks the participant to
-   confirm the package carries nothing sensitive, and that confirmation is a person's
-   judgment for any of these formats, not a gate. Separately, a token glued directly onto a
-   following `_` or letter (`x_ghp_<36 chars>_y`) is still missed; loosening the trailing
-   boundary that misses it risks reopening the same false-positive class a leading boundary
-   once caused (round 13 E11 / round 14 E1), and it is left as a known gap rather than
-   fixed without a corpus proving that trade safe.
+   (`.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`), plus `.pdf` and `.zip`, is skipped outright —
+   round 16 changed this from an extension check to a check of the file's own magic bytes,
+   since a plain-text secret saved under one of these names used to pass on the filename's
+   say-so alone. `.docx`/`.xlsx`/`.pptx` share the plain zip signature and are skipped the
+   same way, for the same reason neither is read as text either way. A compressed or
+   container format that carries none of these signatures — `.gz`, `.7z`, `.tar` and
+   similar — is not skipped, but is read as opaque compressed bytes that decompress into
+   nothing any pattern recognizes, so it passes with the same silence a skipped file would.
+   The `PROOF.md` template asks the participant to confirm the package carries nothing
+   sensitive, and that confirmation is a person's judgment for any of these formats, not a
+   gate. Separately, a token glued directly onto a following `_` or letter
+   (`x_ghp_<36 chars>_y`) is still missed; loosening the trailing boundary that misses it
+   risks reopening the same false-positive class a leading boundary once caused (round 13
+   E11 / round 14 E1), and it is left as a known gap rather than fixed without a corpus
+   proving that trade safe.
 9. **Clean-clone installation is tested one step short of a real clone.** The `clean-export`
    CI job runs `make verify-package`, which exports tracked files with `git archive`, then
    installs, validates and builds in a fresh virtual environment on every change. A true
