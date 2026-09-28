@@ -105,7 +105,12 @@ runs in. They are not an operating-system sandbox:
 - Read and write roots are enforced by `Workspace`. A validator that calls `open()`
   directly is not stopped.
 - A process that leaves the validator's process group by starting a session of its own is
-  not killed with it.
+  not killed with it. **A validator must not start a process outside its own process
+  group** — with `setsid`, Python's `subprocess.Popen(..., start_new_session=True)`, or by
+  daemonizing — because the timeout and exit-time cleanup above signal only that group
+  (round 14 E9). No registered validator does this today; if one ever needs a detached
+  process, that process is this contract's gap until an isolation layer closes it, not
+  something the runner reaches on its own.
 
 Enforcing any of these would need an isolation layer (namespaces, a container, seccomp)
 that release one does not have. A validator taken from anywhere but this repository is

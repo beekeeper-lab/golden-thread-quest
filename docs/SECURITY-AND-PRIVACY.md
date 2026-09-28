@@ -177,7 +177,14 @@ Opening a page, running a build, or viewing a quest must never perform an extern
 ## Review integrity
 
 - Review decisions contain stable review and attempt IDs.
-- The application verifies the decision references the current attempt.
+- The application verifies the decision is internally consistent with the attempt, quest and
+  version it names — not that it was made about *this participant's* attempt. Attempt IDs are
+  not unique across participants by default, so a genuine approval, evidence package
+  included, copied whole from another participant's repository into this one names the same
+  attempt, quest and version and verifies with no warning. That is no stronger a claim than
+  authoring a forged record by hand, a gap ADR-030 already documents; Git history of who
+  committed `review.yaml` (or reviewing through pull requests) is the signal this application
+  does not itself check.
 - Participant-edited review files are displayed as untrusted until provenance is established.
 - The first release may use Git review and reviewer identity conventions rather than cryptographic signing, but the limitation must be visible.
 - Changing evidence after approval marks the review potentially stale when tracked artifact hashes differ.

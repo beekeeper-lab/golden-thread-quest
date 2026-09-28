@@ -25,6 +25,17 @@ DEFAULT_SERVICE_HOST: Final = "127.0.0.1"
 DEFAULT_SERVICE_PORT: Final = 8765
 
 
+class UnsafeParticipantRootError(RuntimeError):
+    """The default `participant/` is a symbolic link, and nobody configured a root.
+
+    `participant/` is a fixed name inside a clone, exactly like `generated` and `local-data`
+    (ADR-043) — anyone can commit a link at that name. A participant who points
+    `GTQ_PARTICIPANT_ROOT` or `--participant-root` somewhere themselves is trusted there
+    (ADR-042: they chose it); nobody chose this one, so it is not trusted merely for being
+    where the default happens to look (round 14 E6 amends ADR-043).
+    """
+
+
 @dataclass(frozen=True, slots=True)
 class AppConfig:
     repo_root: Path
@@ -51,13 +62,25 @@ class AppConfig:
         service_port: int | None = None,
     ) -> Self:
         root = repo_root.resolve()
+        default_participant_root = root / "participant"
+        # Only the default is checked. An explicit `participant_root` is a participant's own
+        # choice of where their work lives and stays trusted wherever it points (ADR-042);
+        # the default is a fixed name inside the clone that nobody chose, so a committed link
+        # at that name redirected every write below it (round 14 E6) exactly the way a
+        # committed `generated -> ..` redirected a build before ADR-043 checked its own name.
+        if participant_root is None and default_participant_root.is_symlink():
+            raise UnsafeParticipantRootError(
+                "Refusing to use participant/: it is a symbolic link, and no participant root "
+                "was configured. Replace it with an ordinary directory, or set "
+                "GTQ_PARTICIPANT_ROOT (or --participant-root) to where your work lives."
+            )
         return cls(
             repo_root=root,
             content_root=root / "content",
             schemas_root=root / "schemas",
             templates_root=root / "templates",
             assets_root=root / "assets",
-            participant_root=(participant_root or root / "participant").resolve(),
+            participant_root=(participant_root or default_participant_root).resolve(),
             # Lexical, never resolved (ADR-043). Resolving turned a committed
             # `generated -> ..` into the repository's parent, which the build then renamed and
             # deleted, and turned a linked `local-data` into wherever it led, so the check

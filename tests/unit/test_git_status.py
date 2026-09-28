@@ -139,3 +139,46 @@ class TestWhatItReports:
 
     def test_the_summary_carries_no_absolute_path(self, repository: Path) -> None:
         assert str(repository) not in str(summary_for(repository, None))
+
+    def test_a_brand_new_untracked_package_is_not_committed(self, repository: Path) -> None:
+        """Round 14 E3: a first attempt's evidence is one `??` line for the whole directory.
+
+        `--untracked-files=normal` reports `participant/` (the whole never-added tree), not
+        one line per file below it, so the recorded path is a directory *above* the declared
+        evidence path rather than the other way round. Only counting `??` lines and never
+        recording them as a path this evidence could match said "committed" for a package Git
+        had never seen — the normal state of every new attempt.
+        """
+        evidence = repository / "participant" / "evidence" / "q" / "a-001"
+        evidence.mkdir(parents=True)
+        (evidence / "PROOF.md").write_text("# Proof\n")
+
+        summary = summary_for(repository, "participant/evidence/q/a-001")
+
+        assert summary["evidence_committed"] is False, summary
+        assert "commit" in str(summary["advice"]).lower()
+
+    def test_a_committed_package_is_committed(self, repository: Path) -> None:
+        evidence = repository / "participant" / "evidence" / "q" / "a-001"
+        evidence.mkdir(parents=True)
+        (evidence / "PROOF.md").write_text("# Proof\n")
+        _git(repository, "add", "-A")
+        _git(repository, "commit", "-m", "evidence")
+
+        summary = summary_for(repository, "participant/evidence/q/a-001")
+
+        assert summary["evidence_committed"] is True, summary
+        assert summary["advice"] is None
+
+    def test_evidence_outside_the_repository_is_unknown_not_committed(
+        self, repository: Path
+    ) -> None:
+        """`GTQ_PARTICIPANT_ROOT` outside the clone: nothing under `repo_root` names the
+        package, so `git status` on the repository cannot vouch for it either way. Reporting
+        "yes" here was as wrong as the untracked case above, for the same reason: nothing
+        Git has ever seen was called committed.
+        """
+        summary = summary_for(repository, "participant/evidence/q/a-001")
+
+        assert summary["evidence_committed"] is None, summary
+        assert summary["advice"] is None

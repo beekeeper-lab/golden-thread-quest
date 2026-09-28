@@ -420,6 +420,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    from quest_app.config import UnsafeParticipantRootError
     from quest_app.content_loader import SchemaFileError
 
     args = build_parser().parse_args(argv)
@@ -428,6 +429,10 @@ def main(argv: list[str] | None = None) -> int:
     except SchemaFileError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_CONTENT_ERROR
+    except UnsafeParticipantRootError as exc:
+        # Raised before any config is built, so nothing below this has run yet (round 14 E6).
+        print(str(exc), file=sys.stderr)
+        return EXIT_USAGE
     return result
 
 
