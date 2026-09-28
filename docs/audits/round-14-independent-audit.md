@@ -73,6 +73,7 @@ listed for round 15.
 | `make validate-content` | pass — 8 quests, 8 regions, 4 badges, 1 track, 0 warnings |
 | `make verify-package` | pass |
 | Clean clone at `3b9b7c2`, by the tooling lens | pass: `make setup` and `make check` (903 passed, 5 skipped without the UI extras), and `make check` beside a running server |
+| Clean clone of `chore/round-14-audit`, with `make check` beside a running server | pass at `65b651d`: `make setup`, the server on a second port, and `make check` beside it (995 passed, 5 skipped without the UI extras), leaving the clone unchanged. The first attempt at `f39448e` failed the repository secret scan on two phrases in this record, written after the gates had run; they were reworded |
 | A new quest added by following the authoring guide | picked up by the catalog, region, tags, home, search and relationships indexes and the evidence page, with no template or code change |
 | Each fix reverted one at a time | every new test failed with its fix reverted, by the branch that wrote it |
 | Guards mutated by the tooling lens | 14 mutations, 12 caught, apart from T1 and T2 |
