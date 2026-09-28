@@ -27,9 +27,11 @@ PROGRESS_FILENAME = "progress.yaml"
 REVIEW_FILENAME = "review.yaml"
 SUBMISSION_FILENAME = "submission.yaml"
 VALIDATION_DIRNAME = "validation"
-# `review._write_yaml` archives a superseded decision as `review-<UTC %Y%m%d%H%M%S>.yaml`, and
-# a record may also be kept under its review ID, `review-<stamp>-<6 hex>.yaml`. Those names,
-# and `review.yaml`, are the review records; nothing else in the package is one.
+# `review._write_yaml` archives a superseded decision as `review-<UTC %Y%m%d%H%M%S>-<6 hex>.yaml`
+# (round 16 S2: the random suffix is what keeps two decisions recorded in the same second from
+# naming, and overwriting, the same archive file). A package archived before that fix used the
+# timestamp alone, `review-<UTC %Y%m%d%H%M%S>.yaml`, so both forms are still recognized. Those
+# names, and `review.yaml`, are the review records; nothing else in the package is one.
 REVIEW_ARCHIVE_NAME = re.compile(r"review-[0-9]{14}(-[0-9a-f]{6})?\.yaml")
 REVIEW_ARCHIVE_GLOBS = (
     "review-" + "[0-9]" * 14 + ".yaml",

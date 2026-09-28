@@ -245,7 +245,12 @@ def test_a_result_over_the_stored_ceiling_is_refused_before_it_is_written(
 def test_the_review_archive_is_not_written_through_a_link(
     config: AppConfig, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, kind: str
 ) -> None:
-    """The archive of a superseded decision was a plain `write_text` to a predictable name."""
+    """The archive of a superseded decision was a plain `write_text` to a predictable name.
+
+    Round 16 S2 made the name carry a random suffix too (so two decisions in the same second
+    do not overwrite one archive), so both the clock and `secrets.token_hex` are frozen here
+    to keep the name predictable enough to plant the obstruction at it in advance.
+    """
     from quest_app import review
 
     class Frozen(datetime):
@@ -254,12 +259,13 @@ def test_the_review_archive_is_not_written_through_a_link(
             return cls(2026, 9, 24, 12, 0, 0, tzinfo=timezone.utc)
 
     monkeypatch.setattr(review, "datetime", Frozen)
+    monkeypatch.setattr(review.secrets, "token_hex", lambda n: "ab" * n)
     package = config.participant_write_path(VERIFIED)
     current = package / "review.yaml"
     original = current.read_bytes()
     outside = tmp_path / "outside.yaml"
     outside.write_text("not the participant's\n")
-    make(package / "review-20260924120000.yaml", kind, outside)
+    make(package / "review-20260924120000-ababab.yaml", kind, outside)
 
     document = yaml.safe_load(original)
     with pytest.raises(StoreError, match="link or special file"):

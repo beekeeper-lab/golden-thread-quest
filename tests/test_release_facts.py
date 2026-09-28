@@ -60,7 +60,12 @@ def test_documented_test_counts_are_true(document: Path, pattern: str, marker: s
         pytest.skip("browser tests are not installed here; make setup-ui installs them")
     assert claimed == actual, (
         f"{document} claims {claimed} tests for -m {marker!r}, but pytest collects "
-        f"{actual}. Update the document, or explain the difference."
+        f"{actual}. This usually means content was added or removed (a new quest's "
+        "parametrized tests count too) rather than a test file changing. Update the "
+        f"'Tests' row in {document} to the number `make check` just printed, or explain "
+        "the difference. docs/CONTENT-AUTHORING-GUIDE.md's 'Add a quest' checklist names "
+        "every document this test and test_the_readme_states_the_curriculum_it_actually_has "
+        "check."
     )
 
 
@@ -128,7 +133,10 @@ def test_the_readme_states_the_curriculum_it_actually_has() -> None:
     }
     normalised = {noun.rstrip("s") + "s": n for noun, n in claimed.items()}
     assert normalised == counted, (
-        f"README.md claims {normalised}, the content tree holds {counted}."
+        f"README.md claims {normalised}, the content tree holds {counted}. Update the "
+        "'Sample curriculum' row in README.md's release-facts table to match — adding a "
+        "valid quest, region, badge, or track changes this count, per "
+        "docs/CONTENT-AUTHORING-GUIDE.md's 'Add a quest' checklist."
     )
 
 

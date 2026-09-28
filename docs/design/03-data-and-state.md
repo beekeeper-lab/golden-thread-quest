@@ -79,7 +79,7 @@ such as `participant/tests/`, as proof.
 | Evidence package | `participant/evidence/<quest-id>/<attempt-id>/` | Participant (content), application (template) | `PROOF.md` answering what was built, where, how to reproduce, what was checked, what remains, and a sensitive-values confirmation; `manifest.yaml`; `logs/`, `screenshots/` |
 | Validation result | JSON, `validation/<run-id>.json` inside the package | Validator runner | Run ID, validator ID and version, quest and attempt IDs, timestamps, outcome, checks, redacted output excerpt |
 | Submission | `submission.yaml` inside the package | Application, on submit | Submission ID, quest version, attempt ID, content hash, **evidence hash**, **proof_files** digests, secret-scan result, validation run IDs, advisories |
-| Review | `review.yaml` inside the package; superseded decisions archived as `review-<timestamp>.yaml` | Application, on the reviewer's decision | Review ID, quest ID and version, attempt ID, evidence hash, reviewer display name, decision, findings, verification statement (for approval), proof_files |
+| Review | `review.yaml` inside the package; superseded decisions archived as `review-<timestamp>-<6 hex>.yaml` (round 16 finding S2: the random suffix keeps two decisions recorded in the same second from overwriting each other's archive) | Application, on the reviewer's decision | Review ID, quest ID and version, attempt ID, evidence hash, reviewer display name, decision, findings, verification statement (for approval), proof_files |
 | Activity log | `participant/ACTIVITY.md` | Application | One line per change the application made |
 | Generated site | `generated/` | Build | HTML pages, JSON indexes, build manifest. Never authoritative |
 
@@ -156,6 +156,18 @@ Three fingerprints let the application notice change without trusting anyone's w
   package, submissions and reviews also record **proof_files**: a digest per declared proof
   path outside the package, `missing` when nothing is there and `unresolvable` when the path
   leads outside `participant/` (ADR-031, amended in round 11).
+
+Both hashes normalize a file's bytes and its name before hashing, not after (ADR-031, amended
+rounds 15 and 16), so the digest answers "did the participant's work change?" rather than
+"did a checkout tool touch it?". A file that decodes as UTF-8 is hashed with every `\r\n` or
+lone `\r` folded to `\n`, so a Windows participant's checkout and a Linux or macOS reviewer's
+are not "changed" by Git's own line-ending conversion alone; a file name is NFC-normalized
+first, so the precomposed and decomposed Unicode forms of the same name (macOS commonly
+writes the latter) hash alike. Content that does not decode as UTF-8 — a binary file, or a
+UTF-16/32 export with no ASCII in it — is hashed exactly as it sits on disk instead: an
+earlier rule normalized any NUL-free file regardless of encoding, which folded a genuine byte
+of a UTF-16 character as though it were a line ending and hid a real edit behind an unchanged
+hash (round 16 finding E10).
 
 The submission records both fingerprints. The reviewer's approval is refused if either has
 changed since submission unless the reviewer acknowledges the change, and after approval the

@@ -15,6 +15,18 @@ Write quests as professional, demonstrable work—not trivia and not instruction
 7. Reference only registered validators.
 8. Validate content before opening a pull request.
 9. Review the rendered page, evidence workspace, catalog entry, and prerequisite links.
+10. Run `make check`. Adding a quest, region, badge, or track changes the numbers two
+    documents state about the project, and `make check` fails on purpose until they are
+    corrected:
+    - README.md's release-facts table: the **Sample curriculum** row (regions, quests,
+      badges, tracks) and the **Tests** row's `make check`/browser counts — a new quest
+      usually adds parametrized cases to existing test files, so the total moves even
+      though no test file changed.
+    - docs/RELEASE-NOTES.md's release-facts table: the same **Tests** row.
+
+    `tests/test_release_facts.py` names the exact row and the number it expects; copy that
+    number in. Do not weaken or skip this check to make a quest addition pass — it exists so
+    the front page's own claims about the project stay true.
 
 Do not edit templates, Python, JavaScript, or CSS merely to make a normal quest appear.
 
@@ -115,3 +127,5 @@ Do not increment for spelling, formatting, or an equivalent clarification that c
 - [ ] The exercise can be completed independently and resumed after interruption.
 - [ ] The rendered page works at narrow width and with keyboard navigation.
 - [ ] A reviewer can decide completion without hidden facilitator knowledge.
+- [ ] `make check` passes, including README.md's and docs/RELEASE-NOTES.md's release-facts
+      tables (see step 10 above).
