@@ -484,12 +484,20 @@ def test_every_pattern_scales_near_linearly_on_adversarial_input(pattern) -> Non
     unit = _PATTERN_ADVERSARIAL_UNITS[pattern.id]
     small = unit * max(1, 250_000 // len(unit))
     large = small * 4
-    started = time.monotonic()
-    pattern.regex.findall(small)
-    small_elapsed = max(time.monotonic() - started, 1e-6)
-    started = time.monotonic()
-    pattern.regex.findall(large)
-    large_elapsed = time.monotonic() - started
+
+    def best_of_three(text: str) -> float:
+        # Round 17: one run of a few milliseconds is at the mercy of whatever else the
+        # machine is doing, and a single slow baseline read as quadratic scaling. The best
+        # of three is the pattern's own cost; a real quadratic stays 16x however it is timed.
+        timings = []
+        for _ in range(3):
+            started = time.monotonic()
+            pattern.regex.findall(text)
+            timings.append(time.monotonic() - started)
+        return min(timings)
+
+    small_elapsed = max(best_of_three(small), 1e-6)
+    large_elapsed = best_of_three(large)
     ratio = large_elapsed / small_elapsed
     assert ratio < 8, (
         f"{pattern.id}: 4x the input took {ratio:.1f}x as long "
