@@ -139,6 +139,35 @@ _UNQUOTED_BRACKET_VALUE = (
 )
 
 
+# The plain form of an unquoted value: a run of value characters, which stops at whitespace
+# and at the punctuation that ends a value in JSON, YAML flow style or a shell command.
+#
+# Round 17 E17: `,` and `;` are among those stops, so a password assigned as
+# `Sup3rS3cr;etValue9` redacted to `[REDACTED];etValue9` — half the value left in clear
+# text — and one assigned as `ab,Sup3rS3cretValue9` was never matched at all, the two
+# characters before the comma being too few to be a finding. The rule now: a `,` or `;`
+# glued between two runs of value characters is part of the value, as long as the run
+# after it goes on to a real end of value (whitespace, a quote, a closing `}`/`]`, the end
+# of the text, or another such separator) and contains none of `=`, `:`, `(`, `)`, `{`,
+# `}`, `[`, `<`, `>`. That second condition is what keeps code out: after a comma, code
+# continues with another key or argument (`f(token=token,user=user)`, minified
+# `{password:e,next:t}`), which has one of those characters in it; a value continues with
+# more of itself, which does not. A value whose first run is under eight characters
+# (`ab,…`) counts only when the whole run, separators included, reaches eight and ends at
+# a real end of value. Each tail run excludes its own separators and has to end on a
+# terminator, so it cannot backtrack. The trade: a shell line with no space after a `;`
+# (a password followed directly by `;echo done`) is now redacted through the command glued
+# to it.
+_UNQUOTED_PLAIN_TAIL = r"[,;][^\s\"',;}`\]=:(){}\[<>]+(?=[\s\"',;}`\]]|$)"
+_UNQUOTED_PLAIN_VALUE = (
+    r"[^\s\"',;}`\]]{8,}(?:"
+    + _UNQUOTED_PLAIN_TAIL
+    + r")*|(?=[^\s\"'`}\]=:(){}\[<>]{8})[^\s\"',;}`\]=:(){}\[<>]{1,7}(?:"
+    + _UNQUOTED_PLAIN_TAIL
+    + r")+(?=[\s\"'`}\]]|$)"
+)
+
+
 # Ordered most specific first: a GitHub token should be reported as a GitHub token, not as
 # a generic high-entropy assignment.
 #
@@ -415,7 +444,9 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
             + _UNQUOTED_BRACKET_VALUE
             + r"|(?:\$\{[^{}\n]{0,200}\}|\$\([^()\n]{0,200}\)|\{\{[^{}\n]{0,200}\}\})"
             + r"[^\s\"',;}`\]]*"
-            + r"|[^\s\"',;}`\]]{8,})"
+            + r"|"
+            + _UNQUOTED_PLAIN_VALUE
+            + r")"
         ),
     ),
 )

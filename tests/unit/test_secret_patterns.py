@@ -846,3 +846,40 @@ def test_a_real_value_glued_after_a_template_is_detected(text: str) -> None:
 )
 def test_a_value_that_is_entirely_a_template_stays_a_placeholder(text: str) -> None:
     assert scan_text(text) == []
+
+
+# Round 17 E17: a `,`/`;` glued inside an unquoted value cut it short — half the value was
+# left in clear text by the redaction, or, with too few characters before the cut, the
+# whole value was never matched.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "password=Sup3rS3cr;etValue9",  # secret-scan: allow
+        "password=ab,Sup3rS3cretValue9",  # secret-scan: allow
+        "password=Sup3r,S3cret;Value9 next",  # secret-scan: allow
+    ],
+)
+def test_a_value_glued_across_a_comma_or_semicolon_is_redacted_whole(text: str) -> None:
+    assert scan_text(text), f"expected {text!r} to be detected"
+    redacted, _ = redact_text(text)
+    assert "etValue9" not in redacted and "Value9" not in redacted, redacted
+    assert scan_text(redacted) == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "f(token=token,user=user)",
+        "{password:e,next:t}",
+        '"password":null,"x":1',
+        "token=secrets.token_urlsafe(32),",
+        "password=ab,cd,efgh=1",
+    ],
+)
+def test_code_after_a_comma_is_not_glued_into_a_value(text: str) -> None:
+    assert scan_text(text) == []
+
+
+def test_a_separator_followed_by_a_space_still_ends_the_value() -> None:
+    redacted, _ = redact_text("password=Sup3rS3cretValue9, user=bob")  # secret-scan: allow
+    assert redacted == f"password={REDACTION_PLACEHOLDER}, user=bob"
