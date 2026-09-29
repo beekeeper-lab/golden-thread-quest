@@ -15,6 +15,13 @@
 </header>
 
 {% if not attempt_id %}
+{% if changed_after_approval %}
+<section class="alert alert-warning stack" aria-labelledby="changed-after-approval-heading">
+  <h2 id="changed-after-approval-heading">Changed since approval</h2>
+  <p>The evidence for these verified quests changed after the reviewer approved it. The approval stands until someone decides otherwise; open each one to see what changed.</p>
+  <ul>{% for item in changed_after_approval %}<li><a href="{{ url(item.route) }}">{{ item.quest.title }}</a> — {% for path in item.paths %}<code>{{ path }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</li>{% endfor %}</ul>
+</section>
+{% endif %}
 {% if queue %}
 <section class="stack" aria-labelledby="queue-heading">
   <h2 id="queue-heading">Waiting for review</h2>
@@ -202,7 +209,7 @@
   </div>
   {% else %}
   <form method="post" action="{{ url(decision_route) }}"
-        data-confirm="{{ confirm }}?">
+        data-confirm="{{ confirm }}?" data-keep-draft="review-{{ quest.id }}">
     <input type="hidden" name="token" value="__GTQ_REQUEST_TOKEN__">
     <div class="field">
       <label for="reviewer_name">Your name</label>

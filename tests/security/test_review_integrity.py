@@ -1406,3 +1406,48 @@ def test_the_review_page_says_when_a_newer_quest_version_is_published(
     page = review_page()
     assert "This attempt is on an older version of the quest" in page
     assert f"{started_on} (version {started_on + 1} is now published)" in page
+
+
+def test_evidence_changed_after_approval_is_flagged_where_people_look(
+    setup, config: AppConfig
+) -> None:  # type: ignore[no-untyped-def]
+    """Round 17 L5: the drift was shown only on the verified attempt's own review page,
+    and nothing linked there once it was verified."""
+    from quest_app.build import build_site
+    from quest_app.view_models import offline_service_view
+
+    submit(setup, config)
+    world, attempt = reload_attempt(config)
+    _, schemas, store, quest, _ = setup
+    record_decision(
+        config,
+        store,
+        quest=quest,
+        attempt=attempt,
+        participant=world.participant,
+        decision="approved",
+        reviewer_name="A Reviewer",
+        verification_statement=STATEMENT,
+        findings=[],
+        schemas=schemas,
+    )
+
+    def pages() -> tuple[str, str]:
+        report = ProblemReport()
+        loaded = load_world(config, report)
+        assert loaded is not None, report.to_text()
+        build_site(loaded, service=offline_service_view())
+        root = config.generated_root
+        return (
+            (root / "review" / "index.html").read_text(),
+            (root / "evidence" / QUEST / "index.html").read_text(),
+        )
+
+    queue, evidence = pages()
+    assert "Changed since approval" not in queue + evidence
+
+    directory = config.resolve_participant_path(attempt.evidence_path)
+    (directory / "PROOF.md").write_text("# Rewritten after the approval\n")
+    queue, evidence = pages()
+    assert "Changed since approval" in queue
+    assert "Changed since approval" in evidence

@@ -118,3 +118,27 @@ def test_the_confirmation_follows_the_chosen_decision(browser: object, served: s
     page.click("button[type=submit]")
     assert shown == [f"{DECISION_CONFIRMATIONS['needs_changes']}?"]
     page.close()
+
+
+def test_a_refused_decision_keeps_what_the_reviewer_typed(browser: object, served: str) -> None:
+    """Round 17 L8: the refusal redirect rendered the form empty again."""
+    page = browser.new_page()  # type: ignore[attr-defined]
+    page.goto(f"{served}/review/{QUEST}/", wait_until="load")
+    page.on("dialog", lambda dialog: dialog.accept())
+    page.fill("#reviewer_name", "A Reviewer")
+    page.select_option("#decision", "needs_changes")
+    statement = "I read every log and reran the command on a clean clone."
+    page.fill("#verification_statement", statement)
+    page.check("#confirm-decision")
+    # Needs changes with no finding: refused by the service, not by the browser.
+    page.click("button[type=submit]")
+    page.wait_for_url("**problem=*")
+    assert page.input_value("#reviewer_name") == "A Reviewer"
+    assert page.input_value("#decision") == "needs_changes"
+    assert page.input_value("#verification_statement") == statement
+    assert not page.is_checked("#confirm-decision"), "a confirmation is always given fresh"
+
+    # An ordinary visit starts empty.
+    page.goto(f"{served}/review/{QUEST}/", wait_until="load")
+    assert page.input_value("#reviewer_name") == ""
+    page.close()

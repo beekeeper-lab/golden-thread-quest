@@ -1085,6 +1085,8 @@ def _evidence_context(
         "run_actions": run_actions,
         "results": results,
         "stale_local_validation": stale_local_validation,
+        "changed_after_approval": tuple(_changed_after_approval(world, entry)),
+        "review_route": routes.review(quest.id),
         "proof_document": _proof_document(world, evidence_path),
         "secret_scan_clean": not scan_findings if evidence_path else None,
         "scan_kinds": scan_kinds(scan_findings),
@@ -1194,6 +1196,19 @@ def _changes_since_approval(config: Any, attempt: Any, review: Any) -> list[str]
     return changes
 
 
+def _changed_after_approval(world: LoadedWorld, entry: QuestProgress) -> list[str]:
+    """What changed since a verified attempt was approved, or nothing (round 17 L5)."""
+    review = entry.review
+    if (
+        entry.attempt is None
+        or review is None
+        or not review.is_approval
+        or entry.state.id is not QuestState.VERIFIED
+    ):
+        return []
+    return _changes_since_approval(world.config, entry.attempt, review)
+
+
 def _review_context(
     entry: QuestProgress, summary: Any, world: LoadedWorld, service: ServiceView
 ) -> dict[str, Any]:
@@ -1286,6 +1301,7 @@ def _review_context(
         "results": results,
         "history": tuple(_decision_view(item) for item in history),
         "queue": (),
+        "changed_after_approval": (),
         "reproduction": _proof_document(world, attempt.evidence_path),
         # A decision needs the service, because recording one writes files.
         "can_decide": service.available and entry.state.id is QuestState.SUBMITTED,
@@ -1332,10 +1348,19 @@ def _review_queue_context(
             submitted_at=entry.attempt.updated_at,
             route=routes.review(quest_id),
         )
-        for quest_id, entry in sorted(states.items())
+        # Round 17 L13: oldest submission first, the order a reviewer works through it.
+        for quest_id, entry in sorted(
+            states.items(), key=lambda item: item[1].attempt.updated_at if item[1].attempt else ""
+        )
         if entry.attempt is not None and entry.state.id is QuestState.SUBMITTED
     )
-    del world
+    # Round 17 L5: evidence that changed after its approval was shown only on that attempt's
+    # own review page, which nothing links to once it is verified.
+    changed_after_approval = tuple(
+        {"quest": summaries[quest_id], "route": routes.review(quest_id), "paths": changed}
+        for quest_id, entry in sorted(states.items())
+        if (changed := _changed_after_approval(world, entry))
+    )
     return {
         "quest": None,
         "attempt_id": None,
@@ -1355,6 +1380,7 @@ def _review_queue_context(
         "results": (),
         "history": (),
         "queue": queue,
+        "changed_after_approval": changed_after_approval,
         "reproduction": None,
         "decision_route": None,
         "can_decide": False,

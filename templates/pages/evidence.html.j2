@@ -74,6 +74,12 @@
     <p class="authority">This state was earned on an earlier passing run. The latest run of
       {{ stale_local_validation | join(', ') }} did not pass; see Local validation below.</p>
     {% endif %}
+    {% if changed_after_approval %}
+    {# Round 17 L5: the review page said this, and nothing linked to it once verified. #}
+    <div class="alert alert-warning" role="status">
+      <p><strong>Changed since approval.</strong> {% for path in changed_after_approval %}<code>{{ path }}</code>{% if not loop.last %}, {% endif %}{% endfor %} changed after the reviewer approved this. The approval stands, but it describes the evidence as it was then. <a href="{{ url(review_route) }}">See the review</a>.</p>
+    </div>
+    {% endif %}
     <dl class="definition-list">
       <dt>Attempt</dt><dd><code>{{ attempt_id }}</code></dd>
       {% if evidence_path %}<dt>Location</dt><dd><code>{{ evidence_path }}</code></dd>{% endif %}
