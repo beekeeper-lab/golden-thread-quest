@@ -232,6 +232,18 @@ class TestTheFormRoute:
         )
         assert status == 403
 
+    def test_a_token_sharing_the_real_ones_prefix_is_refused(
+        self, service: tuple[str, str]
+    ) -> None:
+        """Round 17 F3: comparing only the first characters passed every token test, since
+        each wrong token differed from the first character on."""
+        base, token = service
+        near = token[:-1] + ("a" if token[-1] != "a" else "b")
+        status, _ = post_form(
+            base, "/api/action/start-quest/base-camp-repository-safety", {"token": near}
+        )
+        assert status == 403
+
     def test_a_wrong_token_is_refused(self, service: tuple[str, str]) -> None:
         base, token = service
         status, _ = post_form(
@@ -364,12 +376,23 @@ class TestCrossOrigin:
     def test_the_same_host_on_another_port_is_refused(
         self, service: tuple[str, str], header: str
     ) -> None:
-        """Round 17 T1: every refusal above used another hostname, so the port comparison
+        """Round 17 A-T1: every refusal above used another hostname, so the port comparison
         could be dropped with nothing failing. Another local server on 127.0.0.1 is a
         different origin, and only this run's own pages are same-origin."""
         base, token = service
         parsed = urllib.parse.urlsplit(base)
         other = f"{parsed.scheme}://{parsed.hostname}:{(parsed.port or 80) % 65535 + 1}/"
+        status, _ = post(base, {"action": "rebuild", "token": token}, headers={header: other})
+        assert status == 403
+
+    @pytest.mark.parametrize("header", ["Origin", "Referer"])
+    def test_the_same_host_and_port_over_https_is_refused(
+        self, service: tuple[str, str], header: str
+    ) -> None:
+        """Round 17 F3: the scheme comparison could be dropped with nothing failing."""
+        base, token = service
+        parsed = urllib.parse.urlsplit(base)
+        other = f"https://{parsed.hostname}:{parsed.port}/"
         status, _ = post(base, {"action": "rebuild", "token": token}, headers={header: other})
         assert status == 403
 

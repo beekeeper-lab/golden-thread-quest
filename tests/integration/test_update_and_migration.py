@@ -121,13 +121,17 @@ class TestInProgressAttempts:
         assert data["attempts"][0]["quest_version"] == 1
 
     def test_an_attempt_on_the_current_version_is_not_reported(self) -> None:
-        """Round 17 T2: only strictly older is stale. `<` changed to `<=` passed every test,
+        """Round 17 A-T2: only strictly older is stale. `<` changed to `<=` passed every test,
         and would tell an up-to-date participant their attempt is behind."""
         data = {
             "attempts": [
                 {"attempt_id": "a-1", "quest_id": "q", "quest_version": 2, "state": "in_progress"}
             ]
         }
+        assert attempts_on_older_quest_versions(data, {"q": 2}) == []
+        # Round 17 F4: nor is one on a newer version than published (a rolled-back quest),
+        # which `!=` in place of `<` would report.
+        data["attempts"][0]["quest_version"] = 3
         assert attempts_on_older_quest_versions(data, {"q": 2}) == []
 
     def test_a_verified_attempt_is_not_reported_as_stale(self) -> None:

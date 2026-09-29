@@ -81,7 +81,9 @@ them to evidence or logs, and never sends them anywhere you did not ask it to.
 environment yourself with `python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"`.
 
 **`make test-ui` fails with a missing browser.** Run `make setup-ui`, which installs Playwright and
-downloads Chromium.
+downloads Chromium. It does not install Chromium's system libraries; CI does, with
+`playwright install --with-deps chromium`. If Chromium starts and then fails on a missing shared
+library, run `.venv/bin/playwright install-deps chromium` (it needs administrator rights).
 
 **The secret scan fails on a file you know is safe.** It reports a pattern and a truncated excerpt,
 never the value. If the value really is documentation, use one of the placeholder forms the scanner

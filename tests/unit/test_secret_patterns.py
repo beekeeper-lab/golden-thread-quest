@@ -521,12 +521,18 @@ def test_scan_text_stays_fast_with_many_distinct_non_overlapping_matches() -> No
 
     small = matches(5_000)
     large = matches(20_000)
-    started = time.monotonic()
-    scan_text(small)
-    small_elapsed = max(time.monotonic() - started, 1e-6)
-    started = time.monotonic()
-    scan_text(large)
-    large_elapsed = time.monotonic() - started
+
+    def best_of_three(text: str) -> float:
+        # Round 17 F1: one run under CPU load read as quadratic now and then.
+        timings = []
+        for _ in range(3):
+            started = time.monotonic()
+            scan_text(text)
+            timings.append(time.monotonic() - started)
+        return min(timings)
+
+    small_elapsed = max(best_of_three(small), 1e-6)
+    large_elapsed = best_of_three(large)
     ratio = large_elapsed / small_elapsed
     assert ratio < 8, (
         f"4x the matches took {ratio:.1f}x as long "
@@ -1258,3 +1264,23 @@ def test_a_markdown_or_html_escaped_token_is_detected_and_does_not_render(text: 
     assert redacted == f"token {REDACTION_PLACEHOLDER}"
     assert GITHUB_BODY not in render_markdown(redacted)
     assert scan_text(redacted) == []
+
+
+# Round 17 F5: the mask ratio that makes a starred-out value a placeholder was not pinned;
+# at 0.3 a real value with a third of its characters `x` would be excused.
+@pytest.mark.parametrize(
+    ("text", "found"),
+    [
+        ("password=Sx9xKx2xQ7ab", True),  # secret-scan: allow
+        ("password=gho_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", False),
+        ("password=ab************", False),
+    ],
+)
+def test_the_mask_ratio_threshold_is_pinned(text: str, found: bool) -> None:
+    assert bool(scan_text(text)) is found
+
+
+# Round 17 F12: a substitution that only prints a literal holds the value.
+def test_an_echoed_literal_is_not_a_command_substitution_placeholder() -> None:
+    assert scan_text('password="$(echo Sup3rS3cretValue9)"')  # secret-scan: allow
+    assert scan_text('password="$(cat /run/secrets/db_password)"') == []

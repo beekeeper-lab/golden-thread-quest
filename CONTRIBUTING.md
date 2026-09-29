@@ -29,7 +29,8 @@ make setup-ui
 make test-ui
 ```
 
-Optional: `pre-commit install` runs the fast half of `make check` (format, lint, YAML safety,
+Optional: `pre-commit` is not in the `dev` extras; install it with `uv pip install --python
+.venv/bin/python pre-commit`. Then `pre-commit install` runs the fast half of `make check` (format, lint, YAML safety,
 secret scan) on every commit. Every hook in `.pre-commit-config.yaml` is also a Makefile target
 you can run yourself, so nothing it does is hidden.
 

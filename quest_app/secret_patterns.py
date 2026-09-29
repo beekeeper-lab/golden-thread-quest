@@ -762,7 +762,13 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # command substitution or a Jinja expression, so `"$(true)Sup3rS3cretValue9"` and
     # `"{{ vault_pw }}Sup3rS3cretValue9"` were waved through. Only a value that is entirely
     # one `$(…)` is a command substitution now; the whole-value Jinja check is below.
-    if re.fullmatch(r"\$\([^()]*\)", lowered) or re.fullmatch(r"<[^<>]*>", lowered):
+    #
+    # Round 17 F12: a substitution that only prints a literal (`$(echo Sup3r…)`,
+    # `$(printf '%s' …)`) holds the value itself, so it is not a reference to one.
+    if (
+        re.fullmatch(r"\$\([^()]*\)", lowered)
+        and not re.match(r"\$\(\s*(?:echo|printf)\b", lowered)
+    ) or re.fullmatch(r"<[^<>]*>", lowered):
         return True
     # Round 16 E5: this used to be `lowered.startswith("${")`, so anything shaped like a
     # shell or compose expansion was exempted regardless of what followed — including a

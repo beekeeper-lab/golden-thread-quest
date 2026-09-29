@@ -216,3 +216,16 @@ def test_retargeting_a_directory_link_inside_the_package_changes_the_hash(
     link.symlink_to("b", target_is_directory=True)
 
     assert hash_directory(tmp_path) != before
+
+
+def test_a_file_ending_in_a_cut_off_utf8_character_is_not_treated_as_utf8(
+    tmp_path: Path,
+) -> None:
+    """Round 17 F7: the check that the content ends on a whole UTF-8 character was untested.
+    Without it, `\\xe2\\x82` at the end reads as UTF-8, and the lone `\\r` before it folds,
+    which Git (for which this content is binary) never does."""
+    with_cr = tmp_path / "with_cr.txt"
+    with_lf = tmp_path / "with_lf.txt"
+    with_cr.write_bytes(b"a\rb\xe2\x82")
+    with_lf.write_bytes(b"a\nb\xe2\x82")
+    assert hash_file(with_cr) != hash_file(with_lf)

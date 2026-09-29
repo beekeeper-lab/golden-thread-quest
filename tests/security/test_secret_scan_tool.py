@@ -125,3 +125,10 @@ def test_the_repository_itself_is_clean() -> None:
         check=False,
     )
     assert result.returncode == 0, result.stdout
+
+
+def test_a_line_that_merely_mentions_the_scanner_is_still_scanned(fake_repo: Path) -> None:
+    """Round 17 F6: the pragma is the exact marker, not any mention of the tool's name."""
+    target = fake_repo / "notes.py"
+    target.write_text(f'TOKEN = "{PLANTED}"  # see the secret-scan docs\n')
+    assert [m.line for m in secret_scan.scan_path(target)] == [1]
