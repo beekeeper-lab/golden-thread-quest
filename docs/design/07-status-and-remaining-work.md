@@ -1,198 +1,253 @@
-# Part 7. Status and remaining work
+# Part 7. Where we are, and the phase plan
 
-This part says what is finished, what is open, and what is deliberately left for later. Its
-status is current to round 17 (`docs/audits/round-17-independent-audit.md`). Section 7.4 keeps
-round 12's findings in full as a worked example of a round; every later round's findings are
-in its own record.
+This part is the project's plan. It says what the goal is, where the work stands, how every
+phase of the remaining work runs, and which phases remain. It replaces the audit-status part
+of versions 1.x.
 
-## 7.1 How the work was staged
+**The rule this part exists to enforce: scope changes only at a phase gate.** Between gates
+the current phase's scope is frozen. A new idea, from anyone, goes to
+`docs/PARKING-LOT.md` and is decided at the next gate, not acted on.
 
-`docs/IMPLEMENTATION-PLAN.md` divides the build into eleven stages. Each ends with an audit
-by a fresh reviewer, recorded under `docs/audits/`, and a stage is checked off only when its
-audit passes after fixes.
+## 7.1 The goal
 
-| Stage | Scope | State |
+Put the Golden Thread Quest in front of real participants and a reviewer, learn from what
+they do, and grow the curriculum and the application in the order that learning says is
+most valuable.
+
+The first release is a **pilot**: a small number of participants, working locally, on the
+quests that exist today, with the known limitations written down (Section 7.6). It is not a
+finished curriculum and not a hardened product. Everything after the pilot is chosen at a
+gate.
+
+## 7.2 Where we are (2026-09-29)
+
+**The application is built.** Stages 0 to 9 of `docs/IMPLEMENTATION-PLAN.md` were completed
+and audited on 2026-09-16 and 2026-09-17. Everything Parts 1 to 6 describe exists, with
+1382 tests under `make check` and 57 browser-driven tests under `make test-ui`. Eight quests
+ship, one per region.
+
+**The last twelve days went to one open criterion.** Stage 10, the release decision, has one
+unchecked criterion: DH7, "the final audit reports no unresolved blocking or high findings."
+Its closing rule required an independent round that finds no blocking or high finding at
+all. Seventeen rounds ran, from 2026-09-17 to 2026-09-29. Every round found at least one,
+every finding was fixed with a test, and the next round, pointed at new angles and at the new
+fixes, found more.
+
+**What that taught us.** The rounds found real defects: round 12 found that every browser
+form was refused, and round 17 found that the page showed a proof path the gates did not
+read. But the closing rule had no bound. A fresh adversarial reviewer can always find
+something in 15,000 lines of code, so the loop could not end on its own, and each round
+widened the scope a little: a broader secret scanner, integrity checks, timing tests. None
+of those widenings was a decision the program owner made at a checkpoint, and no working
+build was shown to the program owner along the way.
+
+**What stops now.** Round 18 is not run. The per-round audit loop is replaced by the phase
+method below. The audit records under `docs/audits/` stay as history.
+
+| Round | Blocking | High | | Round | Blocking | High |
+|---|---:|---:|---|---|---:|---:|
+| 1 (final audit) | 3 | 4 | | 10 | 1 | 8 |
+| 2 | 1 | 3 | | 11 | 0 | 3 |
+| 3 | 1 | 2 | | 12 | 2 | 4 |
+| 4 | 0 | 10 | | 13 | 2 | 3 |
+| 5 | 0 | 9 | | 14 | 0 | 3 |
+| 6 | 2 | 6 | | 15 | 0 | 3 |
+| 7 | 1 | 8 | | 16 | 0 | 2 |
+| 8 | 0 | 7 | | 17 | 1 | 5 |
+| 9 | 0 | 8 | | | | |
+
+*Each round's record is `docs/audits/round-NN-independent-audit.md`; rounds 1 to 3 are in
+`stage-10-final-audit.md` and `stage-10-final-re-audit.md`. An outside review on 2026-09-17
+(`external-review-2026-09-17.md`) called the engine a release candidate and the curriculum
+too thin.*
+
+## 7.3 How every phase runs
+
+Every phase has the same five steps. What changes from phase to phase is only the scope.
+
+1. **Plan, then freeze.** At the gate before the phase, this part records the phase's goal,
+   its scope as a numbered list, what is out of scope, a *done-when* checklist of things that
+   can be shown true or false, the demo, and a budget in working sessions. Once the program
+   owner approves it, the scope does not change until the next gate.
+2. **Build.** Only the numbered scope items. Work happens on feature branches and merges to
+   `main` on the implementer's judgment, as `CLAUDE.md` rule 2 allows. An idea that is not
+   in scope goes to `docs/PARKING-LOT.md` with one line saying why it might matter.
+3. **Verify.** One independent review, in a fresh context, checks the done-when list and
+   nothing else. A blocking or high finding *inside the scope* is fixed, and only that fix is
+   re-checked. A finding outside the scope goes to the parking lot. **At most two verify
+   cycles**; if the phase still fails, it stops and goes to the gate as it is.
+4. **Demo.** The program owner runs the phase's result, following written steps, and sees
+   it work.
+5. **Gate.** The design document gets a new minor version (the rule is in
+   `REGENERATING.md`), recording what was done, what was learned and what changed. The
+   parking lot is triaged: each item is scheduled into a phase, left in the lot, or cut.
+   Then the program owner chooses the next phase and approves its plan.
+
+**Two stop rules** end a phase early and go straight to the gate:
+
+- the phase has used half again its budget (for example, a third session on a two-session
+  phase);
+- a safety or data-loss problem turns up outside the phase's scope. It is reported, not
+  fixed on the spot, so the program owner decides whether it outranks the plan.
+
+## 7.4 The phases
+
+Every piece of remaining work the project knows about is in one of these phases or in the
+parking lot. Phase 1 is planned in full. Later phases are sketched, and each one is planned
+in full at the gate before it, using what the earlier phases taught. Each item carries a
+recommendation: **do**, **decide** (at that phase's gate, likely on pilot evidence), or
+**cut** (recommended not to do in the foreseeable future).
+
+### Phase 0: Reset and plan (this version)
+
+- **Goal:** stop the audit loop and put the plan in one document the program owner can read.
+- **Done when:** this part is merged; `docs/PARKING-LOT.md` exists; `CLAUDE.md` states the
+  phase rule; `PLANNING-STATUS.md` points here.
+- **Gate 0:** the program owner approves Phase 1's plan and the closing-rule change in its
+  item 2.
+
+### Phase 1: Pilot release decision
+
+- **Goal:** decide on a fixed checklist whether the application as built goes to a pilot,
+  and let the program owner see it working.
+- **Budget:** two sessions.
+- **Scope:**
+  1. **Housekeeping.** Remove the stale round 17 worktrees under `.worktrees/`, their local
+     branches and `backup/round-17-before-rewrite`. Delete the remote `chore/round-*` and
+     `fix/r*` branches that are merged into `main`.
+  2. **Replace DH7's closing rule** with the release checklist in item 3: DH7 closes when
+     every item in it passes and one verify pass finds no blocking or high finding *within
+     those flows*. This needs the program owner's approval at Gate 0, because they set the
+     current rule on 2026-09-28.
+  3. **The release checklist**, run for real, not by test client:
+     1. CI is green on `main`, every job.
+     2. A true `git clone` from GitHub, then `make setup`, `make check`, `make setup-ui` and
+        `make test-ui`, all pass.
+     3. **Participant flow:** open the site with `make serve`, pick a quest, start it, build
+        its evidence, run its validator, and submit it.
+     4. **Reviewer flow:** open the submission, ask for changes with a finding; the
+        participant fixes and resubmits; the reviewer approves; the passport shows verified
+        completion and verified XP, while claimed progress stays visibly separate.
+     5. **Maintainer flow:** add a sample quest as one Markdown file; after `make build` it
+        appears in its region, the catalog, search and its tag page with no change to UI code.
+     6. **Failure flow:** break a content file; the build names the file and field, and the
+        last good site stays up.
+  4. **A demo walkthrough**, `docs/guides/DEMO.md`: the checklist's flows 3 to 6 as numbered
+     steps the program owner can follow in about fifteen minutes.
+  5. **The release record.** `docs/audits/final-audit.md` gets the checklist results and a
+     recommendation, expected to be `release-with-advisories`; Stage 10's boxes in
+     `docs/IMPLEMENTATION-PLAN.md` are checked; `docs/RELEASE-NOTES.md` and the `README`
+     status note say "pilot".
+- **Out of scope:** round 18's targets; every item in Phases 3 to 7; any new hardening.
+- **Done when:** items 1 to 5 are complete, every checklist item passes, and the verify pass
+  finds no blocking or high finding within the checklist's flows.
+- **Demo:** the program owner follows `docs/guides/DEMO.md`.
+
+### Phase 2: Pilot (recommended next)
+
+- **Goal:** watch one to three real participants and one reviewer use the application, and
+  collect what confuses, blocks or delights them.
+- **Budget:** calendar time rather than sessions; little or no code.
+- **Scope, to be fixed at Gate 1:** who takes part, which of the eight quests they attempt,
+  how they report problems, and how long it runs. Code changes during the pilot are limited
+  to defects that stop a participant from continuing.
+- **Output:** a pilot report that ranks what to change. It is the main input for choosing
+  among Phases 3 to 7.
+
+### Phase 3: Participant and reviewer experience
+
+Known items, likely joined by pilot findings. The ones marked **do** were found while
+using the application; the others wait for evidence.
+
+| Item | Source | Recommendation |
 |---|---|---|
-| 0 | Planning and feasibility audit | Complete |
-| 1 | Repository and engineering foundation | Complete |
-| 2 | Content contracts and loading | Complete |
-| 3 | Deterministic site generation | Complete |
-| 4 | Participant state and loopback service | Complete |
-| 5 | Evidence workspaces and validator framework | Complete |
-| 6 | Participant UI and accessibility | Complete |
-| 7 | Submission and reviewer integrity | Complete |
-| 8 | Fork updates, versioning and migrations | Complete |
-| 9 | Documentation, hardening and release candidate | Complete |
-| 10 | Final independent audit and release decision | **Open** |
+| A degraded view for an attempt whose evidence folder is missing, instead of an unbuildable site | D12 | Do: one deleted folder breaks everything today |
+| Reviewer-awarded badges: a badge-award record so they can be granted | Known limitation 4 | Do if the pilot uses badges |
+| Role separation between participant and reviewer pages | D11 | Decide |
+| Success notices after an action | D14 | Decide |
+| Showing the quest version an attempt started on, not only the current one | Known limitation 10 | Decide |
+| Quest-page section order | D15 | Decide |
+| Deeper gamification than the quest framing implies | External review 9 | Decide, with the curriculum |
 
-## 7.2 Why Stage 10 is still open: DH7
+### Phase 4 onward: Curriculum
 
-Stage 10 closes when every release acceptance criterion in `docs/ACCEPTANCE-CRITERIA.md` is
-met. Forty-seven are checked. One is open:
+The outside review's main finding was that the curriculum is thin: eight quests, one per
+region. `docs/CURRICULUM-BACKLOG.md` proposes 128: Base Camp 9, Jira Jungle 23, Trello
+Islands 17, GitHub Caverns 18, Context Library 12, BA Ruins 13, Scrum Village 9, Playwright
+Labyrinth 20, and 7 hidden challenges.
 
-> **DH7**: the final audit reports no unresolved blocking or high findings.
+- **One region per phase**, in an order chosen at each gate. The recommended first is
+  **Base Camp**, because every other region builds on its safety quests.
+- Each curriculum phase includes the validators its quests need and a glossary content type
+  if the region's quests need one (D1).
+- A quest that writes to Jira, Trello or GitHub must meet the preview-and-confirm conditions
+  in `docs/SECURITY-AND-PRIVACY.md` first. The first region with such quests carries that
+  capability as its own scope item.
+- **Recommendation:** decide how many regions to build after the pilot. The full 128 is a
+  plan, not a promise.
 
-The closing rule, set by the program owner on 2026-09-28: DH7 closes on the first
-independent round that **finds no blocking or high finding at all**, with every medium and
-low finding from that round fixed or explicitly deferred. A blocking or high finding raised
-and then fixed does not count as none found, because the fix is itself unaudited; the next
-round runs against the merge commit that contains it. The earlier rule, a round that finds
-nothing at any severity, was never met in sixteen rounds.
+### Phase 5: Engineering hygiene
 
-**Current status.** Seventeen rounds have run and each found at least one blocking or high
-finding. Round 17 found one blocking and five high, all fixed with tests; round 18 runs
-against its merge commit.
+| Item | Source | Recommendation |
+|---|---|---|
+| A scheduled CI job that runs a true `git clone` and setup | Known limitation 9 | Do; Phase 1 runs it once by hand |
+| Coverage reporting | D2 | Decide |
+| A fixture that holds all eight quest states at once | D8 | Decide |
+| A per-test timeout for the scaling tests | D16 | Decide |
+| Splitting the largest modules, with complexity limits | External review 7 | Decide, only if a later phase is slowed by them |
 
-**Method of a round.** Three independent review **lenses**, each in its own worktree at the
-commit under audit with `docs/audits/` removed, each given only paths, a commit and areas to
-probe, none shown the author's beliefs or another lens's findings. The lenses cover the
-curriculum followed literally, the engine, and tooling, tests and documentation. Every
-finding is verified by reproduction or by reading the cited code before it is accepted.
+### Phase 6: Security hardening
 
-## 7.3 Audit history
+Release one's controls are documented in Part 5. These go further. They matter when
+validators or quests come from authors the program does not review, which is not the case
+today.
 
-| Round | Commit | Blocking | High | Record |
-|---|---|---:|---:|---|
-| 1 (final audit) | `1418b78` | 3 | 4 | `stage-10-final-audit.md` |
-| 2 (re-audit) | `128617e` | 1 | 3 | `stage-10-final-re-audit.md` |
-| 3 (second re-audit) | `aafce28` | 1 | 2 | `stage-10-final-re-audit.md` |
-| External review | `a69a8b8` | n/a | n/a | `external-review-2026-09-17.md`: engine a release candidate, curriculum too thin |
-| 4 | `207a7b3` | 0 | 10 | `round-04-independent-audit.md` |
-| 5 | `ff0c63d` | 0 | 9 | `round-05-independent-audit.md` |
-| 6 | `ad629a2` | 2 | 6 | `round-06-independent-audit.md` |
-| 7 | `31a74cb` | 1 | 8 | `round-07-independent-audit.md` |
-| 8 | `b0667c0` | 0 | 7 | `round-08-independent-audit.md` |
-| 9 | `5248500` | 0 | 8 | `round-09-independent-audit.md` |
-| 10 | `8df0ac5` | 1 | 8 | `round-10-independent-audit.md` |
-| 11 | `ea36037` | 0 | 3 | `round-11-independent-audit.md` |
-| 12 | `16a0b03` | 2 | 4 | `round-12-independent-audit.md`, merged to `main` at `0018e2d` (pull request 10) |
-| 13 | `a942237` | 2 | 3 | `round-13-independent-audit.md`, merged to `main` at `3b9b7c2` (round 14's predecessor commit) |
-| 14 | `3b9b7c2` | 0 | 3 | `round-14-independent-audit.md`, merged to `main` at `95b173e` (round 15's predecessor commit) |
-| 15 | `95b173e` | 0 | 3 | `round-15-independent-audit.md`, merged to `main` at `a31bbf9` |
-| 16 | `a31bbf9` | 0 | 2 | `round-16-independent-audit.md`, merged to `main` at `bc190e9` |
-| 17 | `bc190e9` | 1 | 5 | `round-17-independent-audit.md`: two passes, the first (the A-series) never recorded until the second merged it |
+| Item | Source | Recommendation |
+|---|---|---|
+| Container or seccomp isolation for validators | D9 | Cut until third-party validators exist |
+| Reaching a validator grandchild that starts its own session | Round 12 E9 | Cut, same reason; it depends on D9 |
+| Wider secret-scanner coverage | D10 | Decide, only on a real false negative from the pilot |
+| Scanning binary and compressed files | Known limitation 8 | Cut; the participant's confirmation in `PROOF.md` covers it |
+| Type-tagged evidence hash chunks | D13 | Cut; it re-flags every approved attempt and closes a gap that hides nothing |
 
-Every accepted blocking and high finding from rounds 1 to 12 is fixed on `main`, each code fix
-with a test that fails without it, except round 12's E9 (Low, a validator grandchild that
-starts its own session survives cleanup), which is stated as known limitation 11 below rather
-than fixed. The round records say which lower findings were deferred or stated as limitations
-instead. The pattern the audits name is consistent: defects live in states no fixture occupied
-(no participant yet, a refused action, a second process, a hostile file, a real browser rather
-than a test client). Round 12 found the sharpest instance of that pattern yet: C1 (every
-browser action form refused) went unseen for eleven rounds because no lens had submitted a
-form in a real browser. Rounds 13 through 15 kept finding high-severity issues past round 12's
-fixes — `docs/audits/round-13-independent-audit.md`, `round-14-independent-audit.md` and
-`round-15-independent-audit.md` record what and why. Round 17's blocking finding is the same
-pattern once more: the proof path a page showed was not the path the gates read, which only
-a lens that followed the page in a real browser could see.
+### Phase 7: New capabilities
 
-## 7.4 Round 12: findings and their fixes
+Named in the specification and not built. Each is a product decision, not a fix.
 
-Round 12 audited `16a0b03` and found two blocking and four high findings, so it did not close
-DH7. All eighteen findings are verified and accepted; seventeen are fixed on `main` at
-`0018e2d`, each with a test shown to fail with the fix reverted, and E9 is stated as known
-limitation 11 (Section 7.5). `make check` now runs 830 tests to completion and `make test-ui`
-runs 45 browser-driven ones, both up from 751 and 43 at round 11 (`docs/RELEASE-NOTES.md`). **DH7 is not closed by fixing a round's findings**, so round 13
-must still run against `0018e2d` before Stage 10 can close.
+| Item | Source | Recommendation |
+|---|---|---|
+| Live Environment Health checks through the local service | D7 | Decide after the pilot |
+| A central, opt-in scoreboard | Product brief | Decide after the pilot |
+| AI-assisted advisory evaluation of evidence | Product brief | Decide after the pilot |
+| External-write previews | Product brief | Build with the first curriculum region that needs them |
 
-| ID | Severity | Finding | Fix |
-|---|---|---|---|
-| C1 | Blocking | Every browser action form failed: pages sent `Referrer-Policy: no-referrer`, Chromium then sent `Origin: null`, and the origin check refused it. Only the CLI changed state | The policy is `same-origin` in the header and the meta tag (Part 4, flow 4.8; Part 5, Section 5.2). Two browser tests submit real forms and check the files on disk |
-| E1 | Blocking | Three writes could follow a symbolic link out of `participant/`: the activity line, validation results in a linked `validation/` directory, and the review archive. A FIFO `ACTIVITY.md` hung an action while it held both locks | Every participant write goes through `safe_io`'s no-follow, non-blocking path (ADR-042; Part 2, Section 2.7; Part 5, Section 5.4). An unusable `ACTIVITY.md` skips its line with a warning instead |
-| C2 | High | CLI tests with `--participant-root` still built into the repository's own `generated/`, so `make check` replaced a participant's site with fixture data until the next build | `GTQ_GENERATED_ROOT` and `GTQ_LOCAL_DATA_ROOT` are configuration too (ADR-018, amended), with a test-suite session guard as backstop (Part 2, Section 2.7) |
-| E2 | High | Validation result files were read without a size or file-type bound; a FIFO hung `validate`, `build` and the service | Read through the same bounded reader as `progress.yaml`, up to 8 MB (Part 3, Section 3.2; Part 5, Section 5.9) |
-| E3 | High | `review*.yaml` files were globbed and parsed without a bound or error handling; a stray bad `reviewer-notes.yaml` passed `validate` and crashed `build` | One shared definition of a review record, read bounded, used by the loader, the review history and the evidence hash alike (Part 3, Section 3.4; Part 5, Section 5.9) |
-| E5 | High | A legitimate `locally_validated` attempt became a load error after an update that added a validator to the quest, and every action was then refused | ADR-017 amended: a version mismatch with at least one qualifying result warns instead of erroring (Part 3, Section 3.5) |
-| C3 | Medium | A link leading outside the evidence package made the review page say a secret was found | `evidence.scan_kinds` separates secret, link and oversize findings, worded separately (Part 4, flow 4.4; Part 5, Section 5.7) |
-| C4 | Medium | After a pass, local validation and a failing re-run, the evidence page showed "passed" beside "Last run: fail" with nothing connecting them | The evidence page notes when a declared validator's latest run does not match the state it earned; the state logic itself is unchanged (ADR-017) |
-| C5 | Medium | When a newer quest version renames a proof path, the review checklist marked the old item "Not detected" with no note that the version changed | Each missing checklist item on a version mismatch now notes that the list follows the published version |
-| E4 | Medium | A hand-edited `state: submitted` with no `submission.yaml` loaded and could be approved, skipping the secret-scan gate | A `submitted` attempt with no readable submission record is a load error, and `record_decision` refuses it too (Part 3, Section 3.5; Part 5, Section 5.8) |
-| E6 | Medium | The runner capped the output excerpt and check count but not other check fields, so an oversize field discarded the whole run | Check fields are truncated to their own schema limit; a check outside the schema's `id` or `outcome` is replaced and forces `environment_failure` (Part 2, Section 2.6; Part 4, flow 4.3) |
-| E7 | Medium | Redaction ran after truncation, so a token cut at the boundary was stored in clear | Redaction runs on the complete text first, then truncation (Part 4, flow 4.3; Part 5, Section 5.7) |
-| E8 | Medium | Evidence files had no size ceiling; a very large log made every build slow while it held the locks | Hashing streams a megabyte at a time; the scan reads at most 2 MB of a file and reports the rest as an oversize finding (Part 5, Section 5.4) |
-| T1 | Medium | The documentation command test covered five documents and skipped four guides | The test now checks every Markdown file at the root and under `docs/`, except audits and five named planning files |
-| E9 | Low | A validator grandchild that starts its own session survives cleanup | **Not fixed.** A reliable fix needs an isolation layer this release does not have. Known limitation 11 (Section 7.5) |
-| E10 | Low | `make migrate` rewrote `progress.yaml` without an activity line | `apply_migrations` writes an activity line after a migration it keeps (Part 4, flow 4.7) |
-| E11 | Low | A validator that finished but left a non-daemon thread running was reported `interrupted` | Kept and classified when the result channel has closed and the process is still alive a second later (Part 2, Section 2.6; Part 4, flow 4.3) |
-| T2 | Low | `PYTHON ?= python3` in the Makefile was never used | Removed; a test fails on any Makefile variable nothing references |
+## 7.5 Where things are recorded
 
-**What this means for a reader of this document.** Parts 2 to 5 now describe the fixed
-behavior at `0018e2d`. Where round 12 found the code falling short of the design, the relevant
-part names the finding beside the fix rather than beside an open gap.
+| What | Where |
+|---|---|
+| The plan: goal, current phase, phase sketches | This part |
+| Ideas that arrived mid-phase | `docs/PARKING-LOT.md` |
+| What each version of the plan changed and learned | `docs/design/CHANGELOG.md` |
+| The original stages and the deferred-work register (D1 to D16) | `docs/IMPLEMENTATION-PLAN.md` |
+| Release criteria | `docs/ACCEPTANCE-CRITERIA.md` |
+| Verify passes and audits | `docs/audits/` |
 
-## 7.5 Known limitations
+## 7.6 Known limitations of release one
 
-These are deliberate and documented in `docs/RELEASE-NOTES.md`. They are not defects to be
-fixed before release; they are boundaries of release one.
+Deliberate boundaries, stated for participants in `docs/RELEASE-NOTES.md`. The phase that
+would lift each one is in brackets.
 
-1. Recording a reviewer decision needs the application (the local service or the CLI),
-   because it writes files. Reading evidence works from generated pages alone.
-2. Reviewer provenance is conventional, not cryptographic (ADR-030).
-3. Environment Health reports build-time facts, not live ones (D7).
-4. Reviewer-awarded badges cannot be awarded: there is no badge-award record type, so they
-   show as pending.
-5. Validator isolation is policy plus process boundaries, not a container or seccomp (D9).
-6. Catalog filtering needs JavaScript; region and tag pages are the scripting-free routes.
-7. No coverage reporting (D2) and no glossary content type (D1).
-8. A binary or compressed file (images, PDF, zip and the office formats) is not scanned for
-   secrets; a file that only claims such a format by its first bytes is (round 17 E7).
-9. Clean-clone installation is tested in CI from a `git archive` export, one step short of a
-   real `git clone`; a real clone was run by hand in round 4.
-10. Earlier quest versions are not kept. An attempt records its version, but pages show the
-    current version's criteria; Git history holds the earlier text.
-11. A validator's grandchild that starts a session of its own outlives the timeout (round 12
-    finding E9). The runner kills the whole process group on exit and on timeout, which
-    reaches anything a validator spawns normally; a descendant that calls `setsid()` leaves
-    that group and is not reached by the same `killpg`. Making the service process a Linux
-    `PR_SET_CHILD_SUBREAPER` would catch a reparented orphan like that one, but only by
-    landing it on the service process itself, mixed in with every other run's, with no cheap
-    way to tell which run a reparented PID came from and nothing that ever kills the service
-    process the way a per-run child is killed. That trade swaps one unbounded-survivor case
-    for another, so this is recorded rather than fixed: every shipped validator is reviewed
-    code that does not do this, and the gap only matters against one that is not.
+1. Recording a reviewer decision needs the local service or the CLI, because it writes files.
+2. Reviewer identity is conventional, not cryptographic (ADR-030). [Phase 3, D11]
+3. Environment Health shows build-time facts, not live ones. [Phase 7, D7]
+4. Reviewer-awarded badges cannot yet be awarded; they show as pending. [Phase 3]
+5. Validator isolation is policy plus process boundaries. [Phase 6, D9]
+6. Catalog filtering needs JavaScript; region and tag pages work without it.
+7. No coverage reporting, no glossary content type. [Phases 5 and 4, D2 and D1]
+8. Binary and compressed files are not scanned for secrets. [Phase 6]
+9. Clean-clone installation is tested in CI from a `git archive` export, not a real clone.
+   [Phase 1 once by hand, Phase 5 on a schedule]
+10. Earlier quest versions are not kept; pages show the current version's criteria.
+    [Phase 3]
+11. A validator grandchild that starts its own session outlives the timeout. [Phase 6]
 12. Two builds are byte-identical only when `SOURCE_DATE_EPOCH` is set.
-
-## 7.6 Deferred work
-
-From the deferred-work register in `docs/IMPLEMENTATION-PLAN.md`. Items D3 to D6 were
-delivered in their stages.
-
-| ID | Work | Why deferred |
-|---|---|---|
-| D1 | Glossary content type | No schema, sample or screen needs it yet |
-| D2 | Coverage reporting | Half-configured is worse than absent |
-| D7 | Live Environment Health checks through the service | A generated page cannot inspect the machine when read |
-| D8 | A fixture exercising all eight quest states at once | Tests reach the other states by mutation today |
-| D9 | Container or seccomp isolation for validators | Release one is policy plus process boundaries |
-| D10 | Wider secret-scanner coverage (distant assignments, bare keys, base64, webhooks, personal data) | Widening without a corpus risks false positives that teach people to route around the gate |
-| D11 | Role separation between participant and reviewer | The reviewer page is in the primary navigation; ADR-030 already states provenance is conventional |
-| D12 | A degraded view for an attempt whose evidence directory is missing | Today one deleted folder makes the site unbuildable until `progress.yaml` is edited |
-| D13 | Type-tagged evidence hash chunks | Every approved attempt would read as changed once; the collision it closes hides nothing |
-| D14 | Success notices after an action | The rebuilt page already shows the new state |
-| D15 | Quest-page section order | The body renders in authored order; a content-model decision |
-| D16 | A per-test timeout for the scaling tests | Needs a new test dependency |
-
-**Curriculum.** Release one ships eight quests, one per region, four badges and one track.
-`docs/CURRICULUM-BACKLOG.md` lists about 128 proposed quests across the eight regions plus
-seven optional "trap" challenges, from repository safety through Jira, Trello and GitHub
-synchronization to Playwright test repair. The backlog is a plan, not a promise, and any
-quest that performs an external write must first meet the preview-and-confirm conditions in
-`docs/SECURITY-AND-PRIVACY.md`. Several future-facing application capabilities are also named
-in the specification and not built: a central opt-in scoreboard, AI-assisted advisory
-evaluation, and external-write previews.
-
-## 7.7 What done looks like
-
-Stage 10 completes, and the project can make its release decision, when:
-
-1. a round runs against the latest merge commit and finds no blocking or high finding, with
-   every medium and low finding from it fixed or explicitly deferred;
-2. DH7 is checked, `docs/audits/final-audit.md` records the decision (`release`,
-   `release-with-advisories` or `do-not-release`), and the Stage 10 boxes in
-   `docs/IMPLEMENTATION-PLAN.md` are checked.
-
-Round 18 should point at what round 17 named for it: the proof-path mapping, the new
-validator run parameters, the approval re-scan, the merged secret scanner as one whole, and
-the tests round 17 added, mutated the same way.
-
-This document then gets a minor version for the new status (see `REGENERATING.md`).

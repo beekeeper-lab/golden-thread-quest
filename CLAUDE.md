@@ -11,7 +11,7 @@ Do not reinterpret this as a generic learning-management system or a hosted SaaS
 1. **Never implement directly on `main`.** Create a descriptive feature branch before modifying production files.
 2. **Land your own work.** Commit, push, open the pull request, and merge it to `main` when the stage's audit passes. On this repository the merge is yours to make and does not need to be asked for. Merging an unfinished round is still wrong, but that is a question of readiness, not of permission.
 3. Treat this repository as a planning package until the Stage 0 audit passes.
-4. Follow `docs/IMPLEMENTATION-PLAN.md` in order.
+4. Follow `docs/IMPLEMENTATION-PLAN.md` in order. Since 2026-09-29 the remaining work follows the phase plan in `docs/design/07-status-and-remaining-work.md`: work only the current phase's numbered scope, put any other idea or out-of-scope finding in `docs/PARKING-LOT.md`, and do not start the next phase until the program owner approves it at the gate. Scope changes only at a gate.
 5. Work on only one stage at a time.
 6. Update the checkboxes and stage log as work is completed.
 7. At the end of every stage, perform the required audit using a fresh review context or review subagent when available.

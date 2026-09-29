@@ -1,7 +1,27 @@
 # System Design Changelog
 
 The version rule is in `REGENERATING.md`: major for a restructure, minor for new content or a
-new audit round's status, patch for corrections.
+phase gate, patch for corrections.
+
+## 2.0.0 (2026-09-29)
+
+Describes `main` at `a837e7a`. A major version because Part 7 is restructured: it was the
+audit status and is now the project plan.
+
+- **What changed and why.** Seventeen audit rounds ran between 2026-09-17 and 2026-09-29
+  under a closing rule with no bound, and each widened the scope a little without a decision
+  at a checkpoint. The program owner asked for a strict plan with scope changes only between
+  phases. Round 18 is not run.
+- Part 7 now states the goal (a pilot, then growth chosen from what it teaches), where the
+  work stands, the five steps every phase follows (plan and freeze, build, one verify pass,
+  demo, gate), two stop rules, and Phases 0 to 7 with a recommendation on each known item.
+- Part 7 drops round 12's findings-and-fixes table and the long form of the audit history;
+  both remain in `docs/audits/`.
+- `docs/PARKING-LOT.md` is new: ideas that arrive mid-phase wait there for the next gate.
+- The glossary adds *gate*, *parking lot*, *phase* and *verify pass*, and updates *DH7* and
+  *round*.
+- **Gate 0 is open.** The program owner approves Phase 1's plan, including replacing DH7's
+  closing rule with Phase 1's release checklist, before Phase 1 starts.
 
 ## 1.3.0 (2026-09-29)
 

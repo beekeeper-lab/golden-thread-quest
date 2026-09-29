@@ -10,7 +10,7 @@ The version is `MAJOR.MINOR.PATCH`, held in `docs/design/VERSION`.
 | Change | Bump | Example |
 |---|---|---|
 | Restructure: parts added, removed, merged or reordered | Major | 1.4.2 to 2.0.0 |
-| New content, or the status of a new audit round | Minor | 1.0.0 to 1.1.0 |
+| New content, or a phase gate (Part 7, Section 7.3) | Minor | 2.0.0 to 2.1.0 |
 | Corrections that change no structure and add no content | Patch | 1.1.0 to 1.1.1 |
 
 The HTML and the PDF carry the same version in their file names
@@ -32,9 +32,8 @@ README's metadata table carries it too, and the build refuses to run if the READ
    `quest-app action` command runnable as printed, with `--confirm` on the actions that
    need it (`start-quest`, `submit-for-review`, `record-review`).
 2. Choose the new version by the rule above. Write it to `docs/design/VERSION`. In
-   `docs/design/README.md`, update the Version, Date and Describes rows (and the Audit status
-   row if the audit status came from a branch) and the two file names in the Rendered copies
-   row.
+   `docs/design/README.md`, update the Version, Date, Describes and Plan status rows and the two
+   file names in the Rendered copies row.
 3. Add an entry at the top of `docs/design/CHANGELOG.md`.
 4. Remove the previous version's rendered files. Git history keeps them:
 

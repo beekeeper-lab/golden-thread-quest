@@ -25,11 +25,12 @@ where the term maps to one.
 | **Content hash** | SHA-256 over a quest's front matter and body. Recorded on an attempt at start; a later mismatch is a warning (ADR-028) |
 | **Content problem** | The single error shape every layer reports: file, stable ID, field path, rule, redacted received value, suggestion (`errors.ContentProblem`) |
 | **Curriculum maintainer** | The person who writes quests, regions, badges, tracks and validators. Also called curriculum author |
-| **DH7** | The one open release acceptance criterion: the final audit reports no unresolved blocking or high findings. Closes only on a round that finds none |
+| **DH7** | The one open release acceptance criterion: the final audit reports no unresolved blocking or high findings. Its closing rule is to be replaced by Phase 1's release checklist, subject to Gate 0 (Part 7, Section 7.4) |
 | **Evidence hash** | SHA-256 over an evidence package, excluding `validation/`, `submission.yaml` and `review*.yaml` (ADR-031) |
 | **Evidence package** | The folder `participant/evidence/<quest-id>/<attempt-id>/` holding `PROOF.md`, `manifest.yaml`, logs, screenshots, validation results, the submission and review records |
 | **Fork** | The participant's copy of the canonical repository; its `origin` remote. Curriculum arrives from the `upstream` remote |
 | **Generated output** | Everything under `generated/`: HTML, JSON indexes, build manifest. Disposable and never authoritative (ADR-015) |
+| **Gate** | The checkpoint between two phases: the design document is versioned, the parking lot triaged and the next phase approved. The only point at which scope changes (Part 7, Section 7.3) |
 | **Lens** | One of the independent reviewers in an audit round, each with its own scope and worktree |
 | **Loopback service** | The HTTP server in `serve.py`, bound to `127.0.0.1`, that serves the pages and performs actions |
 | **Locked** | Computed quest state: at least one prerequisite is not verified. Never stored |
@@ -37,8 +38,10 @@ where the term maps to one.
 | **Migration** | A step that moves `progress.yaml` from one schema version to the next, validated before and after, reversible by restoring the original bytes (`migrations.py`) |
 | **Needs changes** | Attempt state after a reviewer asks for changes or rejects. The participant resumes from it |
 | **Origin check** | Refusal of a state-changing request whose `Origin` or `Referer` is present and is not `http` on a loopback name at the bound port |
+| **Parking lot** | `docs/PARKING-LOT.md`: ideas and out-of-scope findings that arrived mid-phase, decided at the next gate |
 | **Participant** | The learner who works through quests in their own fork |
 | **Participant-owned** | The ownership zone of `participant/`: the participant's files, never replaced by an update |
+| **Phase** | A unit of planned work with frozen scope, a done-when checklist, a demo and a budget, ending at a gate (Part 7, Section 7.3) |
 | **Preflight** | `quest-app update`: read-only checks before taking an upstream update. Prints commands; runs no merge |
 | **Prerequisite** | A quest that must be verified before another can start |
 | **Program-owned** | The ownership zone of `content/`, `schemas/`, `templates/`, `assets/`, `quest_app/`, `validators/` and most of `docs/`: changed upstream |
@@ -56,7 +59,7 @@ where the term maps to one.
 | **Request token** | A random value minted when the service starts, held in memory, substituted into served pages, and required on every state-changing request |
 | **Review record** | `review.yaml` in the evidence package, or one of its `review-<timestamp>-<6 hex>.yaml` archives: the reviewer's decision, findings, verification statement, evidence hash and proof files. Enumerated by one shared definition, `progress.review_archive_paths`, used by the loader, the review history and the evidence hash alike (round 12, amended) |
 | **Reviewer** | The person who evaluates submitted evidence and records a decision. Also called Questmaster |
-| **Round** | One release audit pass against a specific commit, recorded under `docs/audits/` |
+| **Round** | One release audit pass against a specific commit, recorded under `docs/audits/`. Seventeen ran; the phase method replaced them (Part 7, Section 7.2) |
 | **Secret scan** | Detection of secret-like values: over tracked files by `tools/secret_scan.py`, and over an evidence package by `evidence.scan_evidence`, where it blocks marking evidence ready and submission. A finding is one of three kinds — secret, link or oversize (`evidence.scan_kinds`) |
 | **Session guard** | A session-scoped test fixture (`tests/conftest.py`) that fails the whole test run if the repository's own `generated/`, `local-data/` or `participant/` changed, catching a test that forgot to isolate one of the three writable roots (round 12) |
 | **Stable ID** | A lowercase, hyphenated identifier that never changes when a title or filename does, and is never reused (ADR-012) |
@@ -68,6 +71,7 @@ where the term maps to one.
 | **Verification statement** | The reviewer's own words, at least twenty characters, saying what they checked and how. Required to approve |
 | **Verified** | Attempt state produced only by a reviewer's approval, and re-derived from the review record on every load (ADR-011) |
 | **Verified XP** | XP from verified quests only |
+| **Verify pass** | A phase's one independent review, which checks that phase's done-when list and nothing else (Part 7, Section 7.3) |
 | **View model** | A display-ready object built in `view_models.py` for one page. Templates read only view models |
 | **Workspace** | The object a validator receives, whose reads and writes are confined to the registered roots after symbolic links are resolved, and which exposes the attempt's own evidence files |
 | **XP** | Experience points declared per quest (`xp`), shown as two separate totals: claimed and verified |
