@@ -928,3 +928,25 @@ def test_a_brace_glued_inside_an_unquoted_value_does_not_hide_it() -> None:
     (match,) = scan_text(text)
     assert match.pattern_id == "secret-assignment-unquoted"
     assert redact_text(text)[0] == f"api_key={REDACTION_PLACEHOLDER}"
+
+
+# Round 17 E6: only the root of a dotted chain was checked, so a passphrase that merely
+# started with a code-root name read as an attribute path.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "password=context.is.king2024",  # secret-scan: allow
+        "password=settings.Sup3r.Secret9",  # secret-scan: allow
+        "password=config.a.b.c.d",  # secret-scan: allow
+    ],
+)
+def test_a_passphrase_starting_with_a_code_root_is_detected(text: str) -> None:
+    assert scan_text(text), f"expected {text!r} to be detected"
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["password = settings.DB_PASSWORD", "token = self.config.github_token", "secret = os.environ"],
+)
+def test_a_real_attribute_path_from_a_code_root_stays_exempted(text: str) -> None:
+    assert scan_text(text) == []

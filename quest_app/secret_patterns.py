@@ -679,11 +679,23 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # dotted passphrase (`correct.horse.battery.staple`, `Welcome.To.Acme`) read exactly like
     # one and was never reported. The length bounds still matter too: without them this also
     # matches a JWT, whose three base64 segments are exactly a long dotted chain.
+    #
+    # Round 17 E6: the root was the only part checked, and on the lowered value, so a
+    # passphrase that merely started with a root name (`context.is.king2024`,
+    # `settings.Sup3r.Secret9`) still read as an attribute path. Every segment is now
+    # checked as written: an attribute name is a lowercase `snake_case` name or an
+    # `UPPER_SNAKE` constant (`settings.SECRET_KEY`), with no digit in it — the digits and
+    # mixed case are what a word-based password adds — and the chain is at most four names
+    # long, root included.
+    written = value.strip()
+    segments = written.split(".")
     if (
-        len(lowered) <= 40
-        and re.fullmatch(r"[a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)+", lowered)
-        and all(len(segment) <= 20 for segment in lowered.split("."))
-        and lowered.split(".", 1)[0] in _CODE_ATTRIBUTE_ROOTS
+        len(written) <= 40
+        and 2 <= len(segments) <= 4
+        and segments[0] in _CODE_ATTRIBUTE_ROOTS
+        and all(
+            len(segment) <= 20 and re.fullmatch(r"[a-z_]+|[A-Z_]+", segment) for segment in segments
+        )
     ):
         return True
     # Round 15 E1: `gh auth status` and this application's own redaction print a value that
