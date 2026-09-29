@@ -28,7 +28,8 @@ Leave terminal 1 running. Use a second terminal for the file steps, and run
 3. Click **Open evidence workspace**, then **Run the repository foundation check**. It
    passes with an advisory: `PROOF.md` is still empty.
 4. Click **Mark evidence ready**, then **Record local validation**, then tick the box and
-   click **Submit for review**. The header now shows **20 claimed XP** and **0 verified XP**:
+   click **Submit for review**. The totals beside the navigation now show **20 claimed XP** and
+   **0 verified XP**:
    your claim and the reviewer's verification are counted separately.
 
 The application let you submit with three required files missing. A reviewer sees that, and
@@ -36,7 +37,7 @@ the next step is what a reviewer should do about it.
 
 ## 2. Reviewer: ask for changes
 
-1. Click **Reviewer** in the top navigation, then the quest. The **Required evidence**
+1. Click **Reviewer** in the navigation (behind **Menu** on a narrow window), then the quest. The **Required evidence**
    checklist shows three items *Not detected*.
 2. In the decision form: enter a name, choose **Needs changes**, and fill in one finding with
    a severity, a summary, the evidence you saw, a criterion and the change you require.
@@ -48,8 +49,9 @@ the next step is what a reviewer should do about it.
 2. `cp docs/guides/demo/repository-ownership.md docs/guides/demo/audit-log.md participant/context/`
 3. `cp docs/guides/demo/second-run.txt participant/evidence/base-camp-repository-safety/base-attempt-001/logs/`
 4. `cp docs/guides/demo/PROOF.md participant/evidence/base-camp-repository-safety/base-attempt-001/PROOF.md`
-5. In the browser, open **Evidence** and the quest. The reviewer's finding is at the top.
-   Click **Resume after review**, then **Run the repository foundation check**, then
+5. In the browser, open **Evidence** and the quest. The reviewer's finding is at the top. The
+   three files still say *Not detected*: the page is from the last build, and the next
+   action rebuilds it. Click **Resume after review**, then **Run the repository foundation check**, then
    **Mark evidence ready**, **Record local validation** and **Submit for review**. Every
    required item now says *Detected* or *Validated*.
 

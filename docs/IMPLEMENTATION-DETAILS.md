@@ -63,7 +63,7 @@ tools/               secret scan, YAML-safety check, cleanup
 | 7 | Submissions, reviewer integrity | `stage-04-to-09-implementation-audits.md` |
 | 8 | Update preflight, migrations | `stage-04-to-09-implementation-audits.md` |
 | 9 | Implementation details, traceability, release notes | `stage-04-to-09-implementation-audits.md`; its misses closed in `stage-10-final-audit.md` |
-| 10 | Final independent audit and release decision | open: rounds 4–17 in `docs/audits/`, DH7 |
+| 10 | Final independent audit and release decision | release checklist passed and DH7 closed (`docs/audits/phase-01-verify.md`); the release decision is the program owner's, at Gate 1 |
 
 ## Decisions that shaped the code
 

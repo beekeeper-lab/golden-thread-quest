@@ -2,11 +2,11 @@
 
 | | |
 |---|---|
-| Version | 2.0.0 |
+| Version | 2.1.0 |
 | Date | 2026-09-29 |
-| Describes | `main` at `a837e7a` (round 17's merge, with its timing-test fix) |
-| Plan status | Phase 0 (reset and plan) complete; Gate 0 open: the program owner approves Phase 1 (Part 7, Section 7.4) |
-| Rendered copies | `artifacts/html/design/golden-thread-system-design-v2.0.0.html`, `artifacts/pdf/design/golden-thread-system-design-v2.0.0.pdf` |
+| Describes | `main` at `4ad5368`, plus the Phase 1 records landing with this version |
+| Plan status | Gate 0 passed; Phase 1 built and verified, with the demo and Gate 1 next (Part 7, Section 7.2) |
+| Rendered copies | `artifacts/html/design/golden-thread-system-design-v2.1.0.html`, `artifacts/pdf/design/golden-thread-system-design-v2.1.0.pdf` |
 
 ## About this document
 

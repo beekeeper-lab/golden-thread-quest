@@ -87,7 +87,7 @@ is itself the finding.
 | **DH4** Update and migration behavior documented | `docs/guides/UPDATING.md` | `integration/test_update_and_migration.py` |
 | **DH5** `IMPLEMENTATION-DETAILS.md` describes what exists | this repository | — |
 | **DH6** `TRACEABILITY.md` connects criteria to code and tests | this file | — |
-| **DH7** Final audit reports no unresolved blocking or high findings | `docs/audits/` | pending Stage 10 |
+| **DH7** Final audit reports no unresolved blocking or high findings | `docs/audits/` | Phase 1 release checklist and verify pass, `docs/audits/phase-01-verify.md` |
 
 ## Rows corrected after the final audit
 

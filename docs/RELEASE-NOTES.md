@@ -2,8 +2,10 @@
 
 **Version:** 0.1.0
 **Date:** 2026-09-29
-**Status:** release candidate under audit — not released, and not yet recommended for use (see
-the README's status note). The final audit's release decision is still open (`docs/ACCEPTANCE-CRITERIA.md`, DH7).
+**Status:** pilot release candidate. It is not released yet. The release checklist passed
+and DH7 is closed (`docs/audits/phase-01-verify.md`). The recommendation is
+`release-with-advisories` (`docs/audits/final-audit.md`), and the program owner decides at
+Gate 1.
 
 ## What this is
 
