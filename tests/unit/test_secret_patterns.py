@@ -873,3 +873,38 @@ AZURE_KEY = "AccountName=x;AccountKey=Ab3dEfGh12Ij4kLm56NoPq==;"  # secret-scan:
 )
 def test_keywordless_credential_shapes_are_detected(pattern_id: str, text: str) -> None:
     assert pattern_id in {match.pattern_id for match in scan_text(text)}, text
+
+
+def test_a_bare_keyword_value_on_the_next_line_is_still_detected() -> None:
+    """A YAML plain scalar may start on the line after its key; only a suffixed name gives
+    that up."""
+    assert scan_text("password:\n  Sup3rS3cretValue9\n")  # secret-scan: allow
+
+
+# Round 17 E9: `PWD`/`OLDPWD` are the shell's own working-directory variables, printed by
+# every `env`/`printenv` transcript; a path value there is not a password.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "PWD=/home/gregg/workspace/quest",
+        "OLDPWD=/home/gregg",
+        '"PWD": "/home/gregg/workspace/quest"',
+        "PWD=~/workspace/quest",
+        "SHELL=/bin/bash\nPWD=/home/gregg/quest\nOLDPWD=/home/gregg\n",  # secret-scan: allow
+    ],
+)
+def test_the_shells_working_directory_variables_are_not_findings(text: str) -> None:
+    assert scan_text(text) == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "DB_PWD=Sup3rS3cretValue9",  # secret-scan: allow
+        "pwd: Sup3rS3cretValue9",  # secret-scan: allow
+        "OLDPWD=Sup3rS3cretValue9",  # secret-scan: allow
+        "DB_PWD=/Sup3rS3cretValue9",  # secret-scan: allow
+    ],
+)
+def test_a_pwd_holding_something_other_than_a_path_is_still_detected(text: str) -> None:
+    assert scan_text(text), f"expected {text!r} to be detected"

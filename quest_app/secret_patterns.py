@@ -81,8 +81,33 @@ _KEYWORDS = "|".join(
         # `messages:{pass:"..."}` in `vendor/axe.min.js`), and English has "bypass". Real
         # env-var-style names compound it behind an underscore instead (`DB_PASS`,
         # `ADMIN_PASS`), which none of those do, so the lookbehind requires one.
-        r"(?<=_)pass\b",
-        r"pwd",
+        #
+        # Round 17 E1: the `\b` here stopped `DB_PASS_PROD` (an `_` is a word character, so
+        # there is no boundary between `PASS` and `_PROD`) once a keyword could carry an
+        # identifier suffix (see `_KEY` below); a following letter is what `\b` was keeping
+        # out (`_passthrough`), so that is what the lookahead refuses now.
+        r"(?<=_)pass(?![a-z])",
+        # Round 17 E1: `"dbPass": "…"` (camelCase, no underscore) and PHP's `$dbpass` are
+        # the other common spelling of the same compound. Only named credential-owner
+        # prefixes qualify, never a bare letter before `pass`, so "bypass", "onPass",
+        # "firstPass" and `messages:{pass:...}` stay ordinary vocabulary.
+        r"(?:db|admin|user|root|smtp|mail|ftp|sql|redis|ldap)pass(?![a-z])",
+        # Round 17 E9: `PWD` and `OLDPWD` are also the shell's own working-directory
+        # variables, and every `env`/`printenv` transcript prints them — so a bare `pwd`
+        # keyword made any such transcript a finding that blocked submission. A standalone
+        # `PWD`/`OLDPWD` (nothing but a non-identifier character before it) whose value is a
+        # filesystem path (`/…`, `~/…`, `C:\…`) is that variable, not a password; any other
+        # value is still one, and a compound name (`DB_PWD`) is detected whatever its value.
+        # The trade: a standalone `PWD=` holding a password that itself starts with `/` or
+        # `~/` is read as a path.
+        r"(?<![a-z0-9_])(?:old)?pwd(?![\"']?[ \t]*[=:][ \t]*[\"']?(?:/|~/|[a-z]:[\\/]))",
+        r"(?<=[a-z0-9_])(?<!old)pwd",
+        # Round 17 E1: a bare `key` is not safe as a keyword (`key: value` is every YAML
+        # and JSON mapping ever written), so only the compounds that name a credential are
+        # added: Django's and Rails' `SECRET_KEY`/`SECRET_KEY_BASE` (already reached through
+        # `secret` plus a suffix), and the encryption, storage-account and signing keys.
+        r"encryption[_-]?key",
+        r"account[_-]?key",
         # Round 17 E2: `TRELLO_KEY`, `STRIPE_KEY` — an env-var name whose credential word
         # is a bare KEY. A lowercase `_key` is left out: `cache_key`, `sort_key` and
         # `primary_key` are ordinary identifiers in the code a participant quotes, while an
@@ -116,7 +141,7 @@ _EXCUSING_TAIL_WORDS: Final = frozenset(
 )  # fmt: skip
 
 # Round 17 E4: `:=` (Go, and Makefiles) and `=>` (PHP, Ruby, Perl) assign too.
-_SEPARATOR = r"[ \t]*(?::=|=>|[=:])[ \t]*"
+_SEPARATOR = r"[ \t]*(?::=|=>|[=:])(?:[ \t]*\r?\n[ \t]+|[ \t]*)"
 
 
 # Ordered most specific first: a GitHub token should be reported as a GitHub token, not as
@@ -634,6 +659,14 @@ def _name_is_excused(match: re.Match[str]) -> bool:
 def _is_finding(pattern: SecretPattern, match: re.Match[str], captured: str) -> bool:
     if _name_is_excused(match):
         return False
+    # A YAML plain scalar may start on the indented line after its key (`password:` then
+    # `  Sup3r…`), so the separator may cross one line break. Only a bare credential word
+    # gets that reading: with a suffix, `class SecretMatch:` followed by an indented body
+    # would otherwise read as an assignment.
+    if "tail" in match.re.groupindex and match.group("tail"):
+        _, value_start, _ = _value(match)
+        if "\n" in match.string[match.end("tail") : value_start]:
+            return False
     return not _is_placeholder(
         captured, allow_call_expression=pattern.id == "secret-assignment-unquoted"
     )
