@@ -13,7 +13,9 @@ authenticated CLI, never from content — is what actually protects the particip
 from __future__ import annotations
 
 import re
+from bisect import bisect_left, bisect_right
 from dataclasses import dataclass
+from html.entities import html5 as html5_entities
 from typing import Final
 
 REDACTION_PLACEHOLDER: Final = "[REDACTED]"
@@ -774,13 +776,137 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     return len(set(lowered)) <= 2
 
 
+# Round 17 E11: Markdown and HTML both let a character be written as an escape that renders
+# as the character itself — `ghp\\_…` (CommonMark's backslash escape of any ASCII
+# punctuation) and `ghp&#95;…`/`ghp&lowbar;…` (a character reference) all render as the
+# literal `ghp_…` token — but the patterns read the escape, not the character, so the scan
+# found nothing and `render_markdown` put the live token on the page. `_unescaped` builds
+# the text as it renders: every backslash-escaped ASCII punctuation character, and every
+# numeric or named character reference that stands for a printable ASCII character, is
+# replaced by that character. `scan_text` and `redact_text` scan that candidate too
+# whenever it differs, and map every span it finds back to the original text, so a finding
+# reports the real line and column and a redaction removes the escaped form whole. No
+# escape here can produce or remove a line break, so line numbers survive the rewrite. A
+# backslash escape inside a code span renders literally, not unescaped; scanning it
+# unescaped anyway only errs toward a finding.
+_ESCAPE = re.compile(
+    r"\\([!-/:-@\[-`{-~])|&(?:#([0-9]{1,7})|#[xX]([0-9a-fA-F]{1,6})|([A-Za-z][A-Za-z0-9]{1,31}));"
+)
+
+
+def _decode_escape(match: re.Match[str]) -> str | None:
+    if match.group(1) is not None:
+        return match.group(1)
+    if match.group(2) is not None:
+        code = int(match.group(2))
+    elif match.group(3) is not None:
+        code = int(match.group(3), 16)
+    else:
+        named = html5_entities.get(match.group(4) + ";")
+        if named is None or len(named) != 1:
+            return None
+        code = ord(named)
+    return chr(code) if 0x21 <= code <= 0x7E else None
+
+
+@dataclass(frozen=True, slots=True)
+class _Unescaped:
+    text: str
+    # Unescaped offset of each character that came from an escape, ascending, and the total
+    # number of original characters dropped up to and including that escape.
+    positions: list[int]
+    dropped: list[int]
+
+    def original(self, offset: int) -> int:
+        """The original-text offset of unescaped `offset` (a span start or end)."""
+        index = bisect_left(self.positions, offset)
+        return offset + (self.dropped[index - 1] if index else 0)
+
+
+def _unescaped(text: str) -> _Unescaped | None:
+    """`text` with its Markdown/HTML escapes resolved, or None when it has none (E11)."""
+    if "\\" not in text and "&" not in text:
+        return None
+    pieces: list[str] = []
+    positions: list[int] = []
+    dropped: list[int] = []
+    cursor = length = total = 0
+    for match in _ESCAPE.finditer(text):
+        char = _decode_escape(match)
+        if char is None:
+            continue
+        pieces.append(text[cursor : match.start()])
+        length += match.start() - cursor
+        pieces.append(char)
+        positions.append(length)
+        length += 1
+        total += match.end() - match.start() - 1
+        dropped.append(total)
+        cursor = match.end()
+    if not positions:
+        return None
+    pieces.append(text[cursor:])
+    return _Unescaped("".join(pieces), positions, dropped)
+
+
+def _find(text: str) -> list[tuple[int, int, SecretPattern, str]]:
+    """Every accepted span in `text`: disjoint, ordered by start, most specific pattern first.
+
+    Overlapping matches from different patterns are kept once, by the first pattern in
+    `PATTERNS` that claims the span.
+    """
+    # Round 16 E2: `claimed` used to be a set scanned end to end for every new match — a
+    # match count of `m` costs O(m) to check, and there were `m` of them, so a file of 95k
+    # distinct AWS keys (2 MB) took 497s just in this bookkeeping, with every per-pattern
+    # regex itself staying linear. `finditer` already returns one pattern's own matches
+    # left to right and non-overlapping, and the accepted set stays disjoint and sorted by
+    # construction, so each pattern's whole batch of new claims can be folded into the
+    # existing sorted set with a single merge of two already-sorted sequences — the same
+    # `O(a + b)` step a merge sort's merge is — rather than a fresh membership scan per match.
+    # `PATTERNS` has a fixed, small length, so the handful of merges this performs (one per
+    # pattern) costs `O(n)` overall, not `O(n^2)`.
+    claimed: list[tuple[int, int]] = []
+    found: list[tuple[int, int, SecretPattern, str]] = []
+    for pattern in PATTERNS:
+        allow_call_expression = pattern.id == "secret-assignment-unquoted"
+        batch: list[tuple[int, int, SecretPattern, str]] = []
+        claim_index = 0
+        for match in pattern.regex.finditer(text):
+            captured = match.group(1) if match.re.groups else match.group(0)
+            if _is_placeholder(captured, allow_call_expression=allow_call_expression):
+                continue
+            start, end = match.span(1) if match.re.groups else match.span(0)
+            while claim_index < len(claimed) and claimed[claim_index][1] <= start:
+                claim_index += 1
+            if claim_index < len(claimed) and claimed[claim_index][0] < end:
+                continue  # overlaps a span an earlier, more specific pattern already claimed
+            batch.append((start, end, pattern, captured))
+        if not batch:
+            continue
+        found.extend(batch)
+        merged: list[tuple[int, int]] = []
+        old_index = new_index = 0
+        while old_index < len(claimed) or new_index < len(batch):
+            take_old = new_index >= len(batch) or (
+                old_index < len(claimed) and claimed[old_index][0] <= batch[new_index][0]
+            )
+            if take_old:
+                merged.append(claimed[old_index])
+                old_index += 1
+            else:
+                merged.append(batch[new_index][:2])
+                new_index += 1
+        claimed = merged
+    found.sort(key=lambda item: item[0])
+    return found
+
+
 def scan_text(text: str) -> list[SecretMatch]:
     """Every secret-like span in `text`, ordered by position.
 
     Overlapping matches from different patterns are reported once, by the first pattern in
     `PATTERNS` that claims the span, so the most specific name wins.
     """
-    matches: list[SecretMatch] = []
     line_starts = [0]
     for index, char in enumerate(text):
         if char == "\n":
@@ -796,60 +922,34 @@ def scan_text(text: str) -> list[SecretMatch]:
                 high = mid - 1
         return low + 1, offset - line_starts[low] + 1
 
-    # Round 16 E2: `claimed` used to be a set scanned end to end for every new match — a
-    # match count of `m` costs O(m) to check, and there were `m` of them, so a file of 95k
-    # distinct AWS keys (2 MB) took 497s just in this bookkeeping, with every per-pattern
-    # regex itself staying linear. `finditer` already returns one pattern's own matches
-    # left to right and non-overlapping, and the accepted set stays disjoint and sorted by
-    # construction, so each pattern's whole batch of new claims can be folded into the
-    # existing sorted set with a single merge of two already-sorted sequences — the same
-    # `O(a + b)` step a merge sort's merge is — rather than a fresh membership scan per match.
-    # `PATTERNS` has a fixed, small length, so the handful of merges this performs (one per
-    # pattern) costs `O(n)` overall, not `O(n^2)`.
-    claimed: list[tuple[int, int]] = []
-    for pattern in PATTERNS:
-        allow_call_expression = pattern.id == "secret-assignment-unquoted"
-        batch: list[tuple[int, int, SecretMatch]] = []
-        claim_index = 0
-        for match in pattern.regex.finditer(text):
-            captured = match.group(1) if match.re.groups else match.group(0)
-            if _is_placeholder(captured, allow_call_expression=allow_call_expression):
+    found = _find(text)
+    unescaped = _unescaped(text)
+    if unescaped is not None:
+        # Round 17 E11: a span the escaped text already reported is not reported twice.
+        starts = [item[0] for item in found]
+        extra: list[tuple[int, int, SecretPattern, str]] = []
+        for start, end, pattern, captured in _find(unescaped.text):
+            start, end = unescaped.original(start), unescaped.original(end)
+            index = bisect_right(starts, start) - 1
+            if index >= 0 and found[index][1] > start:
                 continue
-            start, end = match.span(1) if match.re.groups else match.span(0)
-            while claim_index < len(claimed) and claimed[claim_index][1] <= start:
-                claim_index += 1
-            if claim_index < len(claimed) and claimed[claim_index][0] < end:
-                continue  # overlaps a span an earlier, more specific pattern already claimed
-            line, column = position(start)
-            batch.append(
-                (
-                    start,
-                    end,
-                    SecretMatch(
-                        pattern_id=pattern.id,
-                        description=pattern.description,
-                        line=line,
-                        column=column,
-                        excerpt=_excerpt(captured),
-                    ),
-                )
+            if index + 1 < len(found) and found[index + 1][0] < end:
+                continue
+            extra.append((start, end, pattern, captured))
+        found.extend(extra)
+
+    matches: list[SecretMatch] = []
+    for start, _end, pattern, captured in found:
+        line, column = position(start)
+        matches.append(
+            SecretMatch(
+                pattern_id=pattern.id,
+                description=pattern.description,
+                line=line,
+                column=column,
+                excerpt=_excerpt(captured),
             )
-        if not batch:
-            continue
-        matches.extend(item[2] for item in batch)
-        merged: list[tuple[int, int]] = []
-        old_index = new_index = 0
-        while old_index < len(claimed) or new_index < len(batch):
-            take_old = new_index >= len(batch) or (
-                old_index < len(claimed) and claimed[old_index][0] <= batch[new_index][0]
-            )
-            if take_old:
-                merged.append(claimed[old_index])
-                old_index += 1
-            else:
-                merged.append(batch[new_index][:2])
-                new_index += 1
-        claimed = merged
+        )
     return sorted(matches, key=lambda m: (m.line, m.column))
 
 
@@ -866,8 +966,7 @@ def _excerpt(value: str) -> str:
     return f"{value[:3]}… ({len(value)} chars)"
 
 
-def redact_text(text: str) -> tuple[str, bool]:
-    """`text` with every detected secret replaced. Returns the text and whether anything changed."""
+def _redaction_spans(text: str) -> list[tuple[int, int]]:
     spans: list[tuple[int, int]] = []
     for pattern in PATTERNS:
         for match in pattern.regex.finditer(text):
@@ -877,6 +976,20 @@ def redact_text(text: str) -> tuple[str, bool]:
             ):
                 continue
             spans.append(match.span(1) if match.re.groups else match.span(0))
+    return spans
+
+
+def redact_text(text: str) -> tuple[str, bool]:
+    """`text` with every detected secret replaced. Returns the text and whether anything changed."""
+    spans = _redaction_spans(text)
+    # Round 17 E11: what renders is the unescaped text, so its findings are redacted too,
+    # mapped back onto the escaped form they came from.
+    unescaped = _unescaped(text)
+    if unescaped is not None:
+        spans.extend(
+            (unescaped.original(start), unescaped.original(end))
+            for start, end in _redaction_spans(unescaped.text)
+        )
     if not spans:
         return text, False
     merged: list[tuple[int, int]] = []

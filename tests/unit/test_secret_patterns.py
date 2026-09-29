@@ -319,7 +319,8 @@ def test_an_authorization_token_scheme_header_is_detected() -> None:
 # a pathological input never supplies, which is quadratic — every starting offset rescans
 # the rest of the text. A 120 KB adversarial file took 36s; 2 MB would take hours, all under
 # the store, generated and service locks `redact_text`/`scan_text` run inside of.
-@pytest.mark.parametrize("unit", ["a.", "a-", "eyJ"])
+# Round 17 E11 adds the two escape units: a text full of escapes is scanned twice.
+@pytest.mark.parametrize("unit", ["a.", "a-", "eyJ", "ghp\\_", "&#95;"])
 def test_scan_text_stays_fast_on_a_two_megabyte_adversarial_file(unit: str) -> None:
     text = unit * (2_000_000 // len(unit))
     started = time.monotonic()
@@ -1037,3 +1038,31 @@ def test_curl_user_credential_variants_are_detected(text: str) -> None:
 )
 def test_curl_flags_that_are_not_user_are_not_read_as_one(text: str) -> None:
     assert scan_text(text) == []
+
+
+# Round 17 E11: an escape that renders as `_` hid a token from every pattern, and
+# `render_markdown` then put the literal token on the page.
+GITHUB_BODY = GITHUB.removeprefix("ghp_")
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        f"token ghp\\_{GITHUB_BODY}",
+        f"token ghp&#95;{GITHUB_BODY}",
+        f"token ghp&#x5F;{GITHUB_BODY}",
+        f"token ghp&lowbar;{GITHUB_BODY}",
+    ],
+)
+def test_a_markdown_or_html_escaped_token_is_detected_and_does_not_render(text: str) -> None:
+    from quest_app.markdown_render import render_markdown
+
+    assert "ghp_" in render_markdown(text), "precondition: the escape renders as the token"
+    (match,) = scan_text(f"first line\n{text}\n")
+    assert match.pattern_id == "github-token"
+    assert (match.line, match.column) == (2, 7)
+    redacted, changed = redact_text(text)
+    assert changed
+    assert redacted == f"token {REDACTION_PLACEHOLDER}"
+    assert GITHUB_BODY not in render_markdown(redacted)
+    assert scan_text(redacted) == []
