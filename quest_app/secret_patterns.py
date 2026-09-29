@@ -88,7 +88,16 @@ _KEYWORDS = "|".join(
         # prefixes qualify, never a bare letter before `pass`, so "bypass", "onPass",
         # "firstPass" and `messages:{pass:...}` stay ordinary vocabulary.
         r"(?:db|admin|user|root|smtp|mail|ftp|sql|redis|ldap)pass(?![a-z])",
-        r"pwd",
+        # Round 17 E9: `PWD` and `OLDPWD` are also the shell's own working-directory
+        # variables, and every `env`/`printenv` transcript prints them — so a bare `pwd`
+        # keyword made any such transcript a finding that blocked submission. A standalone
+        # `PWD`/`OLDPWD` (nothing but a non-identifier character before it) whose value is a
+        # filesystem path (`/…`, `~/…`, `C:\…`) is that variable, not a password; any other
+        # value is still one, and a compound name (`DB_PWD`) is detected whatever its value.
+        # The trade: a standalone `PWD=` holding a password that itself starts with `/` or
+        # `~/` is read as a path.
+        r"(?<![a-z0-9_])(?:old)?pwd(?![\"']?[ \t]*[=:][ \t]*[\"']?(?:/|~/|[a-z]:[\\/]))",
+        r"(?<=[a-z0-9_])(?<!old)pwd",
         # Round 17 E1: a bare `key` is not safe as a keyword (`key: value` is every YAML
         # and JSON mapping ever written), so only the compounds that name a credential are
         # added: Django's and Rails' `SECRET_KEY`/`SECRET_KEY_BASE` (already reached through
