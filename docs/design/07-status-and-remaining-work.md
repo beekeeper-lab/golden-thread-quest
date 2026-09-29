@@ -21,7 +21,7 @@ gate.
 
 ## 7.2 Where we are (2026-09-29)
 
-**Current phase: Phase 2A, the pilot release.** Gate 1 passed on 2026-09-29, when the
+**Current phase: Phase 2A, the pilot release, is built and verified; next, the program owner sends the invitation and Phase 2B, the pilot, begins.** Gate 1 passed on 2026-09-29, when the
 program owner decided to release to a pilot. Phase 1's checklist passed and DH7 is closed
 (`docs/audits/phase-01-verify.md`). Phase 2A fixes the two parking-lot items the program
 owner chose and builds the release. Phase 2B is the pilot itself.
@@ -184,6 +184,10 @@ recommendation: **do**, **decide** (at that phase's gate, likely on pilot eviden
   `PILOT.md` from the release through a Base Camp submission, then follows `PILOT-LEAD.md`'s
   review steps, and finds no blocking or high finding.
 - **Demo:** the program owner reads the Slack message and `PILOT.md`, then sends the message.
+- **Result:** built and verified. The verify pass (`docs/audits/phase-02a-verify.md`) found two
+  high findings in cycle 1: refusals were cut short, and reviewing from a clone always showed
+  a false "evidence changed" warning. Both were fixed and passed in cycle 2. The fork and
+  pull-request step on GitHub itself is untested.
 
 ### Phase 2B: Pilot run
 
