@@ -144,17 +144,25 @@ D7 (live Environment Health) and D10 (wider scanner coverage) absorb the rest of
 
 | Gate | Result |
 |---|---|
-| `make check` | GATES-PENDING |
-| `make test-ui` | GATES-PENDING |
-| `make validate-content` | GATES-PENDING |
-| `make verify-package` | GATES-PENDING |
+| `make check` | pass — 1382 passed, 57 deselected |
+| `make test-ui` | pass — 57 passed |
+| `make validate-content` | pass — 8 quests, 8 regions, 4 badges, 1 track, 0 warnings |
+| `make verify-package` | pass — clean-export install, validate and build (53 pages) |
 | Repository secret scan | 0 findings |
 | Clean clone at `b257b04`, by the tooling lens | pass (1181 and 56; Python 3.14 and 3.10) |
+| Clean clone of `chore/round-17-audit` at `353edfb` | pass: `make setup`, then `make check` (1380 passed, 5 skipped without the UI extras); the clone was left unchanged |
+| Design guide v1.3.0 | HTML and PDF regenerated (58 pages); the PDF title page shows 1.3.0 |
 | Each fix reverted one at a time | every new test failed with its fix reverted (see "Mutation check") |
 
 ### Mutation check
 
-MUTATION-PENDING
+Each fix was reverted on its own and its test run: E1–E5, E7–E9, R1, L1, L2, L4 (form and
+CLI), L5–L12, L14–L16, E3's callee rule, E4's separators, the next-line YAML rule and F12.
+Every one failed with its fix reverted. Three survived at first, and their tests were
+tightened until they failed too: E3 (the quoted path), L6 (the service row's status, not only
+its wording) and L7 (a live rerun form, not only the absence of the old reason). The
+A-series tests were written and mutation-checked by the earlier pass. Here they were run on
+the merged branch, where they pass.
 
 ## Verdict
 
