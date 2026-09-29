@@ -54,7 +54,7 @@ where the term maps to one.
 | **Region** | A group of quests on the map, such as Base Camp or Jira Jungle. Defined in `content/regions/` |
 | **Registry** | `validators/registry.yaml`: the complete list of programs the application may run, with their constraints |
 | **Request token** | A random value minted when the service starts, held in memory, substituted into served pages, and required on every state-changing request |
-| **Review record** | `review.yaml` in the evidence package, or one of its `review-<timestamp>.yaml` archives: the reviewer's decision, findings, verification statement, evidence hash and proof files. Enumerated by one shared definition, `progress.review_archive_paths`, used by the loader, the review history and the evidence hash alike (round 12, amended) |
+| **Review record** | `review.yaml` in the evidence package, or one of its `review-<timestamp>-<6 hex>.yaml` archives: the reviewer's decision, findings, verification statement, evidence hash and proof files. Enumerated by one shared definition, `progress.review_archive_paths`, used by the loader, the review history and the evidence hash alike (round 12, amended) |
 | **Reviewer** | The person who evaluates submitted evidence and records a decision. Also called Questmaster |
 | **Round** | One release audit pass against a specific commit, recorded under `docs/audits/` |
 | **Secret scan** | Detection of secret-like values: over tracked files by `tools/secret_scan.py`, and over an evidence package by `evidence.scan_evidence`, where it blocks marking evidence ready and submission. A finding is one of three kinds — secret, link or oversize (`evidence.scan_kinds`) |

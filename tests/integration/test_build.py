@@ -700,6 +700,8 @@ def test_environment_health_reports_what_the_build_knew(config: AppConfig) -> No
     for name in ("Application and content", "Git repository", "Generated and local-data"):
         assert name in served, name
     assert "this page was built by it" in served
+    service_row = served.split("Local action service", 1)[1].split("</tr>", 1)[0]
+    assert re.search(r">\s*Pass\s*<", service_row), "the service row is a pass, not Unknown"
     assert "cannot tell whether the service is running" in health(offline_service_view())
 
 

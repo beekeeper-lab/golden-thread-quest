@@ -3,6 +3,19 @@
 The version rule is in `REGENERATING.md`: major for a restructure, minor for new content or a
 new audit round's status, patch for corrections.
 
+## 1.3.0 (2026-09-29)
+
+Describes `main` at `bc190e9` (round 16's merge commit), amended by the round 17 fixes landing
+in this pull request. DH7 is still open under the closing rule set on 2026-09-28; round 18
+runs against round 17's merge commit.
+
+- Part 7 carries round 17's status, the new closing rule, rounds 16 and 17 in the audit
+  history, and deferred items D13 to D16.
+- The security part describes round 17's scanner, the approval re-scan, the four scan-finding
+  kinds and the proof-path rule.
+- Corrected the ADR count to forty-three and added ADR-043 to Part 6; review archives are
+  named `review-<timestamp>-<6 hex>.yaml` everywhere (round 17 D4).
+
 ## 1.2.0 (2026-09-28)
 
 Describes `main` at `95b173e` (round 15's merge commit), amended by the round 16

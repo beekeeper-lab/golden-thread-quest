@@ -292,6 +292,8 @@ class TestTheFormRoute:
         ) as response:
             result_page = response.read().decode()
         assert "Start the local service to run checks from this page." not in result_page
+        # A live form, with its choice, not a disabled button with the reason removed.
+        assert 'name="param-fixture_set"' in result_page
         assert "Parameter fixture set" in result_page and "stale-item" in result_page
 
     def test_a_locked_quest_is_refused(self, service: tuple[str, str]) -> None:

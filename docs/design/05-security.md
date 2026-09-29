@@ -149,7 +149,14 @@ Validators are program-owned and reviewed like application code.
   E12). The JWT and `basic-auth-url` patterns now bound how far their quantifiers can scan
   (round 15 finding E5): unbounded, either could make one scan of an adversarial multi-
   megabyte file take minutes to hours, held under the store, generated and service locks the
-  whole time.
+  whole time. Round 17 widened the net again, in two passes merged together: a whole private
+  key block is one match, so redaction removes its body (E1); a credential word may carry a
+  name suffix (`SECRET_KEY`, `DB_PASSWORD_PROD`), unless the suffix says the value only
+  describes one (`password_file`, `tokenizer`; E2, A-E1); CLI flags, login commands,
+  cookies, Slack webhooks, Azure connection keys, compound XML, YAML block headers and
+  Markdown- or HTML-escaped tokens are read (E4, L10, A-E2, A-E7, A-E8, A-E11); and the
+  exemptions for code, templates and placeholders now match only the shapes they name (E3,
+  A-E3 to A-E6, F12). `docs/SECURITY-AND-PRIVACY.md` lists each rule and its trade.
 - **Repository hygiene.** `tools/secret_scan.py` (`make secret-scan`, part of `make check`)
   scans every tracked text file and prints `path:line:column` and the pattern, never the
   value. A line ending in an allow pragma is skipped; this is how the scanner's own test
@@ -158,11 +165,14 @@ Validators are program-owned and reviewed like application code.
   `mark-evidence-ready` and again before submission. It calls the detectors directly, so a
   participant cannot switch the check off with the pragma. A file it cannot read, a link
   leading outside the package, and a file over the 2 MB scan ceiling (Section 5.4) all count
-  as findings: the scan cannot clear what it may not read. Every finding is one of three
-  kinds — secret, link or oversize (`evidence.scan_kinds`) — and the evidence and review pages
-  word each one separately, so a link or an oversize file is not reported as "something
-  secret-like" (round 12 finding C3). Images and archives are skipped, which is why a
-  screenshot is not scanned (a known limitation).
+  as findings: the scan cannot clear what it may not read. Every finding is one of four
+  kinds — secret, link, oversize or unreadable (`evidence.scan_kinds`) — and the evidence and
+  review pages word each one separately, so none of the other three is reported as
+  "something secret-like" (round 12 finding C3; round 17 separated unreadable). Images, PDF
+  and archives are skipped by their leading bytes, which is why a screenshot is not scanned (a
+  known limitation); a text file that only opens with an ASCII signature is scanned (E7).
+  A proof path in the quest's own evidence area is looked for only inside the attempt's real
+  package, the one the scan and the hash read (round 17 L1).
 - **Redaction.** Validator output and every free-text check field pass through
   `redact_text` *before* truncation, never after: cutting first can sever a secret-shaped
   token at the boundary, and the half that survives matches no detector's pattern (round 12
@@ -176,7 +186,10 @@ detectors is deferred until there is a corpus to measure false positives against
 
 - `verified` is re-derived from the review record on every load; an attempt that claims it
   without a matching approval is refused as an integrity error (Part 3, Section 3.5).
-- An approval needs a verification statement; a request for changes needs a finding.
+- An approval needs a verification statement; a request for changes needs a finding, which
+  may name the acceptance criterion it is about (round 17 L9).
+- An approval re-runs the secret scan and is refused on any finding, so evidence edited
+  after submission cannot be verified holding a token (round 17 E5).
 - An approval of evidence whose hash or proof-file digests changed since submission is
   refused unless the reviewer acknowledges it; after approval, a later change raises a
   warning that the approval may be stale.

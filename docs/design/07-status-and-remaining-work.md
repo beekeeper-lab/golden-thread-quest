@@ -1,9 +1,9 @@
 # Part 7. Status and remaining work
 
-This part says what is finished, what is open, and what is deliberately left for later. It
-describes `main` at commit `0018e2d` (the merge of pull request 10, round 12), with the round
-12 findings and their fixes taken from `docs/audits/round-12-independent-audit.md`, now merged
-to `main` alongside the code.
+This part says what is finished, what is open, and what is deliberately left for later. Its
+status is current to round 17 (`docs/audits/round-17-independent-audit.md`). Section 7.4 keeps
+round 12's findings in full as a worked example of a round; every later round's findings are
+in its own record.
 
 ## 7.1 How the work was staged
 
@@ -32,16 +32,16 @@ met. Forty-seven are checked. One is open:
 
 > **DH7**: the final audit reports no unresolved blocking or high findings.
 
-The project reads DH7 strictly: it closes only on an audit round that **finds nothing**
-blocking or high. Fixing a round's findings does not close it, because the fixes are
-themselves unaudited; the next round runs against the merge commit that contains them.
+The closing rule, set by the program owner on 2026-09-28: DH7 closes on the first
+independent round that **finds no blocking or high finding at all**, with every medium and
+low finding from that round fixed or explicitly deferred. A blocking or high finding raised
+and then fixed does not count as none found, because the fix is itself unaudited; the next
+round runs against the merge commit that contains it. The earlier rule, a round that finds
+nothing at any severity, was never met in sixteen rounds.
 
-**Current status (past this document's round 12 baseline; see `PLANNING-STATUS.md`).**
-Fifteen rounds have run and each has found something. Round 16 is in progress against the
-round 15 merge commit. Sections 7.3 and 7.4 below describe round 12 in full; rounds 13
-through 15 are recorded in the audit history table (Section 7.3) with their commit and
-finding counts, but do not yet have a round-12-style findings table here — that is deferred
-to a future regeneration of this document, per `REGENERATING.md`.
+**Current status.** Seventeen rounds have run and each found at least one blocking or high
+finding. Round 17 found one blocking and five high, all fixed with tests; round 18 runs
+against its merge commit.
 
 **Method of a round.** Three independent review **lenses**, each in its own worktree at the
 commit under audit with `docs/audits/` removed, each given only paths, a commit and areas to
@@ -68,7 +68,9 @@ finding is verified by reproduction or by reading the cited code before it is ac
 | 12 | `16a0b03` | 2 | 4 | `round-12-independent-audit.md`, merged to `main` at `0018e2d` (pull request 10) |
 | 13 | `a942237` | 2 | 3 | `round-13-independent-audit.md`, merged to `main` at `3b9b7c2` (round 14's predecessor commit) |
 | 14 | `3b9b7c2` | 0 | 3 | `round-14-independent-audit.md`, merged to `main` at `95b173e` (round 15's predecessor commit) |
-| 15 | `95b173e` | 0 | 3 | `round-15-independent-audit.md`, merged to `main` (round 16's predecessor commit; see `PLANNING-STATUS.md`) |
+| 15 | `95b173e` | 0 | 3 | `round-15-independent-audit.md`, merged to `main` at `a31bbf9` |
+| 16 | `a31bbf9` | 0 | 2 | `round-16-independent-audit.md`, merged to `main` at `bc190e9` |
+| 17 | `bc190e9` | 1 | 5 | `round-17-independent-audit.md`: two passes, the first (the A-series) never recorded until the second merged it |
 
 Every accepted blocking and high finding from rounds 1 to 12 is fixed on `main`, each code fix
 with a test that fails without it, except round 12's E9 (Low, a validator grandchild that
@@ -80,8 +82,9 @@ than a test client). Round 12 found the sharpest instance of that pattern yet: C
 browser action form refused) went unseen for eleven rounds because no lens had submitted a
 form in a real browser. Rounds 13 through 15 kept finding high-severity issues past round 12's
 fixes — `docs/audits/round-13-independent-audit.md`, `round-14-independent-audit.md` and
-`round-15-independent-audit.md` record what and why — so DH7 remained open into round 16; this
-document's Section 7.4 below has not yet been extended past round 12's findings (see 7.2).
+`round-15-independent-audit.md` record what and why. Round 17's blocking finding is the same
+pattern once more: the proof path a page showed was not the path the gates read, which only
+a lens that followed the page in a real browser could see.
 
 ## 7.4 Round 12: findings and their fixes
 
@@ -131,7 +134,8 @@ fixed before release; they are boundaries of release one.
 5. Validator isolation is policy plus process boundaries, not a container or seccomp (D9).
 6. Catalog filtering needs JavaScript; region and tag pages are the scripting-free routes.
 7. No coverage reporting (D2) and no glossary content type (D1).
-8. A screenshot is not scanned for secrets.
+8. A binary or compressed file (images, PDF, zip and the office formats) is not scanned for
+   secrets; a file that only claims such a format by its first bytes is (round 17 E7).
 9. Clean-clone installation is tested in CI from a `git archive` export, one step short of a
    real `git clone`; a real clone was run by hand in round 4.
 10. Earlier quest versions are not kept. An attempt records its version, but pages show the
@@ -163,6 +167,10 @@ delivered in their stages.
 | D10 | Wider secret-scanner coverage (distant assignments, bare keys, base64, webhooks, personal data) | Widening without a corpus risks false positives that teach people to route around the gate |
 | D11 | Role separation between participant and reviewer | The reviewer page is in the primary navigation; ADR-030 already states provenance is conventional |
 | D12 | A degraded view for an attempt whose evidence directory is missing | Today one deleted folder makes the site unbuildable until `progress.yaml` is edited |
+| D13 | Type-tagged evidence hash chunks | Every approved attempt would read as changed once; the collision it closes hides nothing |
+| D14 | Success notices after an action | The rebuilt page already shows the new state |
+| D15 | Quest-page section order | The body renders in authored order; a content-model decision |
+| D16 | A per-test timeout for the scaling tests | Needs a new test dependency |
 
 **Curriculum.** Release one ships eight quests, one per region, four badges and one track.
 `docs/CURRICULUM-BACKLOG.md` lists about 128 proposed quests across the eight regions plus
@@ -177,16 +185,14 @@ evaluation, and external-write previews.
 
 Stage 10 completes, and the project can make its release decision, when:
 
-1. a round runs against `0018e2d` (the round 12 fixes are already merged, each with a test
-   that fails without it) and finds no blocking or high finding;
+1. a round runs against the latest merge commit and finds no blocking or high finding, with
+   every medium and low finding from it fixed or explicitly deferred;
 2. DH7 is checked, `docs/audits/final-audit.md` records the decision (`release`,
    `release-with-advisories` or `do-not-release`), and the Stage 10 boxes in
    `docs/IMPLEMENTATION-PLAN.md` are checked.
 
-Round 13 should point at what round 12 named for it: every action through a real browser, not
-`curl`; `safe_io`'s write path against every write site; the `GTQ_GENERATED_ROOT` isolation
-and the session guard, by writing a test that forgets it; the runner's early-close rule
-against a validator that closes stdout before finishing; and the tests round 12 added,
-mutated the same way.
+Round 18 should point at what round 17 named for it: the proof-path mapping, the new
+validator run parameters, the approval re-scan, the merged secret scanner as one whole, and
+the tests round 17 added, mutated the same way.
 
 This document then gets a minor version for the new status (see `REGENERATING.md`).

@@ -2,11 +2,11 @@
 
 | | |
 |---|---|
-| Version | 1.2.0 |
-| Date | 2026-09-28 |
-| Describes | `main` at `95b173e` (round 15's merge commit), amended by the round 16 integrity-lens fixes (secret scanner, hash normalization, participant-root refusal, review-archive naming) landing in this pull request |
-| Audit status from | `PLANNING-STATUS.md`: fifteen rounds have run and each found something; round 16 is in progress against `95b173e`. DH7 is still open (Part 7, Section 7.2) |
-| Rendered copies | `artifacts/html/design/golden-thread-system-design-v1.2.0.html`, `artifacts/pdf/design/golden-thread-system-design-v1.2.0.pdf` |
+| Version | 1.3.0 |
+| Date | 2026-09-29 |
+| Describes | `main` at `bc190e9` (round 16's merge commit), amended by the round 17 fixes landing in this pull request |
+| Audit status from | `docs/audits/round-17-independent-audit.md`: seventeen rounds have run and each found a blocking or high finding; round 18 runs against round 17's merge commit. DH7 is still open (Part 7, Section 7.2) |
+| Rendered copies | `artifacts/html/design/golden-thread-system-design-v1.3.0.html`, `artifacts/pdf/design/golden-thread-system-design-v1.3.0.pdf` |
 
 ## About this document
 
@@ -40,7 +40,7 @@ them and carry the same version in their file names and on their title page.
    diagram of one browser action.
 5. [The security model](05-security.md): threats, the loopback boundary, allowlisted
    writes, validator containment, the secret scan, review integrity.
-6. [Key decisions](06-decisions.md): the forty-one ADRs grouped by the question each
+6. [Key decisions](06-decisions.md): the forty-three ADRs grouped by the question each
    answers.
 7. [Status and remaining work](07-status-and-remaining-work.md): stages, DH7, the audit
    history, the open round 12 findings, known limitations and deferred work.
