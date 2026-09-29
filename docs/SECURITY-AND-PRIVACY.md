@@ -151,12 +151,18 @@ Validators should run with the least available privileges. The architecture shou
 - Detected formats also include a GitHub fine-grained personal access token, a Trello API
   token, a Slack app-level token, a Google OAuth access token, a PGP private key block, a
   credential passed as a `key=`/`token=` URL query parameter, a credential passed to curl's
-  `-u`/`--user` flag (round 16 E11; the scan requires the literal word "curl" earlier on the
-  same line, so an unrelated colon-separated flag argument, such as a container runtime's
-  numeric user:group, is not a false positive), a credential held in an XML element
-  (`<password>...</password>`, Maven's `settings.xml` and similar tooling), and a credential
-  held in a YAML block scalar (`password: >-` / `password: |`, followed by an indented value
-  the flow-style unquoted pattern below never reaches on its own).
+  `-u`/`--user` flag (round 16 E11; the scan requires the literal word "curl" earlier in the
+  same command, so an unrelated colon-separated flag argument, such as a container runtime's
+  numeric user:group, is not a false positive; round 17 E2 added a quoted credential, a value
+  glued to the flag, `-u` at the end of a cluster of curl's argument-less short flags, and a
+  `-u` on a backslash-continued line), a credential held in an XML element (Maven's
+  `settings.xml` and similar tooling; round 17 E7 added compound tag names such as
+  `<db_password>`, attributes on the tag, and a value on its own line between the tags) or
+  in an XML attribute next to one that names it (Spring's `<property name="password"
+  value="…"/>`, .NET's `<add key="…" value="…"/>`), and a credential held in a YAML block
+  scalar (`password: >-` / `password: |`, with or without an indentation indicator or a
+  trailing comment, followed by an indented value the flow-style unquoted pattern below never
+  reaches on its own).
 - A file is decoded several ways and every decoding is scanned, since a whole file is not
   always one encoding (round 15 E6): by byte-order mark (a 4-byte UTF-32 mark is checked
   before the 2-byte UTF-16 marks it starts with the same two bytes as); by a high NUL-byte
@@ -187,7 +193,16 @@ Validators should run with the least available privileges. The architecture shou
     only for the unquoted assignment pattern, which has no closing delimiter of its own and
     so captures straight into this module's own source wherever a keyword-named variable is
     assigned a call expression (`token = payload.get(`) or is itself passed as another
-    call's own argument (`OpenAI(api_key=api_key)`).
+    call's own argument (`OpenAI(api_key=api_key)`). Round 17 E5 checks that shape as
+    written: every identifier in it must read as code rather than a word-based password (no
+    more than one digit between letters, and then only in a lowercase name), a call's or
+    subscript's arguments may only be identifiers, numbers and operators, a bare closing
+    `)`/`]` follows only a digit-free name, and a `{name}` placeholder is written in one
+    case — so a password that merely ends like a call, a subscript or a placeholder is a
+    finding.
+  - Only a value that is entirely a `$(…)` command substitution or a `{{ … }}` expression is
+    a template (round 17 E4): one that merely starts like one used to be excused whatever
+    was glued after it.
   - `${VAR:-default}`/`${VAR-default}` is a shell or compose *default* — a real value the
     moment the variable is unset (an env file's `DB_PASSWORD=${DB_PASSWORD:-Sup3rS3cretValue9}`  <!-- # secret-scan: allow -->
     is the ordinary docker-compose/.env shape) — and round 16 E5 found it was being waved
@@ -198,7 +213,9 @@ Validators should run with the least available privileges. The architecture shou
     one of the names this codebase's own source and its docs' own examples use for the
     object being accessed (`self`, `config`, `os`, and similar). Before round 16 E7, any
     short dotted chain qualified, so a dotted passphrase (`correct.horse.battery.staple`,
-    `Welcome.To.Acme`) read exactly like an attribute path and was never reported.
+    `Welcome.To.Acme`) read exactly like an attribute path and was never reported. Round 17
+    E6 checks every segment, not only the root: each must be a digit-free lowercase
+    `snake_case` or `UPPER_SNAKE` name, and the chain is at most four names long.
   - A lone `<` or `>` at one end of a value used to be enough on its own to call it a
     template; round 16 E11 found that a real value merely starting with a stray `<` or
     ending with a stray `>` was waved through the same way. Only a matched `<...>` pair,
@@ -215,7 +232,32 @@ Validators should run with the least available privileges. The architecture shou
   submitting the value as text. Round 16 E11 added `DB_PASS`/`PWD`-style keywords too: a
   bare `pass` is not safe to add on its own (this repository's own test-result vocabulary
   uses it as a plain field name, and English has "bypass"), so it requires a leading
-  underscore (`DB_PASS`, `ADMIN_PASS`); `pwd` has no such restriction.
+  underscore (`DB_PASS`, `ADMIN_PASS`); `pwd` has no such restriction, except that a
+  standalone `PWD`/`OLDPWD` whose value is a filesystem path is the shell's own
+  working-directory variable, printed by every `env`/`printenv` transcript, and is not a
+  finding (round 17 E9; a compound name such as `DB_PWD` is detected whatever its value).
+- Round 17 E1: a keyword may be followed by an identifier suffix before its operator, so
+  `SECRET_KEY`, `JWT_SECRET_KEY`, `SECRET_KEY_BASE`, `DB_PASSWORD_PROD`, `JIRA_API_TOKEN_2`,
+  `secretKey` and `DB_PASS_PROD` are all assignment keys now; the encryption, storage-account
+  and signing key compounds and the `dbPass`/`$dbpass` spellings (after a named
+  credential-owner prefix only, so "bypass" and "onPass" stay vocabulary) were added. A
+  suffixed name's value must start on the same line as its operator, since a Python class
+  header followed by its body is otherwise exactly that shape, and a single-case
+  `snake_case`/`UPPER_SNAKE` name that itself contains a keyword is read as the name of a
+  credential (`TOKEN_PLACEHOLDER = REQUEST_TOKEN_PLACEHOLDER`), not as its value.
+- An unquoted value is read whole (round 17 E3, E4, E17, C2): a bracket of any length glued
+  to more value, a `]` that more value follows, a `${…}`/`$(…)`/`{{…}}` template with value
+  glued after it, a `}` with more value glued straight after it, and a `,` or `;` glued
+  between two runs of value characters (as long as the run after it reaches a real end of
+  value and has none of `=`, `:`, `(`, `)`, `{`, `}`, `[`, `<`, `>` in it, which is what keeps
+  code such as a call's next keyword argument out) are all part of the value, so the whole
+  value is reported and redacted. A trailing run of nothing but `]` is left out, so a
+  redaction followed by a stray bracket stays a fixed point of the scan.
+- Markdown's backslash escapes and HTML character references render as the character they
+  stand for, so the scan also reads the text with every escaped ASCII punctuation character
+  and every reference to a printable ASCII character resolved, and redacts what it finds
+  there on the escaped original (round 17 E11): a token written with its underscore escaped
+  no longer passes the scan and then renders live.
 - **Known gap, not fixed:** a token glued on its right to `_` or to a letter outside its
   character class (`x_ghp_<36 chars>_y`, `ATTA<64 hex>XYZ`) is still missed. The trailing
   `\b` after each distinctive-prefix pattern requires a transition between a word and a
