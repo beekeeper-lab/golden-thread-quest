@@ -798,6 +798,8 @@ def test_a_name_that_describes_a_credential_is_not_one(text: str) -> None:
         "password=Tr0ub4dor(3)",  # secret-scan: allow
         "token={Sup3rS3cretValue9}",  # secret-scan: allow
         "token=(Ab3dEfGh12xy)",  # secret-scan: allow
+        'token = "{Sup3rS3cretValue9}"',  # secret-scan: allow
+        'password: "(Ab3dEfGh12xy)"',  # secret-scan: allow
     ],
 )
 def test_a_password_wrapped_in_or_ending_with_a_bracket_is_detected(text: str) -> None:
