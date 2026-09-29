@@ -812,3 +812,37 @@ def test_a_redaction_followed_by_a_stray_bracket_is_a_fixed_point() -> None:
     assert redacted == f"password={REDACTION_PLACEHOLDER}]"
     assert scan_text(redacted) == []
     assert redact_text(redacted) == (redacted, False)
+
+
+# Round 17 E4: a real value glued after a template was excused along with the template —
+# unquoted because the value class stopped at the expansion's `}`, quoted because a value
+# only had to *start* with `$(` or `{{`.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "DB_PASSWORD=${DB_PASSWORD}Sup3rS3cretValue9",  # secret-scan: allow
+        "api_key=${API_KEY}Sup3rS3cretValue9",  # secret-scan: allow
+        "DB_PASSWORD=${DB_PASSWORD:?unset}Sup3rS3cretValue9",  # secret-scan: allow
+        'PASSWORD="$(true)Sup3rS3cretValue9"',  # secret-scan: allow
+        'password: "{{ vault_pw }}Sup3rS3cretValue9"',  # secret-scan: allow
+        "password: {{vault_pw}}Sup3rS3cretValue9",  # secret-scan: allow
+    ],
+)
+def test_a_real_value_glued_after_a_template_is_detected(text: str) -> None:
+    assert scan_text(text), f"expected {text!r} to be detected"
+    redacted, _ = redact_text(text)
+    assert "Sup3rS3cretValue9" not in redacted
+    assert scan_text(redacted) == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "token=$(gh auth token)",
+        'token = "$(gh auth token)"',
+        "password: {{ vault_pw }}",
+        "password: {{vault_pw}}",
+    ],
+)
+def test_a_value_that_is_entirely_a_template_stays_a_placeholder(text: str) -> None:
+    assert scan_text(text) == []

@@ -401,7 +401,22 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     SecretPattern(
         "secret-assignment-unquoted",
         "Secret-like assignment",
-        _c(_ASSIGNMENT_KEY + r"(" + _UNQUOTED_BRACKET_VALUE + r"|[^\s\"',;}`\]]{8,})"),
+        #
+        # Round 17 E4: the plain class stops at `}`, so `${DB_PASSWORD}Sup3rS3cretValue9`
+        # captured `${DB_PASSWORD`, which `_is_placeholder` read as a bare `${NAME}` — the
+        # real value glued after the expansion was never looked at. A `${…}`, `$(…)` or
+        # `{{…}}` template is now captured whole, closing delimiter included, together with
+        # whatever is glued after it; only a capture that is entirely the template is a
+        # placeholder. Each template body is bounded and excludes its own delimiters, so it
+        # cannot backtrack.
+        _c(
+            _ASSIGNMENT_KEY
+            + r"("
+            + _UNQUOTED_BRACKET_VALUE
+            + r"|(?:\$\{[^{}\n]{0,200}\}|\$\([^()\n]{0,200}\)|\{\{[^{}\n]{0,200}\}\})"
+            + r"[^\s\"',;}`\]]*"
+            + r"|[^\s\"',;}`\]]{8,})"
+        ),
     ),
 )
 
@@ -466,7 +481,12 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # where a closing angle bracket should have gone) or ended with a stray `>`
     # (`Sup3rS3cretValue9>`) was waved through as a template. Only a value that is a matched
     # `<...>` pair, start to end, is a documentation placeholder now.
-    if lowered.startswith(("$(", "{{")) or re.fullmatch(r"<[^<>]*>", lowered):
+    #
+    # Round 17 E4: `startswith(("$(", "{{"))` excused anything that merely began like a
+    # command substitution or a Jinja expression, so `"$(true)Sup3rS3cretValue9"` and
+    # `"{{ vault_pw }}Sup3rS3cretValue9"` were waved through. Only a value that is entirely
+    # one `$(…)` is a command substitution now; the whole-value Jinja check is below.
+    if re.fullmatch(r"\$\([^()]*\)", lowered) or re.fullmatch(r"<[^<>]*>", lowered):
         return True
     # Round 16 E5: this used to be `lowered.startswith("${")`, so anything shaped like a
     # shell or compose expansion was exempted regardless of what followed — including a
@@ -475,10 +495,12 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # is the ordinary docker-compose/.env shape. Only a value that is entirely
     # `${NAME}`, optionally with a `:?message` clause (an error string shown when unset,
     # never a default value), refers to the environment rather than holding one. The
-    # unquoted pattern's value class excludes `}`, so a bare wrap is captured with its
-    # closing brace already stripped off by the regex — the trailing `\}?` here accounts
-    # for that, and for the quoted pattern, which does capture the closing brace.
-    if re.fullmatch(r"\$\{[a-z_][a-z0-9_]*(?::\?[^{}]*)?\}?", lowered):
+    # unquoted pattern's value class excludes `}`, so a bare wrap used to be captured with
+    # its closing brace already stripped off by the regex, and this allowed for that with a
+    # trailing `\}?` — which also excused an unclosed `${NAME` with a real value glued on.
+    # Round 17 E4: the unquoted pattern now captures a `${…}` whole, brace included, as the
+    # quoted pattern always did, so the closing brace is required here.
+    if re.fullmatch(r"\$\{[a-z_][a-z0-9_]*(?::\?[^{}]*)?\}", lowered):
         return True
     # A value that IS entirely one of the real template shapes below — a Jinja expression, a
     # bare `{name}` format-string/f-string placeholder (this module's own test fixtures are
