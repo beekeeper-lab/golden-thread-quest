@@ -217,7 +217,9 @@ code {
 .state-verified::before { content: "\2713"; }
 
 .state-locally_validated { background: var(--green-100); color: var(--green-700); border-color: var(--green-700); }
-.state-locally_validated::before { content: "\2713"; }
+/* Round 17 L14: ☑, not the ✓ verified has, so the glyph alone keeps claimed and verified
+ * apart the way the words do. */
+.state-locally_validated::before { content: "\2611"; }
 
 .state-submitted { background: var(--blue-100); color: var(--blue-700); border-color: var(--blue-700); }
 .state-submitted::before { content: "\2192"; }

@@ -27,7 +27,7 @@
   <div class="totals">
     <dl class="total"><dt>Claimed XP</dt><dd>{{ totals.claimed_xp }}</dd></dl>
     <dl class="total is-verified"><dt>Verified XP</dt><dd>{{ totals.verified_xp }}</dd></dl>
-    <dl class="total"><dt>Available XP</dt><dd>{{ totals.available_xp }}</dd></dl>
+    <dl class="total"><dt>XP in the curriculum</dt><dd>{{ totals.available_xp }}</dd></dl>
   </div>
   <p class="authority">Verified XP comes only from a reviewer approval. Claimed XP is your own record of what you have finished.</p>
 </section>
@@ -55,7 +55,8 @@
 <section class="stack" aria-labelledby="recommended-heading">
   <h2 id="recommended-heading">Recommended next</h2>
   <div class="card-grid">
-    {{ quest_card(primary.quest, url, recommended=true) }}
+    {# Round 17 L16: the reasons are listed in full below, so the card does not repeat them. #}
+    {{ quest_card(primary.quest, url, recommended=true, show_reasons=false) }}
   </div>
   <div class="panel">
     <h3>Why this one</h3>
@@ -67,6 +68,11 @@
     <p class="authority">This recommendation is calculated from your progress and your track. It is the same for the same inputs.</p>
   </div>
 </section>
+{% elif participant and totals.verified_quests == totals.total_quests %}
+{# Round 17 L16: told to browse for something else when there was nothing else. #}
+{{ empty_state('Every quest is verified',
+    'You have finished the whole curriculum as published. New quests appear here when the curriculum adds them.',
+    'Open your passport', '/passport/', url) }}
 {% elif participant %}
 {{ empty_state('Nothing to recommend right now',
     'Every available quest is finished or submitted. Browse the catalog to pick something outside your track.',

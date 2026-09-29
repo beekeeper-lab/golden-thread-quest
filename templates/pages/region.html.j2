@@ -49,12 +49,15 @@
     'Back to the map', '/map/', url) }}
 {% endif %}
 
-{% if badges %}
+{# Round 17 L15: U03 requires the section; a region with no badge left it out entirely. #}
 <section class="stack" aria-labelledby="badges-heading">
   <h2 id="badges-heading">Badges in this region</h2>
+  {% if badges %}
   <div class="card-grid">
     {% for entry in badges %}{{ badge_tile(entry) }}{% endfor %}
   </div>
+  {% else %}
+  <p class="authority">No badge is awarded for this region yet. Its quests still count toward your verified XP and any track badge.</p>
+  {% endif %}
 </section>
-{% endif %}
 {% endblock %}

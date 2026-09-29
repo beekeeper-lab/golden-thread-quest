@@ -861,6 +861,10 @@ def _reviewer_findings(entry: QuestProgress) -> dict[str, Any] | None:
         "reviewer_display_name": review.reviewer_display_name,
         "reviewed_at": review.reviewed_at,
         "findings": review.findings,
+        # Round 17 L13: once the participant has resubmitted, these findings are what the
+        # reviewer asked for last time, not the current state, so they stop leading the page
+        # as a status alert.
+        "addressed": entry.state.id is QuestState.SUBMITTED,
     }
 
 
