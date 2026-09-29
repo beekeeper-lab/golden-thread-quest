@@ -1,5 +1,32 @@
 # Final Audit
 
+## Release recommendation: `release-with-advisories` (2026-09-29)
+
+**Recommendation for a pilot:** release with advisories. The decision is the program
+owner's, at Gate 1, after the demo in `docs/guides/DEMO.md`.
+
+The basis is Phase 1's release checklist, run for real and checked by an independent verify
+pass (`phase-01-verify.md`). CI is green on `main`. A true `git clone` sets up and passes
+every gate. The participant, reviewer, maintainer and failure flows all work in a real
+browser. No blocking or high finding was found within those flows, so DH7 closes under the
+rule set at Gate 0. The seventeen earlier rounds are indexed below.
+
+**The advisories a pilot must know:**
+
+- The known limitations in `docs/RELEASE-NOTES.md`.
+- The five Phase 1 observations in `docs/PARKING-LOT.md`. The one most likely to matter:
+  submission is accepted while required proof is missing, so the reviewer is the check.
+- One quest per region. The pilot is a trial of the engine and the workflow, not of a full
+  curriculum.
+- The installed Cowork app, named in the README as a target surface, has not been tried.
+  Phase 1 ran on Linux with a terminal and a browser.
+
+**Checked for this recommendation:** the tracked tree has no secret (the repository scan,
+run by `make check` in the clean clone) and no machine-specific path. The only home-directory
+strings are four deliberate `PWD=` fixtures in `tests/unit/test_secret_patterns.py`.
+
+## Earlier rounds
+
 `CLAUDE.md` and `docs/IMPLEMENTATION-PLAN.md` name this file. It is an index rather than a
 copy, because the release audit has run three times and an external reviewer has since
 looked at the result. Every round matters: each one exists because the round before it found
@@ -11,6 +38,8 @@ something the suite did not.
 | Re-audit | `128617e` | **do-not-release** — 1 blocking, 3 high, 9 medium, 4 low | `stage-10-final-re-audit.md` |
 | Second re-audit | `aafce28` | **do-not-release** — 1 blocking, 2 high, 2 medium | `stage-10-final-re-audit.md` |
 | External review | `a69a8b8` | **not ready for participant release** — curriculum skeletal, 1 visible defect | `external-review-2026-09-17.md` |
+| Rounds 4 to 17 | `207a7b3` to `bc190e9` | each found at least one blocking or high finding, all fixed | `round-04-independent-audit.md` to `round-17-independent-audit.md`; summarized in Part 7, Section 7.2 of the system design |
+| Phase 1 verify pass | `edbede9` | no blocking or high finding within the release checklist's flows | `phase-01-verify.md` |
 
 ## What each round found, in one sentence
 
@@ -37,17 +66,13 @@ from one healthy example.
 
 ## Release gate
 
-- [x] No unresolved blocking or high findings — all closed, pending confirmation by re-audit.
-- [x] Acceptance criteria carry stable IDs; 47 of 48 are ticked and the one that is not
-      (`DH1`, clean-clone setup) is named in `docs/TRACEABILITY.md`.
-- [x] `docs/IMPLEMENTATION-DETAILS.md` describes what exists, including six divergences from
-      the plan and why each was made.
-- [ ] Clean-clone reproduction — not performed automatically; needs a fresh checkout.
+- [x] No unresolved blocking or high findings: DH7 closed by the Phase 1 verify pass.
+- [x] Acceptance criteria carry stable IDs, and all 48 are ticked.
+- [x] `docs/IMPLEMENTATION-DETAILS.md` describes what exists.
+- [x] Clean-clone reproduction: a true `git clone`, `make setup`, `make check`, `make setup-ui`
+      and `make test-ui` on 2026-09-29 (`phase-01-verify.md`, item 3.2).
 - [x] Pilot limitations are visible to participants and reviewers, in the guides and in
       `docs/RELEASE-NOTES.md`.
 
-**The release decision is not made in this file.** As of the external review the decision
-is *not ready for participant release*, and the reason is no longer the engine: it is that
-three quests across eight regions is a demonstration rather than a journey. The engine is a
-release candidate. See `external-review-2026-09-17.md` for the finding list and its
-disposition.
+**The release decision is made at Gate 1** by the program owner, and is recorded here and in
+Part 7 of the system design.

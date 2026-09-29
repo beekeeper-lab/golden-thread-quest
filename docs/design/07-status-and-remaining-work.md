@@ -21,6 +21,14 @@ gate.
 
 ## 7.2 Where we are (2026-09-29)
 
+**Current phase: Phase 1 is built and verified, and its demo is next.** The release
+checklist passed, and the verify pass (`docs/audits/phase-01-verify.md`) found no blocking or
+high finding within its flows, so DH7 is closed. The recommendation is
+`release-with-advisories`. Gate 1 comes after the program owner has run
+`docs/guides/DEMO.md`: the release decision, the parking lot, and the plan for Phase 2.
+
+### How we got here
+
 **The application is built.** Stages 0 to 9 of `docs/IMPLEMENTATION-PLAN.md` were completed
 and audited on 2026-09-16 and 2026-09-17. Everything Parts 1 to 6 describe exists, with
 1382 tests under `make check` and 57 browser-driven tests under `make test-ui`. Eight quests
@@ -103,10 +111,10 @@ recommendation: **do**, **decide** (at that phase's gate, likely on pilot eviden
 - **Goal:** stop the audit loop and put the plan in one document the program owner can read.
 - **Done when:** this part is merged; `docs/PARKING-LOT.md` exists; `CLAUDE.md` states the
   phase rule; `PLANNING-STATUS.md` points here.
-- **Gate 0:** the program owner approves Phase 1's plan and the closing-rule change in its
-  item 2.
+- **Gate 0 (2026-09-29): passed.** The program owner approved Phase 1 as written and the
+  closing-rule change in its item 2.
 
-### Phase 1: Pilot release decision
+### Phase 1: Pilot release decision (built and verified; demo and Gate 1 next)
 
 - **Goal:** decide on a fixed checklist whether the application as built goes to a pilot,
   and let the program owner see it working.
@@ -117,8 +125,7 @@ recommendation: **do**, **decide** (at that phase's gate, likely on pilot eviden
      `fix/r*` branches that are merged into `main`.
   2. **Replace DH7's closing rule** with the release checklist in item 3: DH7 closes when
      every item in it passes and one verify pass finds no blocking or high finding *within
-     those flows*. This needs the program owner's approval at Gate 0, because they set the
-     current rule on 2026-09-28.
+     those flows*. Approved at Gate 0.
   3. **The release checklist**, run for real, not by test client:
      1. CI is green on `main`, every job.
      2. A true `git clone` from GitHub, then `make setup`, `make check`, `make setup-ui` and
@@ -142,6 +149,9 @@ recommendation: **do**, **decide** (at that phase's gate, likely on pilot eviden
 - **Done when:** items 1 to 5 are complete, every checklist item passes, and the verify pass
   finds no blocking or high finding within the checklist's flows.
 - **Demo:** the program owner follows `docs/guides/DEMO.md`.
+- **Result:** every checklist item passed. CI on `main` first failed on a start-up race,
+  which pull request 18 fixed. The verify pass found three Low wording problems in the demo,
+  all fixed. Five observations are in the parking lot. See `docs/audits/phase-01-verify.md`.
 
 ### Phase 2: Pilot (recommended next)
 

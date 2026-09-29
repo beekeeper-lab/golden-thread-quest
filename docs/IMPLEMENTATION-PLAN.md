@@ -440,28 +440,28 @@ Do not check the stage heading until its audit passes.
 
 ### Tasks
 
-- [ ] Review the original product brief, acceptance criteria, architecture, and UI specification.
-- [ ] Review implementation details and traceability.
-- [ ] Inspect the complete change set.
-- [ ] Run all automated checks from a clean environment.
-- [ ] Perform primary participant and reviewer workflows manually.
-- [ ] Review unresolved advisories and known limitations.
-- [ ] Confirm no secrets, private evidence, or machine-specific paths are included.
-- [ ] Create `docs/audits/final-audit.md`.
-- [ ] Produce a release recommendation: `release`, `release-with-advisories`, or `do-not-release`.
-- [ ] Fix blocking/high findings and rerun the final audit.
+- [x] Review the original product brief, acceptance criteria, architecture, and UI specification.
+- [x] Review implementation details and traceability.
+- [x] Inspect the complete change set.
+- [x] Run all automated checks from a clean environment.
+- [x] Perform primary participant and reviewer workflows manually.
+- [x] Review unresolved advisories and known limitations.
+- [x] Confirm no secrets, private evidence, or machine-specific paths are included.
+- [x] Create `docs/audits/final-audit.md`.
+- [x] Produce a release recommendation: `release`, `release-with-advisories`, or `do-not-release`.
+- [x] Fix blocking/high findings and rerun the final audit. (None within the release checklist's flows; `docs/audits/phase-01-verify.md`.)
 
 ### Release gate
 
-- [ ] No unresolved blocking or high findings.
-- [ ] All release acceptance criteria are checked or explicitly deferred with approval.
-- [ ] Implementation details describe what exists rather than what was planned.
-- [ ] Clean-clone reproduction succeeds.
-- [ ] Pilot limitations are visible to participants and reviewers.
+- [x] No unresolved blocking or high findings.
+- [x] All release acceptance criteria are checked or explicitly deferred with approval.
+- [x] Implementation details describe what exists rather than what was planned.
+- [x] Clean-clone reproduction succeeds.
+- [x] Pilot limitations are visible to participants and reviewers.
 
 ### Stage completion
 
-- [ ] **Stage 10 complete and final release decision recorded**
+- [ ] **Stage 10 complete and final release decision recorded** (recommendation `release-with-advisories` recorded in `docs/audits/final-audit.md`; the program owner decides at Gate 1, after the demo)
 
 ---
 
@@ -471,6 +471,7 @@ Update this section whenever work pauses.
 
 | Date/time | Branch | Current stage | Last completed item | Next action | Blockers |
 |---|---|---:|---|---|---|
+| 2026-09-29 | phase-1/pilot-release | 10 | Phase 1 built and verified: release checklist passed, DH7 closed, `docs/guides/DEMO.md` written, recommendation `release-with-advisories` | Gate 1: the program owner runs the demo and makes the release decision |  |
 | 2026-09-29 | docs/phase-plan | 10 | Round loop stopped; round 18 not run. Phase plan written as system design v2.0.0, Part 7 | Gate 0: program owner approves Phase 1 (pilot release decision) | DH7 closing-rule change awaits approval |
 | 2026-09-29 | chore/round-17-audit | 10 | Round 17 recorded: 1 blocking, 5 high, all fixed; the earlier unrecorded pass (A-series) merged | Merge, then run round 18 against the merge commit | DH7 open |
 | 2026-09-16 | feature/golden-thread-implementation | 0 | Stage 0 audit: pass-with-advisories | Begin Stage 1 foundation |  |

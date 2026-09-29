@@ -6,8 +6,10 @@
 
 > **Status: work in progress. Not released, and not yet recommended for use.**
 >
-> The engine is substantially built and the whole of it is under test, but a release
-> audit is open and has confirmed findings still being worked through. Interfaces,
+> The engine is built and under test, and it has passed its release checklist: a true
+> clean clone, and the participant, reviewer, maintainer and failure flows in a real
+> browser. The recommendation is a pilot, released with advisories, and the program owner
+> has not yet made that decision (`docs/audits/final-audit.md`). Interfaces,
 > content and file layouts can change without notice, and no upgrade path is promised
 > between now and a first release. Nobody has yet run this on the installed Cowork
 > app, which is its primary target surface.
@@ -108,9 +110,10 @@ application code. A test fails if one does.
 
 ## Status
 
-Stages 0 to 9 of `docs/IMPLEMENTATION-PLAN.md` are complete. The Stage 10 release decision is
-open: `docs/ACCEPTANCE-CRITERIA.md`'s **DH7** is the criterion tracking it, and `docs/audits/`
-holds the full history of rounds, findings and fixes. An external review, early in that
+Stages 0 to 9 of `docs/IMPLEMENTATION-PLAN.md` are complete. The remaining work follows the
+phase plan in `docs/design/07-status-and-remaining-work.md`. Phase 1, the pilot release
+decision, has passed its checklist and closed DH7. The decision itself is taken at Gate 1.
+`docs/audits/` holds every audit. An external review, early in that
 history, left the engine a release candidate and the participant journey short: three quests
 across eight regions was a demonstration rather than a journey. Since then every region has a
 quest — eight quests, one per region.

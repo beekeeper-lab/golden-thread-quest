@@ -25,7 +25,7 @@ where the term maps to one.
 | **Content hash** | SHA-256 over a quest's front matter and body. Recorded on an attempt at start; a later mismatch is a warning (ADR-028) |
 | **Content problem** | The single error shape every layer reports: file, stable ID, field path, rule, redacted received value, suggestion (`errors.ContentProblem`) |
 | **Curriculum maintainer** | The person who writes quests, regions, badges, tracks and validators. Also called curriculum author |
-| **DH7** | The one open release acceptance criterion: the final audit reports no unresolved blocking or high findings. Its closing rule is to be replaced by Phase 1's release checklist, subject to Gate 0 (Part 7, Section 7.4) |
+| **DH7** | The one open release acceptance criterion: the final audit reports no unresolved blocking or high findings. Closes when Phase 1's release checklist passes and its verify pass finds no blocking or high finding within the checklist's flows (Part 7, Section 7.4; rule set at Gate 0) |
 | **Evidence hash** | SHA-256 over an evidence package, excluding `validation/`, `submission.yaml` and `review*.yaml` (ADR-031) |
 | **Evidence package** | The folder `participant/evidence/<quest-id>/<attempt-id>/` holding `PROOF.md`, `manifest.yaml`, logs, screenshots, validation results, the submission and review records |
 | **Fork** | The participant's copy of the canonical repository; its `origin` remote. Curriculum arrives from the `upstream` remote |

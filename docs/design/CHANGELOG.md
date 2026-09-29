@@ -3,6 +3,22 @@
 The version rule is in `REGENERATING.md`: major for a restructure, minor for new content or a
 phase gate, patch for corrections.
 
+## 2.1.0 (2026-09-29)
+
+Gate 0, and Phase 1's result. Describes `main` at `4ad5368`.
+
+- **Gate 0 passed.** The program owner approved Phase 1 as written and the new closing rule
+  for DH7.
+- **Phase 1 is built and verified.** Every release-checklist item passed; the verify pass
+  found no blocking or high finding within its flows, so DH7 is closed. The recommendation is
+  `release-with-advisories`, and the decision is taken at Gate 1 after the demo.
+- **What we learned.** Running the flows in a real browser was quick and found things the
+  test suite does not frame as defects: submission accepts missing proof, and a check can
+  pass on an empty package. Both are in the parking lot as product questions. A merged pull
+  request can still turn `main` red on a timing race, which is why CI on `main` is a
+  checklist item rather than an assumption.
+- Part 7 carries the current phase and Phase 1's result.
+
 ## 2.0.0 (2026-09-29)
 
 Describes `main` at `a837e7a`. A major version because Part 7 is restructured: it was the
