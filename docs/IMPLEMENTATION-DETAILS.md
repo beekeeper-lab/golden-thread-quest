@@ -26,6 +26,7 @@ quest_app/           the application
 ├── build.py             rendering, indexes, manifest, atomic swap
 ├── state_machine.py     the transitions a participant may make
 ├── store.py             atomic writes to participant-owned files
+├── safe_io.py           bounded reads and no-follow writes that cannot block (ADR-042)
 ├── evidence.py          proof detection, secret scanning, evidence hashing
 ├── secret_patterns.py   the patterns behind every scan and every redaction
 ├── review.py            submissions and reviewer decisions

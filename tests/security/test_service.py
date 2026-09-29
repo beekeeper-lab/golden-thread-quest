@@ -360,6 +360,19 @@ class TestCrossOrigin:
         status, _ = post(base, {"action": "rebuild", "token": token}, headers={"Origin": base})
         assert status == 200
 
+    @pytest.mark.parametrize("header", ["Origin", "Referer"])
+    def test_the_same_host_on_another_port_is_refused(
+        self, service: tuple[str, str], header: str
+    ) -> None:
+        """Round 17 T1: every refusal above used another hostname, so the port comparison
+        could be dropped with nothing failing. Another local server on 127.0.0.1 is a
+        different origin, and only this run's own pages are same-origin."""
+        base, token = service
+        parsed = urllib.parse.urlsplit(base)
+        other = f"{parsed.scheme}://{parsed.hostname}:{(parsed.port or 80) % 65535 + 1}/"
+        status, _ = post(base, {"action": "rebuild", "token": token}, headers={header: other})
+        assert status == 403
+
     def test_an_origin_of_null_is_refused(self, service: tuple[str, str]) -> None:
         """A browser sends `Origin: null` for a genuinely cross-origin or sandboxed request.
 
