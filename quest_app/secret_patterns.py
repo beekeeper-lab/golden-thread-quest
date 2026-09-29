@@ -132,6 +132,13 @@ _ASSIGNMENT_KEY = (
 )
 
 
+# The bracketed form of an unquoted value (see `secret-assignment-unquoted` below).
+_UNQUOTED_BRACKET_VALUE = (
+    r"\[(?:[^\]\n\s,\"']{3,80}|(?=[^\]\n\s,\"']{0,2}\][^\s\"',;}`]{5})[^\]\n\s,\"']{0,2})\]"
+    r"(?:\]*[^\s\"',;}`\]])*"
+)
+
+
 # Ordered most specific first: a GitHub token should be reported as a GitHub token, not as
 # a generic high-entropy assignment.
 #
@@ -380,10 +387,21 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     # example, `` `TOKEN=[REDACTED]` `` — captured the backtick along with it, so the exact
     # `[redacted]` placeholder match no longer held and the sentence became a finding. A
     # real value is never written with a backtick in it.
+    #
+    # Round 17 E3: the bracket still needed 3 to 80 characters inside it, so a short one
+    # glued to a real value (`[X]Sup3rS3cretValue9`, `[ab]…`) failed the bracket branch, and
+    # the plain branch then stopped at the `]` with too few characters to be a finding; and
+    # the suffix after the bracket excluded `]`, so `[REDACTED]]Sup3r…` captured exactly
+    # `[REDACTED]`, a placeholder, and `[abc]]Sup3r…` redacted to `[REDACTED]]Sup3r…`, which
+    # itself rescanned clean with the real value still in it. A short bracket (0 to 2
+    # characters) is allowed now when at least five value characters follow it, and the
+    # suffix runs through any `]` that more value follows. A trailing run of nothing but
+    # `]` is left out of the capture, so a redaction followed by a stray `]` — `[REDACTED]]`
+    # — reads as the placeholder it is and the redacted text stays a fixed point.
     SecretPattern(
         "secret-assignment-unquoted",
         "Secret-like assignment",
-        _c(_ASSIGNMENT_KEY + r"(\[[^\]\n\s,\"']{3,80}\][^\s\"',;}`\]]*|[^\s\"',;}`\]]{8,})"),
+        _c(_ASSIGNMENT_KEY + r"(" + _UNQUOTED_BRACKET_VALUE + r"|[^\s\"',;}`\]]{8,})"),
     ),
 )
 
