@@ -29,6 +29,7 @@ from quest_app.safe_io import (
     MAX_VALIDATION_RESULT_BYTES,
     UnsafeStateFileError,
     read_bounded_bytes,
+    read_regular_file_head,
 )
 from quest_app.secret_patterns import scan_text
 from quest_app.store import write_json_atomic
@@ -97,9 +98,8 @@ def _sample_is_text(path: Path) -> bool:
     """The first `_TEXT_SAMPLE_BYTES` of `path` are NUL-free UTF-8 (a multi-byte character
     cut off at the end of the sample does not count against it)."""
     try:
-        with path.open("rb") as handle:
-            sample = handle.read(_TEXT_SAMPLE_BYTES)
-    except OSError:
+        sample = read_regular_file_head(path, _TEXT_SAMPLE_BYTES)
+    except (OSError, UnsafeStateFileError):
         return False
     if b"\x00" in sample:
         return False
@@ -340,10 +340,16 @@ def _scan_one(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
     # it in full first (to then discard it) would make a legitimate large image fail with the
     # oversize finding below, which is exactly the silent-vs-blocked distinction this scan is
     # supposed to preserve.
+    # Round 17 E13: this was a plain `path.open("rb")`, which blocks forever on a FIFO — and
+    # the `is_file()` above does not stop one, since the path can be swapped between the two
+    # calls. The scan runs under the store, generated and service locks, so one FIFO hung all
+    # three. `read_regular_file_head` opens with `O_NONBLOCK` and refuses by `fstat` anything
+    # that is not a regular file, as `read_bounded_bytes` does below; the cost is one more
+    # "could not be read" finding for a path that changed kind mid-scan, which blocks, as it
+    # should for a file the scan never read.
     try:
-        with path.open("rb") as handle:
-            header = handle.read(_MAGIC_HEADER_BYTES)
-    except OSError:
+        header = read_regular_file_head(path, _MAGIC_HEADER_BYTES)
+    except (OSError, UnsafeStateFileError):
         return [SecretFinding(relative, 1, UNREADABLE_DESCRIPTION)]
     if _looks_like_a_skippable_binary_format(header, path):
         return []

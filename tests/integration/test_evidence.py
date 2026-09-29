@@ -12,6 +12,7 @@ from quest_app.config import AppConfig
 from quest_app.errors import ProblemReport
 from quest_app.evidence import (
     MAX_EVIDENCE_FILE_BYTES,
+    SecretFinding,
     _decode_evidence_text,
     describe_scan_findings,
     detect_proof,
@@ -445,6 +446,41 @@ class TestSecretScanning:
         f\\x00é\\x00`), and NUL-stripping a multi-byte character garbles it too."""
         raw = ("﻿café").encode("utf-32")
         assert any("café" in candidate for candidate in _decode_evidence_text(raw))
+
+    def test_a_path_swapped_for_a_fifo_does_not_hang_the_header_read(
+        self, config: AppConfig, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Round 17 E13: the header read was a plain `open("rb")` after `is_file()`, so a
+        path swapped for a FIFO between the two blocked the scan forever under the store,
+        generated and service locks. `is_file` is made to answer for the file that was
+        there a moment ago, which is exactly what the race leaves the scan believing; the
+        scan runs in a thread so a regression fails on the timeout instead of hanging."""
+        import threading
+        from pathlib import Path as RealPath
+
+        target = config.resolve_participant_path(EVIDENCE) / "logs" / "swapped.log"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        os.mkfifo(target)
+        real_is_file = RealPath.is_file
+        monkeypatch.setattr(
+            RealPath, "is_file", lambda self: self.name == "swapped.log" or real_is_file(self)
+        )
+        outcome: list[list[SecretFinding]] = []
+        worker = threading.Thread(
+            target=lambda: outcome.append(list(scan_evidence(config, EVIDENCE))), daemon=True
+        )
+        worker.start()
+        worker.join(timeout=10)
+        if worker.is_alive():
+            # Unblock the stuck reader so the thread does not outlive the test.
+            with target.open("wb"):
+                pass
+            worker.join(timeout=10)
+            pytest.fail("the secret scan blocked opening a FIFO")
+        (findings,) = outcome
+        assert [(f.path.rsplit("/", 1)[-1], f.description) for f in findings] == [
+            ("swapped.log", "could not be read to check it")
+        ]
 
     def test_an_unreadable_directory_blocks_rather_than_passing(self, config: AppConfig) -> None:
         """Round 14 E5: `rglob` silently drops a directory it cannot list instead of raising,
