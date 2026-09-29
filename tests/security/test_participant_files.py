@@ -488,6 +488,38 @@ def test_a_proof_document_over_the_ceiling_is_not_rendered(config: AppConfig) ->
     assert _proof_document(world, READY) is None
 
 
+@pytest.mark.parametrize("mixed", [True, False], ids=["utf16-tail", "plain-utf8"])
+def test_a_proof_document_never_carries_a_token_any_decoding_can_see(
+    config: AppConfig, mixed: bool
+) -> None:
+    """Round 17 E10: only the first candidate decoding was redacted. A UTF-8 PROOF.md with
+    a UTF-16LE tail (a PowerShell `>>` append) renders its plain UTF-8 decode, which reads
+    the tail as `t\\0o\\0k\\0…` and redacts nothing there, so the token was in the page
+    once NUL and U+FFFD were stripped out. The plain case checks a single-encoding file still
+    previews, redacted."""
+    import html
+    import re
+
+    from quest_app.build import _proof_document
+
+    token = "ghp_" + "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8"  # secret-scan: allow
+    head = ("# Proof\n\n" + "Ran the sync; output below.\n" * 40).encode()
+    tail = f"token {token}\r\n"
+    raw = head + (tail.encode("utf-16-le") if mixed else tail.encode())
+    if mixed:
+        assert raw.count(b"\0") / len(raw) < 0.3, "this test needs the mixed-encoding case"
+    package = config.participant_root / READY.removeprefix("participant/")
+    (package / "PROOF.md").write_bytes(raw)
+    world = load_world(config, ProblemReport())
+    assert world is not None
+
+    rendered = _proof_document(world, READY)
+    assert rendered is not None
+    flattened = re.sub("[\x00\ufffd]", "", html.unescape(rendered))
+    assert token not in flattened
+    assert "Ran the sync" not in rendered if mixed else "Ran the sync" in rendered
+
+
 @pytest.mark.parametrize("kind", ["fifo", "directory"])
 def test_a_validator_cannot_write_into_a_special_file(tmp_path: Path, kind: str) -> None:
     """`Workspace.write_text` resolved links but opened a FIFO for writing, which blocks."""

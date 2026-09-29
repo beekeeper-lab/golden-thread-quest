@@ -1129,6 +1129,15 @@ def _validator_choices(world: LoadedWorld, validator_id: str) -> tuple[Parameter
     )
 
 
+# Round 17 E10: shown in place of a PROOF.md whose secret-like value only a decoding other
+# than the rendered one can see, so redacting the rendered one would not have removed it.
+PROOF_DOCUMENT_WITHHELD = (
+    "*This PROOF.md is not previewed.* Part of it is saved in a different text encoding "
+    "(a PowerShell `>>` append writes UTF-16), and that part holds a value the secret scan "
+    "flagged. Remove the value — ideally re-save the file as UTF-8 — and the preview returns."
+)
+
+
 def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None:
     """The participant's own PROOF.md, rendered and sanitized.
 
@@ -1137,7 +1146,7 @@ def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None
     """
     if not evidence_path:
         return None
-    from quest_app.evidence import _decode_evidence_text, package_file
+    from quest_app.evidence import _decode_evidence_text, _secret_value_digests, package_file
     from quest_app.markdown_render import render_markdown
     from quest_app.safe_io import MAX_EVIDENCE_FILE_BYTES, UnsafeStateFileError, read_bounded_bytes
     from quest_app.secret_patterns import redact_text
@@ -1164,7 +1173,23 @@ def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None
     # pattern below without raising anything — the token was still there, readable once the
     # replacement characters were stripped back out (round 16 E3). Its best-guess candidate
     # (the first one, chosen the same way the scan chooses it) is redacted the same way.
-    text, _ = redact_text(_decode_evidence_text(raw)[0])
+    #
+    # Round 17 E10: only that first candidate was redacted. A mixed-encoding PROOF.md — a
+    # UTF-8 head with a UTF-16LE tail from a PowerShell `>>` append, NUL ratio far under the
+    # 30% trigger — has the plain UTF-8 decode as its first candidate, which reads the tail
+    # as `t\0o\0k\0…` and finds nothing there to redact; the scan's NUL-stripped candidate
+    # found the token, so submission was blocked, but the evidence and review pages carried
+    # it, recoverable by stripping NUL and U+FFFD. Redacting every candidate cannot help,
+    # because only one is rendered. So if any other candidate finds a value the rendered one
+    # did not, the page shows a notice in place of the file. The trade: such a PROOF.md loses
+    # its preview until the value is removed, which is what the blocking scan finding already
+    # asks for; a file whose every value the rendered candidate also found (plain UTF-8,
+    # whole-file UTF-16) still previews, redacted.
+    candidates = _decode_evidence_text(raw)
+    rendered_values = _secret_value_digests(candidates[0])
+    if any(_secret_value_digests(other) - rendered_values for other in candidates[1:]):
+        return render_markdown(PROOF_DOCUMENT_WITHHELD)
+    text, _ = redact_text(candidates[0])
     return render_markdown(text)
 
 

@@ -319,6 +319,17 @@ def _decode_evidence_text(raw: bytes) -> list[str]:
     return candidates
 
 
+def _secret_value_digests(text: str) -> set[str]:
+    """A fingerprint of every secret-like value `scan_text` finds in `text`, never the values.
+
+    Round 17 E10: `_proof_document` redacts one candidate decoding and renders it, and needs
+    to know whether another candidate found a value that this one did not — a value only a
+    different decoding can see was not redacted, and survives into the page in a form
+    (`t\\0o\\0k\\0…`, U+FFFD pairs) that stripping those characters gives back whole.
+    """
+    return {match.fingerprint for match in scan_text(text)}
+
+
 def _scan_one(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
     """Apply the fixed scan rules to one filesystem entry: link check, binary-format check,
     the 2 MB ceiling, then decode and match.
