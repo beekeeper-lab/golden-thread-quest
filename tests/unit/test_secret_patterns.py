@@ -964,3 +964,35 @@ def test_a_keyword_with_an_identifier_suffix_is_detected(text: str) -> None:
 )
 def test_suffixed_keyword_code_shapes_are_not_false_positives(text: str) -> None:
     assert scan_text(text) == []
+
+
+# Round 17 E3 (and the curriculum lens's C1, the same defect): a bracket of fewer than three
+# characters glued to a real value was never matched, and a `]` after the bracket ended the
+# capture, so a real value after it was left out of both the scan and the redaction.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "password=[X]Sup3rS3cretValue9",  # secret-scan: allow
+        "password=[ab]Sup3rS3cretValue9",  # secret-scan: allow
+        "password=[]Sup3rS3cretValue9",  # secret-scan: allow
+        "db_password=[Q]Tr0ub4dor3HunterRealSecret9",  # secret-scan: allow
+        "password=[REDACTED]]Sup3rS3cretValue9",  # secret-scan: allow
+        "password=[abc]]Sup3rS3cretValue9",  # secret-scan: allow
+        "password=[Sup3r]S3cret]Value9",  # secret-scan: allow
+    ],
+)
+def test_a_bracket_glued_to_a_real_value_is_detected_and_fully_redacted(text: str) -> None:
+    matches = scan_text(text)
+    assert matches, f"expected {text!r} to be detected"
+    assert matches[0].pattern_id == "secret-assignment-unquoted"
+    redacted, changed = redact_text(text)
+    assert changed
+    assert redacted.endswith(f"={REDACTION_PLACEHOLDER}"), redacted
+    assert scan_text(redacted) == [], "the redaction itself must not still be a finding"
+
+
+def test_a_redaction_followed_by_a_stray_bracket_is_a_fixed_point() -> None:
+    redacted, _ = redact_text("password=Sup3rS3cretValue9]")  # secret-scan: allow
+    assert redacted == f"password={REDACTION_PLACEHOLDER}]"
+    assert scan_text(redacted) == []
+    assert redact_text(redacted) == (redacted, False)
