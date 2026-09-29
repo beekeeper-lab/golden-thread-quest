@@ -46,15 +46,25 @@ from the same folder. Your progress is kept in files, so nothing is lost.
 
 1. Read the whole quest page first. The acceptance criteria are numbered, and a reviewer's
    feedback will refer to them by number.
-2. Click **Start quest**. It creates your evidence folder, and the page shows its path.
+2. Tick the confirmation box and click **Start quest**. It creates your evidence folder, and
+   the page shows its path.
 3. Do the work in your editor and terminal, not in the application. Put each file where the
    quest page's **Required evidence** list says, and fill in the `PROOF.md` in your
    evidence folder.
 4. On the evidence page, run the check. A failing check is not a failed quest: it tells you
    what to fix.
-5. Click **Mark evidence ready**, then **Record local validation**, then **Submit for
-   review**. Submission is refused while a required file is missing, and the notice names
-   it.
+5. Click **Mark evidence ready**, then **Record local validation**, then tick the box and
+   click **Submit for review**. Submission is refused while a required file is missing, and
+   the notice names it.
+
+**Redacting.** Where a quest asks for redacted output, put `[REDACTED]` where the value was,
+with nothing glued after it: `token: [REDACTED]`. The secret check treats a closing bracket
+or parenthesis straight after the placeholder as part of a possible secret. If it flags your
+line, reword it as `token: [REDACTED]` or "the token was redacted".
+
+**The second quest.** After Base Camp is verified, the home page may recommend a Jira
+quest, which needs a Jira account. For the pilot, open **Quest Map**, then **BA Ruins**,
+and take **Ingest a Meeting Transcript Without Losing Its Source** instead.
 
 `docs/guides/PARTICIPANT.md` is the one-page reference, and `docs/USER-GUIDE.md` is the full
 guide.

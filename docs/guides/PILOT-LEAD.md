@@ -46,6 +46,8 @@ request, titled `Pilot: <name>`.
 5. Open the quest and read the evidence. `docs/guides/REVIEWER.md` says what to check.
    Record **Approve**, with a verification statement, or **Needs changes**, with at least one
    finding.
+   If the page says the evidence changed since it was submitted, it did: the participant
+   edited it after submitting. Ask them why before you tick the acknowledgement box.
 6. Stop the service with Ctrl-C.
 7. `git add participant/`
 8. `git commit -m "Review: <quest-id>"`

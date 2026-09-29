@@ -2,11 +2,11 @@
 
 | | |
 |---|---|
-| Version | 2.1.0 |
+| Version | 2.2.0 |
 | Date | 2026-09-29 |
-| Describes | `main` at `4ad5368`, plus the Phase 1 records landing with this version |
-| Plan status | Gate 0 passed; Phase 1 built and verified, with the demo and Gate 1 next (Part 7, Section 7.2) |
-| Rendered copies | `artifacts/html/design/golden-thread-system-design-v2.1.0.html`, `artifacts/pdf/design/golden-thread-system-design-v2.1.0.pdf` |
+| Describes | `main` at `be2b766`, plus the Phase 2A changes landing with this version |
+| Plan status | Gates 0 and 1 passed; Phase 2A (pilot release) current, Phase 2B (pilot run) next (Part 7, Section 7.2) |
+| Rendered copies | `artifacts/html/design/golden-thread-system-design-v2.2.0.html`, `artifacts/pdf/design/golden-thread-system-design-v2.2.0.pdf` |
 
 ## About this document
 

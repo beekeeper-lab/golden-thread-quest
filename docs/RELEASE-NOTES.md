@@ -14,6 +14,12 @@ passed (`docs/audits/phase-01-verify.md`), and the program owner released it at 
   files missing could be submitted, and only the reviewer caught it.
 - **The Base Camp check fails on an untouched `PROOF.md`.** It used to report "passed with
   advisories" on an empty package.
+- **Review from a clone works.** The evidence fingerprint no longer counts empty folders,
+  which Git does not carry, so a reviewer's clone of a participant's branch no longer reads
+  every hand-in as "changed since submitted" (ADR-031, amended). A submission or approval
+  recorded under 0.1.x reads as changed once.
+- A refusal names every problem. It used to be cut at 300 characters, which dropped a
+  missing file from a long list.
 - The service removes its port record even if it is stopped during start-up.
 - New guides: `docs/guides/PILOT.md` for participants, `docs/guides/PILOT-LEAD.md` for the
   pilot lead, and `docs/guides/DEMO.md` for a fifteen-minute tour.
@@ -70,7 +76,7 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 1386 under `make check`, plus 57 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
+| Tests | 1388 under `make check`, plus 57 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3 quest-facing, plus 2 registered environment probes and one unregistered slow probe used only to prove the timeout |

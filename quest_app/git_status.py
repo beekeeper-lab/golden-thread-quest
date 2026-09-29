@@ -169,7 +169,8 @@ def summary_for(repo_root: Path, evidence_path: str | None) -> dict[str, object]
             not status.contains_uncommitted(evidence_path) if known and evidence_path else None
         ),
         "advice": (
-            "Commit your evidence before submitting so a reviewer sees what you did."
+            "Your evidence has uncommitted changes. Commit and push it after you submit, so a "
+            "reviewer sees what you did."
             if known and evidence_path and status.contains_uncommitted(evidence_path)
             else None
         ),

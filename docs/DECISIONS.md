@@ -470,6 +470,13 @@ shows is already hashed under its target's own name, but which directory it poin
 not hashed at all: `logs -> a/` retargeted to `logs -> b/` left the digest unchanged. A
 package holding such a link hashes differently once, for the same reason as above.
 
+**Amended (Phase 2A):** a plain directory is not hashed. Git carries files and links but
+never a directory, so the empty `screenshots/` every package is created with was missing
+from a reviewer's clone of the participant's branch, and every hand-in read as changed since
+submitted. A directory that holds anything is still covered by the relative names of what it
+holds; a directory link is still hashed by its link text. Every package created before 0.2.0
+hashes differently once, and is handled the same way as the resets above.
+
 ## ADR-032 — The application never pushes, opens a pull request, or merges
 
 **Decision:** Submission prints the exact Git commands and stops. `git_status.py` runs only

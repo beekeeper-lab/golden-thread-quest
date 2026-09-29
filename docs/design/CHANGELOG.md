@@ -3,6 +3,20 @@
 The version rule is in `REGENERATING.md`: major for a restructure, minor for new content or a
 phase gate, patch for corrections.
 
+## 2.2.0 (2026-09-29)
+
+Gate 1. Describes `main` at `be2b766`, plus Phase 2A.
+
+- **Gate 1 passed.** The program owner released to a pilot (`release-with-advisories`) of
+  about two participants, and chose the two missing-proof items from the parking lot. The
+  other Phase 1 observations stay in the lot until the pilot report, and round 17's
+  pointers were cut, because Phase 1's browser flows covered them.
+- **What we learned.** The demo turned two "works as specified" behaviours into product
+  decisions, which is what a gate is for. Deciding them took one message, and building them
+  took part of a session.
+- Part 7 replaces the Phase 2 sketch with Phase 2A (pilot release, frozen scope) and
+  Phase 2B (the pilot run).
+
 ## 2.1.0 (2026-09-29)
 
 Gate 0, and Phase 1's result. Describes `main` at `4ad5368`.
