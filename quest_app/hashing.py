@@ -382,6 +382,13 @@ def hash_directory(
             continue
         if len(parts) == 1 and any(fnmatch(parts[-1], pattern) for pattern in skip_globs):
             continue
+        if path.is_dir() and not path.is_symlink():
+            # Phase 2A: a plain directory is not part of the identity. Git carries files and
+            # links, never a directory, so the empty `screenshots/` every package starts with
+            # was missing from the reviewer's clone of the participant's branch, and every
+            # hand-in read as "changed since submitted". A directory that holds anything is
+            # still covered, by the relative names of what it holds.
+            continue
         chunks.append(_encode_name(relative))
         if not resolves_inside(path, resolved_root):
             link = path.readlink() if path.is_symlink() else Path("?")
@@ -390,14 +397,16 @@ def hash_directory(
             if path.is_symlink():
                 chunks.append(b"symlink:" + _encode_name(str(path.readlink())))
             chunks.append(path)
+        elif path.is_symlink():
+            # Round 17 A-E15: a directory link inside the package is not descended (the walk
+            # does not follow links), so what it shows is already hashed under its target's
+            # own name — but *which* directory it shows was not hashed at all, and
+            # retargeting `logs -> a/` to `logs -> b/` left the digest unchanged. Its link
+            # text is hashed, the same as a file link's.
+            chunks.append(b"symlink:" + _encode_name(str(path.readlink())))
+            chunks.append(b"dir")
         else:
-            if path.is_symlink():
-                # Round 17 A-E15: a directory link inside the package is not descended (the walk
-                # does not follow links), so what it shows is already hashed under its target's
-                # own name — but *which* directory it shows was not hashed at all, and
-                # retargeting `logs -> a/` to `logs -> b/` left the digest unchanged. Its link
-                # text is hashed, the same as a file link's.
-                chunks.append(b"symlink:" + _encode_name(str(path.readlink())))
+            # Neither file, link nor directory: a FIFO or socket, marked as before.
             chunks.append(b"dir")
     try:
         return _digest(chunks)

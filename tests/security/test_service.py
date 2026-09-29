@@ -33,6 +33,8 @@ from quest_app.serve import (
 )
 from quest_app.view_models import online_service_view
 
+from proof_fixtures import place_required_proof
+
 
 @pytest.fixture
 def service(config: AppConfig) -> Iterator[tuple[str, str]]:
@@ -1060,6 +1062,34 @@ def _flash_on(base: str, location: str) -> str:
     return unescape(re.sub(r"<[^>]+>", "", " ".join(alerts)))
 
 
+class TestARefusalIsShownWhole:
+    """Phase 2A: a 300-character cut dropped the third missing file from the refusal."""
+
+    def test_every_missing_required_file_is_named_on_the_page(
+        self, service: tuple[str, str], config: AppConfig
+    ) -> None:
+        base, token = service
+        quest = "jira-read-assigned-stories"
+        location = TestTheAdvisoryReachesTheBrowser._redirect_of(
+            base, f"/api/action/submit-for-review/{quest}", {"token": token, "confirm": "yes"}
+        )
+        assert "problem=" in location, location
+        shown = _flash_on(base, location)
+        report = ProblemReport()
+        world = load_world(config, report)
+        assert world is not None, report.to_text()
+        from quest_app.review import missing_required_proof
+
+        attempt = world.participant.progress.attempt_for(quest)
+        expected = missing_required_proof(
+            world.content.quests[quest], attempt, world.participant.results_for(attempt), config
+        )
+        assert len(expected) >= 3, expected
+        assert len(" ".join(expected)) > 300, "the refusal under test is short; this is vacuous"
+        for problem in expected:
+            assert problem in shown, (problem, shown)
+
+
 class TestStalePortEntries:
     """A service killed outright never runs its own cleanup.
 
@@ -1120,6 +1150,7 @@ class TestARebuildThatFailsAfterTheRecordIsWritten:
         self, service: tuple[str, str], failing_rebuild: None, config: AppConfig
     ) -> None:
         base, token = service
+        place_required_proof(config.participant_root, "jira-read-assigned-stories")
         status, body = post(
             base,
             {
@@ -1869,6 +1900,7 @@ class TestTheFormPathParsesAcknowledgeChangedEvidenceStrictly:
         report = ProblemReport()
         world = load_world(bound, report)
         assert world is not None, report.to_text()
+        place_required_proof(bound.participant_root, self.QUEST)
         create_submission(
             bound,
             ProgressStore(bound),

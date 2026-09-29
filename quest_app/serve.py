@@ -209,6 +209,8 @@ SERVICE_HEADER = "X-Quest-App"
 REPO_HEADER = "X-Quest-Repo"
 
 
+# The longest refusal kept for the page. Bounded, because it is held in memory per run.
+PROBLEM_LIMIT = 4000
 PORTS_DIRNAME = "service-ports"
 PORT_FILE_MAX_BYTES = 16
 
@@ -810,7 +812,7 @@ class ActionHandler(BaseHTTPRequestHandler):
             # decision, be refused, and hear nothing until they next moved the cursor.
             return (
                 '<div class="alert alert-error" role="alert">'
-                f"<p><strong>That did not happen.</strong> {escape(message[:400])}</p>"
+                f"<p><strong>That did not happen.</strong> {escape(message[:PROBLEM_LIMIT])}</p>"
                 "</div>"
             )
         notice = self.state.flash((query.get("notice") or [""])[0])
@@ -847,7 +849,9 @@ class ActionHandler(BaseHTTPRequestHandler):
         # The URL carries an identifier, never the text. A link carrying free text could put
         # any words an attacker chose inside a real alert on a real page of this application.
         if message:
-            location = f"{location}?problem={self.state.remember_flash(message[:300])}"
+            # A refusal is kept whole up to a bound: a cut at 300 characters dropped the third
+            # missing file from a submission refusal that promised to name each one (Phase 2A).
+            location = f"{location}?problem={self.state.remember_flash(message[:PROBLEM_LIMIT])}"
         elif notice:
             location = f"{location}?notice={self.state.remember_flash(notice[:300])}"
         self.send_response(HTTPStatus.SEE_OTHER)

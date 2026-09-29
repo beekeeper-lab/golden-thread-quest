@@ -461,7 +461,7 @@ Do not check the stage heading until its audit passes.
 
 ### Stage completion
 
-- [ ] **Stage 10 complete and final release decision recorded** (recommendation `release-with-advisories` recorded in `docs/audits/final-audit.md`; the program owner decides at Gate 1, after the demo)
+- [x] **Stage 10 complete and final release decision recorded** (`release-with-advisories`, to a pilot, decided by the program owner at Gate 1 on 2026-09-29; `docs/audits/final-audit.md`)
 
 ---
 
@@ -471,6 +471,7 @@ Update this section whenever work pauses.
 
 | Date/time | Branch | Current stage | Last completed item | Next action | Blockers |
 |---|---|---:|---|---|---|
+| 2026-09-29 | phase-2/pilot-release | 2A | Gate 1: released to a pilot. Both missing-proof fixes built, with the pilot guides and version 0.2.0 | Verify pass, merge, tag `v0.2.0`, then the program owner sends the invitation | |
 | 2026-09-29 | phase-1/pilot-release | 10 | Phase 1 built and verified: release checklist passed, DH7 closed, `docs/guides/DEMO.md` written, recommendation `release-with-advisories` | Gate 1: the program owner runs the demo and makes the release decision |  |
 | 2026-09-29 | docs/phase-plan | 10 | Round loop stopped; round 18 not run. Phase plan written as system design v2.0.0, Part 7 | Gate 0: program owner approves Phase 1 (pilot release decision) | DH7 closing-rule change awaits approval |
 | 2026-09-29 | chore/round-17-audit | 10 | Round 17 recorded: 1 blocking, 5 high, all fixed; the earlier unrecorded pass (A-series) merged | Merge, then run round 18 against the merge commit | DH7 open |

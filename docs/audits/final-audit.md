@@ -1,9 +1,12 @@
 # Final Audit
 
-## Release recommendation: `release-with-advisories` (2026-09-29)
+## Release decision: `release-with-advisories`, to a pilot (2026-09-29)
 
-**Recommendation for a pilot:** release with advisories. The decision is the program
-owner's, at Gate 1, after the demo in `docs/guides/DEMO.md`.
+**Decided by the program owner at Gate 1:** release to a pilot of about two participants,
+after fixing the two parking-lot items about missing proof (Phase 2A, `docs/design/07-status-and-remaining-work.md`).
+The release is version 0.2.0, tagged `v0.2.0`.
+
+The recommendation it accepted was release with advisories, on the basis below.
 
 The basis is Phase 1's release checklist, run for real and checked by an independent verify
 pass (`phase-01-verify.md`). CI is green on `main`. A true `git clone` sets up and passes
@@ -74,5 +77,5 @@ from one healthy example.
 - [x] Pilot limitations are visible to participants and reviewers, in the guides and in
       `docs/RELEASE-NOTES.md`.
 
-**The release decision is made at Gate 1** by the program owner, and is recorded here and in
-Part 7 of the system design.
+**The release decision was made at Gate 1** by the program owner: `release-with-advisories`,
+to a pilot. It is recorded at the top of this file and in Part 7 of the system design.

@@ -18,6 +18,8 @@ import pytest
 import yaml
 from quest_app.actions import CONFIRMATIONS, MUTATING_ACTIONS
 
+from proof_fixtures import place_required_proof
+
 ROOT = Path(__file__).resolve().parent.parent.parent
 QUEST = "base-camp-repository-safety"
 
@@ -42,6 +44,10 @@ def run(participant: Path, *args: str, confirm: bool = True) -> subprocess.Compl
     # does. `confirm=False` is the gate itself, tested below.
     needs = bool(args) and args[0] in CONFIRMATIONS and "--confirm" not in args
     confirmation = ["--confirm"] if confirm and needs else []
+    # A submission is refused while required proof is missing (Phase 2A). A test about
+    # something else puts the proof in place first, as a participant has to.
+    if args and args[0] == "submit-for-review" and "--quest" in args:
+        place_required_proof(participant, args[args.index("--quest") + 1])
     return subprocess.run(
         [
             sys.executable,

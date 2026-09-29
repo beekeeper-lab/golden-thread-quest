@@ -20,6 +20,8 @@ from quest_app.errors import ProblemReport
 from quest_app.pipeline import LoadedWorld, load_world
 from quest_app.serve import FLASH_PLACEHOLDER
 
+from proof_fixtures import place_required_proof
+
 FIXED_TIME = "2026-09-16T00:00:00+00:00"
 
 
@@ -458,6 +460,7 @@ def test_no_broken_links_with_an_attempt_awaiting_review(config: AppConfig) -> N
     setup_report = ProblemReport()
     world = load_world(config, setup_report)
     assert world is not None, setup_report.to_text()
+    place_required_proof(config.participant_root, quest_id)
     create_submission(
         config,
         ProgressStore(config),

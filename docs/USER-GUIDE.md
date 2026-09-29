@@ -200,6 +200,8 @@ evaluated, what it observed, and what to do. They are ordered with the most seri
 
 **If you are stuck for more than an hour**, do the smallest honest thing: write down in
 `PROOF.md` exactly where you got to and what you tried, mark the evidence ready, and submit.
+Submission is refused while a required file is missing or empty, so put what you have in
+each one, even if that is a note saying what is not done yet.
 A reviewer asking for changes with a concrete finding is worth more than another hour alone.
 
 **Commit often.** Your work is in Git. `git status`, `git stash list` and `git reflog` have
@@ -244,6 +246,10 @@ Preferred, strongest first:
 
 Screenshots support the others; they are not the proof. A screenshot shows something
 happened once on your machine. A command someone else can run shows it happens.
+
+**Every required file has to be there before you submit.** A submission is refused while
+any required file, folder or command record on the evidence page reads *Not detected* or
+*Needs attention*, and the refusal names each one.
 
 **Never put a secret in evidence.** The application scans before you can mark evidence ready
 or submit, and refuses if it finds one — it reports the file and line and never the value.

@@ -32,14 +32,16 @@ from quest_app.config import AppConfig
 from quest_app.evidence import (
     changed_proof_files,
     describe_scan_findings,
+    detect_proof,
     evidence_hash,
     proof_file_digests,
+    proof_location,
     proof_paths_outside_package,
     scan_declared_proof,
 )
 from quest_app.hashing import UnreadableFileError
 from quest_app.models import AttemptState, Decision, Quest
-from quest_app.progress import Attempt, ParticipantState, ReviewDecision
+from quest_app.progress import Attempt, ParticipantState, ReviewDecision, ValidationResult
 from quest_app.safe_io import UnsafeStateFileError, read_bounded_bytes
 from quest_app.store import ProgressStore, append_audit, atomic_write_bytes
 
@@ -128,6 +130,8 @@ def readiness_problems(
             problems.append("The evidence directory is missing.")
 
     results = participant.results_for(attempt)
+    problems.extend(missing_required_proof(quest, attempt, results, config))
+
     latest = {result.validator_id: result for result in results}
     for validator_id in quest.validators:
         result = latest.get(validator_id)
@@ -140,6 +144,38 @@ def readiness_problems(
             problems.append(
                 f"advisory: {validator_id} last returned {result.outcome.replace('_', ' ')}."
             )
+    return problems
+
+
+# The proof types a file on disk can satisfy. A validator requirement is reached through a
+# result and stays advisory at submission; a demonstration or a review cannot be detected.
+_FILE_PROOF_TYPES = frozenset({"file", "directory", "command-record"})
+
+
+def missing_required_proof(
+    quest: Quest,
+    attempt: Attempt,
+    results: tuple[ValidationResult, ...],
+    config: AppConfig,
+) -> list[str]:
+    """Each required file the evidence page shows as not detected or empty, as a blocker.
+
+    The pilot run submitted a package with three of four required files missing: the page
+    said "Not detected" beside each, and nothing stopped the submission until a reviewer
+    sent it back. The states come from `detect_proof`, the same call the page uses, so the
+    refusal and the checklist cannot disagree.
+    """
+    states = detect_proof(quest, config, attempt.evidence_path, results)
+    problems: list[str] = []
+    for item in quest.proof:
+        if not item.required or item.type not in _FILE_PROOF_TYPES or item.path is None:
+            continue
+        state = states.get(item.id)
+        where = proof_location(item.path, attempt.evidence_path)
+        if state == "missing":
+            problems.append(f"Required evidence is not in place: {where} ({item.description})")
+        elif state == "warning":
+            problems.append(f"Required evidence is empty: {where} ({item.description})")
     return problems
 
 

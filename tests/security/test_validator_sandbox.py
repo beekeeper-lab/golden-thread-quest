@@ -618,6 +618,31 @@ class TestAValidatorJudgesTheAttemptItWasGiven:
         return directory
 
     @pytest.mark.slow
+    def test_the_untouched_template_fails_rather_than_passing_with_advisories(
+        self, registry, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Phase 1's pilot run: an empty package came back "passed with advisories"."""
+        from quest_app.store import _create_evidence_package
+
+        mine = self._evidence(config, "base-camp-repository-safety", "base-attempt-004")
+        _create_evidence_package(
+            config.participant_root,
+            mine,
+            quest_id="base-camp-repository-safety",
+            attempt_id="base-attempt-004",
+        )
+        result = run_validator(
+            registry.get("validate-repository-foundation"),
+            config,
+            quest_id="base-camp-repository-safety",
+            attempt_id="base-attempt-004",
+            run_id="template-run-001",
+        )
+        answers = next(c for c in result.checks if c.id == "proof-answers-reviewer-questions")
+        assert answers.outcome == "fail", answers.evidence
+        assert result.outcome == "fail", result.outcome
+
+    @pytest.mark.slow
     def test_another_quests_blank_proof_cannot_fail_this_attempt(
         self, registry, config: AppConfig
     ) -> None:  # type: ignore[no-untyped-def]

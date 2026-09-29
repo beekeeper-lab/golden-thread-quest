@@ -28,6 +28,8 @@ from quest_app.review import create_submission
 from quest_app.store import ProgressStore
 from quest_app.view_models import build_quest_summary, offline_service_view, online_service_view
 
+from proof_fixtures import place_required_proof
+
 # Has a registered validator and an attempt already on record (`evidence_ready`), so its
 # `ValidatorView.latest_outcome` is not None either — the interesting case, not the one
 # where nothing has run yet.
@@ -154,6 +156,7 @@ class TestC4ReviewPageStatesWhenItsComparisonWasMade:
         assert world is not None, report.to_text()
         quest = world.content.quests[VALIDATED_QUEST]
         attempt = world.participant.progress.attempt_for(VALIDATED_QUEST)
+        place_required_proof(config.participant_root, quest.id)
         create_submission(
             config,
             ProgressStore(config),

@@ -18,7 +18,7 @@ The sample files you copy in are in `docs/guides/demo/`.
 Leave terminal 1 running. Use a second terminal for the file steps, and run
 `cd ~/gtq-demo` in it first.
 
-## 1. Participant: start, and submit too early
+## 1. Participant: start, and try to submit too early
 
 1. Click **View quest** on the recommendation. Read the quest page: mission, numbered
    acceptance criteria, and **Required evidence**, where every item says *Not detected*.
@@ -26,41 +26,42 @@ Leave terminal 1 running. Use a second terminal for the file steps, and run
    the browser's confirmation. An evidence package now exists under
    `participant/evidence/base-camp-repository-safety/base-attempt-001/`.
 3. Click **Open evidence workspace**, then **Run the repository foundation check**. It
-   passes with an advisory: `PROOF.md` is still empty.
-4. Click **Mark evidence ready**, then **Record local validation**, then tick the box and
-   click **Submit for review**. The totals beside the navigation now show **20 claimed XP** and
-   **0 verified XP**:
-   your claim and the reviewer's verification are counted separately.
+   fails: `PROOF.md` is still the empty template.
+4. Click **Mark evidence ready**. Then tick the box under **Submit for review** and click it.
+   The submission is refused, and the red notice names the three required files that are not
+   in place. Nothing reaches a reviewer.
 
-The application let you submit with three required files missing. A reviewer sees that, and
-the next step is what a reviewer should do about it.
-
-## 2. Reviewer: ask for changes
-
-1. Click **Reviewer** in the navigation (behind **Menu** on a narrow window), then the quest. The **Required evidence**
-   checklist shows three items *Not detected*.
-2. In the decision form: enter a name, choose **Needs changes**, and fill in one finding with
-   a severity, a summary, the evidence you saw, a criterion and the change you require.
-   Tick the confirmation box, click the button and accept.
-
-## 3. Participant: fix and resubmit (terminal 2)
+## 2. Participant: put the evidence in place and submit (terminal 2)
 
 1. `mkdir -p participant/context participant/evidence/base-camp-repository-safety/base-attempt-001/logs`
 2. `cp docs/guides/demo/repository-ownership.md docs/guides/demo/audit-log.md participant/context/`
 3. `cp docs/guides/demo/second-run.txt participant/evidence/base-camp-repository-safety/base-attempt-001/logs/`
 4. `cp docs/guides/demo/PROOF.md participant/evidence/base-camp-repository-safety/base-attempt-001/PROOF.md`
-5. In the browser, open **Evidence** and the quest. The reviewer's finding is at the top. The
-   three files still say *Not detected*: the page is from the last build, and the next
-   action rebuilds it. Click **Resume after review**, then **Run the repository foundation check**, then
-   **Mark evidence ready**, **Record local validation** and **Submit for review**. Every
-   required item now says *Detected* or *Validated*.
+5. In the browser, click **Run the repository foundation check** again. It passes, and every
+   required item now reads *Detected* or *Validated*.
+6. Click **Record local validation**, then tick the box and click **Submit for review**. The
+   totals beside the navigation now show **20 claimed XP** and **0 verified XP**: your claim
+   and the reviewer's verification are counted separately.
 
-## 4. Reviewer: approve
+## 3. Reviewer: ask for changes
 
-1. **Reviewer**, then the quest. Enter a name, choose **Approve**, and write a verification
+1. Click **Reviewer** in the navigation (behind **Menu** on a narrow window), then the quest.
+   Every required item is in place, but the quest also asks `PROOF.md` to explain how
+   interruption was tested, and it does not.
+2. In the decision form: enter a name, choose **Needs changes**, and fill in one finding with
+   a severity, a summary, the evidence you saw, a criterion and the change you require.
+   Tick the confirmation box, click the button and accept.
+
+## 4. Participant, then reviewer: resubmit and approve
+
+1. `printf '\n## Interruption test\n\nI stopped the workflow between the two runs and restarted it. The second run found DEMO-1 and created nothing.\n' >> participant/evidence/base-camp-repository-safety/base-attempt-001/PROOF.md`
+2. In the browser, open **Evidence** and the quest. The reviewer's finding is at the top.
+   Click **Resume after review**, then **Run the repository foundation check**, **Mark
+   evidence ready**, **Record local validation** and **Submit for review**.
+3. **Reviewer**, then the quest. Enter a name, choose **Approve**, and write a verification
    statement of at least twenty characters saying what you checked. Tick the confirmation
    box and submit.
-2. Open **Passport**. It shows 20 verified XP and 1 verified quest. The home page now
+4. Open **Passport**. It shows 20 verified XP and 1 verified quest. The home page now
    recommends a quest in the next region.
 
 ## 5. Maintainer: add a quest without touching UI code

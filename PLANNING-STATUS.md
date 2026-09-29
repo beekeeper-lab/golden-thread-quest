@@ -9,9 +9,9 @@ stands, how every phase runs, and the phases. Scope changes only at a gate betwe
 ideas that arrive mid-phase wait in `docs/PARKING-LOT.md`.
 
 Seventeen Stage 10 audit rounds ran under a closing rule for DH7 that no round met, and the
-round loop has stopped. Gate 0 passed on 2026-09-29. **Phase 1, the pilot release decision,
-is built and verified:** the release checklist passed and DH7 is closed. **Next is Gate 1:**
-the program owner runs `docs/guides/DEMO.md` and decides on the release. See `docs/RELEASE-NOTES.md` for what works and the known limitations, and
+round loop has stopped. Gate 0 and Gate 1 passed on 2026-09-29. Phase 1's release checklist
+passed and DH7 is closed, and the program owner released version 0.2.0 to a pilot. **Now:
+Phase 2A**, the pilot release (`docs/guides/PILOT.md`), then Phase 2B, the pilot itself. See `docs/RELEASE-NOTES.md` for what works and the known limitations, and
 `docs/audits/` for every audit.
 
 The original planning status follows, preserved because it is the specification the

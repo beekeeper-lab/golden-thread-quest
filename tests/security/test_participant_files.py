@@ -405,7 +405,11 @@ def _old_digest(chunks: list[bytes]) -> str:
 def test_hashing_streams_files_and_keeps_every_recorded_digest(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """No file is held whole in memory, and a digest recorded before still matches."""
+    """No file is held whole in memory, and the digest is the documented one.
+
+    Phase 2A (ADR-031, amended) dropped plain directories from the digest, because Git does
+    not carry them and a reviewer's clone of the participant's branch had to hash the same.
+    """
     from quest_app import hashing
     from quest_app.hashing import hash_directory, hash_file
 
@@ -413,7 +417,7 @@ def test_hashing_streams_files_and_keeps_every_recorded_digest(
     big = os.urandom(3 * 1024 * 1024 + 17)
     (tmp_path / "logs" / "run.log").write_bytes(big)
     (tmp_path / "PROOF.md").write_text("# Proof\n")
-    expected_tree = _old_digest([b"PROOF.md", b"# Proof\n", b"logs", b"dir", b"logs/run.log", big])
+    expected_tree = _old_digest([b"PROOF.md", b"# Proof\n", b"logs/run.log", big])
     expected_file = _old_digest([big])
 
     def refuse(self: Path) -> bytes:
@@ -438,6 +442,19 @@ def test_hashing_streams_files_and_keeps_every_recorded_digest(
     assert hash_directory(tmp_path) == expected_tree
     assert hash_file(tmp_path / "logs" / "run.log") == expected_file
     assert reads and max(reads) <= 1024 * 1024 and -1 not in reads
+
+
+def test_an_empty_directory_does_not_change_the_digest(tmp_path: Path) -> None:
+    """A clone of the participant's branch has no empty folders; the digest must agree."""
+    from quest_app.hashing import hash_directory
+
+    (tmp_path / "PROOF.md").write_text("# Proof\n")
+    before = hash_directory(tmp_path)
+    (tmp_path / "screenshots").mkdir()
+    (tmp_path / "logs" / "nested").mkdir(parents=True)
+    assert hash_directory(tmp_path) == before
+    (tmp_path / "logs" / "run.txt").write_text("ran\n")
+    assert hash_directory(tmp_path) != before, "a file inside a folder is still covered"
 
 
 def test_an_evidence_file_over_the_ceiling_is_a_finding_that_blocks_submission(
