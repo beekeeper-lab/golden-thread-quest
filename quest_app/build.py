@@ -877,7 +877,9 @@ def _quest_detail_context(
         if entry.attempt is not None
         else None
     )
-    required, optional = build_proof_views(quest, detected)
+    required, optional = build_proof_views(
+        quest, detected, entry.attempt.evidence_path if entry.attempt is not None else None
+    )
     prerequisites = tuple(
         PrerequisiteView(
             id=pid,
@@ -1000,7 +1002,7 @@ def _evidence_context(
     # skills/) is scanned too, not only the package.
     scan_findings = scan_declared_proof(world.config, quest, evidence_path) if evidence_path else []
     detected = detect_proof(quest, world.config, evidence_path, results)
-    required, optional = build_proof_views(quest, detected)
+    required, optional = build_proof_views(quest, detected, evidence_path)
     latest: dict[str, Any] = {r.validator_id: r for r in results}
     validators = tuple(
         ValidatorView(
@@ -1172,7 +1174,9 @@ def _review_context(
     results = _results_for(entry, world)
     submission = read_submission(config, attempt) or {}
     required, _ = build_proof_views(
-        entry.quest, detect_proof(entry.quest, config, attempt.evidence_path, results)
+        entry.quest,
+        detect_proof(entry.quest, config, attempt.evidence_path, results),
+        attempt.evidence_path,
     )
     if attempt.quest_version != entry.quest.version:
         # Round 12 C5: the checklist above is the *published* quest's required evidence,

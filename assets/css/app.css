@@ -15,6 +15,13 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* Round 17 L3: `.card { display: flex }` and `.button` beat the browser's own `[hidden]`
+ * rule, so the catalog's live filter set `hidden` on every card and hid none of them. The
+ * attribute must win over any component's display. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);

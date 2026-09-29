@@ -17,11 +17,13 @@ from quest_app.evidence import (
     detect_proof,
     evidence_hash,
     new_run_id,
+    proof_location,
     scan_evidence,
     scan_kinds,
     store_result,
 )
 from quest_app.pipeline import load_world
+from quest_app.view_models import build_proof_views
 
 EVIDENCE = "participant/evidence/base-camp-repository-safety/base-camp-attempt-001"
 LEAKED = "ghp_abcdefghijklmnopqrstuvwxyz0123456789"  # secret-scan: allow
@@ -106,6 +108,40 @@ class TestProofDetection:
 
         states = detect_proof(quest, config, attempt.evidence_path, ())
         assert states[item.id] == "missing"
+
+    def test_a_file_at_the_literal_authored_attempt_path_is_not_detected(
+        self, world, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Round 17 L1: the literal `attempt-001/` folder is outside the real package, so
+        nothing scans or fingerprints it. Counting it as detected let an unscanned file carry
+        a submission and change after approval unseen."""
+        quest = world.content.quests["base-camp-repository-safety"]
+        attempt = world.participant.progress.attempt_for(quest.id)
+        item = next(i for i in quest.proof if i.type == "command-record")
+
+        literal = config.resolve_participant_path(item.path)
+        literal.parent.mkdir(parents=True, exist_ok=True)
+        literal.write_text(f"token={LEAKED}\n")
+
+        assert detect_proof(quest, config, attempt.evidence_path, ())[item.id] == "missing"
+
+    def test_proof_rows_show_the_path_inside_the_real_package(
+        self, world, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Round 17 L2: pages pointed participants and reviewers at `attempt-001/`."""
+        quest = world.content.quests["base-camp-repository-safety"]
+        attempt = world.participant.progress.attempt_for(quest.id)
+        item = next(i for i in quest.proof if i.type == "command-record")
+
+        shown = proof_location(item.path, attempt.evidence_path)
+        assert shown == f"{attempt.evidence_path}/logs/{Path(item.path).name}"
+        required, _ = build_proof_views(quest, None, attempt.evidence_path)
+        assert shown in [view.path for view in required]
+        # Without an attempt, and for a path outside the quest's own area, it is as authored.
+        assert proof_location(item.path, None) == item.path
+        assert proof_location("participant/context/x.md", attempt.evidence_path) == (
+            "participant/context/x.md"
+        )
 
     def test_a_traversing_proof_path_is_never_detected(self, world, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
         import dataclasses

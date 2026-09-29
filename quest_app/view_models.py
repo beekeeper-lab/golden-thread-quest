@@ -518,13 +518,16 @@ def build_recommendation_view(
 
 
 def build_proof_views(
-    quest: Quest, detected: dict[str, str] | None = None
+    quest: Quest, detected: dict[str, str] | None = None, evidence_path: str | None = None
 ) -> tuple[tuple[ProofView, ...], tuple[ProofView, ...]]:
     """Proof requirements with whatever detection state the caller has established.
 
     With no detection information — on a quest page, before an attempt exists — every item
-    reads "Not detected", which is accurate rather than pessimistic.
+    reads "Not detected", which is accurate rather than pessimistic. With an attempt, each
+    path is shown where it goes in that attempt's package (`proof_location`).
     """
+    from quest_app.evidence import proof_location
+
     detected = detected or {}
 
     def view(item: ProofRequirement) -> ProofView:
@@ -534,7 +537,7 @@ def build_proof_views(
             type=item.type,
             description=item.description,
             required=item.required,
-            path=item.path,
+            path=proof_location(item.path, evidence_path) if item.path else item.path,
             validator=item.validator,
             status=status,
             status_label=PROOF_STATUS_LABELS.get(status, status),

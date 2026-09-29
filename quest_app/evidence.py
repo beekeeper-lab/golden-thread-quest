@@ -174,6 +174,26 @@ def _detect_one(
     if item.path is None:
         return "missing"
 
+    # Round 17 L1: a path in the quest's own evidence area names the author's invented
+    # `attempt-001` directory. A file placed at that literal path was reported "detected",
+    # while the secret scan, the evidence hash and the proof digests only ever read the
+    # real package, so it was submitted unscanned and could change after approval unseen.
+    # Such a path is only ever looked for inside the real package now.
+    if evidence_path and _in_quest_area(item.path, evidence_path):
+        try:
+            package = config.resolve_participant_path(evidence_path)
+        except ValueError:
+            return "missing"
+        candidates = _inside_the_package(item.path, evidence_path, package)
+        if item.type == "directory":
+            return (
+                "detected" if candidates[0].is_dir() and any(candidates[0].iterdir()) else "missing"
+            )
+        for candidate in candidates:
+            if candidate.is_file():
+                return "detected" if candidate.stat().st_size > 0 else "warning"
+        return "missing"
+
     try:
         target = config.resolve_participant_path(item.path)
     except ValueError:
@@ -194,6 +214,27 @@ def _detect_one(
             if candidate.is_file():
                 return "detected"
     return "missing"
+
+
+def _in_quest_area(item_path: str, evidence_path: str) -> bool:
+    quest_area = str(Path(evidence_path).parent).replace("\\", "/") + "/"
+    return item_path.replace("\\", "/").startswith(quest_area)
+
+
+def proof_location(item_path: str, evidence_path: str | None) -> str:
+    """Where the participant should put the file `item_path` names, for display.
+
+    Round 17 L2: pages showed the authored `.../attempt-001/logs/x.txt`, a folder that
+    never exists, so a participant following the page put the file where nothing scans it
+    and a reviewer looked for a file that was not there. A path in the quest's evidence area
+    is shown inside the participant's real package; any other path is shown as authored.
+    """
+    if not evidence_path or not _in_quest_area(item_path, evidence_path):
+        return item_path
+    quest_area = str(Path(evidence_path).parent).replace("\\", "/") + "/"
+    remainder = Path(item_path.replace("\\", "/")[len(quest_area) :]).parts
+    inside = remainder[1:] if len(remainder) > 1 else remainder
+    return "/".join((evidence_path.rstrip("/"), *inside))
 
 
 def _inside_the_package(item_path: str, evidence_path: str, package: Path) -> list[Path]:
