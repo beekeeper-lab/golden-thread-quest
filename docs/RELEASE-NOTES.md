@@ -56,7 +56,7 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 1181 under `make check`, plus 56 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
+| Tests | 1185 under `make check`, plus 56 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3 quest-facing, plus 2 registered environment probes and one unregistered slow probe used only to prove the timeout |
@@ -135,3 +135,10 @@ application does and does not guarantee about who approved what.
 There is nothing to upgrade from. Schema version 1 is the first. The migration machinery
 exists already because the first real migration is the wrong moment to be designing the
 safety around it.
+
+The evidence hash rule changed in round 17 (ADR-031, amendments E14 and E15). A package that
+holds a non-UTF-8 text file with Windows line endings (cp1252, Latin-1), or a directory
+symbolic link inside it, hashes differently from before, so a submission or approval recorded
+over such a package reads as "changed since submitted" or "changed since approval" once,
+though no byte of the work moved. The reviewer re-reads the evidence and approves with the
+acknowledgement ADR-030 already asks for. Packages without either hash exactly as before.

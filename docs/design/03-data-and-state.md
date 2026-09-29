@@ -158,7 +158,7 @@ Three fingerprints let the application notice change without trusting anyone's w
   leads outside `participant/` (ADR-031, amended in round 11).
 
 Both hashes normalize a file's bytes and its name before hashing, not after (ADR-031, amended
-rounds 15 and 16), so the digest answers "did the participant's work change?" rather than
+rounds 15, 16 and 17), so the digest answers "did the participant's work change?" rather than
 "did a checkout tool touch it?". A file that decodes as UTF-8 is hashed with every `\r\n` or
 lone `\r` folded to `\n`, so a Windows participant's checkout and a Linux or macOS reviewer's
 are not "changed" by Git's own line-ending conversion alone; a file name is NFC-normalized
@@ -167,7 +167,11 @@ writes the latter) hash alike. Content that does not decode as UTF-8 — a binar
 UTF-16/32 export with no ASCII in it — is hashed exactly as it sits on disk instead: an
 earlier rule normalized any NUL-free file regardless of encoding, which folded a genuine byte
 of a UTF-16 character as though it were a line ending and hid a real edit behind an unchanged
-hash (round 16 finding E10).
+hash (round 16 finding E10). Content that is not UTF-8 is still folded, but only its `\r\n`
+pairs and only when Git's own `core.autocrlf` would convert it — no NUL byte, no lone `\r`,
+and Git's printable-byte ratio — so a cp1252 or Latin-1 log converted by Git is not a change
+either (round 17 finding E14). A directory symbolic link inside the package is hashed by its
+link text, as a file link is, so retargeting it is a change (round 17 finding E15).
 
 The submission records both fingerprints. The reviewer's approval is refused if either has
 changed since submission unless the reviewer acknowledges the change, and after approval the
