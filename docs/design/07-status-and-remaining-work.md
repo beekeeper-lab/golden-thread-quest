@@ -103,10 +103,10 @@ recommendation: **do**, **decide** (at that phase's gate, likely on pilot eviden
 - **Goal:** stop the audit loop and put the plan in one document the program owner can read.
 - **Done when:** this part is merged; `docs/PARKING-LOT.md` exists; `CLAUDE.md` states the
   phase rule; `PLANNING-STATUS.md` points here.
-- **Gate 0:** the program owner approves Phase 1's plan and the closing-rule change in its
-  item 2.
+- **Gate 0 (2026-09-29): passed.** The program owner approved Phase 1 as written and the
+  closing-rule change in its item 2.
 
-### Phase 1: Pilot release decision
+### Phase 1: Pilot release decision (current)
 
 - **Goal:** decide on a fixed checklist whether the application as built goes to a pilot,
   and let the program owner see it working.
@@ -117,8 +117,7 @@ recommendation: **do**, **decide** (at that phase's gate, likely on pilot eviden
      `fix/r*` branches that are merged into `main`.
   2. **Replace DH7's closing rule** with the release checklist in item 3: DH7 closes when
      every item in it passes and one verify pass finds no blocking or high finding *within
-     those flows*. This needs the program owner's approval at Gate 0, because they set the
-     current rule on 2026-09-28.
+     those flows*. Approved at Gate 0.
   3. **The release checklist**, run for real, not by test client:
      1. CI is green on `main`, every job.
      2. A true `git clone` from GitHub, then `make setup`, `make check`, `make setup-ui` and
