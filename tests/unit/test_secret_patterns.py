@@ -1008,3 +1008,32 @@ def test_a_yaml_block_scalar_with_an_indicator_or_comment_is_detected(text: str)
     (match,) = scan_text(text)
     assert match.pattern_id == "yaml-block-scalar-credential"
     assert "Sup3rS3cretValue9" not in redact_text(text)[0]
+
+
+# Round 17 E2: `curl -u` was matched only unquoted, space-separated, as its own flag, on the
+# same line as `curl`.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "curl -u 'me@x.com:T0kenValue123' https://x",  # secret-scan: allow
+        'curl -u "me@x.com:T0kenValue123" https://x',  # secret-scan: allow
+        "curl -ume@x.com:T0kenValue123 https://x",  # secret-scan: allow
+        "curl -su me@x.com:T0kenValue123 https://x",  # secret-scan: allow
+        "curl -X GET \\\n  -u me@x.com:T0kenValue123 https://x",  # secret-scan: allow
+    ],
+)
+def test_curl_user_credential_variants_are_detected(text: str) -> None:
+    (match,) = scan_text(text)
+    assert match.pattern_id == "curl-user-credential"
+    assert "T0kenValue123" not in redact_text(text)[0]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        'curl --data-urlencode "q=a:bcd" https://x',
+        'curl -H "Accept: application/json" https://x',
+    ],
+)
+def test_curl_flags_that_are_not_user_are_not_read_as_one(text: str) -> None:
+    assert scan_text(text) == []

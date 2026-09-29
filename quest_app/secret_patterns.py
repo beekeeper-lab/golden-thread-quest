@@ -375,7 +375,22 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     SecretPattern(
         "curl-user-credential",
         "Credential passed to curl's -u/--user flag",
-        _c(r"curl\b[^\n]{0,200}?(?:-u|--user)[= ]([^\s'\"]{3,}:[^\s'\"]{3,})"),
+        #
+        # Round 17 E2: only `-u user:secret` / `--user[= ]user:secret` on the same line as
+        # `curl` was matched. Missed: a quoted credential (`-u 'me@x.com:…'`, `-u "…"`), the
+        # value glued to the flag (`-ume@x.com:…`, which curl accepts for any short option),
+        # `-u` at the end of a cluster of curl's argument-less short flags (`-su`, `-fsSLu`),
+        # and a `-u` on a backslash-continued next line of the same command. The scan-ahead
+        # may now cross a `\` line continuation, still bounded at 200 characters; the flag
+        # must start after whitespace, so a `-u` inside a longer option (`--data-urlencode`)
+        # is never read as one; the short-flag cluster admits only letters curl defines as
+        # taking no argument, so a flag that does take one (`-H`, `-d`) is never read as
+        # the start of a `-u`. The user part excludes `:` so it cannot backtrack against
+        # the separator, and both parts are bounded.
+        _c(
+            r"curl\b(?:[^\n]|\\\r?\n){0,200}?(?<=\s)(?:-[sSvLkfiIjJlnNOpqR]{0,6}u|--user)"
+            r"(?:[= ][ \t]*)?[\"']?([^\s'\":]{2,255}:[^\s'\"]{3,255})"
+        ),
     ),
     # Round 16 E11: a credential is not only ever assigned with `=`/`:` — Maven's
     # `settings.xml` and similar tooling write it as an XML element, and a YAML block
