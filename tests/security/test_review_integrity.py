@@ -294,6 +294,40 @@ class TestApprovalGuards:
         )
         assert decision.is_approval
 
+    def test_a_secret_added_after_submission_blocks_approval_but_not_needs_changes(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Round 17 E5: approval did not re-run the scan, so a token written into the
+        evidence after submission was approved into `verified`."""
+        submit(setup, config)
+        world, attempt = reload_attempt(config)
+        directory = config.resolve_participant_path(attempt.evidence_path)
+        leaked = "ghp_abcdefghijklmnopqrstuvwxyz0123456789"  # secret-scan: allow
+        (directory / "later.txt").write_text(f"GITHUB_TOKEN={leaked}\n")
+        _, schemas, store, quest, _ = setup
+
+        def decide(decision: str, findings: list[dict[str, str]]):  # type: ignore[no-untyped-def]
+            return record_decision(
+                config,
+                store,
+                quest=quest,
+                attempt=attempt,
+                participant=world.participant,
+                decision=decision,
+                reviewer_name="A Reviewer",
+                verification_statement=STATEMENT,
+                findings=findings,
+                schemas=schemas,
+                acknowledge_changed_evidence=True,
+            )
+
+        with pytest.raises(ReviewError, match="secret scan"):
+            decide("approved", [])
+        _, unchanged = reload_attempt(config)
+        assert unchanged.recorded_state is AttemptState.SUBMITTED
+
+        assert not decide("needs_changes", [FINDING]).is_approval
+
     def test_an_acknowledged_change_is_recorded_as_data_not_only_as_prose(
         self, setup, config: AppConfig
     ) -> None:  # type: ignore[no-untyped-def]

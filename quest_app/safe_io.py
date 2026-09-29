@@ -300,6 +300,12 @@ def atomic_write(root: Path, path: Path, data: bytes, *, prefix: str = PARTICIPA
             with contextlib.suppress(FileNotFoundError):
                 os.unlink(temporary, dir_fd=directory)
             raise
+        # Round 17 E9: the rename itself lives in the directory, so without this a power loss
+        # could undo it and the file would read as it did before the write. Best effort: the
+        # write has already happened, and a filesystem that cannot fsync a directory must not
+        # turn it into a reported failure.
+        with contextlib.suppress(OSError):
+            os.fsync(directory)
 
 
 def append_to_regular_file(root: Path, path: Path, data: bytes) -> None:

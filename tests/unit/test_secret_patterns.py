@@ -456,6 +456,9 @@ _PATTERN_ADVERSARIAL_UNITS: dict[str, str] = dict(  # noqa: C406 - a `{"id": "un
         ("bearer-header", "authorization: bearer Z"),
         ("basic-auth-header", "authorization: basic Z"),
         ("curl-user-credential", "curl -u Z "),
+        ("cli-flag-credential", "--password "),
+        ("cli-login-password", "docker login -p "),
+        ("cookie-header", "cookie: a="),
         ("xml-element-credential", "<password>Z"),
         ("yaml-block-scalar-credential", "password: >-\nZ\n"),
         ("secret-assignment", 'password="Z'),
@@ -695,3 +698,148 @@ def test_the_jwt_header_segment_bound_is_pinned() -> None:
 
     past_bound = "eyJ" + "a" * 513 + "." + payload + "." + signature
     assert not any(m.pattern_id == "jwt" for m in scan_text(past_bound))
+
+
+# Round 17 E1: `private-key-block` matched only the BEGIN line, so redaction left the base64
+# body and the END line readable in the generated evidence and review pages.
+_OPENSSH_KEY = (
+    "-----BEGIN OPENSSH PRIVATE KEY-----\n"  # secret-scan: allow
+    "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW\n"
+    "QyNTUxOQAAACBqLc0dnBH3s1RZ2Kx1nqMzbYq0nZ+4v1l7kJ8o6r9iGQAAAJgAAAAA==\n"
+    "-----END OPENSSH PRIVATE KEY-----"
+)
+_ENCRYPTED_RSA_KEY = (
+    "-----BEGIN RSA PRIVATE KEY-----\r\n"  # secret-scan: allow
+    "Proc-Type: 4,ENCRYPTED\r\n"
+    "DEK-Info: AES-128-CBC,5E1C6B0B6A8F2C3D\r\n"
+    "\r\n"
+    "MIIEowIBAAKCAQEAu1SU1LfVLPHCozMxH2Mo4lgOEePzNm0tRgeLezV6ffAt0gun\r\n"
+    "-----END RSA PRIVATE KEY-----"
+)
+_PGP_KEY = (
+    "-----BEGIN PGP PRIVATE KEY BLOCK-----\n"  # secret-scan: allow
+    "Comment: exported\n"
+    "\n"
+    "lQOYBGabcdEBCADQx+/=\n"
+    "=abcd\n"
+    "-----END PGP PRIVATE KEY BLOCK-----"
+)
+
+
+@pytest.mark.parametrize("key", [_OPENSSH_KEY, _ENCRYPTED_RSA_KEY, _PGP_KEY])
+def test_redacting_a_private_key_removes_the_whole_block(key: str) -> None:
+    redacted, changed = redact_text("before\n```\n" + key + "\n```\nafter")
+    assert changed
+    assert redacted == "before\n```\n" + REDACTION_PLACEHOLDER + "\n```\nafter"
+
+
+def test_a_private_key_cut_off_before_its_end_line_is_redacted_as_far_as_its_body() -> None:
+    truncated = _OPENSSH_KEY.rsplit("\n", 1)[0]
+    redacted, _ = redact_text(truncated + "\nThe rest of the log.")
+    assert redacted == REDACTION_PLACEHOLDER + "\nThe rest of the log."
+
+
+def test_a_private_key_body_scales_linearly_however_many_begin_lines_repeat() -> None:
+    pattern = next(p for p in PATTERNS if p.id == "private-key-block")
+    unit = "-----BEGIN RSA PRIVATE KEY-----\nMIIEow\n"  # secret-scan: allow
+    small = unit * (250_000 // len(unit))
+    started = time.monotonic()
+    pattern.regex.findall(small)
+    small_elapsed = max(time.monotonic() - started, 1e-6)
+    started = time.monotonic()
+    pattern.regex.findall(small * 4)
+    assert (time.monotonic() - started) / small_elapsed < 8
+
+
+# Round 17 E2: the separator had to follow the credential word directly, so any name with
+# a suffix after it was never scanned.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "SECRET_KEY=django-insecure-Q7v9Lm2Xp4Rt8Wz1",  # secret-scan: allow
+        "SECRET_KEY: Ab3dEfGh12Ij4kLm56",  # secret-scan: allow
+        "secretKey: Ab3dEfGh12Ij4kLm56",  # secret-scan: allow
+        "DB_PASSWORD_PROD=Sup3rS3cretValue9",  # secret-scan: allow
+        "PASSWORD_PROD=Sup3rS3cretValue9",  # secret-scan: allow
+        "passwordHash=Ab3dEfGh12Ij4kLm56",  # secret-scan: allow
+        "TRELLO_KEY=0123456789abcdef0123456789abcdef",  # secret-scan: allow
+        "JWT_SIGNING_KEY=Ab3dEfGh12Ij4kLm56",  # secret-scan: allow
+    ],
+)
+def test_a_credential_name_with_a_suffix_is_detected(text: str) -> None:
+    assert scan_text(text), f"expected {text!r} to be detected"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "password_file=/run/secrets/db_password",
+        "tokenizer=bert-base-uncased",
+        "token_expires_at: 2026-09-29T10:00:00Z",
+        "secret_name: my-secret-name",
+        "cache_key=user-profile-123",
+        '"total_tokens": 1234567890,',
+        "TOKEN_PLACEHOLDER = REQUEST_TOKEN_PLACEHOLDER",
+        "class SecretMatch:\n    pattern_id: str",
+    ],
+)
+def test_a_name_that_describes_a_credential_is_not_one(text: str) -> None:
+    assert scan_text(text) == []
+
+
+# Round 17 E3: the call-expression exemption made the closing paren optional and matched
+# the lowered value, so a password with an unclosed or trailing paren read as code.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "DB_PASSWORD=Pa55word(Winter2026!",  # secret-scan: allow
+        "password=Hunter2[prod-2026",  # secret-scan: allow
+        "password=Sup3rS3cretValue9)",  # secret-scan: allow
+        "password=Tr0ub4dor(3)",  # secret-scan: allow
+        "token={Sup3rS3cretValue9}",  # secret-scan: allow
+        "token=(Ab3dEfGh12xy)",  # secret-scan: allow
+    ],
+)
+def test_a_password_wrapped_in_or_ending_with_a_bracket_is_detected(text: str) -> None:
+    assert scan_text(text), f"expected {text!r} to be detected"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        'token = payload.get("token")',
+        'api_key = load_api_key(config["provider"], project_root)',
+        "SECTION_KEYS: dict[str, str] = {",
+        "client = OpenAI(api_key=api_key)",
+        "token=secrets.token_urlsafe(32),",
+        "password: (see vault)",
+        "--token $GITHUB_TOKEN",
+    ],
+)
+def test_code_and_references_stay_exempt(text: str) -> None:
+    assert scan_text(text) == []
+
+
+# Round 17 E4: shapes the assignment patterns never recognized.
+@pytest.mark.parametrize(
+    "text",
+    [
+        'password="it\'s-Sup3rS3cret9"',  # secret-scan: allow
+        '{"password":"abc\\"Sup3rS3cret9"}',  # secret-scan: allow
+        "--password Ab3xYz9Qw8rT5uV",  # secret-scan: allow
+        "docker login -u me -p Sup3rS3cretValue9",  # secret-scan: allow
+        "mysql -uroot -pSup3rS3cretValue9",  # secret-scan: allow
+        'api_key := "Ab3dEfGh12Ij"',  # secret-scan: allow
+        "password => Ab3dEfGh12Ij",  # secret-scan: allow
+        "Cookie: session=Ab3dEfGh12Ij4kLm56",  # secret-scan: allow
+        "Set-Cookie: sid=Ab3dEfGh12Ij4kLm56; HttpOnly",  # secret-scan: allow
+    ],
+)
+def test_other_credential_shapes_are_detected(text: str) -> None:
+    assert scan_text(text), f"expected {text!r} to be detected"
+
+
+def test_an_escaped_quote_inside_a_value_is_redacted_with_it() -> None:
+    text = '{"password":"abc\\"Sup3rS3cret9"}'  # secret-scan: allow
+    expected = '{"password":"' + REDACTION_PLACEHOLDER + '"}'  # secret-scan: allow
+    assert redact_text(text)[0] == expected

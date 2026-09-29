@@ -311,6 +311,21 @@ def record_decision(
             f"{exc.relative_path} in the evidence could not be read, so the decision cannot "
             "be recorded."
         ) from exc
+    if decision == Decision.APPROVED:
+        # Round 17 E5: evidence edited after submission could be approved into `verified`
+        # while holding a token the submission gate would have refused. The scan is cheap,
+        # so an approval runs the same one and refuses on the same findings; a
+        # needs-changes or rejected decision still records, since that is how the reviewer
+        # tells the participant to take the secret out.
+        scan_problems = describe_scan_findings(
+            scan_declared_proof(config, quest, attempt.evidence_path)
+        )
+        if scan_problems:
+            raise ReviewError(
+                "The evidence cannot be approved while the secret scan finds a problem in it: "
+                + " ".join(scan_problems)
+                + " Record needs changes instead, so the participant can fix it."
+            )
     # The same paths the submission recorded, so the review describes what was submitted.
     # A submission from before proof files were recorded falls back to what the quest
     # declares now, so even that attempt's approval can be checked for staleness later.

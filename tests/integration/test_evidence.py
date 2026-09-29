@@ -13,10 +13,12 @@ from quest_app.errors import ProblemReport
 from quest_app.evidence import (
     MAX_EVIDENCE_FILE_BYTES,
     _decode_evidence_text,
+    describe_scan_findings,
     detect_proof,
     evidence_hash,
     new_run_id,
     scan_evidence,
+    scan_kinds,
     store_result,
 )
 from quest_app.pipeline import load_world
@@ -207,6 +209,10 @@ class TestSecretScanning:
         finally:
             target.chmod(0o600)
         assert [finding.description for finding in findings] == ["could not be read to check it"]
+        # Round 17: and it is not worded as a secret to the participant or the reviewer.
+        assert scan_kinds(findings) == frozenset({"unreadable"})
+        (problem,) = describe_scan_findings(findings)
+        assert "secret" not in problem and "could not be read" in problem
 
     def test_a_traversing_evidence_path_scans_nothing(self, config: AppConfig) -> None:
         assert scan_evidence(config, "participant/evidence/../../etc") == []
@@ -234,10 +240,10 @@ class TestSecretScanning:
         ("name", "header"),
         [
             ("screenshot.txt", b"\x89PNG\r\n\x1a\n"),
-            ("notes.txt", b"%PDF-1.4\n"),
+            ("notes.txt", b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n"),
             ("archive.log", b"PK\x03\x04"),
             ("photo.md", b"\xff\xd8\xff"),
-            ("frame.dat", b"GIF89a"),
+            ("frame.dat", b"GIF89a\x01\x00\x01\x00\x80\x00\x00"),
             ("image.out", b"RIFF\x00\x00\x00\x00WEBP"),
         ],
     )
@@ -247,6 +253,30 @@ class TestSecretScanning:
         target = config.resolve_participant_path(EVIDENCE) / name
         target.write_bytes(header + f"token={LEAKED}".encode())
         assert scan_evidence(config, EVIDENCE) == []
+
+    # Round 17 E7: GIF and PDF signatures are plain ASCII, so a text file could open with
+    # one and be skipped unread.
+    @pytest.mark.parametrize("header", [b"GIF89a\n", b"GIF87a\n", b"%PDF-1.4\n"])
+    def test_a_text_file_opening_with_an_ascii_signature_is_still_scanned(
+        self, config: AppConfig, header: bytes
+    ) -> None:
+        target = config.resolve_participant_path(EVIDENCE) / "capture.gif"
+        target.write_bytes(header + f"GITHUB_TOKEN={LEAKED}\n".encode())
+        findings = scan_evidence(config, EVIDENCE)
+        assert [finding.path.rsplit("/", 1)[-1] for finding in findings] == ["capture.gif"]
+
+    def test_two_different_short_secrets_in_one_file_are_both_reported(
+        self, config: AppConfig
+    ) -> None:
+        """Round 17 E8: findings were deduplicated by excerpt, which for a value under 12
+        characters is only its length, so the second secret was never shown."""
+        target = config.resolve_participant_path(EVIDENCE) / "two.env"
+        target.write_text(
+            "password=Abcdefgh12\n"  # secret-scan: allow
+            "password=Zyxwvuts98\n"  # secret-scan: allow
+        )
+        findings = scan_evidence(config, EVIDENCE)
+        assert sorted(finding.line for finding in findings) == [1, 2]
 
     def test_an_oversize_real_image_is_skipped_rather_than_flagged_oversize(
         self, config: AppConfig

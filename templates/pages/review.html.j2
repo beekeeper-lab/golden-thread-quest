@@ -78,7 +78,8 @@
     {% if 'secret' in scan_kinds %}<p>The scan found something secret-like. Do not approve until it is removed and the value rotated.</p>{% endif %}
     {% if 'link' in scan_kinds %}<p>The scan found a link in the evidence that leads outside the package, so it could not be checked or shown. That is not a secret finding — do not approve until it is replaced with a copy of the file.</p>{% endif %}
     {% if 'oversize' in scan_kinds %}<p>The scan found a file too large to read, so it could not be checked. That is not a secret finding — do not approve until it is trimmed or kept out of the package.</p>{% endif %}
-    <p class="authority">This reflects the last build, not a check run when you record your decision — recording an approval does not re-run the scan, and this page cannot stop it. That is yours to enforce.</p>
+    {% if 'unreadable' in scan_kinds %}<p>The scan found a file it could not read, so it could not be checked. That is not a secret finding — the participant needs to fix it before this can be approved.</p>{% endif %}
+    <p class="authority">This reflects the last build. The scan runs again when you record an approval, and an approval is refused while it finds anything.</p>
   </div>
   {% endif %}
   <p class="authority">Validator output is stored redacted and is never rendered as HTML.</p>

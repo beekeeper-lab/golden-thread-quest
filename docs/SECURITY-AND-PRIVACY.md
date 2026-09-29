@@ -104,7 +104,8 @@ Validators should run with the least available privileges. The architecture shou
 - Credentials come from authenticated CLIs, environment variables, or approved credential stores.
 - Content, progress, evidence, logs, screenshots, and Git must not contain secrets.
 - `.gitignore` includes common secret and local-response patterns.
-- A secret scanner runs before submission preparation.
+- A secret scanner runs before submission preparation, and again when a reviewer records an
+  approval: an approval is refused while it finds anything (round 17 E5).
 - Logs redact configured keys and token-like values.
 - Raw external-system responses are stored only under Gitignored `local-data/` and are opt-in.
 - A screenshot is not the only kind of evidence the scanner cannot usefully read (round 15
@@ -124,7 +125,12 @@ Validators should run with the least available privileges. The architecture shou
   signatures — `.gz`, `.7z`, `.tar` and similar — is not skipped, but its bytes are not text
   either: the scanner decodes and pattern-matches them anyway, and a real secret inside such
   a stream does not survive decompression into a shape any pattern recognizes, so it passes
-  with the same silence a skipped file would. The `PROOF.md` template every attempt is given
+  with the same silence a skipped file would. Three of the signatures — `GIF87a`, `GIF89a`
+  and `%PDF-` — are plain ASCII, so a text file can open with one; round 17 E7 found such a
+  file was skipped unread. A file opening with one of those three is skipped only when its
+  first 64 KB are not NUL-free UTF-8, which a real GIF's screen descriptor or a real PDF's
+  binary comment line and compressed streams never are. A zip written with no compression
+  (`ZIP_STORED`) still carries its members' text verbatim and is still skipped. The `PROOF.md` template every attempt is given
   ends with a **Sensitive values** section asking the participant to confirm the package
   carries no secret, customer name or private ticket content, and clearing an image,
   archive or office document before it goes in is their judgment. There is no automated
@@ -157,6 +163,17 @@ Validators should run with the least available privileges. The architecture shou
   (`<password>...</password>`, Maven's `settings.xml` and similar tooling), and a credential
   held in a YAML block scalar (`password: >-` / `password: |`, followed by an indented value
   the flow-style unquoted pattern below never reaches on its own).
+- Round 17 added: a whole private key block is one match — its armor headers, base64 body
+  and END line, not only the BEGIN line (E1, which left the key body readable in the
+  generated evidence and review pages while reporting it redacted); an assignment whose name
+  carries text after the credential word (`SECRET_KEY=`, `DB_PASSWORD_PROD=`, `secretKey:`,
+  `passwordHash=`, and an upper-case `_KEY` env-var name such as `TRELLO_KEY`), unless that
+  text says the value describes a credential rather than holding one (`password_file`,
+  `token_expires_at`, `tokenizer`, `total_tokens`; E2); the `:=` and `=>` separators, a
+  double-quoted value containing an apostrophe and either quote containing an escaped quote;
+  a credential passed as a separate `--password`/`--token` argument, to `docker login -p`,
+  or glued to `mysql -p`; and the first cookie of a `Cookie`/`Set-Cookie` header (E4).
+  A bare shell variable (`--token $GITHUB_TOKEN`) is a reference, like `${GITHUB_TOKEN}`.
 - A file is decoded several ways and every decoding is scanned, since a whole file is not
   always one encoding (round 15 E6): by byte-order mark (a 4-byte UTF-32 mark is checked
   before the 2-byte UTF-16 marks it starts with the same two bytes as); by a high NUL-byte
@@ -182,12 +199,17 @@ Validators should run with the least available privileges. The architecture shou
   - A paren or brace elsewhere in a value no longer suppresses it on its own (round 16 E6
     narrowed this further than round 15 E12 had): a real password that happens to contain
     one (`Tr0ub4dor(3)x`) is detected. The remaining allowance — a real call or subscript
-    shape (an identifier, optionally dotted, immediately followed by `(` or `[`, with
-    nothing after the matching close but what the value class already stopped at) — is kept
+    shape (a lower-case identifier, optionally dotted, immediately followed by `(` or `[`,
+    closed, or left open only where more identifiers and openers follow before the value
+    class stopped at an argument's quote) — is kept
     only for the unquoted assignment pattern, which has no closing delimiter of its own and
     so captures straight into this module's own source wherever a keyword-named variable is
     assigned a call expression (`token = payload.get(`) or is itself passed as another
-    call's own argument (`OpenAI(api_key=api_key)`).
+    call's own argument (`OpenAI(api_key=api_key)`). Round 17 E3 found the close was
+    optional and the check ran on the lowered value, so `Pa55word(Winter2026!`,
+    `Sup3rS3cretValue9)`, `{Sup3rS3cretValue9}` and `(Ab3dEfGh12xy)` were all excused as code
+    or templates; the identifier is matched as written now, and a `{name}` placeholder or a
+    `(see vault)` annotation admits no digit.
   - `${VAR:-default}`/`${VAR-default}` is a shell or compose *default* — a real value the
     moment the variable is unset (an env file's `DB_PASSWORD=${DB_PASSWORD:-Sup3rS3cretValue9}`  <!-- # secret-scan: allow -->
     is the ordinary docker-compose/.env shape) — and round 16 E5 found it was being waved
