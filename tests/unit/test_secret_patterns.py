@@ -535,7 +535,7 @@ def test_redacting_a_placeholder_glued_to_a_real_value_covers_the_whole_value() 
 
 
 def test_a_real_value_glued_after_this_applications_own_placeholder_is_detected() -> None:
-    (match,) = scan_text(f"password={REDACTION_PLACEHOLDER}realvalue9")
+    (match,) = scan_text(f"password={REDACTION_PLACEHOLDER}realvalue9")  # secret-scan: allow
     assert match.pattern_id == "secret-assignment-unquoted"
 
 
@@ -883,3 +883,48 @@ def test_code_after_a_comma_is_not_glued_into_a_value(text: str) -> None:
 def test_a_separator_followed_by_a_space_still_ends_the_value() -> None:
     redacted, _ = redact_text("password=Sup3rS3cretValue9, user=bob")  # secret-scan: allow
     assert redacted == f"password={REDACTION_PLACEHOLDER}, user=bob"
+
+
+# Round 17 E5: the call/subscript exemption matched only the lowered shape, so a password
+# that merely ended like a call, a subscript, a bare closing or a format placeholder was
+# excused along with real code.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "password=Tr0ub4dor(3)",  # secret-scan: allow
+        "password=Summer2024(!)",  # secret-scan: allow
+        "DB_PASS=Sup3rS3cr3t)",  # secret-scan: allow
+        "password=MyP4ssw0rd(",  # secret-scan: allow
+        "password={Sup3rS3cretValue9}",  # secret-scan: allow
+        "password=abc[Sup3rS3cretValue9",  # secret-scan: allow
+        'password = "{Sup3rS3cretValue9}"',  # secret-scan: allow
+    ],
+)
+def test_a_password_shaped_like_the_end_of_a_call_is_detected(text: str) -> None:
+    assert scan_text(text), f"expected {text!r} to be detected"
+    redacted, _ = redact_text(text)
+    assert "S3cr" not in redacted and "0ub4" not in redacted and "P4ss" not in redacted
+    assert "Summer2024" not in redacted
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "token = parts[-1]",
+        'token = os.environ["GITHUB_TOKEN"]',
+        "client = OpenAI(api_key=api_key)",
+        "token = base64.b64encode(raw)",
+    ],
+)
+def test_real_code_shapes_stay_exempted(text: str) -> None:
+    assert scan_text(text) == []
+
+
+# Round 17 C2: the plain unquoted run stopped at every `}`, so with fewer than eight
+# characters before the brace nothing matched at all and the real secret after it was never
+# looked at.
+def test_a_brace_glued_inside_an_unquoted_value_does_not_hide_it() -> None:
+    text = "api_key=k8s{Q}9aQ2vLm7RealSecret"  # secret-scan: allow
+    (match,) = scan_text(text)
+    assert match.pattern_id == "secret-assignment-unquoted"
+    assert redact_text(text)[0] == f"api_key={REDACTION_PLACEHOLDER}"

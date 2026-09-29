@@ -159,8 +159,16 @@ _UNQUOTED_BRACKET_VALUE = (
 # (a password followed directly by `;echo done`) is now redacted through the command glued
 # to it.
 _UNQUOTED_PLAIN_TAIL = r"[,;][^\s\"',;}`\]=:(){}\[<>]+(?=[\s\"',;}`\]]|$)"
+#
+# Round 17 C2: the plain run also stopped at every `}`, so a value with a brace in it and
+# fewer than eight characters before the brace (`k8s{Q}9aQ2vLm7RealSecret`) was never
+# matched, and the real secret after the brace was never looked at. A `}` with more value
+# glued straight after it is part of the value now; one followed by anything else still
+# ends it, so a JSON or JavaScript object's own closing brace is never swallowed. So does a
+# `}` followed by a backslash: read as source text, an f-string placeholder followed by an
+# escape (`f"token={LEAKED}\n"`, all over this repository's own tests) is not a value.
 _UNQUOTED_PLAIN_VALUE = (
-    r"[^\s\"',;}`\]]{8,}(?:"
+    r"(?:[^\s\"',;}`\]]|\}(?=[^\s\"',;}`\]\\])){8,}(?:"
     + _UNQUOTED_PLAIN_TAIL
     + r")*|(?=[^\s\"'`}\]=:(){}\[<>]{8})[^\s\"',;}`\]=:(){}\[<>]{1,7}(?:"
     + _UNQUOTED_PLAIN_TAIL
@@ -486,6 +494,71 @@ _CODE_ATTRIBUTE_ROOTS: Final = frozenset(
 )
 
 
+# Round 17 E5: a digit between two letters is how a password is usually made from a word
+# (`P4ssw0rd`, `Tr0ub4dor`, `Sup3rS3cret`); code names put digits there rarely, and then
+# once, in a lowercase name (`b64encode`, `sha256sum`, `oauth2client`).
+_SANDWICHED_DIGIT = re.compile(r"[A-Za-z]\d+(?=[A-Za-z])")
+_CODE_EXPRESSION = re.compile(
+    r"(?P<callee>[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)"
+    r"(?:\((?P<call_args>[^()]*)\)?|\[(?P<subscript_args>[^\[\]]*)\]?|(?P<closing>[)\]]))"
+)
+
+
+def _is_code_identifier(name: str) -> bool:
+    """`name` reads as an identifier a programmer wrote, not as a password (round 17 E5)."""
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
+        return False
+    sandwiched = len(_SANDWICHED_DIGIT.findall(name))
+    return sandwiched == 0 or (sandwiched == 1 and name.islower())
+
+
+def _is_format_placeholder(value: str, *, closed: bool) -> bool:
+    """`value` is a `{name}` format-string placeholder (round 17 E5).
+
+    `closed=False` also accepts the forms the unquoted pattern captures, which stop before a
+    closing brace or a comma: `{GITHUB` and `{total_tokens:`.
+    """
+    shape = (
+        r"\{([A-Za-z_][A-Za-z0-9_]*)\}"
+        if closed
+        else r"\{([A-Za-z_][A-Za-z0-9_]*)(?::[^{}]{0,20})?\}?"
+    )
+    match = re.fullmatch(shape, value)
+    if match is None:
+        return False
+    name = match.group(1)
+    return _is_code_identifier(name) and (name.islower() or name.isupper())
+
+
+def _is_code_expression(value: str) -> bool:
+    """`value` is a call, subscript or format placeholder read out of source (round 17 E5)."""
+    if _is_format_placeholder(value, closed=False):
+        return True
+    match = _CODE_EXPRESSION.fullmatch(value)
+    if match is None:
+        return False
+    callee = match.group("callee")
+    if not all(_is_code_identifier(segment) for segment in callee.split(".")):
+        return False
+    if match.group("closing") is not None:
+        # A keyword-named variable passed as another call's own argument (`api_key=api_key)`):
+        # a plain name, never one with a digit in it.
+        return not any(ch.isdigit() for ch in callee)
+    args = match.group("call_args")
+    if args is None:
+        args = match.group("subscript_args")
+    if args:
+        if not re.fullmatch(r"[A-Za-z0-9_.=*+\-\[\]]*", args) or not re.search(
+            r"[A-Za-z0-9]", args
+        ):
+            return False
+        if not all(
+            _is_code_identifier(name) for name in re.findall(r"[A-Za-z_][A-Za-z0-9_]*", args)
+        ):
+            return False
+    return True
+
+
 def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     """`value` is documentation, a template, a mask, or code — not a live credential.
 
@@ -537,9 +610,14 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # bare `{name}` format-string/f-string placeholder (this module's own test fixtures are
     # full of exactly that shape, reading their own source: `f'token = "{GITHUB}"'`), or a
     # parenthetical annotation like `(redacted)` or `(see vault)` — is a placeholder.
+    #
+    # Round 17 E5: the `{name}` check matched the lowered value, so `{Sup3rS3cretValue9}`
+    # read as a format placeholder too. A real one names a variable, and a variable name is
+    # written in one case (`{api_key}`, `{GITHUB}`) without a password's mixed-in digits;
+    # `_is_format_placeholder` checks the value as written.
     if (
         re.fullmatch(r"\{\{\s*[^{}]*\s*\}\}", lowered)
-        or re.fullmatch(r"\{[a-z_][a-z0-9_]*\}", lowered)
+        or _is_format_placeholder(value.strip(), closed=True)
         or re.fullmatch(r"\([a-z][a-z0-9 _-]*\)", lowered)
     ):
         return True
@@ -559,9 +637,20 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # truncates before a closing brace. `Tr0ub4dor(3)xyz` has a *closed* paren with more
     # value after it — not how any of these shapes read — so it fails every alternative
     # below and stays a finding.
-    if allow_call_expression and re.fullmatch(
-        r"[a-z_][a-z0-9_.]*(?:\([^()]*\)?|\[[^\[\]]*\]?|[)\]])|\{[a-z_][a-z0-9_]*\}?", lowered
-    ):
+    #
+    # Round 17 E5: that shape was still matched on the lowered value with no look at what
+    # the identifiers or the arguments were, so any password that merely *ended* like a
+    # call was excused with it: `Tr0ub4dor(3)`, `Summer2024(!)`, `MyP4ssw0rd(` (the value
+    # class stopped where a quote would have been), `Sup3rS3cr3t)` (a "bare closing"),
+    # `abc[Sup3rS3cretValue9` and `{Sup3rS3cretValue9}`. `_is_code_expression` keeps the
+    # same four shapes but checks them as written: every identifier in them must read as a
+    # code identifier rather than a password (see `_is_code_identifier`), a call's or
+    # subscript's arguments may only be identifiers, numbers and the operators code puts
+    # between them, a bare closing is only ever a digit-free name, and a `{name}` must be
+    # written in one case. `token = payload.get(`, `token_urlsafe(32)`, `OpenAI(api_key=
+    # api_key)` and `load_api_key(config[` — the real code this repository's own source
+    # contains — all still pass.
+    if allow_call_expression and _is_code_expression(value.strip()):
         return True
     # Round 17 E1: once a keyword can carry a suffix, the unquoted pattern reads three more
     # code shapes from this repository's own source that no suffix-free name ever produced:
@@ -580,7 +669,7 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
             and "_" in value
             and re.search(_KEYWORDS, value, re.IGNORECASE)
         )
-        or re.fullmatch(r"\{[a-z_][a-z0-9_]*(?::[^{}]{0,20})?\}?", lowered)
+        or _is_format_placeholder(value.strip(), closed=False)
         or re.match(r"(?:function|return)(?![a-z0-9_$])", lowered)
     ):
         return True
