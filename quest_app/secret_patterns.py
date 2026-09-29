@@ -77,9 +77,49 @@ _KEYWORDS = "|".join(
         # `messages:{pass:"..."}` in `vendor/axe.min.js`), and English has "bypass". Real
         # env-var-style names compound it behind an underscore instead (`DB_PASS`,
         # `ADMIN_PASS`), which none of those do, so the lookbehind requires one.
-        r"(?<=_)pass\b",
+        #
+        # Round 17 E1: the `\b` here stopped `DB_PASS_PROD` (an `_` is a word character, so
+        # there is no boundary between `PASS` and `_PROD`) once a keyword could carry an
+        # identifier suffix (see `_KEY` below); a following letter is what `\b` was keeping
+        # out (`_passthrough`), so that is what the lookahead refuses now.
+        r"(?<=_)pass(?![a-z])",
+        # Round 17 E1: `"dbPass": "…"` (camelCase, no underscore) and PHP's `$dbpass` are
+        # the other common spelling of the same compound. Only named credential-owner
+        # prefixes qualify, never a bare letter before `pass`, so "bypass", "onPass",
+        # "firstPass" and `messages:{pass:...}` stay ordinary vocabulary.
+        r"(?:db|admin|user|root|smtp|mail|ftp|sql|redis|ldap)pass(?![a-z])",
         r"pwd",
+        # Round 17 E1: a bare `key` is not safe as a keyword (`key: value` is every YAML
+        # and JSON mapping ever written), so only the compounds that name a credential are
+        # added: Django's and Rails' `SECRET_KEY`/`SECRET_KEY_BASE` (already reached through
+        # `secret` plus a suffix), and the encryption, storage-account and signing keys.
+        r"encryption[_-]?key",
+        r"account[_-]?key",
+        r"signing[_-]?key",
     )
+)
+
+# Round 17 E1: every assignment-shaped pattern used to require the `[=:]` (or closing tag,
+# or quote) immediately after the keyword itself, so a keyword followed by anything at all
+# before the operator was never matched: `SECRET_KEY=`, `"secret_key": "…"`, `"secretKey"`,
+# `JWT_SECRET_KEY=`, `DB_PASSWORD_PROD=`, `JIRA_API_TOKEN_2=` — the ordinary way an env
+# file or config names a second credential of the same kind. The keyword may now be
+# followed by an identifier suffix (letters, digits, `_`, `-`) before whatever the pattern
+# expects next. The suffix is bounded, so each keyword occurrence costs a constant amount
+# of backtracking however long the identifier run after it is. The trade is a wider net:
+# a field such as `password_file` or `secret_name` holding an 8-character value is now a
+# finding too; none of this repository's own tracked files, and none of the negative
+# fixtures (`nextPageToken`, `bypass`, `"pass": …`), has that shape.
+#
+# A suffixed name gives up one thing the bare keyword has: its operator may not be followed
+# by a line break before the value. A bare `password:` followed by the value indented on
+# the next line is a valid YAML plain scalar and stays detected; but a suffix is exactly
+# what turns a Python class or loop header into that shape (`class SecretMatch:` followed by
+# an indented `pattern_id: str`, `class SecretPattern:` followed by its docstring), and
+# neither a class body nor a docstring is a value.
+_KEY = r"(?:" + _KEYWORDS + r")[A-Za-z0-9_-]{0,40}"
+_ASSIGNMENT_KEY = (
+    r"[\"']?(?:" + _KEYWORDS + r")(?:[\"']?\s*[=:]\s*|[A-Za-z0-9_-]{1,40}[\"']?[ \t]*[=:][ \t]*)"
 )
 
 
@@ -297,14 +337,14 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     SecretPattern(
         "yaml-block-scalar-credential",
         "Secret-like value in a YAML block scalar",
-        _c(r"(?:" + _KEYWORDS + r")\s*:\s*[|>][+-]?\s*\n[ \t]+(\S[^\n]{7,})"),
+        _c(_KEY + r"\s*:\s*[|>][+-]?\s*\n[ \t]+(\S[^\n]{7,})"),
     ),
     # Quoted assignment first, so a quoted value keeps its exact span even when it contains
     # characters the unquoted form would stop at.
     SecretPattern(
         "secret-assignment",
         "Secret-like assignment",
-        _c(r"[\"']?(?:" + _KEYWORDS + r")[\"']?\s*[=:]\s*[\"']([^\"'\n]{8,})[\"']"),
+        _c(_ASSIGNMENT_KEY + r"[\"']([^\"'\n]{8,})[\"']"),
     ),
     # Unquoted: `.env` lines, shell transcripts and YAML. Stops at whitespace and at the
     # punctuation that ends a value in JSON, YAML flow style or a shell command. The
@@ -334,10 +374,7 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     SecretPattern(
         "secret-assignment-unquoted",
         "Secret-like assignment",
-        _c(
-            r"[\"']?(?:" + _KEYWORDS + r")[\"']?\s*[=:]\s*"
-            r"(\[[^\]\n\s,\"']{3,80}\][^\s\"',;}`\]]*|[^\s\"',;}`\]]{8,})"
-        ),
+        _c(_ASSIGNMENT_KEY + r"(\[[^\]\n\s,\"']{3,80}\][^\s\"',;}`\]]*|[^\s\"',;}`\]]{8,})"),
     ),
 )
 
@@ -444,6 +481,27 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # below and stays a finding.
     if allow_call_expression and re.fullmatch(
         r"[a-z_][a-z0-9_.]*(?:\([^()]*\)?|\[[^\[\]]*\]?|[)\]])|\{[a-z_][a-z0-9_]*\}?", lowered
+    ):
+        return True
+    # Round 17 E1: once a keyword can carry a suffix, the unquoted pattern reads three more
+    # code shapes from this repository's own source that no suffix-free name ever produced:
+    # a keyword-named constant or variable assigned from another one (`TOKEN_PLACEHOLDER =
+    # REQUEST_TOKEN_PLACEHOLDER`, `"total_tokens": total_tokens`), an f-string placeholder
+    # with a format spec (`{total_tokens:,}`, cut at the comma), and minified JavaScript
+    # whose property value is a function or a return expression (`tokenList:function(){`,
+    # `"nmtokens":return(...)`, both in `vendor/axe.min.js`). Each is excused only in the
+    # narrow form code takes: a bare identifier must be single-case snake_case with no digit,
+    # contain an underscore, and itself contain a credential keyword — the name of a
+    # credential, not a value — and the JavaScript case must start with the reserved word
+    # itself. A real password of any of these shapes (`super_secret_token`) is the trade.
+    if allow_call_expression and (
+        (
+            re.fullmatch(r"[a-z_]+|[A-Z_]+", value.strip())
+            and "_" in value
+            and re.search(_KEYWORDS, value, re.IGNORECASE)
+        )
+        or re.fullmatch(r"\{[a-z_][a-z0-9_]*(?::[^{}]{0,20})?\}?", lowered)
+        or re.match(r"(?:function|return)(?![a-z0-9_$])", lowered)
     ):
         return True
     # A short dotted identifier chain is an attribute path, not a secret — but only when it
