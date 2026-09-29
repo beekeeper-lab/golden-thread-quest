@@ -14,7 +14,9 @@ from __future__ import annotations
 
 import hashlib
 import re
+from bisect import bisect_left, bisect_right
 from dataclasses import dataclass
+from html.entities import html5 as html5_entities
 from typing import Final
 
 REDACTION_PLACEHOLDER: Final = "[REDACTED]"
@@ -143,11 +145,71 @@ _EXCUSING_TAIL_WORDS: Final = frozenset(
 # Round 17 E4: `:=` (Go, and Makefiles) and `=>` (PHP, Ruby, Perl) assign too.
 _SEPARATOR = r"[ \t]*(?::=|=>|[=:])(?:[ \t]*\r?\n[ \t]+|[ \t]*)"
 
+# Round 17 E1: every assignment-shaped pattern used to require the `[=:]` (or closing tag,
+# or quote) immediately after the keyword itself, so a keyword followed by anything at all
+# before the operator was never matched: `SECRET_KEY=`, `"secret_key": "…"`, `"secretKey"`,
+# `JWT_SECRET_KEY=`, `DB_PASSWORD_PROD=`, `JIRA_API_TOKEN_2=` — the ordinary way an env
+# file or config names a second credential of the same kind. The keyword may now be
+# followed by an identifier suffix (letters, digits, `_`, `-`) before whatever the pattern
+# expects next. The suffix is bounded, so each keyword occurrence costs a constant amount
+# of backtracking however long the identifier run after it is. The trade is a wider net:
+# a field such as `password_file` or `secret_name` holding an 8-character value is now a
+# finding too; none of this repository's own tracked files, and none of the negative
+# fixtures (`nextPageToken`, `bypass`, `"pass": …`), has that shape.
+#
+# A suffixed name gives up one thing the bare keyword has: its operator may not be followed
+# by a line break before the value. A bare `password:` followed by the value indented on
+# the next line is a valid YAML plain scalar and stays detected; but a suffix is exactly
+# what turns a Python class or loop header into that shape (`class SecretMatch:` followed by
+# an indented `pattern_id: str`, `class SecretPattern:` followed by its docstring), and
+# neither a class body nor a docstring is a value.
+_KEY = r"(?:" + _KEYWORDS + r")[A-Za-z0-9_-]{0,40}"
+_ASSIGNMENT_KEY = (
+    r"[\"']?(?:" + _KEYWORDS + r")(?:[\"']?\s*[=:]\s*|[A-Za-z0-9_-]{1,40}[\"']?[ \t]*[=:][ \t]*)"
+)
+
 
 # The bracketed form of an unquoted value (see `secret-assignment-unquoted` below).
 _UNQUOTED_BRACKET_VALUE = (
     r"\[(?:[^\]\n\s,\"']{3,80}|(?=[^\]\n\s,\"']{0,2}\][^\s\"',;}`]{5})[^\]\n\s,\"']{0,2})\]"
     r"(?:\]*[^\s\"',;}`\]])*"
+)
+
+
+# The plain form of an unquoted value: a run of value characters, which stops at whitespace
+# and at the punctuation that ends a value in JSON, YAML flow style or a shell command.
+#
+# Round 17 E17: `,` and `;` are among those stops, so a password assigned as
+# `Sup3rS3cr;etValue9` redacted to `[REDACTED];etValue9` — half the value left in clear
+# text — and one assigned as `ab,Sup3rS3cretValue9` was never matched at all, the two
+# characters before the comma being too few to be a finding. The rule now: a `,` or `;`
+# glued between two runs of value characters is part of the value, as long as the run
+# after it goes on to a real end of value (whitespace, a quote, a closing `}`/`]`, the end
+# of the text, or another such separator) and contains none of `=`, `:`, `(`, `)`, `{`,
+# `}`, `[`, `<`, `>`. That second condition is what keeps code out: after a comma, code
+# continues with another key or argument (`f(token=token,user=user)`, minified
+# `{password:e,next:t}`), which has one of those characters in it; a value continues with
+# more of itself, which does not. A value whose first run is under eight characters
+# (`ab,…`) counts only when the whole run, separators included, reaches eight and ends at
+# a real end of value. Each tail run excludes its own separators and has to end on a
+# terminator, so it cannot backtrack. The trade: a shell line with no space after a `;`
+# (a password followed directly by `;echo done`) is now redacted through the command glued
+# to it.
+_UNQUOTED_PLAIN_TAIL = r"[,;][^\s\"',;}`\]=:(){}\[<>]+(?=[\s\"',;}`\]]|$)"
+#
+# Round 17 C2: the plain run also stopped at every `}`, so a value with a brace in it and
+# fewer than eight characters before the brace (`k8s{Q}9aQ2vLm7RealSecret`) was never
+# matched, and the real secret after the brace was never looked at. A `}` with more value
+# glued straight after it is part of the value now; one followed by anything else still
+# ends it, so a JSON or JavaScript object's own closing brace is never swallowed. So does a
+# `}` followed by a backslash: read as source text, an f-string placeholder followed by an
+# escape (`f"token={LEAKED}\n"`, all over this repository's own tests) is not a value.
+_UNQUOTED_PLAIN_VALUE = (
+    r"(?:[^\s\"',;}`\]]|\}(?=[^\s\"',;}`\]\\])){8,}(?:"
+    + _UNQUOTED_PLAIN_TAIL
+    + r")*|(?=[^\s\"'`}\]=:(){}\[<>]{8})[^\s\"',;}`\]=:(){}\[<>]{1,7}(?:"
+    + _UNQUOTED_PLAIN_TAIL
+    + r")+(?=[\s\"'`}\]]|$)"
 )
 
 
@@ -384,22 +446,76 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     SecretPattern(
         "curl-user-credential",
         "Credential passed to curl's -u/--user flag",
-        _c(r"curl\b[^\n]{0,200}?(?:-u|--user)[= ]([^\s'\"]{3,}:[^\s'\"]{3,})"),
+        #
+        # Round 17 E2: only `-u user:secret` / `--user[= ]user:secret` on the same line as
+        # `curl` was matched. Missed: a quoted credential (`-u 'me@x.com:…'`, `-u "…"`), the
+        # value glued to the flag (`-ume@x.com:…`, which curl accepts for any short option),
+        # `-u` at the end of a cluster of curl's argument-less short flags (`-su`, `-fsSLu`),
+        # and a `-u` on a backslash-continued next line of the same command. The scan-ahead
+        # may now cross a `\` line continuation, still bounded at 200 characters; the flag
+        # must start after whitespace, so a `-u` inside a longer option (`--data-urlencode`)
+        # is never read as one; the short-flag cluster admits only letters curl defines as
+        # taking no argument, so a flag that does take one (`-H`, `-d`) is never read as
+        # the start of a `-u`. The user part excludes `:` so it cannot backtrack against
+        # the separator, and both parts are bounded.
+        _c(
+            r"curl\b(?:[^\n]|\\\r?\n){0,200}?(?<=\s)(?:-[sSvLkfiIjJlnNOpqR]{0,6}u|--user)"
+            r"(?:[= ][ \t]*)?[\"']?([^\s'\":]{2,255}:[^\s'\"]{3,255})"
+        ),
     ),
     # Round 16 E11: a credential is not only ever assigned with `=`/`:` — Maven's
     # `settings.xml` and similar tooling write it as an XML element, and a YAML block
     # scalar (`password: >-` / `password: |`, followed by an indented value on its own
     # line) is valid YAML the flow-style unquoted pattern below never reaches, since it
     # requires the value on the same line as the keyword.
+    #
+    # Round 17 E7: the element pattern only matched a bare `<keyword>` tag with the value on
+    # the same line, so the ordinary variants were all missed: a compound tag name
+    # (`<db_password>`), a tag with attributes (`<password encrypted="false">`), and a value
+    # on its own line between the tags, as any pretty-printed XML writes it. The tag name may
+    # now carry a bounded prefix and suffix around the keyword and up to 200 characters of
+    # attributes, and the value may sit on the line after the opening tag with the closing
+    # tag on the line after it. The value is bounded at 512 characters and must start and
+    # end on a non-space character, which is what keeps the trailing-whitespace run in
+    # front of the closing tag from backtracking against it. Any closing tag ends it: a
+    # well-formed document only ever closes the tag it opened.
     SecretPattern(
         "xml-element-credential",
         "Secret-like value in an XML element",
-        _c(r"<(?:" + _KEYWORDS + r")>([^<>\n]{8,})</(?:" + _KEYWORDS + r")>"),
+        _c(
+            r"<[A-Za-z0-9_:.-]{0,40}?"
+            + _KEY
+            + r"(?:\s[^<>]{0,200})?>[ \t]*(?:\r?\n[ \t]*)?"
+            + r"([^<>\s][^<>\n]{6,510}[^<>\s])[ \t]*(?:\r?\n[ \t]*)?</[A-Za-z0-9_:.-]{1,80}>"
+        ),
+    ),
+    # Round 17 E7: Spring's `<property name="password" value="…"/>` and .NET's
+    # `<add key="DbPassword" value="…"/>` hold the credential in an attribute, next to an
+    # attribute that names it; neither the element pattern nor the assignment patterns
+    # (which need `=`/`:` straight after the name) ever reached it.
+    SecretPattern(
+        "xml-attribute-credential",
+        "Secret-like value in an XML attribute",
+        _c(
+            r"\b(?:name|key)[ \t]*=[ \t]*[\"'][A-Za-z0-9_.:-]{0,40}?"
+            + _KEY
+            + r"[\"'][ \t\r\n]{1,40}value[ \t]*=[ \t]*[\"']([^\"'<>\n]{8,512})[\"']"
+        ),
     ),
     SecretPattern(
         "yaml-block-scalar-credential",
         "Secret-like value in a YAML block scalar",
-        _c(r"(?:" + _KEYWORDS + r")\s*:\s*[|>][+-]?\s*\n[ \t]+(\S[^\n]{7,})"),
+        # Round 17 E8: the header only allowed an optional chomping indicator straight
+        # before the line break, so an indentation indicator (`|2`, `>-1`, `|+2`) or a
+        # trailing comment (`|-  # prod`) — both valid YAML block-scalar headers — hid the
+        # value. Either indicator order and a `#` comment are allowed now. Blank lines
+        # before the value are matched line by line rather than by an open `\s*` in front
+        # of a `\n`, which could backtrack across a long run of whitespace.
+        _c(
+            _KEY
+            + r"[ \t]*:[ \t]*[|>](?:[1-9][+-]?|[+-][1-9]?)?[ \t]*(?:#[^\n]*)?\r?\n"
+            + r"(?:[ \t]*\r?\n)*[ \t]+(\S[^\n]{7,})"
+        ),
     ),
     # Round 17 E4: a credential passed as a separate command-line argument rather than
     # glued on with `=` — `--password Ab3x…`, `docker login -p …`, `mysql -p…` — which the
@@ -484,6 +600,14 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     SecretPattern(
         "secret-assignment-unquoted",
         "Secret-like assignment",
+        #
+        # Round 17 E4: the plain class stops at `}`, so `${DB_PASSWORD}Sup3rS3cretValue9`
+        # captured `${DB_PASSWORD`, which `_is_placeholder` read as a bare `${NAME}` — the
+        # real value glued after the expansion was never looked at. A `${…}`, `$(…)` or
+        # `{{…}}` template is now captured whole, closing delimiter included, together with
+        # whatever is glued after it; only a capture that is entirely the template is a
+        # placeholder. Each template body is bounded and excludes its own delimiters, so it
+        # cannot backtrack.
         _c(
             r"[\"']?(?:"
             + _KEYWORDS
@@ -493,7 +617,11 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
             + _SEPARATOR
             + r"(?P<value>"
             + _UNQUOTED_BRACKET_VALUE
-            + r"|[^\s\"',;}`\]]{8,})"
+            + r"|(?:\$\{[^{}\n]{0,200}\}|\$\([^()\n]{0,200}\)|\{\{[^{}\n]{0,200}\}\})"
+            + r"[^\s\"',;}`\]]*"
+            + r"|"
+            + _UNQUOTED_PLAIN_VALUE
+            + r")"
         ),
     ),
 )
@@ -533,6 +661,76 @@ _CODE_ATTRIBUTE_ROOTS: Final = frozenset(
 )
 
 
+# Round 17 E5: a digit between two letters is how a password is usually made from a word
+# (`P4ssw0rd`, `Tr0ub4dor`, `Sup3rS3cret`); code names put digits there rarely, and then
+# once, in a lowercase name (`b64encode`, `sha256sum`, `oauth2client`).
+_SANDWICHED_DIGIT = re.compile(r"[A-Za-z]\d+(?=[A-Za-z])")
+_CODE_EXPRESSION = re.compile(
+    r"(?P<callee>[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)"
+    r"(?:\((?P<call_args>[^()]*)\)?|\[(?P<subscript_args>[^\[\]]*)\]?|(?P<closing>[)\]]))"
+)
+
+
+def _is_code_identifier(name: str) -> bool:
+    """`name` reads as an identifier a programmer wrote, not as a password (round 17 E5)."""
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
+        return False
+    sandwiched = len(_SANDWICHED_DIGIT.findall(name))
+    return sandwiched == 0 or (sandwiched == 1 and name.islower())
+
+
+def _is_format_placeholder(value: str, *, closed: bool) -> bool:
+    """`value` is a `{name}` format-string placeholder (round 17 E5).
+
+    `closed=False` also accepts the forms the unquoted pattern captures, which stop before a
+    closing brace or a comma: `{GITHUB` and `{total_tokens:`.
+    """
+    shape = (
+        r"\{([A-Za-z_][A-Za-z0-9_]*)\}"
+        if closed
+        else r"\{([A-Za-z_][A-Za-z0-9_]*)(?::[^{}]{0,20})?\}?"
+    )
+    match = re.fullmatch(shape, value)
+    if match is None:
+        return False
+    name = match.group(1)
+    return _is_code_identifier(name) and (name.islower() or name.isupper())
+
+
+def _is_code_expression(value: str) -> bool:
+    """`value` is a call, subscript or format placeholder read out of source (round 17 E5)."""
+    if _is_format_placeholder(value, closed=False):
+        return True
+    match = _CODE_EXPRESSION.fullmatch(value)
+    if match is None:
+        return False
+    callee = match.group("callee")
+    if not all(_is_code_identifier(segment) for segment in callee.split(".")):
+        return False
+    # Round 17 E3: a name that mixes an upper-case letter with a digit (`Hunter2[prod-2026`,
+    # `Pa55word(`) is how a password is written, not a callee: code names a function in
+    # snake_case and a class without digits (`payload.get(`, `OpenAI(`).
+    if any(re.search(r"[A-Z]", part) and re.search(r"\d", part) for part in callee.split(".")):
+        return False
+    if match.group("closing") is not None:
+        # A keyword-named variable passed as another call's own argument (`api_key=api_key)`):
+        # a plain name, never one with a digit in it.
+        return not any(ch.isdigit() for ch in callee)
+    args = match.group("call_args")
+    if args is None:
+        args = match.group("subscript_args")
+    if args:
+        if not re.fullmatch(r"[A-Za-z0-9_.=*+\-\[\]]*", args) or not re.search(
+            r"[A-Za-z0-9]", args
+        ):
+            return False
+        if not all(
+            _is_code_identifier(name) for name in re.findall(r"[A-Za-z_][A-Za-z0-9_]*", args)
+        ):
+            return False
+    return True
+
+
 def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     """`value` is documentation, a template, a mask, or code — not a live credential.
 
@@ -559,7 +757,12 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # where a closing angle bracket should have gone) or ended with a stray `>`
     # (`Sup3rS3cretValue9>`) was waved through as a template. Only a value that is a matched
     # `<...>` pair, start to end, is a documentation placeholder now.
-    if lowered.startswith(("$(", "{{")) or re.fullmatch(r"<[^<>]*>", lowered):
+    #
+    # Round 17 E4: `startswith(("$(", "{{"))` excused anything that merely began like a
+    # command substitution or a Jinja expression, so `"$(true)Sup3rS3cretValue9"` and
+    # `"{{ vault_pw }}Sup3rS3cretValue9"` were waved through. Only a value that is entirely
+    # one `$(…)` is a command substitution now; the whole-value Jinja check is below.
+    if re.fullmatch(r"\$\([^()]*\)", lowered) or re.fullmatch(r"<[^<>]*>", lowered):
         return True
     # Round 16 E5: this used to be `lowered.startswith("${")`, so anything shaped like a
     # shell or compose expansion was exempted regardless of what followed — including a
@@ -568,24 +771,27 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # is the ordinary docker-compose/.env shape. Only a value that is entirely
     # `${NAME}`, optionally with a `:?message` clause (an error string shown when unset,
     # never a default value), refers to the environment rather than holding one. The
-    # unquoted pattern's value class excludes `}`, so a bare wrap is captured with its
-    # closing brace already stripped off by the regex — the trailing `\}?` here accounts
-    # for that, and for the quoted pattern, which does capture the closing brace.
-    if re.fullmatch(r"\$\{[a-z_][a-z0-9_]*(?::\?[^{}]*)?\}?", lowered):
+    # unquoted pattern's value class excludes `}`, so a bare wrap used to be captured with
+    # its closing brace already stripped off by the regex, and this allowed for that with a
+    # trailing `\}?` — which also excused an unclosed `${NAME` with a real value glued on.
+    # Round 17 E4: the unquoted pattern now captures a `${…}` whole, brace included, as the
+    # quoted pattern always did, so the closing brace is required here.
+    if re.fullmatch(r"\$\{[a-z_][a-z0-9_]*(?::\?[^{}]*)?\}", lowered):
         return True
     # A value that IS entirely one of the real template shapes below — a Jinja expression, a
     # bare `{name}` format-string/f-string placeholder (this module's own test fixtures are
     # full of exactly that shape, reading their own source: `f'token = "{GITHUB}"'`), or a
     # parenthetical annotation like `(redacted)` or `(see vault)` — is a placeholder.
     #
-    # Round 17 E3: the last two were matched against the lowered value, so a value that
-    # merely *wrapped* a real password in braces or parens (`{Sup3rS3cretValue9}`,
-    # `(Ab3dEfGh12xy)`) read as a template. A format placeholder is a name — letters and
-    # underscores — and an annotation is words, so neither shape admits a digit now.
+    # Round 17 E3 and A-E5: the last two were matched against the lowered value, so a value
+    # that merely *wrapped* a real password in braces or parens (`{Sup3rS3cretValue9}`,
+    # `(Ab3dEfGh12xy)`) read as a template. A format placeholder names a variable, written in
+    # one case without a password's mixed-in digits (`_is_format_placeholder`), and an
+    # annotation is words, so it admits no digit either.
     stripped = value.strip()
     if (
         re.fullmatch(r"\{\{\s*[^{}]*\s*\}\}", lowered)
-        or re.fullmatch(r"\{[A-Za-z_]+\}", stripped)
+        or _is_format_placeholder(stripped, closed=True)
         or re.fullmatch(r"\([a-z][a-z _-]*\)", stripped)
     ):
         return True
@@ -610,19 +816,50 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # value after it — not how any of these shapes read — so it fails every alternative
     # below and stays a finding.
     #
-    # Round 17 E3: that shape was still matched against the lowered value with the closing
-    # paren optional, so `Pa55word(Winter2026!`, `Hunter2[prod-2026` and
-    # `Sup3rS3cretValue9)` all read as code. Code in the files this reads is lower-case
-    # snake_case, so the identifier is matched as written, not lowered; an unclosed paren
-    # or bracket may be followed only by more identifiers and openers, never by anything
-    # else (the value class stopped at the quote of an argument: `payload.get("token")`,
-    # `load_api_key(config["provider"]`, `dict[str, str]`); and a `{NAME}` fixture is
-    # letters and underscores only.
-    if allow_call_expression and re.fullmatch(
-        r"[a-z_][a-z0-9_.]*"
-        r"(?:\([^()]*\)|\[[^\[\]]*\]|(?:[(\[][a-z_][a-z0-9_.]*)+[(\[]?|[(\[]|[)\]])"
-        r"|\{[A-Za-z_]+\}?",
-        stripped,
+    # Round 17 E5: that shape was still matched on the lowered value with no look at what
+    # the identifiers or the arguments were, so any password that merely *ended* like a
+    # call was excused with it: `Tr0ub4dor(3)`, `Summer2024(!)`, `MyP4ssw0rd(` (the value
+    # class stopped where a quote would have been), `Sup3rS3cr3t)` (a "bare closing"),
+    # `abc[Sup3rS3cretValue9` and `{Sup3rS3cretValue9}`. `_is_code_expression` keeps the
+    # same four shapes but checks them as written: every identifier in them must read as a
+    # code identifier rather than a password (see `_is_code_identifier`), a call's or
+    # subscript's arguments may only be identifiers, numbers and the operators code puts
+    # between them, a bare closing is only ever a digit-free name, and a `{name}` must be
+    # written in one case. `token = payload.get(`, `token_urlsafe(32)`, `OpenAI(api_key=
+    # api_key)` and `load_api_key(config[` — the real code this repository's own source
+    # contains — all still pass.
+    if allow_call_expression and _is_code_expression(value.strip()):
+        return True
+    # Round 17 E7: an `UPPER_SNAKE` name that itself contains a credential keyword is the
+    # *name* of a credential — an environment variable or a marker this application
+    # substitutes at serve time (`value="__GTQ_REQUEST_TOKEN__"` in its own templates, now
+    # that an XML attribute is scanned) — not a value. Digits, lowercase or no underscore
+    # at all and it is a value again.
+    if (
+        re.fullmatch(r"[A-Z_]+", value.strip())
+        and "_" in value
+        and re.search(_KEYWORDS, value, re.IGNORECASE)
+    ):
+        return True
+    # Round 17 E1: once a keyword can carry a suffix, the unquoted pattern reads three more
+    # code shapes from this repository's own source that no suffix-free name ever produced:
+    # a keyword-named constant or variable assigned from another one (`TOKEN_PLACEHOLDER =
+    # REQUEST_TOKEN_PLACEHOLDER`, `"total_tokens": total_tokens`), an f-string placeholder
+    # with a format spec (`{total_tokens:,}`, cut at the comma), and minified JavaScript
+    # whose property value is a function or a return expression (`tokenList:function(){`,
+    # `"nmtokens":return(...)`, both in `vendor/axe.min.js`). Each is excused only in the
+    # narrow form code takes: a bare identifier must be single-case snake_case with no digit,
+    # contain an underscore, and itself contain a credential keyword — the name of a
+    # credential, not a value — and the JavaScript case must start with the reserved word
+    # itself. A real password of any of these shapes (`super_secret_token`) is the trade.
+    if allow_call_expression and (
+        (
+            re.fullmatch(r"[a-z_]+|[A-Z_]+", value.strip())
+            and "_" in value
+            and re.search(_KEYWORDS, value, re.IGNORECASE)
+        )
+        or _is_format_placeholder(value.strip(), closed=False)
+        or re.match(r"(?:function|return)(?![a-z0-9_$])", lowered)
     ):
         return True
     # A short dotted identifier chain is an attribute path, not a secret — but only when it
@@ -631,11 +868,23 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # dotted passphrase (`correct.horse.battery.staple`, `Welcome.To.Acme`) read exactly like
     # one and was never reported. The length bounds still matter too: without them this also
     # matches a JWT, whose three base64 segments are exactly a long dotted chain.
+    #
+    # Round 17 E6: the root was the only part checked, and on the lowered value, so a
+    # passphrase that merely started with a root name (`context.is.king2024`,
+    # `settings.Sup3r.Secret9`) still read as an attribute path. Every segment is now
+    # checked as written: an attribute name is a lowercase `snake_case` name or an
+    # `UPPER_SNAKE` constant (`settings.SECRET_KEY`), with no digit in it — the digits and
+    # mixed case are what a word-based password adds — and the chain is at most four names
+    # long, root included.
+    written = value.strip()
+    segments = written.split(".")
     if (
-        len(lowered) <= 40
-        and re.fullmatch(r"[a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)+", lowered)
-        and all(len(segment) <= 20 for segment in lowered.split("."))
-        and lowered.split(".", 1)[0] in _CODE_ATTRIBUTE_ROOTS
+        len(written) <= 40
+        and 2 <= len(segments) <= 4
+        and segments[0] in _CODE_ATTRIBUTE_ROOTS
+        and all(
+            len(segment) <= 20 and re.fullmatch(r"[a-z_]+|[A-Z_]+", segment) for segment in segments
+        )
     ):
         return True
     # Round 15 E1: `gh auth status` and this application's own redaction print a value that
@@ -692,13 +941,135 @@ def _is_finding(pattern: SecretPattern, match: re.Match[str], captured: str) -> 
     )
 
 
+# Round 17 E11: Markdown and HTML both let a character be written as an escape that renders
+# as the character itself — `ghp\\_…` (CommonMark's backslash escape of any ASCII
+# punctuation) and `ghp&#95;…`/`ghp&lowbar;…` (a character reference) all render as the
+# literal `ghp_…` token — but the patterns read the escape, not the character, so the scan
+# found nothing and `render_markdown` put the live token on the page. `_unescaped` builds
+# the text as it renders: every backslash-escaped ASCII punctuation character, and every
+# numeric or named character reference that stands for a printable ASCII character, is
+# replaced by that character. `scan_text` and `redact_text` scan that candidate too
+# whenever it differs, and map every span it finds back to the original text, so a finding
+# reports the real line and column and a redaction removes the escaped form whole. No
+# escape here can produce or remove a line break, so line numbers survive the rewrite. A
+# backslash escape inside a code span renders literally, not unescaped; scanning it
+# unescaped anyway only errs toward a finding.
+_ESCAPE = re.compile(
+    r"\\([!-/:-@\[-`{-~])|&(?:#([0-9]{1,7})|#[xX]([0-9a-fA-F]{1,6})|([A-Za-z][A-Za-z0-9]{1,31}));"
+)
+
+
+def _decode_escape(match: re.Match[str]) -> str | None:
+    if match.group(1) is not None:
+        return match.group(1)
+    if match.group(2) is not None:
+        code = int(match.group(2))
+    elif match.group(3) is not None:
+        code = int(match.group(3), 16)
+    else:
+        named = html5_entities.get(match.group(4) + ";")
+        if named is None or len(named) != 1:
+            return None
+        code = ord(named)
+    return chr(code) if 0x21 <= code <= 0x7E else None
+
+
+@dataclass(frozen=True, slots=True)
+class _Unescaped:
+    text: str
+    # Unescaped offset of each character that came from an escape, ascending, and the total
+    # number of original characters dropped up to and including that escape.
+    positions: list[int]
+    dropped: list[int]
+
+    def original(self, offset: int) -> int:
+        """The original-text offset of unescaped `offset` (a span start or end)."""
+        index = bisect_left(self.positions, offset)
+        return offset + (self.dropped[index - 1] if index else 0)
+
+
+def _unescaped(text: str) -> _Unescaped | None:
+    """`text` with its Markdown/HTML escapes resolved, or None when it has none (E11)."""
+    if "\\" not in text and "&" not in text:
+        return None
+    pieces: list[str] = []
+    positions: list[int] = []
+    dropped: list[int] = []
+    cursor = length = total = 0
+    for match in _ESCAPE.finditer(text):
+        char = _decode_escape(match)
+        if char is None:
+            continue
+        pieces.append(text[cursor : match.start()])
+        length += match.start() - cursor
+        pieces.append(char)
+        positions.append(length)
+        length += 1
+        total += match.end() - match.start() - 1
+        dropped.append(total)
+        cursor = match.end()
+    if not positions:
+        return None
+    pieces.append(text[cursor:])
+    return _Unescaped("".join(pieces), positions, dropped)
+
+
+def _find(text: str) -> list[tuple[int, int, SecretPattern, str]]:
+    """Every accepted span in `text`: disjoint, ordered by start, most specific pattern first.
+
+    Overlapping matches from different patterns are kept once, by the first pattern in
+    `PATTERNS` that claims the span.
+    """
+    # Round 16 E2: `claimed` used to be a set scanned end to end for every new match — a
+    # match count of `m` costs O(m) to check, and there were `m` of them, so a file of 95k
+    # distinct AWS keys (2 MB) took 497s just in this bookkeeping, with every per-pattern
+    # regex itself staying linear. `finditer` already returns one pattern's own matches
+    # left to right and non-overlapping, and the accepted set stays disjoint and sorted by
+    # construction, so each pattern's whole batch of new claims can be folded into the
+    # existing sorted set with a single merge of two already-sorted sequences — the same
+    # `O(a + b)` step a merge sort's merge is — rather than a fresh membership scan per match.
+    # `PATTERNS` has a fixed, small length, so the handful of merges this performs (one per
+    # pattern) costs `O(n)` overall, not `O(n^2)`.
+    claimed: list[tuple[int, int]] = []
+    found: list[tuple[int, int, SecretPattern, str]] = []
+    for pattern in PATTERNS:
+        batch: list[tuple[int, int, SecretPattern, str]] = []
+        claim_index = 0
+        for match in pattern.regex.finditer(text):
+            captured, start, end = _value(match)
+            if not _is_finding(pattern, match, captured):
+                continue
+            while claim_index < len(claimed) and claimed[claim_index][1] <= start:
+                claim_index += 1
+            if claim_index < len(claimed) and claimed[claim_index][0] < end:
+                continue  # overlaps a span an earlier, more specific pattern already claimed
+            batch.append((start, end, pattern, captured))
+        if not batch:
+            continue
+        found.extend(batch)
+        merged: list[tuple[int, int]] = []
+        old_index = new_index = 0
+        while old_index < len(claimed) or new_index < len(batch):
+            take_old = new_index >= len(batch) or (
+                old_index < len(claimed) and claimed[old_index][0] <= batch[new_index][0]
+            )
+            if take_old:
+                merged.append(claimed[old_index])
+                old_index += 1
+            else:
+                merged.append(batch[new_index][:2])
+                new_index += 1
+        claimed = merged
+    found.sort(key=lambda item: item[0])
+    return found
+
+
 def scan_text(text: str) -> list[SecretMatch]:
     """Every secret-like span in `text`, ordered by position.
 
     Overlapping matches from different patterns are reported once, by the first pattern in
     `PATTERNS` that claims the span, so the most specific name wins.
     """
-    matches: list[SecretMatch] = []
     line_starts = [0]
     for index, char in enumerate(text):
         if char == "\n":
@@ -714,59 +1085,35 @@ def scan_text(text: str) -> list[SecretMatch]:
                 high = mid - 1
         return low + 1, offset - line_starts[low] + 1
 
-    # Round 16 E2: `claimed` used to be a set scanned end to end for every new match — a
-    # match count of `m` costs O(m) to check, and there were `m` of them, so a file of 95k
-    # distinct AWS keys (2 MB) took 497s just in this bookkeeping, with every per-pattern
-    # regex itself staying linear. `finditer` already returns one pattern's own matches
-    # left to right and non-overlapping, and the accepted set stays disjoint and sorted by
-    # construction, so each pattern's whole batch of new claims can be folded into the
-    # existing sorted set with a single merge of two already-sorted sequences — the same
-    # `O(a + b)` step a merge sort's merge is — rather than a fresh membership scan per match.
-    # `PATTERNS` has a fixed, small length, so the handful of merges this performs (one per
-    # pattern) costs `O(n)` overall, not `O(n^2)`.
-    claimed: list[tuple[int, int]] = []
-    for pattern in PATTERNS:
-        batch: list[tuple[int, int, SecretMatch]] = []
-        claim_index = 0
-        for match in pattern.regex.finditer(text):
-            captured, start, end = _value(match)
-            if not _is_finding(pattern, match, captured):
+    found = _find(text)
+    unescaped = _unescaped(text)
+    if unescaped is not None:
+        # Round 17 E11: a span the escaped text already reported is not reported twice.
+        starts = [item[0] for item in found]
+        extra: list[tuple[int, int, SecretPattern, str]] = []
+        for start, end, pattern, captured in _find(unescaped.text):
+            start, end = unescaped.original(start), unescaped.original(end)
+            index = bisect_right(starts, start) - 1
+            if index >= 0 and found[index][1] > start:
                 continue
-            while claim_index < len(claimed) and claimed[claim_index][1] <= start:
-                claim_index += 1
-            if claim_index < len(claimed) and claimed[claim_index][0] < end:
-                continue  # overlaps a span an earlier, more specific pattern already claimed
-            line, column = position(start)
-            batch.append(
-                (
-                    start,
-                    end,
-                    SecretMatch(
-                        pattern_id=pattern.id,
-                        description=pattern.description,
-                        line=line,
-                        column=column,
-                        excerpt=_excerpt(captured),
-                        fingerprint=hashlib.sha256(captured.encode()).hexdigest()[:16],
-                    ),
-                )
+            if index + 1 < len(found) and found[index + 1][0] < end:
+                continue
+            extra.append((start, end, pattern, captured))
+        found.extend(extra)
+
+    matches: list[SecretMatch] = []
+    for start, _end, pattern, captured in found:
+        line, column = position(start)
+        matches.append(
+            SecretMatch(
+                pattern_id=pattern.id,
+                description=pattern.description,
+                line=line,
+                column=column,
+                excerpt=_excerpt(captured),
+                fingerprint=hashlib.sha256(captured.encode()).hexdigest()[:16],
             )
-        if not batch:
-            continue
-        matches.extend(item[2] for item in batch)
-        merged: list[tuple[int, int]] = []
-        old_index = new_index = 0
-        while old_index < len(claimed) or new_index < len(batch):
-            take_old = new_index >= len(batch) or (
-                old_index < len(claimed) and claimed[old_index][0] <= batch[new_index][0]
-            )
-            if take_old:
-                merged.append(claimed[old_index])
-                old_index += 1
-            else:
-                merged.append(batch[new_index][:2])
-                new_index += 1
-        claimed = merged
+        )
     return sorted(matches, key=lambda m: (m.line, m.column))
 
 
@@ -783,14 +1130,27 @@ def _excerpt(value: str) -> str:
     return f"{value[:3]}… ({len(value)} chars)"
 
 
-def redact_text(text: str) -> tuple[str, bool]:
-    """`text` with every detected secret replaced. Returns the text and whether anything changed."""
+def _redaction_spans(text: str) -> list[tuple[int, int]]:
     spans: list[tuple[int, int]] = []
     for pattern in PATTERNS:
         for match in pattern.regex.finditer(text):
             captured, start, end = _value(match)
             if _is_finding(pattern, match, captured):
                 spans.append((start, end))
+    return spans
+
+
+def redact_text(text: str) -> tuple[str, bool]:
+    """`text` with every detected secret replaced. Returns the text and whether anything changed."""
+    spans = _redaction_spans(text)
+    # Round 17 E11: what renders is the unescaped text, so its findings are redacted too,
+    # mapped back onto the escaped form they came from.
+    unescaped = _unescaped(text)
+    if unescaped is not None:
+        spans.extend(
+            (unescaped.original(start), unescaped.original(end))
+            for start, end in _redaction_spans(unescaped.text)
+        )
     if not spans:
         return text, False
     merged: list[tuple[int, int]] = []
