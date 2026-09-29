@@ -867,7 +867,11 @@ def test_an_escaped_quote_inside_a_value_is_redacted_with_it() -> None:
 
 # Round 17 L10: planted in Trello evidence, each reached `evidence_ready`.
 ENCODED_QUERY = "next=%2Fcards%3Ftoken%3Dab12cd34ef56ab12cd34ef56"  # secret-scan: allow
-SLACK_WEBHOOK = "https://hooks.slack.com/services/" + "T0ABCDEFG/B0ABCDEFG/" + "aBcDeFgHiJkLmNoPqRsTuVwX"  # secret-scan: allow  # noqa: E501
+# Built from pieces so the whole URL, which GitHub push protection reads as a real webhook,
+# never appears in the source.
+SLACK_WEBHOOK = (
+    "https://hooks.slack.com/services/" + "T0ABCDEFG/B0ABCDEFG/" + "aBcDeFgHiJkLmNoPqRsTuVwX"
+)
 AZURE_KEY = "AccountName=x;AccountKey=Ab3dEfGh12Ij4kLm56NoPq==;"  # secret-scan: allow
 
 
