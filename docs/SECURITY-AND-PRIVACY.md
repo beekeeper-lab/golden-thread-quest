@@ -159,10 +159,10 @@ Validators should run with the least available privileges. The architecture shou
   credential passed as a `key=`/`token=` URL query parameter, a credential passed to curl's
   `-u`/`--user` flag (round 16 E11; the scan requires the literal word "curl" earlier in the
   same command, so an unrelated colon-separated flag argument, such as a container runtime's
-  numeric user:group, is not a false positive; round 17 E2 added a quoted credential, a value
+  numeric user:group, is not a false positive; round 17 A-E2 added a quoted credential, a value
   glued to the flag, `-u` at the end of a cluster of curl's argument-less short flags, and a
   `-u` on a backslash-continued line), a credential held in an XML element (Maven's
-  `settings.xml` and similar tooling; round 17 E7 added compound tag names such as
+  `settings.xml` and similar tooling; round 17 A-E7 added compound tag names such as
   `<db_password>`, attributes on the tag, and a value on its own line between the tags) or
   in an XML attribute next to one that names it (Spring's `<property name="password"
   value="…"/>`, .NET's `<add key="…" value="…"/>`), and a credential held in a YAML block
@@ -211,7 +211,7 @@ Validators should run with the least available privileges. The architecture shou
     only for the unquoted assignment pattern, which has no closing delimiter of its own and
     so captures straight into this module's own source wherever a keyword-named variable is
     assigned a call expression (`token = payload.get(`) or is itself passed as another
-    call's own argument (`OpenAI(api_key=api_key)`). Round 17 E5 checks that shape as
+    call's own argument (`OpenAI(api_key=api_key)`). Round 17 A-E5 checks that shape as
     written: every identifier in it must read as code rather than a word-based password (no
     more than one digit between letters, and then only in a lowercase name), a call's or
     subscript's arguments may only be identifiers, numbers and operators, a bare closing
@@ -219,7 +219,7 @@ Validators should run with the least available privileges. The architecture shou
     case — so a password that merely ends like a call, a subscript or a placeholder is a
     finding.
   - Only a value that is entirely a `$(…)` command substitution or a `{{ … }}` expression is
-    a template (round 17 E4): one that merely starts like one used to be excused whatever
+    a template (round 17 A-E4): one that merely starts like one used to be excused whatever
     was glued after it.
   - `${VAR:-default}`/`${VAR-default}` is a shell or compose *default* — a real value the
     moment the variable is unset (an env file's `DB_PASSWORD=${DB_PASSWORD:-Sup3rS3cretValue9}`  <!-- # secret-scan: allow -->
@@ -253,8 +253,8 @@ Validators should run with the least available privileges. The architecture shou
   underscore (`DB_PASS`, `ADMIN_PASS`); `pwd` has no such restriction, except that a
   standalone `PWD`/`OLDPWD` whose value is a filesystem path is the shell's own
   working-directory variable, printed by every `env`/`printenv` transcript, and is not a
-  finding (round 17 E9; a compound name such as `DB_PWD` is detected whatever its value).
-- Round 17 E1: a keyword may be followed by an identifier suffix before its operator, so
+  finding (round 17 A-E9; a compound name such as `DB_PWD` is detected whatever its value).
+- Round 17 A-E1: a keyword may be followed by an identifier suffix before its operator, so
   `SECRET_KEY`, `JWT_SECRET_KEY`, `SECRET_KEY_BASE`, `DB_PASSWORD_PROD`, `JIRA_API_TOKEN_2`,
   `secretKey` and `DB_PASS_PROD` are all assignment keys now; the encryption, storage-account
   and signing key compounds and the `dbPass`/`$dbpass` spellings (after a named
@@ -263,7 +263,7 @@ Validators should run with the least available privileges. The architecture shou
   header followed by its body is otherwise exactly that shape, and a single-case
   `snake_case`/`UPPER_SNAKE` name that itself contains a keyword is read as the name of a
   credential (`TOKEN_PLACEHOLDER = REQUEST_TOKEN_PLACEHOLDER`), not as its value.
-- An unquoted value is read whole (round 17 E3, E4, E17, C2): a bracket of any length glued
+- An unquoted value is read whole (round 17 A-E3, A-E4, A-E17, A-C2): a bracket of any length glued
   to more value, a `]` that more value follows, a `${…}`/`$(…)`/`{{…}}` template with value
   glued after it, a `}` with more value glued straight after it, and a `,` or `;` glued
   between two runs of value characters (as long as the run after it reaches a real end of
@@ -274,7 +274,7 @@ Validators should run with the least available privileges. The architecture shou
 - Markdown's backslash escapes and HTML character references render as the character they
   stand for, so the scan also reads the text with every escaped ASCII punctuation character
   and every reference to a printable ASCII character resolved, and redacts what it finds
-  there on the escaped original (round 17 E11): a token written with its underscore escaped
+  there on the escaped original (round 17 A-E11): a token written with its underscore escaped
   no longer passes the scan and then renders live.
 - **Known gap, not fixed:** a token glued on its right to `_` or to a letter outside its
   character class (`x_ghp_<36 chars>_y`, `ATTA<64 hex>XYZ`) is still missed. The trailing

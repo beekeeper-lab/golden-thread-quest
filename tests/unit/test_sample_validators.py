@@ -177,7 +177,7 @@ class TestNoSecretsCheckReportsWhatItCouldNotRead:
         assert "too large" in check.summary.lower() or "could not" in check.summary.lower()
 
     def test_a_text_file_named_like_a_pdf_is_scanned(self, tmp_path: Path) -> None:
-        """Round 17 C5: the check skipped `.pdf` by name while the submission gate read it."""
+        """Round 17 A-C5: the check skipped `.pdf` by name while the submission gate read it."""
         workspace = self._workspace_over(tmp_path)
         shots = workspace.evidence_root / "screenshots"  # type: ignore[operator]
         shots.mkdir()
@@ -189,7 +189,7 @@ class TestNoSecretsCheckReportsWhatItCouldNotRead:
         assert "terminal.pdf" in (check.evidence or "")
 
     def test_a_utf16_secret_is_found(self, tmp_path: Path) -> None:
-        """Round 17 C5: the check decoded UTF-8 only, the gate decodes UTF-16 as well."""
+        """Round 17 A-C5: the check decoded UTF-8 only, the gate decodes UTF-16 as well."""
         workspace = self._workspace_over(tmp_path)
         text = "GITHUB_TOKEN=ghp_" + "A1b2" * 9 + "\r\n"
         (workspace.evidence_root / "ps.log").write_bytes(b"\xff\xfe" + text.encode("utf-16-le"))  # type: ignore[operator]

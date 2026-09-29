@@ -450,7 +450,7 @@ class TestSecretScanning:
     def test_a_path_swapped_for_a_fifo_does_not_hang_the_header_read(
         self, config: AppConfig, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Round 17 E13: the header read was a plain `open("rb")` after `is_file()`, so a
+        """Round 17 A-E13: the header read was a plain `open("rb")` after `is_file()`, so a
         path swapped for a FIFO between the two blocked the scan forever under the store,
         generated and service locks. `is_file` is made to answer for the file that was
         there a moment ago, which is exactly what the race leaves the scan believing; the

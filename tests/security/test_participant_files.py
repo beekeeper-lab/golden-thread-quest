@@ -492,7 +492,7 @@ def test_a_proof_document_over_the_ceiling_is_not_rendered(config: AppConfig) ->
 def test_a_proof_document_never_carries_a_token_any_decoding_can_see(
     config: AppConfig, mixed: bool
 ) -> None:
-    """Round 17 E10: only the first candidate decoding was redacted. A UTF-8 PROOF.md with
+    """Round 17 A-E10: only the first candidate decoding was redacted. A UTF-8 PROOF.md with
     a UTF-16LE tail (a PowerShell `>>` append) renders its plain UTF-8 decode, which reads
     the tail as `t\\0o\\0k\\0…` and redacts nothing there, so the token was in the page
     once NUL and U+FFFD were stripped out. The plain case checks a single-encoding file still

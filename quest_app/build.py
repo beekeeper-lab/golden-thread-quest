@@ -1129,7 +1129,7 @@ def _validator_choices(world: LoadedWorld, validator_id: str) -> tuple[Parameter
     )
 
 
-# Round 17 E10: shown in place of a PROOF.md whose secret-like value only a decoding other
+# Round 17 A-E10: shown in place of a PROOF.md whose secret-like value only a decoding other
 # than the rendered one can see, so redacting the rendered one would not have removed it.
 PROOF_DOCUMENT_WITHHELD = (
     "*This PROOF.md is not previewed.* Part of it is saved in a different text encoding "
@@ -1174,7 +1174,7 @@ def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None
     # replacement characters were stripped back out (round 16 E3). Its best-guess candidate
     # (the first one, chosen the same way the scan chooses it) is redacted the same way.
     #
-    # Round 17 E10: only that first candidate was redacted. A mixed-encoding PROOF.md — a
+    # Round 17 A-E10: only that first candidate was redacted. A mixed-encoding PROOF.md — a
     # UTF-8 head with a UTF-16LE tail from a PowerShell `>>` append, NUL ratio far under the
     # 30% trigger — has the plain UTF-8 decode as its first candidate, which reads the tail
     # as `t\0o\0k\0…` and finds nothing there to redact; the scan's NUL-stripped candidate

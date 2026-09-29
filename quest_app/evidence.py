@@ -322,7 +322,7 @@ def _decode_evidence_text(raw: bytes) -> list[str]:
 def _secret_value_digests(text: str) -> set[str]:
     """A fingerprint of every secret-like value `scan_text` finds in `text`, never the values.
 
-    Round 17 E10: `_proof_document` redacts one candidate decoding and renders it, and needs
+    Round 17 A-E10: `_proof_document` redacts one candidate decoding and renders it, and needs
     to know whether another candidate found a value that this one did not — a value only a
     different decoding can see was not redacted, and survives into the page in a form
     (`t\\0o\\0k\\0…`, U+FFFD pairs) that stripping those characters gives back whole.
@@ -351,7 +351,7 @@ def _scan_one(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
     # it in full first (to then discard it) would make a legitimate large image fail with the
     # oversize finding below, which is exactly the silent-vs-blocked distinction this scan is
     # supposed to preserve.
-    # Round 17 E13: this was a plain `path.open("rb")`, which blocks forever on a FIFO — and
+    # Round 17 A-E13: this was a plain `path.open("rb")`, which blocks forever on a FIFO — and
     # the `is_file()` above does not stop one, since the path can be swapped between the two
     # calls. The scan runs under the store, generated and service locks, so one FIFO hung all
     # three. `read_regular_file_head` opens with `O_NONBLOCK` and refuses by `fstat` anything
@@ -401,7 +401,7 @@ def _scan_one(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
 def scan_file(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
     """The submission gate's rules for one file, for a check that must agree with it.
 
-    Round 17 C5: the repository-foundation validator kept its own copy of these rules — an
+    Round 17 A-C5: the repository-foundation validator kept its own copy of these rules — an
     extension skip list and a single UTF-8 decode — so a text file named `terminal.pdf`
     passed its check while this module's scan blocked the same package. One implementation
     means the two cannot disagree again.

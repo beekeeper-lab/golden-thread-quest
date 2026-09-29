@@ -122,7 +122,7 @@ def read_bounded_bytes(
 def read_regular_file_head(path: Path, max_bytes: int) -> bytes:
     """At most the first `max_bytes` of `path`, opened the way `read_bounded_bytes` opens it.
 
-    Round 17 E13: the secret scan's header read used a plain `path.open("rb")` after an
+    Round 17 A-E13: the secret scan's header read used a plain `path.open("rb")` after an
     `is_file()` check, so a path swapped for a FIFO between the two blocked the open forever,
     holding the store, generated and service locks. The same `O_NONBLOCK` open and `fstat`
     check as `read_bounded_bytes` apply here; unlike it, a large file is not refused, because

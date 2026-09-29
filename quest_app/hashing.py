@@ -26,9 +26,9 @@ case: one of a character's two bytes can itself be `\r`, and folding it changed 
 without moving the hash — the edit that mattered was invisible to it. Text now also has to
 decode as UTF-8, not merely have no NUL byte in it; see `_text_shape`.
 
-Round 17 E14: that stopped folding cp1252/Latin-1 text, which Git converts all the same.
+Round 17 A-E14: that stopped folding cp1252/Latin-1 text, which Git converts all the same.
 Content that is not UTF-8 is now folded exactly when Git's own `core.autocrlf` would convert
-it — no NUL, no lone `\r`, Git's printable ratio — and only its `\r\n` pairs. Round 17 E15:
+it — no NUL, no lone `\r`, Git's printable ratio — and only its `\r\n` pairs. Round 17 A-E15:
 a directory symbolic link inside the package is hashed by its link text, as a file link is.
 """
 
@@ -103,7 +103,7 @@ def _update_with_file(hasher: Any, path: Path) -> None:
     still streamed rather than buffered) — a screenshot, a zip, a UTF-16/32 export, or any
     other binary or non-UTF-8 format fails one of those checks within its first few bytes in
     practice, so this rarely costs such a file more than the one pass it always took.
-    Round 17 E14: content that is not UTF-8 is also text when Git itself would convert its
+    Round 17 A-E14: content that is not UTF-8 is also text when Git itself would convert its
     line endings (no NUL, no lone `\\r`, Git's printable ratio); see `_text_shape`.
     Normalizing changes a file's byte length, so the length prefix cannot come from `fstat`
     for a text file the way it does for a binary one; it is computed in the same pass that
@@ -145,7 +145,7 @@ def _feed_raw(hasher: Any, stream: Any, size: int) -> None:
         remaining -= len(block)
 
 
-# Round 17 E14: the bytes Git's own text heuristic (`gather_stats` in Git's `convert.c`)
+# Round 17 A-E14: the bytes Git's own text heuristic (`gather_stats` in Git's `convert.c`)
 # counts as non-printable: control bytes other than backspace, tab, form feed and escape
 # (`\n` and `\r` are counted separately), and DEL.
 _NONPRINTABLE = tuple(
@@ -163,7 +163,7 @@ def _text_shape(stream: Any, size: int) -> tuple[bool, int]:
     * decodes as UTF-8 (strict), in which case every `\\r\\n` and lone `\\r` folds to
       `\\n` exactly as before; or
     * does not decode as UTF-8 but is what Git itself converts: no lone `\\r`, and Git's
-      printable-to-non-printable ratio says text (round 17 E14). Such content has only
+      printable-to-non-printable ratio says text (round 17 A-E14). Such content has only
       `\\r\\n` pairs to fold, so the one folding pass serves both cases.
 
     Round 16 E10: "text" used to mean only "holds no NUL byte anywhere", which folds every
@@ -173,7 +173,7 @@ def _text_shape(stream: Any, size: int) -> tuple[bool, int]:
     ending, and folding it changed 不 into 上 without moving the hash. Round 16 answered that
     by folding only UTF-8.
 
-    Round 17 E14: that also stopped folding every other 8-bit text encoding, while Git's
+    Round 17 A-E14: that also stopped folding every other 8-bit text encoding, while Git's
     `core.autocrlf` converts a cp1252 or Latin-1 file exactly as it converts a UTF-8 one — so
     a Windows participant's `caf\\xe9\\r\\n` log read as "changed since approval" on a Linux
     reviewer's `caf\\xe9\\n` checkout. Git's rule (`convert_is_binary`, applied to the whole
@@ -392,7 +392,7 @@ def hash_directory(
             chunks.append(path)
         else:
             if path.is_symlink():
-                # Round 17 E15: a directory link inside the package is not descended (the walk
+                # Round 17 A-E15: a directory link inside the package is not descended (the walk
                 # does not follow links), so what it shows is already hashed under its target's
                 # own name — but *which* directory it shows was not hashed at all, and
                 # retargeting `logs -> a/` to `logs -> b/` left the digest unchanged. Its link

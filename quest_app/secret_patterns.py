@@ -84,17 +84,17 @@ _KEYWORDS = "|".join(
         # env-var-style names compound it behind an underscore instead (`DB_PASS`,
         # `ADMIN_PASS`), which none of those do, so the lookbehind requires one.
         #
-        # Round 17 E1: the `\b` here stopped `DB_PASS_PROD` (an `_` is a word character, so
+        # Round 17 A-E1: the `\b` here stopped `DB_PASS_PROD` (an `_` is a word character, so
         # there is no boundary between `PASS` and `_PROD`) once a keyword could carry an
         # identifier suffix (see `_KEY` below); a following letter is what `\b` was keeping
         # out (`_passthrough`), so that is what the lookahead refuses now.
         r"(?<=_)pass(?![a-z])",
-        # Round 17 E1: `"dbPass": "…"` (camelCase, no underscore) and PHP's `$dbpass` are
+        # Round 17 A-E1: `"dbPass": "…"` (camelCase, no underscore) and PHP's `$dbpass` are
         # the other common spelling of the same compound. Only named credential-owner
         # prefixes qualify, never a bare letter before `pass`, so "bypass", "onPass",
         # "firstPass" and `messages:{pass:...}` stay ordinary vocabulary.
         r"(?:db|admin|user|root|smtp|mail|ftp|sql|redis|ldap)pass(?![a-z])",
-        # Round 17 E9: `PWD` and `OLDPWD` are also the shell's own working-directory
+        # Round 17 A-E9: `PWD` and `OLDPWD` are also the shell's own working-directory
         # variables, and every `env`/`printenv` transcript prints them — so a bare `pwd`
         # keyword made any such transcript a finding that blocked submission. A standalone
         # `PWD`/`OLDPWD` (nothing but a non-identifier character before it) whose value is a
@@ -104,7 +104,7 @@ _KEYWORDS = "|".join(
         # `~/` is read as a path.
         r"(?<![a-z0-9_])(?:old)?pwd(?![\"']?[ \t]*[=:][ \t]*[\"']?(?:/|~/|[a-z]:[\\/]))",
         r"(?<=[a-z0-9_])(?<!old)pwd",
-        # Round 17 E1: a bare `key` is not safe as a keyword (`key: value` is every YAML
+        # Round 17 A-E1: a bare `key` is not safe as a keyword (`key: value` is every YAML
         # and JSON mapping ever written), so only the compounds that name a credential are
         # added: Django's and Rails' `SECRET_KEY`/`SECRET_KEY_BASE` (already reached through
         # `secret` plus a suffix), and the encryption, storage-account and signing keys.
@@ -145,7 +145,7 @@ _EXCUSING_TAIL_WORDS: Final = frozenset(
 # Round 17 E4: `:=` (Go, and Makefiles) and `=>` (PHP, Ruby, Perl) assign too.
 _SEPARATOR = r"[ \t]*(?::=|=>|[=:])(?:[ \t]*\r?\n[ \t]+|[ \t]*)"
 
-# Round 17 E1: every assignment-shaped pattern used to require the `[=:]` (or closing tag,
+# Round 17 A-E1: every assignment-shaped pattern used to require the `[=:]` (or closing tag,
 # or quote) immediately after the keyword itself, so a keyword followed by anything at all
 # before the operator was never matched: `SECRET_KEY=`, `"secret_key": "…"`, `"secretKey"`,
 # `JWT_SECRET_KEY=`, `DB_PASSWORD_PROD=`, `JIRA_API_TOKEN_2=` — the ordinary way an env
@@ -179,7 +179,7 @@ _UNQUOTED_BRACKET_VALUE = (
 # The plain form of an unquoted value: a run of value characters, which stops at whitespace
 # and at the punctuation that ends a value in JSON, YAML flow style or a shell command.
 #
-# Round 17 E17: `,` and `;` are among those stops, so a password assigned as
+# Round 17 A-E17: `,` and `;` are among those stops, so a password assigned as
 # `Sup3rS3cr;etValue9` redacted to `[REDACTED];etValue9` — half the value left in clear
 # text — and one assigned as `ab,Sup3rS3cretValue9` was never matched at all, the two
 # characters before the comma being too few to be a finding. The rule now: a `,` or `;`
@@ -197,7 +197,7 @@ _UNQUOTED_BRACKET_VALUE = (
 # to it.
 _UNQUOTED_PLAIN_TAIL = r"[,;][^\s\"',;}`\]=:(){}\[<>]+(?=[\s\"',;}`\]]|$)"
 #
-# Round 17 C2: the plain run also stopped at every `}`, so a value with a brace in it and
+# Round 17 A-C2: the plain run also stopped at every `}`, so a value with a brace in it and
 # fewer than eight characters before the brace (`k8s{Q}9aQ2vLm7RealSecret`) was never
 # matched, and the real secret after the brace was never looked at. A `}` with more value
 # glued straight after it is part of the value now; one followed by anything else still
@@ -447,7 +447,7 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
         "curl-user-credential",
         "Credential passed to curl's -u/--user flag",
         #
-        # Round 17 E2: only `-u user:secret` / `--user[= ]user:secret` on the same line as
+        # Round 17 A-E2: only `-u user:secret` / `--user[= ]user:secret` on the same line as
         # `curl` was matched. Missed: a quoted credential (`-u 'me@x.com:…'`, `-u "…"`), the
         # value glued to the flag (`-ume@x.com:…`, which curl accepts for any short option),
         # `-u` at the end of a cluster of curl's argument-less short flags (`-su`, `-fsSLu`),
@@ -469,7 +469,7 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     # line) is valid YAML the flow-style unquoted pattern below never reaches, since it
     # requires the value on the same line as the keyword.
     #
-    # Round 17 E7: the element pattern only matched a bare `<keyword>` tag with the value on
+    # Round 17 A-E7: the element pattern only matched a bare `<keyword>` tag with the value on
     # the same line, so the ordinary variants were all missed: a compound tag name
     # (`<db_password>`), a tag with attributes (`<password encrypted="false">`), and a value
     # on its own line between the tags, as any pretty-printed XML writes it. The tag name may
@@ -489,7 +489,7 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
             + r"([^<>\s][^<>\n]{6,510}[^<>\s])[ \t]*(?:\r?\n[ \t]*)?</[A-Za-z0-9_:.-]{1,80}>"
         ),
     ),
-    # Round 17 E7: Spring's `<property name="password" value="…"/>` and .NET's
+    # Round 17 A-E7: Spring's `<property name="password" value="…"/>` and .NET's
     # `<add key="DbPassword" value="…"/>` hold the credential in an attribute, next to an
     # attribute that names it; neither the element pattern nor the assignment patterns
     # (which need `=`/`:` straight after the name) ever reached it.
@@ -505,7 +505,7 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     SecretPattern(
         "yaml-block-scalar-credential",
         "Secret-like value in a YAML block scalar",
-        # Round 17 E8: the header only allowed an optional chomping indicator straight
+        # Round 17 A-E8: the header only allowed an optional chomping indicator straight
         # before the line break, so an indentation indicator (`|2`, `>-1`, `|+2`) or a
         # trailing comment (`|-  # prod`) — both valid YAML block-scalar headers — hid the
         # value. Either indicator order and a `#` comment are allowed now. Blank lines
@@ -587,7 +587,7 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     # `[redacted]` placeholder match no longer held and the sentence became a finding. A
     # real value is never written with a backtick in it.
     #
-    # Round 17 E3: the bracket still needed 3 to 80 characters inside it, so a short one
+    # Round 17 A-E3: the bracket still needed 3 to 80 characters inside it, so a short one
     # glued to a real value (`[X]Sup3rS3cretValue9`, `[ab]…`) failed the bracket branch, and
     # the plain branch then stopped at the `]` with too few characters to be a finding; and
     # the suffix after the bracket excluded `]`, so `[REDACTED]]Sup3r…` captured exactly
@@ -601,7 +601,7 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
         "secret-assignment-unquoted",
         "Secret-like assignment",
         #
-        # Round 17 E4: the plain class stops at `}`, so `${DB_PASSWORD}Sup3rS3cretValue9`
+        # Round 17 A-E4: the plain class stops at `}`, so `${DB_PASSWORD}Sup3rS3cretValue9`
         # captured `${DB_PASSWORD`, which `_is_placeholder` read as a bare `${NAME}` — the
         # real value glued after the expansion was never looked at. A `${…}`, `$(…)` or
         # `{{…}}` template is now captured whole, closing delimiter included, together with
@@ -661,7 +661,7 @@ _CODE_ATTRIBUTE_ROOTS: Final = frozenset(
 )
 
 
-# Round 17 E5: a digit between two letters is how a password is usually made from a word
+# Round 17 A-E5: a digit between two letters is how a password is usually made from a word
 # (`P4ssw0rd`, `Tr0ub4dor`, `Sup3rS3cret`); code names put digits there rarely, and then
 # once, in a lowercase name (`b64encode`, `sha256sum`, `oauth2client`).
 _SANDWICHED_DIGIT = re.compile(r"[A-Za-z]\d+(?=[A-Za-z])")
@@ -672,7 +672,7 @@ _CODE_EXPRESSION = re.compile(
 
 
 def _is_code_identifier(name: str) -> bool:
-    """`name` reads as an identifier a programmer wrote, not as a password (round 17 E5)."""
+    """`name` reads as an identifier a programmer wrote, not as a password (round 17 A-E5)."""
     if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
         return False
     sandwiched = len(_SANDWICHED_DIGIT.findall(name))
@@ -680,7 +680,7 @@ def _is_code_identifier(name: str) -> bool:
 
 
 def _is_format_placeholder(value: str, *, closed: bool) -> bool:
-    """`value` is a `{name}` format-string placeholder (round 17 E5).
+    """`value` is a `{name}` format-string placeholder (round 17 A-E5).
 
     `closed=False` also accepts the forms the unquoted pattern captures, which stop before a
     closing brace or a comma: `{GITHUB` and `{total_tokens:`.
@@ -698,7 +698,7 @@ def _is_format_placeholder(value: str, *, closed: bool) -> bool:
 
 
 def _is_code_expression(value: str) -> bool:
-    """`value` is a call, subscript or format placeholder read out of source (round 17 E5)."""
+    """`value` is a call, subscript or format placeholder read out of source (round 17 A-E5)."""
     if _is_format_placeholder(value, closed=False):
         return True
     match = _CODE_EXPRESSION.fullmatch(value)
@@ -758,7 +758,7 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # (`Sup3rS3cretValue9>`) was waved through as a template. Only a value that is a matched
     # `<...>` pair, start to end, is a documentation placeholder now.
     #
-    # Round 17 E4: `startswith(("$(", "{{"))` excused anything that merely began like a
+    # Round 17 A-E4: `startswith(("$(", "{{"))` excused anything that merely began like a
     # command substitution or a Jinja expression, so `"$(true)Sup3rS3cretValue9"` and
     # `"{{ vault_pw }}Sup3rS3cretValue9"` were waved through. Only a value that is entirely
     # one `$(…)` is a command substitution now; the whole-value Jinja check is below.
@@ -774,7 +774,7 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # unquoted pattern's value class excludes `}`, so a bare wrap used to be captured with
     # its closing brace already stripped off by the regex, and this allowed for that with a
     # trailing `\}?` — which also excused an unclosed `${NAME` with a real value glued on.
-    # Round 17 E4: the unquoted pattern now captures a `${…}` whole, brace included, as the
+    # Round 17 A-E4: the unquoted pattern now captures a `${…}` whole, brace included, as the
     # quoted pattern always did, so the closing brace is required here.
     if re.fullmatch(r"\$\{[a-z_][a-z0-9_]*(?::\?[^{}]*)?\}", lowered):
         return True
@@ -816,7 +816,7 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # value after it — not how any of these shapes read — so it fails every alternative
     # below and stays a finding.
     #
-    # Round 17 E5: that shape was still matched on the lowered value with no look at what
+    # Round 17 A-E5: that shape was still matched on the lowered value with no look at what
     # the identifiers or the arguments were, so any password that merely *ended* like a
     # call was excused with it: `Tr0ub4dor(3)`, `Summer2024(!)`, `MyP4ssw0rd(` (the value
     # class stopped where a quote would have been), `Sup3rS3cr3t)` (a "bare closing"),
@@ -830,7 +830,7 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # contains — all still pass.
     if allow_call_expression and _is_code_expression(value.strip()):
         return True
-    # Round 17 E7: an `UPPER_SNAKE` name that itself contains a credential keyword is the
+    # Round 17 A-E7: an `UPPER_SNAKE` name that itself contains a credential keyword is the
     # *name* of a credential — an environment variable or a marker this application
     # substitutes at serve time (`value="__GTQ_REQUEST_TOKEN__"` in its own templates, now
     # that an XML attribute is scanned) — not a value. Digits, lowercase or no underscore
@@ -841,7 +841,7 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
         and re.search(_KEYWORDS, value, re.IGNORECASE)
     ):
         return True
-    # Round 17 E1: once a keyword can carry a suffix, the unquoted pattern reads three more
+    # Round 17 A-E1: once a keyword can carry a suffix, the unquoted pattern reads three more
     # code shapes from this repository's own source that no suffix-free name ever produced:
     # a keyword-named constant or variable assigned from another one (`TOKEN_PLACEHOLDER =
     # REQUEST_TOKEN_PLACEHOLDER`, `"total_tokens": total_tokens`), an f-string placeholder
@@ -869,7 +869,7 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # one and was never reported. The length bounds still matter too: without them this also
     # matches a JWT, whose three base64 segments are exactly a long dotted chain.
     #
-    # Round 17 E6: the root was the only part checked, and on the lowered value, so a
+    # Round 17 A-E6: the root was the only part checked, and on the lowered value, so a
     # passphrase that merely started with a root name (`context.is.king2024`,
     # `settings.Sup3r.Secret9`) still read as an attribute path. Every segment is now
     # checked as written: an attribute name is a lowercase `snake_case` name or an
@@ -941,7 +941,7 @@ def _is_finding(pattern: SecretPattern, match: re.Match[str], captured: str) -> 
     )
 
 
-# Round 17 E11: Markdown and HTML both let a character be written as an escape that renders
+# Round 17 A-E11: Markdown and HTML both let a character be written as an escape that renders
 # as the character itself — `ghp\\_…` (CommonMark's backslash escape of any ASCII
 # punctuation) and `ghp&#95;…`/`ghp&lowbar;…` (a character reference) all render as the
 # literal `ghp_…` token — but the patterns read the escape, not the character, so the scan
@@ -1088,7 +1088,7 @@ def scan_text(text: str) -> list[SecretMatch]:
     found = _find(text)
     unescaped = _unescaped(text)
     if unescaped is not None:
-        # Round 17 E11: a span the escaped text already reported is not reported twice.
+        # Round 17 A-E11: a span the escaped text already reported is not reported twice.
         starts = [item[0] for item in found]
         extra: list[tuple[int, int, SecretPattern, str]] = []
         for start, end, pattern, captured in _find(unescaped.text):
@@ -1143,7 +1143,7 @@ def _redaction_spans(text: str) -> list[tuple[int, int]]:
 def redact_text(text: str) -> tuple[str, bool]:
     """`text` with every detected secret replaced. Returns the text and whether anything changed."""
     spans = _redaction_spans(text)
-    # Round 17 E11: what renders is the unescaped text, so its findings are redacted too,
+    # Round 17 A-E11: what renders is the unescaped text, so its findings are redacted too,
     # mapped back onto the escaped form they came from.
     unescaped = _unescaped(text)
     if unescaped is not None:

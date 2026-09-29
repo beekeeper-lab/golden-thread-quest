@@ -230,7 +230,7 @@ def _check_no_secrets_in_evidence(workspace: Workspace, output: ValidatorOutput)
     # failure: `submit-for-review` scans whichever package is being submitted, so nothing
     # goes unscanned, and no attempt is blocked by a file it does not own.
     #
-    # Round 17 C5: this used to skip by extension and decode as UTF-8 only, the rules round
+    # Round 17 A-C5: this used to skip by extension and decode as UTF-8 only, the rules round
     # 16 E12 and round 15 E6 had already replaced in the submission gate, so a plain-text
     # secret saved as `screenshots/terminal.pdf` passed here while submission refused it.
     # The file is now scanned by the gate's own function: the same signature check, the

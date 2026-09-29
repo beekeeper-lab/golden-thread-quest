@@ -883,7 +883,7 @@ def test_a_bare_keyword_value_on_the_next_line_is_still_detected() -> None:
     assert scan_text("password:\n  Sup3rS3cretValue9\n")  # secret-scan: allow
 
 
-# Round 17 E9: `PWD`/`OLDPWD` are the shell's own working-directory variables, printed by
+# Round 17 A-E9: `PWD`/`OLDPWD` are the shell's own working-directory variables, printed by
 # every `env`/`printenv` transcript; a path value there is not a password.
 @pytest.mark.parametrize(
     "text",
@@ -968,7 +968,7 @@ def test_suffixed_keyword_code_shapes_are_not_false_positives(text: str) -> None
     assert scan_text(text) == []
 
 
-# Round 17 E3 (and the curriculum lens's C1, the same defect): a bracket of fewer than three
+# Round 17 A-E3 (and the curriculum lens's C1, the same defect): a bracket of fewer than three
 # characters glued to a real value was never matched, and a `]` after the bracket ended the
 # capture, so a real value after it was left out of both the scan and the redaction.
 @pytest.mark.parametrize(
@@ -1000,7 +1000,7 @@ def test_a_redaction_followed_by_a_stray_bracket_is_a_fixed_point() -> None:
     assert redact_text(redacted) == (redacted, False)
 
 
-# Round 17 E4: a real value glued after a template was excused along with the template —
+# Round 17 A-E4: a real value glued after a template was excused along with the template —
 # unquoted because the value class stopped at the expansion's `}`, quoted because a value
 # only had to *start* with `$(` or `{{`.
 @pytest.mark.parametrize(
@@ -1034,7 +1034,7 @@ def test_a_value_that_is_entirely_a_template_stays_a_placeholder(text: str) -> N
     assert scan_text(text) == []
 
 
-# Round 17 E17: a `,`/`;` glued inside an unquoted value cut it short — half the value was
+# Round 17 A-E17: a `,`/`;` glued inside an unquoted value cut it short — half the value was
 # left in clear text by the redaction, or, with too few characters before the cut, the
 # whole value was never matched.
 @pytest.mark.parametrize(
@@ -1071,7 +1071,7 @@ def test_a_separator_followed_by_a_space_still_ends_the_value() -> None:
     assert redacted == f"password={REDACTION_PLACEHOLDER}, user=bob"
 
 
-# Round 17 E5: the call/subscript exemption matched only the lowered shape, so a password
+# Round 17 A-E5: the call/subscript exemption matched only the lowered shape, so a password
 # that merely ended like a call, a subscript, a bare closing or a format placeholder was
 # excused along with real code.
 @pytest.mark.parametrize(
@@ -1106,7 +1106,7 @@ def test_real_code_shapes_stay_exempted(text: str) -> None:
     assert scan_text(text) == []
 
 
-# Round 17 C2: the plain unquoted run stopped at every `}`, so with fewer than eight
+# Round 17 A-C2: the plain unquoted run stopped at every `}`, so with fewer than eight
 # characters before the brace nothing matched at all and the real secret after it was never
 # looked at.
 def test_a_brace_glued_inside_an_unquoted_value_does_not_hide_it() -> None:
@@ -1116,7 +1116,7 @@ def test_a_brace_glued_inside_an_unquoted_value_does_not_hide_it() -> None:
     assert redact_text(text)[0] == f"api_key={REDACTION_PLACEHOLDER}"
 
 
-# Round 17 E6: only the root of a dotted chain was checked, so a passphrase that merely
+# Round 17 A-E6: only the root of a dotted chain was checked, so a passphrase that merely
 # started with a code-root name read as an attribute path.
 @pytest.mark.parametrize(
     "text",
@@ -1138,7 +1138,7 @@ def test_a_real_attribute_path_from_a_code_root_stays_exempted(text: str) -> Non
     assert scan_text(text) == []
 
 
-# Round 17 E7: only a bare single-line `<keyword>` element was matched.
+# Round 17 A-E7: only a bare single-line `<keyword>` element was matched.
 XML_COMPOUND_TAG = "<db_password>Sup3rS3cretValue9</db_password>"  # secret-scan: allow
 
 
@@ -1186,7 +1186,7 @@ def test_xml_markup_that_names_a_credential_without_holding_one_is_clean(text: s
     assert scan_text(text) == []
 
 
-# Round 17 E8: an indentation indicator or a trailing comment on a block-scalar header hid
+# Round 17 A-E8: an indentation indicator or a trailing comment on a block-scalar header hid
 # the value underneath it.
 @pytest.mark.parametrize(
     "text",
@@ -1203,7 +1203,7 @@ def test_a_yaml_block_scalar_with_an_indicator_or_comment_is_detected(text: str)
     assert "Sup3rS3cretValue9" not in redact_text(text)[0]
 
 
-# Round 17 E2: `curl -u` was matched only unquoted, space-separated, as its own flag, on the
+# Round 17 A-E2: `curl -u` was matched only unquoted, space-separated, as its own flag, on the
 # same line as `curl`.
 @pytest.mark.parametrize(
     "text",
@@ -1232,7 +1232,7 @@ def test_curl_flags_that_are_not_user_are_not_read_as_one(text: str) -> None:
     assert scan_text(text) == []
 
 
-# Round 17 E11: an escape that renders as `_` hid a token from every pattern, and
+# Round 17 A-E11: an escape that renders as `_` hid a token from every pattern, and
 # `render_markdown` then put the literal token on the page.
 GITHUB_BODY = GITHUB.removeprefix("ghp_")
 

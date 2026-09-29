@@ -158,7 +158,7 @@ def test_a_genuinely_different_name_still_differs(tmp_path: Path) -> None:
 
 
 def test_a_cp1252_file_hashes_the_same_across_line_endings(tmp_path: Path) -> None:
-    """Round 17 E14.
+    """Round 17 A-E14.
 
     Round 16 folded line endings only in content that decodes as UTF-8, but Git's
     `core.autocrlf` converts a cp1252 or Latin-1 text file exactly as it converts a UTF-8
@@ -174,7 +174,7 @@ def test_a_cp1252_file_hashes_the_same_across_line_endings(tmp_path: Path) -> No
 
 
 def test_non_utf8_content_with_a_lone_cr_is_not_folded(tmp_path: Path) -> None:
-    """Round 17 E14: Git treats non-UTF-8 content holding a lone `\\r` as binary and never
+    """Round 17 A-E14: Git treats non-UTF-8 content holding a lone `\\r` as binary and never
     converts it, so the hash does not fold it either: a lone `\\r` there may be half of a
     UTF-16 code unit (round 16 E10), not a line ending."""
     with_cr = tmp_path / "with_cr.txt"
@@ -186,7 +186,7 @@ def test_non_utf8_content_with_a_lone_cr_is_not_folded(tmp_path: Path) -> None:
 
 
 def test_non_utf8_content_git_calls_binary_is_not_folded(tmp_path: Path) -> None:
-    """Round 17 E14: more than one non-printable byte per 128 printable ones is binary to
+    """Round 17 A-E14: more than one non-printable byte per 128 printable ones is binary to
     Git, which never converts it; the hash leaves its `\\r\\n` pairs alone too."""
     crlf = tmp_path / "crlf.bin"
     lf = tmp_path / "lf.bin"
@@ -199,7 +199,7 @@ def test_non_utf8_content_git_calls_binary_is_not_folded(tmp_path: Path) -> None
 def test_retargeting_a_directory_link_inside_the_package_changes_the_hash(
     tmp_path: Path,
 ) -> None:
-    """Round 17 E15.
+    """Round 17 A-E15.
 
     The walk does not follow a directory link, so what it shows is hashed under its target's
     own name, and which directory it points at was never hashed at all: `logs -> a/`
