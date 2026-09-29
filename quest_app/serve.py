@@ -1063,19 +1063,22 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
         return 2
 
     bound = int(server.server_address[1])
-    port_file = claim_port_file(config, bound)
-
-    address = _service_url(config.service_host, bound)
-    print(f"Golden Thread Quest is at {address}", file=sys.stderr)
-    # Deliberately not printed. The pages this run serves already carry it, substituted as
-    # they are served, so nobody needs to read it — and printing it put it into any log a
-    # participant redirected the service into, which is the one place it could reach disk.
-    print(
-        "Pages served by this run carry a request token; it is not printed or stored.",
-        file=sys.stderr,
-    )
-    print("Stop with Ctrl-C.", file=sys.stderr)
+    port_file: Path | None = None
+    # The port file is claimed inside the `try`, so a Ctrl-C that lands while the startup
+    # lines are still printing still reaches the `finally` that removes it.
     try:
+        port_file = claim_port_file(config, bound)
+
+        address = _service_url(config.service_host, bound)
+        print(f"Golden Thread Quest is at {address}", file=sys.stderr)
+        # Deliberately not printed. The pages this run serves already carry it, substituted
+        # as they are served, so nobody needs to read it — and printing it put it into any
+        # log a participant redirected the service into, the one place it could reach disk.
+        print(
+            "Pages served by this run carry a request token; it is not printed or stored.",
+            file=sys.stderr,
+        )
+        print("Stop with Ctrl-C.", file=sys.stderr)
         server.serve_forever()
     except KeyboardInterrupt:
         print("\nstopped", file=sys.stderr)
