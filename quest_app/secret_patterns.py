@@ -419,7 +419,17 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     SecretPattern(
         "yaml-block-scalar-credential",
         "Secret-like value in a YAML block scalar",
-        _c(_KEY + r"\s*:\s*[|>][+-]?\s*\n[ \t]+(\S[^\n]{7,})"),
+        # Round 17 E8: the header only allowed an optional chomping indicator straight
+        # before the line break, so an indentation indicator (`|2`, `>-1`, `|+2`) or a
+        # trailing comment (`|-  # prod`) — both valid YAML block-scalar headers — hid the
+        # value. Either indicator order and a `#` comment are allowed now. Blank lines
+        # before the value are matched line by line rather than by an open `\s*` in front
+        # of a `\n`, which could backtrack across a long run of whitespace.
+        _c(
+            _KEY
+            + r"[ \t]*:[ \t]*[|>](?:[1-9][+-]?|[+-][1-9]?)?[ \t]*(?:#[^\n]*)?\r?\n"
+            + r"(?:[ \t]*\r?\n)*[ \t]+(\S[^\n]{7,})"
+        ),
     ),
     # Quoted assignment first, so a quoted value keeps its exact span even when it contains
     # characters the unquoted form would stop at.

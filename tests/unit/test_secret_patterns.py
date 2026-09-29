@@ -991,3 +991,20 @@ def test_xml_credential_variants_are_detected(pattern_id: str, text: str) -> Non
 )
 def test_xml_markup_that_names_a_credential_without_holding_one_is_clean(text: str) -> None:
     assert scan_text(text) == []
+
+
+# Round 17 E8: an indentation indicator or a trailing comment on a block-scalar header hid
+# the value underneath it.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "password: |2\n  Sup3rS3cretValue9\n",  # secret-scan: allow
+        "password: |-  # prod\n  Sup3rS3cretValue9\n",  # secret-scan: allow
+        "password: >+1\n Sup3rS3cretValue9\n",  # secret-scan: allow
+        "password: >-\n\n  Sup3rS3cretValue9\n",  # secret-scan: allow
+    ],
+)
+def test_a_yaml_block_scalar_with_an_indicator_or_comment_is_detected(text: str) -> None:
+    (match,) = scan_text(text)
+    assert match.pattern_id == "yaml-block-scalar-credential"
+    assert "Sup3rS3cretValue9" not in redact_text(text)[0]
