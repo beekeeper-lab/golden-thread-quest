@@ -322,11 +322,30 @@ def test_an_authorization_token_scheme_header_is_detected() -> None:
 # Round 17 A-E11 adds the two escape units: a text full of escapes is scanned twice.
 @pytest.mark.parametrize("unit", ["a.", "a-", "eyJ", "ghp\\_", "&#95;"])
 def test_scan_text_stays_fast_on_a_two_megabyte_adversarial_file(unit: str) -> None:
-    text = unit * (2_000_000 // len(unit))
+    # Round 17: a fixed 5s bound on 2 MB passed at 2.3s locally and failed at 5.1s on a slower
+    # CI runner with the code linear, the machine-dependence F1 and F3 name. Scaling is
+    # checked instead (4x the input must cost well under the 16x a quadratic scan shows),
+    # with an absolute ceiling far above any linear run and far below a quadratic one.
+    small = unit * (500_000 // len(unit))
+    large = small * 4
+
+    def best_of_three(text: str) -> float:
+        timings = []
+        for _ in range(3):
+            started = time.monotonic()
+            scan_text(text)
+            timings.append(time.monotonic() - started)
+        return min(timings)
+
+    small_elapsed = max(best_of_three(small), 1e-6)
     started = time.monotonic()
-    scan_text(text)
-    elapsed = time.monotonic() - started
-    assert elapsed < 5, f"{unit!r} * ~2MB took {elapsed:.2f}s, expected well under 5s"
+    scan_text(large)
+    large_elapsed = time.monotonic() - started
+    assert large_elapsed / small_elapsed < 8, (
+        f"{unit!r}: 4x the input took {large_elapsed / small_elapsed:.1f}x as long "
+        f"({small_elapsed:.2f}s -> {large_elapsed:.2f}s), expected near-linear scaling"
+    )
+    assert large_elapsed < 30, f"{unit!r} * ~2MB took {large_elapsed:.2f}s"
 
 
 # Round 15 E12: the OpenPGP armor marker is "...PRIVATE KEY BLOCK-----", not
