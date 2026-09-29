@@ -908,3 +908,59 @@ def test_the_shells_working_directory_variables_are_not_findings(text: str) -> N
 )
 def test_a_pwd_holding_something_other_than_a_path_is_still_detected(text: str) -> None:
     assert scan_text(text), f"expected {text!r} to be detected"
+
+
+# Round 17 A-E1 (the earlier pass of this round): every assignment pattern required the
+# operator immediately after the keyword,
+# so a keyword followed by any identifier suffix — the ordinary way a config names a second
+# credential of the same kind — was never matched.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "SECRET_KEY=Sup3rS3cretValue9xyz",  # secret-scan: allow
+        '"secret_key": "Sup3rS3cretValue9xyz"',  # secret-scan: allow
+        '"secretKey": "Sup3rS3cretValue9xyz"',  # secret-scan: allow
+        "JWT_SECRET_KEY=Sup3rS3cretValue9xyz",  # secret-scan: allow
+        "SECRET_KEY_BASE=Sup3rS3cretValue9xyz",  # secret-scan: allow
+        "ENCRYPTION_KEY=Sup3rS3cretValue9xyz",  # secret-scan: allow
+        "signing_key: Sup3rS3cretValue9xyz",  # secret-scan: allow
+        "DB_PASSWORD_PROD=Sup3rS3cretValue9",  # secret-scan: allow
+        "TRELLO_TOKEN_PROD=Sup3rS3cretValue9",  # secret-scan: allow
+        "JIRA_API_TOKEN_2=Sup3rS3cretValue9",  # secret-scan: allow
+        "DB_PASS_PROD=Sup3rS3cretValue9",  # secret-scan: allow
+        '"dbPass": "Sup3rS3cretValue9"',  # secret-scan: allow
+        "AccountKey=Sup3rS3cretValue9xyzAbCdEf==",  # secret-scan: allow
+    ],
+)
+def test_a_keyword_with_an_identifier_suffix_is_detected(text: str) -> None:
+    matches = scan_text(text)
+    assert matches, f"expected {text!r} to be detected"
+    # `AccountKey=` is claimed by the more specific `azure-connection-key` (round 17 L10).
+    assert matches[0].pattern_id in {
+        "secret-assignment",
+        "secret-assignment-unquoted",
+        "azure-connection-key",
+    }
+    redacted, _ = redact_text(text)
+    assert "Sup3rS3cretValue9" not in redacted
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # A suffixed name's value never starts on the next line: that is a class body or a
+        # docstring, not a value.
+        "class SecretMatch:\n    pattern_id: str\n",
+        'class SecretPattern:\n    """One named detector.\n',
+        # Keyword-named code this repository's own source contains.
+        "TOKEN_PLACEHOLDER = REQUEST_TOKEN_PLACEHOLDER",
+        '{"total_tokens": total_tokens,',
+        'print(f"Total tokens:   {total_tokens:,}")',
+        "tokenList:function(){return Sp},uniqueArray",
+        # Bare `pass` and camelCase `Pass` after an arbitrary word stay ordinary vocabulary.
+        "bypass=truetruetrue",
+        "onPass=handlePassEvent",
+    ],
+)
+def test_suffixed_keyword_code_shapes_are_not_false_positives(text: str) -> None:
+    assert scan_text(text) == []
