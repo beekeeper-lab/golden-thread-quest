@@ -294,6 +294,40 @@ class TestApprovalGuards:
         )
         assert decision.is_approval
 
+    def test_a_secret_added_after_submission_blocks_approval_but_not_needs_changes(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Round 17 E5: approval did not re-run the scan, so a token written into the
+        evidence after submission was approved into `verified`."""
+        submit(setup, config)
+        world, attempt = reload_attempt(config)
+        directory = config.resolve_participant_path(attempt.evidence_path)
+        leaked = "ghp_abcdefghijklmnopqrstuvwxyz0123456789"  # secret-scan: allow
+        (directory / "later.txt").write_text(f"GITHUB_TOKEN={leaked}\n")
+        _, schemas, store, quest, _ = setup
+
+        def decide(decision: str, findings: list[dict[str, str]]):  # type: ignore[no-untyped-def]
+            return record_decision(
+                config,
+                store,
+                quest=quest,
+                attempt=attempt,
+                participant=world.participant,
+                decision=decision,
+                reviewer_name="A Reviewer",
+                verification_statement=STATEMENT,
+                findings=findings,
+                schemas=schemas,
+                acknowledge_changed_evidence=True,
+            )
+
+        with pytest.raises(ReviewError, match="secret scan"):
+            decide("approved", [])
+        _, unchanged = reload_attempt(config)
+        assert unchanged.recorded_state is AttemptState.SUBMITTED
+
+        assert not decide("needs_changes", [FINDING]).is_approval
+
     def test_an_acknowledged_change_is_recorded_as_data_not_only_as_prose(
         self, setup, config: AppConfig
     ) -> None:  # type: ignore[no-untyped-def]
@@ -1372,3 +1406,100 @@ def test_the_review_page_says_when_a_newer_quest_version_is_published(
     page = review_page()
     assert "This attempt is on an older version of the quest" in page
     assert f"{started_on} (version {started_on + 1} is now published)" in page
+
+
+def test_evidence_changed_after_approval_is_flagged_where_people_look(
+    setup, config: AppConfig
+) -> None:  # type: ignore[no-untyped-def]
+    """Round 17 L5: the drift was shown only on the verified attempt's own review page,
+    and nothing linked there once it was verified."""
+    from quest_app.build import build_site
+    from quest_app.view_models import offline_service_view
+
+    submit(setup, config)
+    world, attempt = reload_attempt(config)
+    _, schemas, store, quest, _ = setup
+    record_decision(
+        config,
+        store,
+        quest=quest,
+        attempt=attempt,
+        participant=world.participant,
+        decision="approved",
+        reviewer_name="A Reviewer",
+        verification_statement=STATEMENT,
+        findings=[],
+        schemas=schemas,
+    )
+
+    def pages() -> tuple[str, str]:
+        report = ProblemReport()
+        loaded = load_world(config, report)
+        assert loaded is not None, report.to_text()
+        build_site(loaded, service=offline_service_view())
+        root = config.generated_root
+        return (
+            (root / "review" / "index.html").read_text(),
+            (root / "evidence" / QUEST / "index.html").read_text(),
+        )
+
+    queue, evidence = pages()
+    assert "Changed since approval" not in queue + evidence
+
+    directory = config.resolve_participant_path(attempt.evidence_path)
+    (directory / "PROOF.md").write_text("# Rewritten after the approval\n")
+    queue, evidence = pages()
+    assert "Changed since approval" in queue
+    assert "Changed since approval" in evidence
+
+
+def test_a_finding_can_name_its_criterion_and_the_change_it_needs(setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+    """Round 17 L9: ADR-016 says findings reference `ac-<n>`, and the schema had a
+    `required_change`, but neither could be entered from the form or the CLI."""
+    submit(setup, config)
+    world, attempt = reload_attempt(config)
+    _, schemas, store, quest, _ = setup
+
+    def decide(finding: dict[str, str]):  # type: ignore[no-untyped-def]
+        return record_decision(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            decision="needs_changes",
+            reviewer_name="A Reviewer",
+            verification_statement=None,
+            findings=[finding],
+            schemas=schemas,
+        )
+
+    with pytest.raises(ReviewError, match="not one of this quest's acceptance criteria"):
+        decide({**FINDING, "criterion": "ac-99"})
+
+    decision = decide({**FINDING, "criterion": "ac-3", "required_change": "Page until done."})
+    (finding,) = decision.findings
+    assert (finding.criterion, finding.required_change) == ("ac-3", "Page until done.")
+    stored = yaml.safe_load(
+        (config.resolve_participant_path(attempt.evidence_path) / "review.yaml").read_text()
+    )
+    assert stored["findings"][0]["criterion"] == "ac-3"
+
+
+def test_the_cli_carries_a_findings_criterion_and_required_change() -> None:
+    """The CLI half of L9: `severity@ac-N:summary:evidence::required change`."""
+    from quest_app.cli import findings_from_args
+
+    assert findings_from_args(
+        ["high@ac-3:Pagination stops early:Only page one was read::Request every page"]
+    ) == [
+        {
+            "id": "finding-1",
+            "severity": "high",
+            "summary": "Pagination stops early",
+            "evidence": "Only page one was read",
+            "criterion": "ac-3",
+            "required_change": "Request every page",
+        }
+    ]
+    assert findings_from_args(["low:Summary text:Evidence text"])[0]["criterion"] == ""

@@ -11,6 +11,7 @@ participant a minute, and a missed credential costs them a rotation and a conver
 
 from __future__ import annotations
 
+import codecs
 import json
 import os
 import secrets
@@ -28,11 +29,14 @@ from quest_app.safe_io import (
     MAX_VALIDATION_RESULT_BYTES,
     UnsafeStateFileError,
     read_bounded_bytes,
+    read_regular_file_head,
 )
 from quest_app.secret_patterns import scan_text
 from quest_app.store import write_json_atomic
 
 OUTSIDE_LINK_DESCRIPTION = "is a link that leads outside the evidence package"
+# Round 17: an unreadable file was worded as "secret-like" to the participant and reviewer.
+UNREADABLE_DESCRIPTION = "could not be read to check it"
 OVERSIZE_DESCRIPTION = (
     f"is larger than the {MAX_EVIDENCE_FILE_BYTES // 1_000_000} MB the secret scan reads, "
     "so it cannot be checked"
@@ -40,7 +44,7 @@ OVERSIZE_DESCRIPTION = (
 
 
 def scan_kinds(findings: list[SecretFinding]) -> frozenset[str]:
-    """Which kinds of problem a scan found: `secret`, `link` or `oversize`.
+    """Which kinds of problem a scan found: `secret`, `link`, `oversize` or `unreadable`.
 
     The three fail the scan alike but need different words. A page that called a link or an
     unreadably large file "secret-like" sent people looking for a credential that was never
@@ -51,6 +55,8 @@ def scan_kinds(findings: list[SecretFinding]) -> frozenset[str]:
         if f.description == OUTSIDE_LINK_DESCRIPTION
         else "oversize"
         if f.description == OVERSIZE_DESCRIPTION
+        else "unreadable"
+        if f.description == UNREADABLE_DESCRIPTION
         else "secret"
         for f in findings
     }
@@ -79,11 +85,38 @@ _MAGIC_SIGNATURES: Final[tuple[bytes, ...]] = (
 _MAGIC_HEADER_BYTES = 16  # enough for every signature above, and for the WebP check below
 
 
-def _looks_like_a_skippable_binary_format(header: bytes) -> bool:
+# Round 17 E7: these three signatures are plain ASCII, so a text file can open with one
+# (`GIF89a` then a token on the next line) and was skipped unread. A real GIF has binary
+# screen-descriptor bytes straight after its signature and a real PDF almost always has a
+# binary comment line or compressed streams within its first few kilobytes; a file opening
+# with one of these whose sample is still clean UTF-8 text is read as text instead.
+_ASCII_SIGNATURES: Final[tuple[bytes, ...]] = (b"GIF87a", b"GIF89a", b"%PDF-")
+_TEXT_SAMPLE_BYTES = 65_536
+
+
+def _sample_is_text(path: Path) -> bool:
+    """The first `_TEXT_SAMPLE_BYTES` of `path` are NUL-free UTF-8 (a multi-byte character
+    cut off at the end of the sample does not count against it)."""
+    try:
+        sample = read_regular_file_head(path, _TEXT_SAMPLE_BYTES)
+    except (OSError, UnsafeStateFileError):
+        return False
+    if b"\x00" in sample:
+        return False
+    try:
+        codecs.getincrementaldecoder("utf-8")().decode(sample, final=False)
+    except UnicodeDecodeError:
+        return False
+    return True
+
+
+def _looks_like_a_skippable_binary_format(header: bytes, path: Path) -> bool:
     """`header` (the file's first `_MAGIC_HEADER_BYTES`) opens with the magic bytes of a
     format the secret scan cannot usefully read as text — a real screenshot, a real PDF, a
     real zip — regardless of what the file is named.
     """
+    if header.startswith(_ASCII_SIGNATURES):
+        return not _sample_is_text(path)
     if header.startswith(_MAGIC_SIGNATURES):
         return True
     # WebP is a RIFF container: "RIFF", 4 bytes of little-endian chunk size, then "WEBP".
@@ -141,6 +174,26 @@ def _detect_one(
     if item.path is None:
         return "missing"
 
+    # Round 17 L1: a path in the quest's own evidence area names the author's invented
+    # `attempt-001` directory. A file placed at that literal path was reported "detected",
+    # while the secret scan, the evidence hash and the proof digests only ever read the
+    # real package, so it was submitted unscanned and could change after approval unseen.
+    # Such a path is only ever looked for inside the real package now.
+    if evidence_path and _in_quest_area(item.path, evidence_path):
+        try:
+            package = config.resolve_participant_path(evidence_path)
+        except ValueError:
+            return "missing"
+        candidates = _inside_the_package(item.path, evidence_path, package)
+        if item.type == "directory":
+            return (
+                "detected" if candidates[0].is_dir() and any(candidates[0].iterdir()) else "missing"
+            )
+        for candidate in candidates:
+            if candidate.is_file():
+                return "detected" if candidate.stat().st_size > 0 else "warning"
+        return "missing"
+
     try:
         target = config.resolve_participant_path(item.path)
     except ValueError:
@@ -161,6 +214,27 @@ def _detect_one(
             if candidate.is_file():
                 return "detected"
     return "missing"
+
+
+def _in_quest_area(item_path: str, evidence_path: str) -> bool:
+    quest_area = str(Path(evidence_path).parent).replace("\\", "/") + "/"
+    return item_path.replace("\\", "/").startswith(quest_area)
+
+
+def proof_location(item_path: str, evidence_path: str | None) -> str:
+    """Where the participant should put the file `item_path` names, for display.
+
+    Round 17 L2: pages showed the authored `.../attempt-001/logs/x.txt`, a folder that
+    never exists, so a participant following the page put the file where nothing scans it
+    and a reviewer looked for a file that was not there. A path in the quest's evidence area
+    is shown inside the participant's real package; any other path is shown as authored.
+    """
+    if not evidence_path or not _in_quest_area(item_path, evidence_path):
+        return item_path
+    quest_area = str(Path(evidence_path).parent).replace("\\", "/") + "/"
+    remainder = Path(item_path.replace("\\", "/")[len(quest_area) :]).parts
+    inside = remainder[1:] if len(remainder) > 1 else remainder
+    return "/".join((evidence_path.rstrip("/"), *inside))
 
 
 def _inside_the_package(item_path: str, evidence_path: str, package: Path) -> list[Path]:
@@ -245,6 +319,17 @@ def _decode_evidence_text(raw: bytes) -> list[str]:
     return candidates
 
 
+def _secret_value_digests(text: str) -> set[str]:
+    """A fingerprint of every secret-like value `scan_text` finds in `text`, never the values.
+
+    Round 17 A-E10: `_proof_document` redacts one candidate decoding and renders it, and needs
+    to know whether another candidate found a value that this one did not — a value only a
+    different decoding can see was not redacted, and survives into the page in a form
+    (`t\\0o\\0k\\0…`, U+FFFD pairs) that stripping those characters gives back whole.
+    """
+    return {match.fingerprint for match in scan_text(text)}
+
+
 def _scan_one(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
     """Apply the fixed scan rules to one filesystem entry: link check, binary-format check,
     the 2 MB ceiling, then decode and match.
@@ -266,12 +351,18 @@ def _scan_one(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
     # it in full first (to then discard it) would make a legitimate large image fail with the
     # oversize finding below, which is exactly the silent-vs-blocked distinction this scan is
     # supposed to preserve.
+    # Round 17 A-E13: this was a plain `path.open("rb")`, which blocks forever on a FIFO — and
+    # the `is_file()` above does not stop one, since the path can be swapped between the two
+    # calls. The scan runs under the store, generated and service locks, so one FIFO hung all
+    # three. `read_regular_file_head` opens with `O_NONBLOCK` and refuses by `fstat` anything
+    # that is not a regular file, as `read_bounded_bytes` does below; the cost is one more
+    # "could not be read" finding for a path that changed kind mid-scan, which blocks, as it
+    # should for a file the scan never read.
     try:
-        with path.open("rb") as handle:
-            header = handle.read(_MAGIC_HEADER_BYTES)
-    except OSError:
-        return [SecretFinding(relative, 1, "could not be read to check it")]
-    if _looks_like_a_skippable_binary_format(header):
+        header = read_regular_file_head(path, _MAGIC_HEADER_BYTES)
+    except (OSError, UnsafeStateFileError):
+        return [SecretFinding(relative, 1, UNREADABLE_DESCRIPTION)]
+    if _looks_like_a_skippable_binary_format(header, path):
         return []
     try:
         raw = read_bounded_bytes(path, max_bytes=MAX_EVIDENCE_FILE_BYTES)
@@ -283,7 +374,7 @@ def _scan_one(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
         return [SecretFinding(relative, 1, OVERSIZE_DESCRIPTION)]
     except OSError:
         # A file the scan cannot read is a file it cannot vouch for, so it blocks.
-        return [SecretFinding(relative, 1, "could not be read to check it")]
+        return [SecretFinding(relative, 1, UNREADABLE_DESCRIPTION)]
     # Round 15 E6: several candidate decodings of the same bytes are scanned (mixed
     # encodings, a NUL-diluted ratio), so the same secret can legitimately turn up correctly
     # decoded more than once. `(pattern_id, excerpt)` identifies the same underlying value
@@ -294,7 +385,10 @@ def _scan_one(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
     findings: list[SecretFinding] = []
     for text in _decode_evidence_text(raw):
         for match in scan_text(text):
-            key = (match.pattern_id, match.excerpt)
+            # Round 17 E8: keyed by the value's fingerprint, not its excerpt — a short value's
+            # excerpt is only its length, so two different secrets of one length collapsed
+            # into one finding and the participant saw only the first.
+            key = (match.pattern_id, match.fingerprint)
             if key in seen:
                 continue
             seen.add(key)
@@ -302,6 +396,20 @@ def _scan_one(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
                 SecretFinding(path=relative, line=match.line, description=match.description)
             )
     return findings
+
+
+def scan_file(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
+    """The submission gate's rules for one file, for a check that must agree with it.
+
+    Round 17 A-C5: the repository-foundation validator kept its own copy of these rules — an
+    extension skip list and a single UTF-8 decode — so a text file named `terminal.pdf`
+    passed its check while this module's scan blocked the same package. One implementation
+    means the two cannot disagree again.
+    """
+    return _scan_one(path, relative, boundary)
+
+
+UNREADABLE_DESCRIPTIONS = frozenset({OVERSIZE_DESCRIPTION, "could not be read to check it"})
 
 
 def scan_evidence(config: AppConfig, evidence_path: str) -> list[SecretFinding]:
@@ -329,7 +437,7 @@ def scan_evidence(config: AppConfig, evidence_path: str) -> list[SecretFinding]:
         # with a clean scan. This is what `hash_directory` now fails on too, so a directory
         # that changes readability changes both the scan and the hash the same way.
         relative = f"{evidence_path}/{path.relative_to(root).as_posix()}"
-        findings.append(SecretFinding(relative, 1, "could not be read to check it"))
+        findings.append(SecretFinding(relative, 1, UNREADABLE_DESCRIPTION))
     return findings
 
 
@@ -422,7 +530,7 @@ def _scan_declared_path(config: AppConfig, declared: str) -> list[SecretFinding]
             findings.extend(_scan_one(path, relative, target))
     for path in sorted(unreadable, key=lambda p: p.relative_to(target).as_posix()):
         relative = f"{stripped}/{path.relative_to(target).as_posix()}"
-        findings.append(SecretFinding(relative, 1, "could not be read to check it"))
+        findings.append(SecretFinding(relative, 1, UNREADABLE_DESCRIPTION))
     return sorted(findings, key=lambda f: f.path)
 
 
@@ -438,7 +546,8 @@ def describe_scan_findings(findings: list[SecretFinding]) -> list[str]:
     problems: list[str] = []
     links = [f for f in findings if f.description == OUTSIDE_LINK_DESCRIPTION]
     oversize = [f for f in findings if f.description == OVERSIZE_DESCRIPTION]
-    secret = [f for f in findings if f not in links and f not in oversize]
+    unreadable = [f for f in findings if f.description == UNREADABLE_DESCRIPTION]
+    secret = [f for f in findings if f not in links and f not in oversize and f not in unreadable]
     if links:
         # Not a secret, and saying "secret-like" would send the participant hunting for one.
         problems.append(
@@ -450,6 +559,11 @@ def describe_scan_findings(findings: list[SecretFinding]) -> list[str]:
         problems.append(
             f"{oversize[0].path} {OVERSIZE_DESCRIPTION}. Trim it, or keep the full file out "
             "of the evidence and include only the part that shows the result."
+        )
+    if unreadable:
+        problems.append(
+            f"{unreadable[0].path} could not be read, so the scan could not check it. Fix its "
+            "permissions, or take it out of the evidence."
         )
     if secret:
         problems.append(

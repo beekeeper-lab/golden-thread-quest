@@ -221,24 +221,28 @@ def _check_evidence_package(workspace: Workspace, output: ValidatorOutput) -> No
 
 
 def _check_no_secrets_in_evidence(workspace: Workspace, output: ValidatorOutput) -> None:
-    from quest_app.secret_patterns import scan_text
+    from quest_app.evidence import UNREADABLE_DESCRIPTIONS, scan_file
 
     findings: list[str] = []
     truncated: list[str] = []
+    boundary = workspace.evidence_root
     # This attempt's evidence. A secret in another attempt's package is that attempt's
     # failure: `submit-for-review` scans whichever package is being submitted, so nothing
     # goes unscanned, and no attempt is blocked by a file it does not own.
+    #
+    # Round 17 A-C5: this used to skip by extension and decode as UTF-8 only, the rules round
+    # 16 E12 and round 15 E6 had already replaced in the submission gate, so a plain-text
+    # secret saved as `screenshots/terminal.pdf` passed here while submission refused it.
+    # The file is now scanned by the gate's own function: the same signature check, the
+    # same decodings, the same 2 MB ceiling. Round 13 E9's rule still holds — a file the
+    # check could not read in full is reported as unread, never as clean.
     for path in workspace.attempt_files():
-        if path.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf"}:
-            continue
-        text, was_truncated = workspace.read_text_bounded(str(path), limit=200_000)
-        if was_truncated:
-            # Round 13 E9: this used to read the whole file and quietly check only the
-            # first 200,000 characters, so a secret past that point passed as clean. This
-            # check cannot vouch for what it never read, so it reports that instead.
-            truncated.append(workspace.relative(path))
-        for match in scan_text(text):
-            findings.append(f"{workspace.relative(path)}:{match.line} ({match.description})")
+        label = workspace.relative(path)
+        for finding in scan_file(path, label, boundary or path.parent):
+            if finding.description in UNREADABLE_DESCRIPTIONS:
+                truncated.append(label)
+            else:
+                findings.append(f"{label}:{finding.line} ({finding.description})")
 
     if findings:
         output.add(
@@ -262,8 +266,8 @@ def _check_no_secrets_in_evidence(workspace: Workspace, output: ValidatorOutput)
                 severity="medium",
                 summary="Part of the evidence is too large for this check to read in full.",
                 evidence=(
-                    "; ".join(truncated[:5]) + " exceeded the 200,000-character window this "
-                    "check reads. Nothing was found in the part that was read."
+                    "; ".join(truncated[:5]) + " could not be read in full, or is over the "
+                    "2 MB the secret scan reads. Nothing was found in what was read."
                 ),
                 suggested_action=(
                     "This is a secondary check; submission's own secret scan still reads the "

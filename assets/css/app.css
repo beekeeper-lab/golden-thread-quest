@@ -15,6 +15,13 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* Round 17 L3: `.card { display: flex }` and `.button` beat the browser's own `[hidden]`
+ * rule, so the catalog's live filter set `hidden` on every card and hid none of them. The
+ * attribute must win over any component's display. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
@@ -210,7 +217,9 @@ code {
 .state-verified::before { content: "\2713"; }
 
 .state-locally_validated { background: var(--green-100); color: var(--green-700); border-color: var(--green-700); }
-.state-locally_validated::before { content: "\2713"; }
+/* Round 17 L14: ☑, not the ✓ verified has, so the glyph alone keeps claimed and verified
+ * apart the way the words do. */
+.state-locally_validated::before { content: "\2611"; }
 
 .state-submitted { background: var(--blue-100); color: var(--blue-700); border-color: var(--blue-700); }
 .state-submitted::before { content: "\2192"; }

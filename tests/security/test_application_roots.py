@@ -366,7 +366,7 @@ def test_the_service_and_a_cli_action_agree_on_every_root(
 
 # ---------------------------------------------------------------------------------- E5
 
-SECRET_KEY = "outside_only_key_name_7f3a"
+SECRET_KEY = "outside_only_key_name_7f3a"  # secret-scan: allow
 
 
 def _outside_record(tmp_path: Path) -> Path:

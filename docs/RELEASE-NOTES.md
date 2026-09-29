@@ -1,8 +1,9 @@
 # Release Notes — Pilot Candidate
 
 **Version:** 0.1.0
-**Date:** 2026-09-17
-**Status:** pilot candidate, pending the final audit
+**Date:** 2026-09-29
+**Status:** release candidate under audit — not released, and not yet recommended for use (see
+the README's status note). The final audit's release decision is still open (`docs/ACCEPTANCE-CRITERIA.md`, DH7).
 
 ## What this is
 
@@ -56,7 +57,7 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 1181 under `make check`, plus 56 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
+| Tests | 1382 under `make check`, plus 57 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3 quest-facing, plus 2 registered environment probes and one unregistered slow probe used only to prove the timeout |
@@ -67,9 +68,11 @@ them. It does not own them.
 These are real and deliberate. Each one is written down where it matters rather than only
 here.
 
-1. **The reviewer decision form needs the local service.** A reviewer reads everything from
-   generated pages, but recording a decision writes files, so it happens through the running
-   service like every other state change.
+1. **Recording a decision writes files, so it needs a writer.** A reviewer reads everything
+   from generated pages. The decision itself is recorded either through the browser form,
+   which needs the running local service, or with `quest-app action record-review`, which
+   needs neither a browser nor the service (round 17 D1 corrected this item, which said only
+   the service could).
 
 2. **Reviewer provenance is conventional, not cryptographic** (ADR-030). A reviewer is
    identified by the display name in the record and by Git history. A participant with write
@@ -77,7 +80,10 @@ here.
    *internally inconsistent* claim is refused; the remaining gap is social. If your program
    needs more, review through pull requests so the Git history carries the identity.
 3. **Environment Health reports build-time facts, not live ones.** A generated page cannot
-   inspect the machine at the moment it is read. Live checks arrive with the service.
+   inspect the machine at the moment it is read. It reports the application and content
+   version, Python, Git branch and upstream, the output directories and — on a page the
+   running service built — the service itself, each as of the build (round 17 L6). A write
+   test and which external CLIs are installed need a live read and remain deferred (D7).
 4. **Reviewer-awarded badges cannot yet be awarded.** There is no badge-award record type, so
    meeting the criteria shows as "pending". Granting one by arithmetic would be exactly the
    blurring of authority the product exists to prevent.
@@ -85,7 +91,8 @@ here.
    architecture permits adding one without changing quest content.
 6. **Catalog filtering needs JavaScript.** A static page cannot filter itself. The routes
    that work without it are real pages: regions and tags, linked from every card and quest.
-7. **No coverage reporting** and **no glossary content type** (D1, D2).
+7. **No coverage reporting** and **no glossary content type** (deferred items D2 and D1 in
+   `docs/IMPLEMENTATION-PLAN.md`).
 8. **The secret scanner cannot usefully read a binary or compressed file** (round 15
    corrected this from naming a screenshot as the one exception). Every image format
    (`.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`), plus `.pdf` and `.zip`, is skipped outright —
@@ -126,7 +133,8 @@ here.
 
 ## For the pilot cohort
 
-Start with `docs/guides/PARTICIPANT.md`. Reviewers should read
+Start with `docs/USER-GUIDE.md`, the whole-journey guide the README points to, and keep
+`docs/guides/PARTICIPANT.md` beside it as the short reference. Reviewers should read
 `docs/guides/REVIEWER.md`, particularly the provenance section — it says plainly what the
 application does and does not guarantee about who approved what.
 
@@ -135,3 +143,23 @@ application does and does not guarantee about who approved what.
 There is nothing to upgrade from. Schema version 1 is the first. The migration machinery
 exists already because the first real migration is the wrong moment to be designing the
 safety around it.
+
+The evidence hash rule changed in round 17 (ADR-031, amendments A-E14 and A-E15). A package that
+holds a non-UTF-8 text file with Windows line endings (cp1252, Latin-1), or a directory
+symbolic link inside it, hashes differently from before, so a submission or approval recorded
+over such a package reads as "changed since submitted" or "changed since approval" once,
+though no byte of the work moved. The reviewer re-reads the evidence and approves with the
+acknowledgement ADR-030 already asks for. Packages without either hash exactly as before.
+
+Round 17 also changed three behaviours an existing participant or reviewer can notice:
+
+- **Approving evidence that holds a secret is refused.** The secret scan runs again when an
+  approval is recorded (round 17 E5). Record needs changes instead.
+- **Proof paths are shown inside your real attempt folder.** A quest names
+  `…/attempt-001/logs/x.txt`; pages now show `…/<prefix>-attempt-001/logs/x.txt`, and only a
+  file there counts as detected (round 17 L1, L2). A file left at the literal `attempt-001/`
+  path is no longer detected, because nothing scans or fingerprints it there. Move it into
+  the attempt folder the evidence page names.
+- **The secret scan reports more shapes** (round 17 E1–E4, L10 and the A-series): a file
+  that scanned clean before may now report a finding. The finding names the file and line.
+

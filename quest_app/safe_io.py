@@ -119,6 +119,24 @@ def read_bounded_bytes(
     return data
 
 
+def read_regular_file_head(path: Path, max_bytes: int) -> bytes:
+    """At most the first `max_bytes` of `path`, opened the way `read_bounded_bytes` opens it.
+
+    Round 17 A-E13: the secret scan's header read used a plain `path.open("rb")` after an
+    `is_file()` check, so a path swapped for a FIFO between the two blocked the open forever,
+    holding the store, generated and service locks. The same `O_NONBLOCK` open and `fstat`
+    check as `read_bounded_bytes` apply here; unlike it, a large file is not refused, because
+    the caller only wants the head (a real multi-megabyte screenshot must still be readable
+    far enough to be recognized and skipped). Raises `UnsafeStateFileError` for anything that
+    is not a regular file once opened.
+    """
+    descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK | getattr(os, "O_CLOEXEC", 0))
+    with os.fdopen(descriptor, "rb") as stream:
+        if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+            raise UnsafeStateFileError(f"{path.name} is not an ordinary file.")
+        return stream.read(max_bytes)
+
+
 def read_bounded_text(
     path: Path,
     *,
@@ -300,6 +318,12 @@ def atomic_write(root: Path, path: Path, data: bytes, *, prefix: str = PARTICIPA
             with contextlib.suppress(FileNotFoundError):
                 os.unlink(temporary, dir_fd=directory)
             raise
+        # Round 17 E9: the rename itself lives in the directory, so without this a power loss
+        # could undo it and the file would read as it did before the write. Best effort: the
+        # write has already happened, and a filesystem that cannot fsync a directory must not
+        # turn it into a reported failure.
+        with contextlib.suppress(OSError):
+            os.fsync(directory)
 
 
 def append_to_regular_file(root: Path, path: Path, data: bytes) -> None:

@@ -37,8 +37,12 @@ quest-app action record-review --quest <quest-id> \
 
 `--decision` takes the same three values the browser form posts: `approved`,
 `needs_changes`, `rejected`. Repeat `--finding` for each one; each needs all three fields,
-`severity:summary:evidence`. Add `--acknowledge-changed-evidence` to approve evidence that
-changed after submission, which is the checkbox the browser form shows for the same purpose.
+`severity:summary:evidence`. Two parts are optional, as they are in the form: `@ac-N` after
+the severity names the acceptance criterion the finding is about, and `::` followed by text
+at the end says what the participant should change — for example
+`--finding "high@ac-3:Pagination stops after page one:only 50 of 120 stories::Request pages until none remain"`.
+Add `--acknowledge-changed-evidence` to approve evidence that changed after submission,
+which is the checkbox the browser form shows for the same purpose.
 
 ## What you are deciding
 
@@ -66,12 +70,11 @@ submission and the evidence hash at the moment it was submitted. Check:
    verdicts about the work. `inconclusive` means nobody could tell, which is not a pass.
 3. **Can you reproduce it?** The proof document should let you, from a clean clone.
 4. **Was the secret scan clean?** It is a safety net, not a guarantee. Read the evidence as
-   though it might still contain something. It is also a participant-side gate, not a
-   reviewer-side one: it runs before submission and its banner on this page reflects the
-   last build, but recording your decision does not re-run it, and a live finding shown here
-   does not by itself block an approval. If you see the banner, do not approve until the
-   value is gone from the evidence and rotated — the application will not stop you, so this
-   check is yours to make.
+   though it might still contain something. It runs before submission, its banner on this
+   page reflects the last build, and it runs again when you record an approval: an approval
+   is refused while the scan finds anything in the evidence, including anything added after
+   submission. Record needs changes instead, so the participant removes the value and
+   rotates it. A clean scan does not mean clean evidence, so the reading is still yours.
 
 ## Deciding
 

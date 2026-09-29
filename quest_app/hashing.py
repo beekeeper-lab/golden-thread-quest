@@ -25,6 +25,11 @@ in it (a CJK-only document, encoded the way Windows commonly writes one) is exac
 case: one of a character's two bytes can itself be `\r`, and folding it changed the character
 without moving the hash — the edit that mattered was invisible to it. Text now also has to
 decode as UTF-8, not merely have no NUL byte in it; see `_text_shape`.
+
+Round 17 A-E14: that stopped folding cp1252/Latin-1 text, which Git converts all the same.
+Content that is not UTF-8 is now folded exactly when Git's own `core.autocrlf` would convert
+it — no NUL, no lone `\r`, Git's printable ratio — and only its `\r\n` pairs. Round 17 A-E15:
+a directory symbolic link inside the package is hashed by its link text, as a file link is.
 """
 
 from __future__ import annotations
@@ -98,6 +103,8 @@ def _update_with_file(hasher: Any, path: Path) -> None:
     still streamed rather than buffered) — a screenshot, a zip, a UTF-16/32 export, or any
     other binary or non-UTF-8 format fails one of those checks within its first few bytes in
     practice, so this rarely costs such a file more than the one pass it always took.
+    Round 17 A-E14: content that is not UTF-8 is also text when Git itself would convert its
+    line endings (no NUL, no lone `\\r`, Git's printable ratio); see `_text_shape`.
     Normalizing changes a file's byte length, so the length prefix cannot come from `fstat`
     for a text file the way it does for a binary one; it is computed in the same pass that
     checks it, before anything is fed to `hasher`.
@@ -138,36 +145,63 @@ def _feed_raw(hasher: Any, stream: Any, size: int) -> None:
         remaining -= len(block)
 
 
+# Round 17 A-E14: the bytes Git's own text heuristic (`gather_stats` in Git's `convert.c`)
+# counts as non-printable: control bytes other than backspace, tab, form feed and escape
+# (`\n` and `\r` are counted separately), and DEL.
+_NONPRINTABLE = tuple(
+    bytes([byte]) for byte in (*range(1, 32), 127) if byte not in (8, 9, 10, 12, 13, 27)
+)
+
+
 def _text_shape(stream: Any, size: int) -> tuple[bool, int]:
-    """Whether `stream`'s first `size` bytes hold no NUL byte and decode as UTF-8 (strict),
-    and their length once every `\\r\\n` pair collapses to one `\\n` (a lone `\\r` keeps the
-    byte count the same).
+    """Whether `stream`'s first `size` bytes are text to fold line endings in, and their
+    length once every `\\r\\n` pair collapses to one `\\n` (a lone `\\r` keeps the byte
+    count the same).
+
+    Content is text when it holds no NUL byte and either
+
+    * decodes as UTF-8 (strict), in which case every `\\r\\n` and lone `\\r` folds to
+      `\\n` exactly as before; or
+    * does not decode as UTF-8 but is what Git itself converts: no lone `\\r`, and Git's
+      printable-to-non-printable ratio says text (round 17 A-E14). Such content has only
+      `\\r\\n` pairs to fold, so the one folding pass serves both cases.
 
     Round 16 E10: "text" used to mean only "holds no NUL byte anywhere", which folds every
-    `\\r` byte to `\\n` even in content that is not text at all. A NUL-free UTF-16 file with no
-    ASCII in it (a CJK-only document, encoded the way Windows commonly writes one) is exactly
-    such a case: one of a character's own two bytes can be `\\r` without being a line ending,
-    and folding it changed the character without moving the hash. A UTF-8 decode check catches
-    that (those bytes are not valid UTF-8), and it is required in *addition* to the NUL-byte
-    check, not instead of it: content can be NUL-free and valid UTF-8 while still being
-    something nobody wants normalized — deliberate NUL bytes inside otherwise-ASCII binary
-    data, say, which decode as UTF-8 (NUL is a valid single-byte code point) and which the
-    NUL-byte check alone continues to catch. Decoding is checked with the same incremental
-    decoder Python's own streaming input uses, so nothing here ever buffers the whole file to
-    decode it, and it fails on the first invalid byte — which a binary format, or a UTF-16/32
-    file's leading BOM, produces immediately in practice, so this rarely costs such a file more
-    than the one pass it always took.
+    `\\r` byte to `\\n` even in content that is not text at all. A NUL-free UTF-16 file with
+    no ASCII in it (a CJK-only document, encoded the way Windows commonly writes one) is
+    exactly such a case: one of a character's own two bytes can be `\\r` without being a line
+    ending, and folding it changed 不 into 上 without moving the hash. Round 16 answered that
+    by folding only UTF-8.
 
-    A NUL byte, or an invalid byte, ends the read the moment it is seen: content that will not
-    be normalized needs no transformed length, and the caller re-reads it raw from the start.
-    A `\\r` at the very end of a chunk is not decided yet — the next chunk might open with the
-    `\\n` that makes it a pair — so it is carried into the count made from that chunk instead
-    of this one.
+    Round 17 A-E14: that also stopped folding every other 8-bit text encoding, while Git's
+    `core.autocrlf` converts a cp1252 or Latin-1 file exactly as it converts a UTF-8 one — so
+    a Windows participant's `caf\\xe9\\r\\n` log read as "changed since approval" on a Linux
+    reviewer's `caf\\xe9\\n` checkout. Git's rule (`convert_is_binary`, applied to the whole
+    file) is: a NUL byte, a lone `\\r`, or more than one non-printable byte per 128 printable
+    ones means binary, and binary is never converted; otherwise only `\\r\\n` pairs change,
+    never a lone `\\r`. Folding exactly that transformation, under exactly that condition,
+    is what makes the hash invariant under Git's conversion and nothing more. It keeps round
+    16's case apart: 不's UTF-16 bytes `0D 4E` hold a lone `\\r`, which Git treats as binary
+    and which is therefore hashed as it sits. A UTF-16 file whose bytes happen to form
+    `0D 0A` across two code units, and nowhere form a lone `\\r`, is folded — but that is the
+    very file Git would rewrite on commit, so hashing the two forms alike is what keeps the
+    Windows working copy and the committed file in agreement, not a collision the hash invents.
+
+    A NUL byte ends the read the moment it is seen, and so does a lone `\\r` once the content
+    is known not to be UTF-8: content that will not be normalized needs no transformed
+    length, and the caller re-reads it raw from the start. A `\\r` at the very end of a chunk
+    is not decided yet — the next chunk might open with the `\\n` that makes it a pair — so
+    it is carried into the count made from that chunk instead of this one.
     """
     decoder = codecs.getincrementaldecoder("utf-8")()
+    is_utf8 = True
     consumed = 0
     crlf_pairs = 0
+    carriage_returns = 0
+    line_feeds = 0
+    nonprintable = 0
     trailing_cr = False
+    last_byte = b""
     while consumed < size:
         block = stream.read(min(HASH_CHUNK_BYTES, size - consumed))
         if not block:
@@ -175,17 +209,38 @@ def _text_shape(stream: Any, size: int) -> tuple[bool, int]:
         consumed += len(block)
         if b"\0" in block:
             return False, 0
-        try:
-            decoder.decode(block)
-        except UnicodeDecodeError:
-            return False, 0
+        if is_utf8:
+            try:
+                decoder.decode(block)
+            except UnicodeDecodeError:
+                is_utf8 = False
         if trailing_cr and block[:1] == b"\n":
             crlf_pairs += 1
         crlf_pairs += block.count(b"\r\n")
+        carriage_returns += block.count(b"\r")
+        line_feeds += block.count(b"\n")
+        nonprintable += sum(block.count(byte) for byte in _NONPRINTABLE)
         trailing_cr = block[-1:] == b"\r"
-    try:
-        decoder.decode(b"", final=True)
-    except UnicodeDecodeError:
+        last_byte = block[-1:]
+        lone_crs = carriage_returns - crlf_pairs - (1 if trailing_cr else 0)
+        if not is_utf8 and lone_crs:
+            return False, 0
+    if is_utf8:
+        try:
+            decoder.decode(b"", final=True)
+        except UnicodeDecodeError:
+            is_utf8 = False
+    if is_utf8:
+        return True, size - crlf_pairs
+    if carriage_returns != crlf_pairs:
+        # A lone `\r` at end of file: Git calls that binary too.
+        return False, 0
+    if last_byte == b"\x1a":
+        # Git does not count a trailing DOS end-of-file marker as non-printable.
+        nonprintable -= 1
+    # Git counts a pair's `\n` with its `\r`, and neither as printable.
+    printable = size - carriage_returns - line_feeds - nonprintable
+    if (printable >> 7) < nonprintable:
         return False, 0
     return True, size - crlf_pairs
 
@@ -336,6 +391,13 @@ def hash_directory(
                 chunks.append(b"symlink:" + _encode_name(str(path.readlink())))
             chunks.append(path)
         else:
+            if path.is_symlink():
+                # Round 17 A-E15: a directory link inside the package is not descended (the walk
+                # does not follow links), so what it shows is already hashed under its target's
+                # own name — but *which* directory it shows was not hashed at all, and
+                # retargeting `logs -> a/` to `logs -> b/` left the digest unchanged. Its link
+                # text is hashed, the same as a file link's.
+                chunks.append(b"symlink:" + _encode_name(str(path.readlink())))
             chunks.append(b"dir")
     try:
         return _digest(chunks)

@@ -537,7 +537,8 @@ def test_a_quest_page_communicates_every_required_element(built: AppConfig) -> N
         built.generated_root / "quests" / "playwright-first-independent-test" / "index.html"
     ).read_text()
     assert "Automated checks" in declared, "declared validators are not shown"
-    assert "validate-playwright-quality".replace("-", " ") in declared.lower()
+    # Named by the registry's `display_name` since round 17 L12, not by its ID.
+    assert "playwright test quality" in declared.lower()
 
 
 @pytest.mark.slow
@@ -681,3 +682,50 @@ def test_make_clean_knows_about_build_debris() -> None:
     from clean import REMOVABLE
 
     assert {"generated", "generated.building", "generated.previous"} <= set(REMOVABLE)
+
+
+def test_environment_health_reports_what_the_build_knew(config: AppConfig) -> None:
+    """Round 17 L6: five rows, "Unknown" for the service even on a page the service built,
+    and nothing about Git or the output directories the build had already looked at."""
+    from quest_app.view_models import offline_service_view, online_service_view
+
+    def health(service: object) -> str:
+        report = ProblemReport()
+        world = load_world(config, report)
+        assert world is not None, report.to_text()
+        build_site(world, service=service)  # type: ignore[arg-type]
+        return (config.generated_root / "health" / "index.html").read_text()
+
+    served = health(online_service_view())
+    for name in ("Application and content", "Git repository", "Generated and local-data"):
+        assert name in served, name
+    assert "this page was built by it" in served
+    service_row = served.split("Local action service", 1)[1].split("</tr>", 1)[0]
+    assert re.search(r">\s*Pass\s*<", service_row), "the service row is a pass, not Unknown"
+    assert "cannot tell whether the service is running" in health(offline_service_view())
+
+
+def test_round_17_page_polish(built: AppConfig) -> None:
+    """Round 17 L11, L14, L15, L16, each small enough to check together."""
+    import re as _re
+
+    root = built.generated_root
+    css = (built.repo_root / "assets" / "css" / "app.css").read_text()
+    glyph = {
+        state: _re.search(rf"\.state-{state}::before {{ content: \"([^\"]+)\"", css).group(1)  # type: ignore[union-attr]
+        for state in ("verified", "locally_validated")
+    }
+    assert glyph["verified"] != glyph["locally_validated"], "L14: one glyph for both"
+
+    region = next((root / "regions").glob("*/index.html")).read_text()
+    assert "Badges in this region" in region, "L15: U03 requires the section on every region"
+
+    home = (root / "index.html").read_text()
+    reasons = _re.findall(r"<li>([^<]+)</li>", home.split("Why this one", 1)[-1].split("</ul>")[0])
+    recommended = home.split('id="recommended-heading"', 1)[1].split("</section>", 1)[0]
+    for reason in reasons:
+        assert recommended.count(reason) == 1, f"L16: {reason!r} is listed twice"
+
+    evidence = (root / "evidence" / "jira-read-assigned-stories" / "index.html").read_text()
+    aside = evidence.split('aria-label="Attempt status and actions"', 1)[1]
+    assert _re.search(r"</div>\s*<p>[^<]+</p>", aside), "L11: the state is explained visibly"

@@ -444,6 +444,32 @@ differently, the same one-time reset the round 15 amendment above describes, for
 reason: the *rule* moved, not the participant's work. A reviewer who sees a changed-since
 warning on such a file around the time this shipped should re-read the evidence the same way.
 
+**Amended (round 17, E14):** "decodes as UTF-8" was narrower than what Git treats as text.
+Git's `core.autocrlf` converts a cp1252 or Latin-1 file exactly as it converts a UTF-8 one,
+so a Windows participant's `caf\xe9\r\n` log still read as "changed since approval" on a
+Linux reviewer's `caf\xe9\n` checkout. The rule now follows Git's own (`convert_is_binary`
+in `convert.c`, applied to the whole file, not the 8000-byte prefix Git's diff uses):
+content with a NUL byte is binary; content that decodes as UTF-8 folds every `\r\n` and lone
+`\r` to `\n`, unchanged from round 16; any other content folds its `\r\n` pairs, and only
+those, when it holds no lone `\r` and has no more than one non-printable byte per 128
+printable ones — the only content Git converts, and the only transformation it makes. The
+round 16 case stays apart: 不's UTF-16 bytes `0D 4E` are a lone `\r`, which Git calls binary
+and the hash leaves as it sits. A UTF-16 file whose bytes form `0D 0A` across two code units
+with no lone `\r` anywhere *is* folded; that is deliberate, because it is the file Git itself
+rewrites on commit, so the hash agreeing across the two forms is the invariance this ADR
+promises, not a collision it adds. Rejected: folding any NUL-free content — that is the
+round 15 rule round 16 removed, and it folds a lone `\r` Git never touches. Content that is
+not UTF-8 and holds a `\r\n` pair, no NUL and no lone `\r`, and passes the ratio, hashes
+differently from round 16 (it hashed raw then); everything else hashes exactly as before. An
+approval recorded over such a file reads as changed once, the same one-time reset described
+above, and is handled the same way.
+
+**Amended (round 17, E15):** a directory symbolic link inside the package is hashed by its
+link text, the same as a file link is. The walk does not follow directory links, so what one
+shows is already hashed under its target's own name, but which directory it pointed at was
+not hashed at all: `logs -> a/` retargeted to `logs -> b/` left the digest unchanged. A
+package holding such a link hashes differently once, for the same reason as above.
+
 ## ADR-032 — The application never pushes, opens a pull request, or merges
 
 **Decision:** Submission prints the exact Git commands and stops. `git_status.py` runs only

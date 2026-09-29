@@ -232,12 +232,69 @@ class TestTheFormRoute:
         )
         assert status == 403
 
+    def test_a_token_sharing_the_real_ones_prefix_is_refused(
+        self, service: tuple[str, str]
+    ) -> None:
+        """Round 17 F3: comparing only the first characters passed every token test, since
+        each wrong token differed from the first character on."""
+        base, token = service
+        near = token[:-1] + ("a" if token[-1] != "a" else "b")
+        status, _ = post_form(
+            base, "/api/action/start-quest/base-camp-repository-safety", {"token": near}
+        )
+        assert status == 403
+
     def test_a_wrong_token_is_refused(self, service: tuple[str, str]) -> None:
         base, token = service
         status, _ = post_form(
             base, "/api/action/start-quest/base-camp-repository-safety", {"token": "x" * len(token)}
         )
         assert status == 403
+
+    def test_the_page_offers_a_validator_parameter_and_the_form_carries_it(
+        self, service: tuple[str, str], config: AppConfig
+    ) -> None:
+        """Round 17 L4/L12: the Jira check's fixture could be chosen only through the JSON
+        API, and the button was labelled from the validator's ID."""
+        base, token = service
+        # As `serve` itself builds: with the service online, so run controls are live.
+        report = ProblemReport()
+        world = load_world(config, report)
+        assert world is not None, report.to_text()
+        build_site(world, service=online_service_view())
+        with urllib.request.urlopen(  # noqa: S310 - fixed loopback URL built in this test
+            f"{base}/evidence/jira-read-assigned-stories/", timeout=10
+        ) as response:
+            page = response.read().decode()
+        assert 'name="param-fixture_set"' in page
+        assert '<option value="pagination">' in page
+        assert "Jira assigned-story synchronization" in page, "the registry's display name"
+
+        status, _ = post_form(
+            base,
+            "/api/action/run-validator/jira-read-assigned-stories/validate-jira-read-assigned",
+            {"token": token, "param-fixture_set": "stale-item"},
+        )
+        assert status == 200
+        stored = sorted(
+            (config.participant_root / "evidence" / "jira-read-assigned-stories").rglob(
+                "validation/*.json"
+            ),
+            key=lambda path: path.stat().st_mtime_ns,
+        )
+        document = json.loads(stored[-1].read_text())
+        assert document["environment"]["parameter_fixture_set"] == "stale-item"
+
+        # Round 17 L7: the result page's rerun control was hard-coded off, even here.
+        with urllib.request.urlopen(  # noqa: S310 - fixed loopback URL built in this test
+            f"{base}/evidence/jira-read-assigned-stories/validation/{document['run_id']}/",
+            timeout=10,
+        ) as response:
+            result_page = response.read().decode()
+        assert "Start the local service to run checks from this page." not in result_page
+        # A live form, with its choice, not a disabled button with the reason removed.
+        assert 'name="param-fixture_set"' in result_page
+        assert "Parameter fixture set" in result_page and "stale-item" in result_page
 
     def test_a_locked_quest_is_refused(self, service: tuple[str, str]) -> None:
         """The same rule the CLI enforces, from the other caller of the shared action layer.
@@ -316,6 +373,30 @@ class TestCrossOrigin:
         base, token = service
         status, _ = post(base, {"action": "rebuild", "token": token}, headers={"Origin": base})
         assert status == 200
+
+    @pytest.mark.parametrize("header", ["Origin", "Referer"])
+    def test_the_same_host_on_another_port_is_refused(
+        self, service: tuple[str, str], header: str
+    ) -> None:
+        """Round 17 A-T1: every refusal above used another hostname, so the port comparison
+        could be dropped with nothing failing. Another local server on 127.0.0.1 is a
+        different origin, and only this run's own pages are same-origin."""
+        base, token = service
+        parsed = urllib.parse.urlsplit(base)
+        other = f"{parsed.scheme}://{parsed.hostname}:{(parsed.port or 80) % 65535 + 1}/"
+        status, _ = post(base, {"action": "rebuild", "token": token}, headers={header: other})
+        assert status == 403
+
+    @pytest.mark.parametrize("header", ["Origin", "Referer"])
+    def test_the_same_host_and_port_over_https_is_refused(
+        self, service: tuple[str, str], header: str
+    ) -> None:
+        """Round 17 F3: the scheme comparison could be dropped with nothing failing."""
+        base, token = service
+        parsed = urllib.parse.urlsplit(base)
+        other = f"https://{parsed.hostname}:{parsed.port}/"
+        status, _ = post(base, {"action": "rebuild", "token": token}, headers={header: other})
+        assert status == 403
 
     def test_an_origin_of_null_is_refused(self, service: tuple[str, str]) -> None:
         """A browser sends `Origin: null` for a genuinely cross-origin or sandboxed request.

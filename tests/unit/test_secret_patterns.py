@@ -319,7 +319,8 @@ def test_an_authorization_token_scheme_header_is_detected() -> None:
 # a pathological input never supplies, which is quadratic — every starting offset rescans
 # the rest of the text. A 120 KB adversarial file took 36s; 2 MB would take hours, all under
 # the store, generated and service locks `redact_text`/`scan_text` run inside of.
-@pytest.mark.parametrize("unit", ["a.", "a-", "eyJ"])
+# Round 17 A-E11 adds the two escape units: a text full of escapes is scanned twice.
+@pytest.mark.parametrize("unit", ["a.", "a-", "eyJ", "ghp\\_", "&#95;"])
 def test_scan_text_stays_fast_on_a_two_megabyte_adversarial_file(unit: str) -> None:
     text = unit * (2_000_000 // len(unit))
     started = time.monotonic()
@@ -453,13 +454,19 @@ _PATTERN_ADVERSARIAL_UNITS: dict[str, str] = dict(  # noqa: C406 - a `{"id": "un
         ("stripe-key", "sk_live_"),
         ("npm-token", "npm_"),
         ("url-query-credential", "?key=Z"),
+        ("slack-webhook", "hooks.slack.com/services/"),
+        ("azure-connection-key", "AccountKey="),
         ("bearer-header", "authorization: bearer Z"),
         ("basic-auth-header", "authorization: basic Z"),
         ("curl-user-credential", "curl -u Z "),
+        ("cli-flag-credential", "--password "),
+        ("cli-login-password", "docker login -p "),
+        ("cookie-header", "cookie: a="),
         ("xml-element-credential", "<password>Z"),
         ("yaml-block-scalar-credential", "password: >-\nZ\n"),
         ("secret-assignment", 'password="Z'),
         ("secret-assignment-unquoted", "password=Z"),
+        ("xml-attribute-credential", 'name="password" value="Z'),
     ]
 )
 
@@ -479,12 +486,20 @@ def test_every_pattern_scales_near_linearly_on_adversarial_input(pattern) -> Non
     unit = _PATTERN_ADVERSARIAL_UNITS[pattern.id]
     small = unit * max(1, 250_000 // len(unit))
     large = small * 4
-    started = time.monotonic()
-    pattern.regex.findall(small)
-    small_elapsed = max(time.monotonic() - started, 1e-6)
-    started = time.monotonic()
-    pattern.regex.findall(large)
-    large_elapsed = time.monotonic() - started
+
+    def best_of_three(text: str) -> float:
+        # Round 17: one run of a few milliseconds is at the mercy of whatever else the
+        # machine is doing, and a single slow baseline read as quadratic scaling. The best
+        # of three is the pattern's own cost; a real quadratic stays 16x however it is timed.
+        timings = []
+        for _ in range(3):
+            started = time.monotonic()
+            pattern.regex.findall(text)
+            timings.append(time.monotonic() - started)
+        return min(timings)
+
+    small_elapsed = max(best_of_three(small), 1e-6)
+    large_elapsed = best_of_three(large)
     ratio = large_elapsed / small_elapsed
     assert ratio < 8, (
         f"{pattern.id}: 4x the input took {ratio:.1f}x as long "
@@ -506,12 +521,18 @@ def test_scan_text_stays_fast_with_many_distinct_non_overlapping_matches() -> No
 
     small = matches(5_000)
     large = matches(20_000)
-    started = time.monotonic()
-    scan_text(small)
-    small_elapsed = max(time.monotonic() - started, 1e-6)
-    started = time.monotonic()
-    scan_text(large)
-    large_elapsed = time.monotonic() - started
+
+    def best_of_three(text: str) -> float:
+        # Round 17 F1: one run under CPU load read as quadratic now and then.
+        timings = []
+        for _ in range(3):
+            started = time.monotonic()
+            scan_text(text)
+            timings.append(time.monotonic() - started)
+        return min(timings)
+
+    small_elapsed = max(best_of_three(small), 1e-6)
+    large_elapsed = best_of_three(large)
     ratio = large_elapsed / small_elapsed
     assert ratio < 8, (
         f"4x the matches took {ratio:.1f}x as long "
@@ -535,7 +556,7 @@ def test_redacting_a_placeholder_glued_to_a_real_value_covers_the_whole_value() 
 
 
 def test_a_real_value_glued_after_this_applications_own_placeholder_is_detected() -> None:
-    (match,) = scan_text(f"password={REDACTION_PLACEHOLDER}realvalue9")
+    (match,) = scan_text(f"password={REDACTION_PLACEHOLDER}realvalue9")  # secret-scan: allow
     assert match.pattern_id == "secret-assignment-unquoted"
 
 
@@ -695,3 +716,575 @@ def test_the_jwt_header_segment_bound_is_pinned() -> None:
 
     past_bound = "eyJ" + "a" * 513 + "." + payload + "." + signature
     assert not any(m.pattern_id == "jwt" for m in scan_text(past_bound))
+
+
+# Round 17 E1: `private-key-block` matched only the BEGIN line, so redaction left the base64
+# body and the END line readable in the generated evidence and review pages.
+_OPENSSH_KEY = (
+    "-----BEGIN OPENSSH PRIVATE KEY-----\n"  # secret-scan: allow
+    "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW\n"
+    "QyNTUxOQAAACBqLc0dnBH3s1RZ2Kx1nqMzbYq0nZ+4v1l7kJ8o6r9iGQAAAJgAAAAA==\n"
+    "-----END OPENSSH PRIVATE KEY-----"
+)
+_ENCRYPTED_RSA_KEY = (
+    "-----BEGIN RSA PRIVATE KEY-----\r\n"  # secret-scan: allow
+    "Proc-Type: 4,ENCRYPTED\r\n"
+    "DEK-Info: AES-128-CBC,5E1C6B0B6A8F2C3D\r\n"
+    "\r\n"
+    "MIIEowIBAAKCAQEAu1SU1LfVLPHCozMxH2Mo4lgOEePzNm0tRgeLezV6ffAt0gun\r\n"
+    "-----END RSA PRIVATE KEY-----"
+)
+_PGP_KEY = (
+    "-----BEGIN PGP PRIVATE KEY BLOCK-----\n"  # secret-scan: allow
+    "Comment: exported\n"
+    "\n"
+    "lQOYBGabcdEBCADQx+/=\n"
+    "=abcd\n"
+    "-----END PGP PRIVATE KEY BLOCK-----"
+)
+
+
+@pytest.mark.parametrize("key", [_OPENSSH_KEY, _ENCRYPTED_RSA_KEY, _PGP_KEY])
+def test_redacting_a_private_key_removes_the_whole_block(key: str) -> None:
+    redacted, changed = redact_text("before\n```\n" + key + "\n```\nafter")
+    assert changed
+    assert redacted == "before\n```\n" + REDACTION_PLACEHOLDER + "\n```\nafter"
+
+
+def test_a_private_key_cut_off_before_its_end_line_is_redacted_as_far_as_its_body() -> None:
+    truncated = _OPENSSH_KEY.rsplit("\n", 1)[0]
+    redacted, _ = redact_text(truncated + "\nThe rest of the log.")
+    assert redacted == REDACTION_PLACEHOLDER + "\nThe rest of the log."
+
+
+def test_a_private_key_body_scales_linearly_however_many_begin_lines_repeat() -> None:
+    pattern = next(p for p in PATTERNS if p.id == "private-key-block")
+    unit = "-----BEGIN RSA PRIVATE KEY-----\nMIIEow\n"  # secret-scan: allow
+    small = unit * (250_000 // len(unit))
+    started = time.monotonic()
+    pattern.regex.findall(small)
+    small_elapsed = max(time.monotonic() - started, 1e-6)
+    started = time.monotonic()
+    pattern.regex.findall(small * 4)
+    assert (time.monotonic() - started) / small_elapsed < 8
+
+
+# Round 17 E2: the separator had to follow the credential word directly, so any name with
+# a suffix after it was never scanned.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "SECRET_KEY=django-insecure-Q7v9Lm2Xp4Rt8Wz1",  # secret-scan: allow
+        "SECRET_KEY: Ab3dEfGh12Ij4kLm56",  # secret-scan: allow
+        "secretKey: Ab3dEfGh12Ij4kLm56",  # secret-scan: allow
+        "DB_PASSWORD_PROD=Sup3rS3cretValue9",  # secret-scan: allow
+        "PASSWORD_PROD=Sup3rS3cretValue9",  # secret-scan: allow
+        "passwordHash=Ab3dEfGh12Ij4kLm56",  # secret-scan: allow
+        "TRELLO_KEY=0123456789abcdef0123456789abcdef",  # secret-scan: allow
+        "JWT_SIGNING_KEY=Ab3dEfGh12Ij4kLm56",  # secret-scan: allow
+    ],
+)
+def test_a_credential_name_with_a_suffix_is_detected(text: str) -> None:
+    assert scan_text(text), f"expected {text!r} to be detected"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "password_file=/run/secrets/db_password",
+        "tokenizer=bert-base-uncased",
+        "token_expires_at: 2026-09-29T10:00:00Z",
+        "secret_name: my-secret-name",
+        "cache_key=user-profile-123",
+        '"total_tokens": 1234567890,',
+        "TOKEN_PLACEHOLDER = REQUEST_TOKEN_PLACEHOLDER",
+        "class SecretMatch:\n    pattern_id: str",
+    ],
+)
+def test_a_name_that_describes_a_credential_is_not_one(text: str) -> None:
+    assert scan_text(text) == []
+
+
+# Round 17 E3: the call-expression exemption made the closing paren optional and matched
+# the lowered value, so a password with an unclosed or trailing paren read as code.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "DB_PASSWORD=Pa55word(Winter2026!",  # secret-scan: allow
+        "password=Hunter2[prod-2026",  # secret-scan: allow
+        "password=Sup3rS3cretValue9)",  # secret-scan: allow
+        "password=Tr0ub4dor(3)",  # secret-scan: allow
+        "token={Sup3rS3cretValue9}",  # secret-scan: allow
+        "token=(Ab3dEfGh12xy)",  # secret-scan: allow
+        'token = "{Sup3rS3cretValue9}"',  # secret-scan: allow
+        'password: "(Ab3dEfGh12xy)"',  # secret-scan: allow
+    ],
+)
+def test_a_password_wrapped_in_or_ending_with_a_bracket_is_detected(text: str) -> None:
+    assert scan_text(text), f"expected {text!r} to be detected"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        'token = payload.get("token")',
+        'api_key = load_api_key(config["provider"], project_root)',
+        "SECTION_KEYS: dict[str, str] = {",
+        "client = OpenAI(api_key=api_key)",
+        "token=secrets.token_urlsafe(32),",
+        "password: (see vault)",
+        "--token $GITHUB_TOKEN",
+    ],
+)
+def test_code_and_references_stay_exempt(text: str) -> None:
+    assert scan_text(text) == []
+
+
+# Round 17 E4: shapes the assignment patterns never recognized.
+@pytest.mark.parametrize(
+    "text",
+    [
+        'password="it\'s-Sup3rS3cret9"',  # secret-scan: allow
+        '{"password":"abc\\"Sup3rS3cret9"}',  # secret-scan: allow
+        "--password Ab3xYz9Qw8rT5uV",  # secret-scan: allow
+        "docker login -u me -p Sup3rS3cretValue9",  # secret-scan: allow
+        "mysql -uroot -pSup3rS3cretValue9",  # secret-scan: allow
+        'api_key := "Ab3dEfGh12Ij"',  # secret-scan: allow
+        "password => Ab3dEfGh12Ij",  # secret-scan: allow
+        "Cookie: session=Ab3dEfGh12Ij4kLm56",  # secret-scan: allow
+        "Set-Cookie: sid=Ab3dEfGh12Ij4kLm56; HttpOnly",  # secret-scan: allow
+    ],
+)
+def test_other_credential_shapes_are_detected(text: str) -> None:
+    assert scan_text(text), f"expected {text!r} to be detected"
+
+
+def test_an_escaped_quote_inside_a_value_is_redacted_with_it() -> None:
+    text = '{"password":"abc\\"Sup3rS3cret9"}'  # secret-scan: allow
+    expected = '{"password":"' + REDACTION_PLACEHOLDER + '"}'  # secret-scan: allow
+    assert redact_text(text)[0] == expected
+
+
+# Round 17 L10: planted in Trello evidence, each reached `evidence_ready`.
+ENCODED_QUERY = "next=%2Fcards%3Ftoken%3Dab12cd34ef56ab12cd34ef56"  # secret-scan: allow
+# Built from pieces so the whole URL, which GitHub push protection reads as a real webhook,
+# never appears in the source.
+SLACK_WEBHOOK = (
+    "https://hooks.slack.com/services/" + "T0ABCDEFG/B0ABCDEFG/" + "aBcDeFgHiJkLmNoPqRsTuVwX"
+)
+AZURE_KEY = "AccountName=x;AccountKey=Ab3dEfGh12Ij4kLm56NoPq==;"  # secret-scan: allow
+
+
+@pytest.mark.parametrize(
+    ("pattern_id", "text"),
+    [
+        ("url-query-credential", ENCODED_QUERY),
+        ("slack-webhook", SLACK_WEBHOOK),
+        ("azure-connection-key", AZURE_KEY),
+    ],
+)
+def test_keywordless_credential_shapes_are_detected(pattern_id: str, text: str) -> None:
+    assert pattern_id in {match.pattern_id for match in scan_text(text)}, text
+
+
+def test_a_bare_keyword_value_on_the_next_line_is_still_detected() -> None:
+    """A YAML plain scalar may start on the line after its key; only a suffixed name gives
+    that up."""
+    assert scan_text("password:\n  Sup3rS3cretValue9\n")  # secret-scan: allow
+
+
+# Round 17 A-E9: `PWD`/`OLDPWD` are the shell's own working-directory variables, printed by
+# every `env`/`printenv` transcript; a path value there is not a password.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "PWD=/home/gregg/workspace/quest",
+        "OLDPWD=/home/gregg",
+        '"PWD": "/home/gregg/workspace/quest"',
+        "PWD=~/workspace/quest",
+        "SHELL=/bin/bash\nPWD=/home/gregg/quest\nOLDPWD=/home/gregg\n",  # secret-scan: allow
+    ],
+)
+def test_the_shells_working_directory_variables_are_not_findings(text: str) -> None:
+    assert scan_text(text) == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "DB_PWD=Sup3rS3cretValue9",  # secret-scan: allow
+        "pwd: Sup3rS3cretValue9",  # secret-scan: allow
+        "OLDPWD=Sup3rS3cretValue9",  # secret-scan: allow
+        "DB_PWD=/Sup3rS3cretValue9",  # secret-scan: allow
+    ],
+)
+def test_a_pwd_holding_something_other_than_a_path_is_still_detected(text: str) -> None:
+    assert scan_text(text), f"expected {text!r} to be detected"
+
+
+# Round 17 A-E1 (the earlier pass of this round): every assignment pattern required the
+# operator immediately after the keyword,
+# so a keyword followed by any identifier suffix — the ordinary way a config names a second
+# credential of the same kind — was never matched.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "SECRET_KEY=Sup3rS3cretValue9xyz",  # secret-scan: allow
+        '"secret_key": "Sup3rS3cretValue9xyz"',  # secret-scan: allow
+        '"secretKey": "Sup3rS3cretValue9xyz"',  # secret-scan: allow
+        "JWT_SECRET_KEY=Sup3rS3cretValue9xyz",  # secret-scan: allow
+        "SECRET_KEY_BASE=Sup3rS3cretValue9xyz",  # secret-scan: allow
+        "ENCRYPTION_KEY=Sup3rS3cretValue9xyz",  # secret-scan: allow
+        "signing_key: Sup3rS3cretValue9xyz",  # secret-scan: allow
+        "DB_PASSWORD_PROD=Sup3rS3cretValue9",  # secret-scan: allow
+        "TRELLO_TOKEN_PROD=Sup3rS3cretValue9",  # secret-scan: allow
+        "JIRA_API_TOKEN_2=Sup3rS3cretValue9",  # secret-scan: allow
+        "DB_PASS_PROD=Sup3rS3cretValue9",  # secret-scan: allow
+        '"dbPass": "Sup3rS3cretValue9"',  # secret-scan: allow
+        "AccountKey=Sup3rS3cretValue9xyzAbCdEf==",  # secret-scan: allow
+    ],
+)
+def test_a_keyword_with_an_identifier_suffix_is_detected(text: str) -> None:
+    matches = scan_text(text)
+    assert matches, f"expected {text!r} to be detected"
+    # `AccountKey=` is claimed by the more specific `azure-connection-key` (round 17 L10).
+    assert matches[0].pattern_id in {
+        "secret-assignment",
+        "secret-assignment-unquoted",
+        "azure-connection-key",
+    }
+    redacted, _ = redact_text(text)
+    assert "Sup3rS3cretValue9" not in redacted
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # A suffixed name's value never starts on the next line: that is a class body or a
+        # docstring, not a value.
+        "class SecretMatch:\n    pattern_id: str\n",
+        'class SecretPattern:\n    """One named detector.\n',
+        # Keyword-named code this repository's own source contains.
+        "TOKEN_PLACEHOLDER = REQUEST_TOKEN_PLACEHOLDER",
+        '{"total_tokens": total_tokens,',
+        'print(f"Total tokens:   {total_tokens:,}")',
+        "tokenList:function(){return Sp},uniqueArray",
+        # Bare `pass` and camelCase `Pass` after an arbitrary word stay ordinary vocabulary.
+        "bypass=truetruetrue",
+        "onPass=handlePassEvent",
+    ],
+)
+def test_suffixed_keyword_code_shapes_are_not_false_positives(text: str) -> None:
+    assert scan_text(text) == []
+
+
+# Round 17 A-E3 (and the curriculum lens's C1, the same defect): a bracket of fewer than three
+# characters glued to a real value was never matched, and a `]` after the bracket ended the
+# capture, so a real value after it was left out of both the scan and the redaction.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "password=[X]Sup3rS3cretValue9",  # secret-scan: allow
+        "password=[ab]Sup3rS3cretValue9",  # secret-scan: allow
+        "password=[]Sup3rS3cretValue9",  # secret-scan: allow
+        "db_password=[Q]Tr0ub4dor3HunterRealSecret9",  # secret-scan: allow
+        "password=[REDACTED]]Sup3rS3cretValue9",  # secret-scan: allow
+        "password=[abc]]Sup3rS3cretValue9",  # secret-scan: allow
+        "password=[Sup3r]S3cret]Value9",  # secret-scan: allow
+    ],
+)
+def test_a_bracket_glued_to_a_real_value_is_detected_and_fully_redacted(text: str) -> None:
+    matches = scan_text(text)
+    assert matches, f"expected {text!r} to be detected"
+    assert matches[0].pattern_id == "secret-assignment-unquoted"
+    redacted, changed = redact_text(text)
+    assert changed
+    assert redacted.endswith(f"={REDACTION_PLACEHOLDER}"), redacted
+    assert scan_text(redacted) == [], "the redaction itself must not still be a finding"
+
+
+def test_a_redaction_followed_by_a_stray_bracket_is_a_fixed_point() -> None:
+    redacted, _ = redact_text("password=Sup3rS3cretValue9]")  # secret-scan: allow
+    assert redacted == f"password={REDACTION_PLACEHOLDER}]"
+    assert scan_text(redacted) == []
+    assert redact_text(redacted) == (redacted, False)
+
+
+# Round 17 A-E4: a real value glued after a template was excused along with the template —
+# unquoted because the value class stopped at the expansion's `}`, quoted because a value
+# only had to *start* with `$(` or `{{`.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "DB_PASSWORD=${DB_PASSWORD}Sup3rS3cretValue9",  # secret-scan: allow
+        "api_key=${API_KEY}Sup3rS3cretValue9",  # secret-scan: allow
+        "DB_PASSWORD=${DB_PASSWORD:?unset}Sup3rS3cretValue9",  # secret-scan: allow
+        'PASSWORD="$(true)Sup3rS3cretValue9"',  # secret-scan: allow
+        'password: "{{ vault_pw }}Sup3rS3cretValue9"',  # secret-scan: allow
+        "password: {{vault_pw}}Sup3rS3cretValue9",  # secret-scan: allow
+    ],
+)
+def test_a_real_value_glued_after_a_template_is_detected(text: str) -> None:
+    assert scan_text(text), f"expected {text!r} to be detected"
+    redacted, _ = redact_text(text)
+    assert "Sup3rS3cretValue9" not in redacted
+    assert scan_text(redacted) == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "token=$(gh auth token)",
+        'token = "$(gh auth token)"',
+        "password: {{ vault_pw }}",
+        "password: {{vault_pw}}",
+    ],
+)
+def test_a_value_that_is_entirely_a_template_stays_a_placeholder(text: str) -> None:
+    assert scan_text(text) == []
+
+
+# Round 17 A-E17: a `,`/`;` glued inside an unquoted value cut it short — half the value was
+# left in clear text by the redaction, or, with too few characters before the cut, the
+# whole value was never matched.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "password=Sup3rS3cr;etValue9",  # secret-scan: allow
+        "password=ab,Sup3rS3cretValue9",  # secret-scan: allow
+        "password=Sup3r,S3cret;Value9 next",  # secret-scan: allow
+    ],
+)
+def test_a_value_glued_across_a_comma_or_semicolon_is_redacted_whole(text: str) -> None:
+    assert scan_text(text), f"expected {text!r} to be detected"
+    redacted, _ = redact_text(text)
+    assert "etValue9" not in redacted and "Value9" not in redacted, redacted
+    assert scan_text(redacted) == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "f(token=token,user=user)",
+        "{password:e,next:t}",
+        '"password":null,"x":1',
+        "token=secrets.token_urlsafe(32),",
+        "password=ab,cd,efgh=1",
+    ],
+)
+def test_code_after_a_comma_is_not_glued_into_a_value(text: str) -> None:
+    assert scan_text(text) == []
+
+
+def test_a_separator_followed_by_a_space_still_ends_the_value() -> None:
+    redacted, _ = redact_text("password=Sup3rS3cretValue9, user=bob")  # secret-scan: allow
+    assert redacted == f"password={REDACTION_PLACEHOLDER}, user=bob"
+
+
+# Round 17 A-E5: the call/subscript exemption matched only the lowered shape, so a password
+# that merely ended like a call, a subscript, a bare closing or a format placeholder was
+# excused along with real code.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "password=Tr0ub4dor(3)",  # secret-scan: allow
+        "password=Summer2024(!)",  # secret-scan: allow
+        "DB_PASS=Sup3rS3cr3t)",  # secret-scan: allow
+        "password=MyP4ssw0rd(",  # secret-scan: allow
+        "password={Sup3rS3cretValue9}",  # secret-scan: allow
+        "password=abc[Sup3rS3cretValue9",  # secret-scan: allow
+        'password = "{Sup3rS3cretValue9}"',  # secret-scan: allow
+    ],
+)
+def test_a_password_shaped_like_the_end_of_a_call_is_detected(text: str) -> None:
+    assert scan_text(text), f"expected {text!r} to be detected"
+    redacted, _ = redact_text(text)
+    assert "S3cr" not in redacted and "0ub4" not in redacted and "P4ss" not in redacted
+    assert "Summer2024" not in redacted
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "token = parts[-1]",
+        'token = os.environ["GITHUB_TOKEN"]',
+        "client = OpenAI(api_key=api_key)",
+        "token = base64.b64encode(raw)",
+    ],
+)
+def test_real_code_shapes_stay_exempted(text: str) -> None:
+    assert scan_text(text) == []
+
+
+# Round 17 A-C2: the plain unquoted run stopped at every `}`, so with fewer than eight
+# characters before the brace nothing matched at all and the real secret after it was never
+# looked at.
+def test_a_brace_glued_inside_an_unquoted_value_does_not_hide_it() -> None:
+    text = "api_key=k8s{Q}9aQ2vLm7RealSecret"  # secret-scan: allow
+    (match,) = scan_text(text)
+    assert match.pattern_id == "secret-assignment-unquoted"
+    assert redact_text(text)[0] == f"api_key={REDACTION_PLACEHOLDER}"
+
+
+# Round 17 A-E6: only the root of a dotted chain was checked, so a passphrase that merely
+# started with a code-root name read as an attribute path.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "password=context.is.king2024",  # secret-scan: allow
+        "password=settings.Sup3r.Secret9",  # secret-scan: allow
+        "password=config.a.b.c.d",  # secret-scan: allow
+    ],
+)
+def test_a_passphrase_starting_with_a_code_root_is_detected(text: str) -> None:
+    assert scan_text(text), f"expected {text!r} to be detected"
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["password = settings.DB_PASSWORD", "token = self.config.github_token", "secret = os.environ"],
+)
+def test_a_real_attribute_path_from_a_code_root_stays_exempted(text: str) -> None:
+    assert scan_text(text) == []
+
+
+# Round 17 A-E7: only a bare single-line `<keyword>` element was matched.
+XML_COMPOUND_TAG = "<db_password>Sup3rS3cretValue9</db_password>"  # secret-scan: allow
+
+
+XML_WITH_ATTRIBUTES = (
+    '<password encrypted="false">Sup3rS3cretValue9</password>'  # secret-scan: allow
+)
+
+
+XML_VALUE_ON_ITS_OWN_LINE = "<password>\n  Sup3rS3cretValue9\n</password>"  # secret-scan: allow
+
+
+XML_SPRING_PROPERTY = '<property name="password" value="Sup3rS3cretValue9"/>'  # secret-scan: allow
+
+
+XML_DOTNET_APP_SETTING = '<add key="DbPassword" value="Sup3rS3cretValue9" />'  # secret-scan: allow
+
+
+@pytest.mark.parametrize(
+    ("pattern_id", "text"),
+    [
+        ("xml-element-credential", XML_COMPOUND_TAG),
+        ("xml-element-credential", XML_WITH_ATTRIBUTES),
+        ("xml-element-credential", XML_VALUE_ON_ITS_OWN_LINE),
+        ("xml-attribute-credential", XML_SPRING_PROPERTY),
+        ("xml-attribute-credential", XML_DOTNET_APP_SETTING),
+    ],
+)
+def test_xml_credential_variants_are_detected(pattern_id: str, text: str) -> None:
+    (match,) = scan_text(text)
+    assert match.pattern_id == pattern_id
+    redacted, _ = redact_text(text)
+    assert "Sup3rS3cretValue9" not in redacted
+    assert scan_text(redacted) == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        '<input type="hidden" name="request_token" value="__GTQ_REQUEST_TOKEN__">',
+        '<input name="password" value="{{ value }}">',
+        '<label for="password">Password</label>',
+    ],
+)
+def test_xml_markup_that_names_a_credential_without_holding_one_is_clean(text: str) -> None:
+    assert scan_text(text) == []
+
+
+# Round 17 A-E8: an indentation indicator or a trailing comment on a block-scalar header hid
+# the value underneath it.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "password: |2\n  Sup3rS3cretValue9\n",  # secret-scan: allow
+        "password: |-  # prod\n  Sup3rS3cretValue9\n",  # secret-scan: allow
+        "password: >+1\n Sup3rS3cretValue9\n",  # secret-scan: allow
+        "password: >-\n\n  Sup3rS3cretValue9\n",  # secret-scan: allow
+    ],
+)
+def test_a_yaml_block_scalar_with_an_indicator_or_comment_is_detected(text: str) -> None:
+    (match,) = scan_text(text)
+    assert match.pattern_id == "yaml-block-scalar-credential"
+    assert "Sup3rS3cretValue9" not in redact_text(text)[0]
+
+
+# Round 17 A-E2: `curl -u` was matched only unquoted, space-separated, as its own flag, on the
+# same line as `curl`.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "curl -u 'me@x.com:T0kenValue123' https://x",  # secret-scan: allow
+        'curl -u "me@x.com:T0kenValue123" https://x',  # secret-scan: allow
+        "curl -ume@x.com:T0kenValue123 https://x",  # secret-scan: allow
+        "curl -su me@x.com:T0kenValue123 https://x",  # secret-scan: allow
+        "curl -X GET \\\n  -u me@x.com:T0kenValue123 https://x",  # secret-scan: allow
+    ],
+)
+def test_curl_user_credential_variants_are_detected(text: str) -> None:
+    (match,) = scan_text(text)
+    assert match.pattern_id == "curl-user-credential"
+    assert "T0kenValue123" not in redact_text(text)[0]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        'curl --data-urlencode "q=a:bcd" https://x',
+        'curl -H "Accept: application/json" https://x',
+    ],
+)
+def test_curl_flags_that_are_not_user_are_not_read_as_one(text: str) -> None:
+    assert scan_text(text) == []
+
+
+# Round 17 A-E11: an escape that renders as `_` hid a token from every pattern, and
+# `render_markdown` then put the literal token on the page.
+GITHUB_BODY = GITHUB.removeprefix("ghp_")
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        f"token ghp\\_{GITHUB_BODY}",
+        f"token ghp&#95;{GITHUB_BODY}",
+        f"token ghp&#x5F;{GITHUB_BODY}",
+        f"token ghp&lowbar;{GITHUB_BODY}",
+    ],
+)
+def test_a_markdown_or_html_escaped_token_is_detected_and_does_not_render(text: str) -> None:
+    from quest_app.markdown_render import render_markdown
+
+    assert "ghp_" in render_markdown(text), "precondition: the escape renders as the token"
+    (match,) = scan_text(f"first line\n{text}\n")
+    assert match.pattern_id == "github-token"
+    assert (match.line, match.column) == (2, 7)
+    redacted, changed = redact_text(text)
+    assert changed
+    assert redacted == f"token {REDACTION_PLACEHOLDER}"
+    assert GITHUB_BODY not in render_markdown(redacted)
+    assert scan_text(redacted) == []
+
+
+# Round 17 F5: the mask ratio that makes a starred-out value a placeholder was not pinned;
+# at 0.3 a real value with a third of its characters `x` would be excused.
+@pytest.mark.parametrize(
+    ("text", "found"),
+    [
+        ("password=Sx9xKx2xQ7ab", True),  # secret-scan: allow
+        ("password=gho_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", False),
+        ("password=ab************", False),
+    ],
+)
+def test_the_mask_ratio_threshold_is_pinned(text: str, found: bool) -> None:
+    assert bool(scan_text(text)) is found
+
+
+# Round 17 F12: a substitution that only prints a literal holds the value.
+def test_an_echoed_literal_is_not_a_command_substitution_placeholder() -> None:
+    assert scan_text('password="$(echo Sup3rS3cretValue9)"')  # secret-scan: allow
+    assert scan_text('password="$(cat /run/secrets/db_password)"') == []

@@ -38,7 +38,7 @@ def run(workspace: Workspace, output: ValidatorOutput) -> None:
         return
     document, produced = loaded
 
-    _check_all_items_present(expected, produced, output)
+    _check_all_items_present(expected, produced, output, fixture_set)
     _check_normalized_fields(produced, output)
     _check_traceability(produced, output)
     _check_no_duplicates(produced, output)
@@ -100,7 +100,10 @@ def _load_participant_output(
 
 
 def _check_all_items_present(
-    expected: dict[str, Any], produced: list[dict[str, Any]], output: ValidatorOutput
+    expected: dict[str, Any],
+    produced: list[dict[str, Any]],
+    output: ValidatorOutput,
+    fixture_name: str = "happy-path",
 ) -> None:
     expected_keys = {item["key"] for item in expected["stories"]}
     produced_keys = {item.get("key") for item in produced}
@@ -111,9 +114,15 @@ def _check_all_items_present(
                 id="pagination-handled",
                 outcome="fail",
                 severity="high",
-                summary="Some assigned stories are missing from the output.",
+                summary=f"Stories in the {fixture_name!r} fixture are missing from the output.",
                 evidence=f"missing: {', '.join(missing[:8])}",
-                suggested_action="Keep requesting pages until the source reports no more results.",
+                # Round 17 L4: this said only "keep requesting pages", which sent a
+                # participant who had synced their real project hunting for a pagination bug.
+                suggested_action=(
+                    f"Run your synchronization against validators/fixtures/jira/{fixture_name}"
+                    ".json as its source, then run this again. If you did, keep requesting "
+                    "pages until the source reports no more results."
+                ),
             )
         )
     else:

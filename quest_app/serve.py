@@ -661,6 +661,15 @@ class ActionHandler(BaseHTTPRequestHandler):
         payload: dict[str, Any] = {"action": action, "quest_id": quest_id}
         if len(parts) == 3:
             payload["validator_id"] = parts[2]
+            # Round 17 L4: a run control's enum choices arrive as `param-<name>` fields. They
+            # are passed on as strings; the registry's allowlist accepts or refuses them.
+            chosen = {
+                name[len("param-") :]: values[0]
+                for name, values in fields.items()
+                if name.startswith("param-") and values
+            }
+            if chosen:
+                payload["parameters"] = chosen
         try:
             payload.update(self._review_fields(fields))
         except ValueError as exc:
@@ -710,6 +719,8 @@ class ActionHandler(BaseHTTPRequestHandler):
         severities = fields.get("finding_severity", [])
         summaries = fields.get("finding_summary", [])
         evidence = fields.get("finding_evidence", [])
+        criteria = fields.get("finding_criterion", [])
+        changes = fields.get("finding_required_change", [])
         findings = []
         for index, (severity, summary, observed) in enumerate(
             zip(severities, summaries, evidence, strict=False)
@@ -740,6 +751,9 @@ class ActionHandler(BaseHTTPRequestHandler):
                     "severity": severity,
                     "summary": summary,
                     "evidence": observed,
+                    # Round 17 L9: optional, and dropped by the action layer when blank.
+                    "criterion": criteria[index] if index < len(criteria) else "",
+                    "required_change": changes[index] if index < len(changes) else "",
                 }
             )
         extra: dict[str, Any] = {}

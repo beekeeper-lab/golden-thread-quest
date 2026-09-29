@@ -285,7 +285,7 @@ flowchart TB
 5. **Needs changes** and **rejected** need at least one finding with a severity, a summary
    and the evidence observed.
 6. The review record is validated against its schema. An existing `review.yaml` is archived
-   as `review-<timestamp>.yaml` rather than overwritten, so a change of mind stays visible.
+   as `review-<timestamp>-<6 hex>.yaml` rather than overwritten, so a change of mind stays visible.
    The new record is written atomically.
 7. `_apply_decision` sets the attempt state: `verified` for an approval, `needs_changes`
    otherwise. This is the only code that writes `verified`.

@@ -26,6 +26,7 @@ quest_app/           the application
 ├── build.py             rendering, indexes, manifest, atomic swap
 ├── state_machine.py     the transitions a participant may make
 ├── store.py             atomic writes to participant-owned files
+├── safe_io.py           bounded reads and no-follow writes that cannot block (ADR-042)
 ├── evidence.py          proof detection, secret scanning, evidence hashing
 ├── secret_patterns.py   the patterns behind every scan and every redaction
 ├── review.py            submissions and reviewer decisions
@@ -55,12 +56,14 @@ tools/               secret scan, YAML-safety check, cleanup
 | 0 | Planning audit, ADR-016 to ADR-025 | pass-with-advisories |
 | 1 | Package, toolchain, CI, safety tools | fail → fixed → pass-with-advisories |
 | 2 | Content contracts, loading, semantics | fail → fixed → pass with one open item → fixed |
-| 3 | Eleven screens, build pipeline, indexes | fail → fixed → re-audit |
-| 4 | Loopback service, state machine, atomic writes | — |
-| 5 | Validator registry, sandboxed runner, evidence | — |
-| 6 | Structural and browser accessibility tests | — |
-| 7 | Submissions, reviewer integrity | — |
-| 8 | Update preflight, migrations | — |
+| 3 | Eleven screens, build pipeline, indexes | fail → fixed → pass with residuals → closed |
+| 4 | Loopback service, state machine, atomic writes | `stage-04-to-09-implementation-audits.md` |
+| 5 | Validator registry, sandboxed runner, evidence | `stage-04-to-09-implementation-audits.md` |
+| 6 | Structural and browser accessibility tests | `stage-06-ui-audit.md`: fail → all findings closed |
+| 7 | Submissions, reviewer integrity | `stage-04-to-09-implementation-audits.md` |
+| 8 | Update preflight, migrations | `stage-04-to-09-implementation-audits.md` |
+| 9 | Implementation details, traceability, release notes | `stage-04-to-09-implementation-audits.md`; its misses closed in `stage-10-final-audit.md` |
+| 10 | Final independent audit and release decision | open: rounds 4–17 in `docs/audits/`, DH7 |
 
 ## Decisions that shaped the code
 
@@ -112,7 +115,7 @@ group, and a timeout kills the group. `validators/slow_probe.py` spawns a child 
 the test proves it.
 
 **Verified means a reviewer said so.** Loading re-derives `verified` from the review record
-and refuses six distinct forms of claim without one. Recording the decision that produces it
+and refuses seven distinct forms of claim without one (round 17 D3 corrected "six"). Recording the decision that produces it
 is itself confirmed: `record-review` is in `state_machine.CONFIRMATIONS`, the page renders
 that text as a required checkbox, and `ActionRunner.perform` refuses the action without it —
 so the browser, the JSON endpoint and `quest-app action --confirm` all meet the same gate.
@@ -134,14 +137,16 @@ is atomic, validated before it lands, and recorded in `participant/ACTIVITY.md`.
 
 ## Test layers
 
-| Layer | Where | Count |
+| Layer | Where | Covers |
 |---|---|---|
-| Unit | `tests/unit` | detectors, template genericity |
+| Unit | `tests/unit` | detectors, hashing, the transition table, template genericity |
 | Contract | `tests/contract` | schemas, loading, sanitization, format validation |
 | Semantic | `tests/semantic` | every rejection rule, progress integrity |
 | Integration | `tests/integration` | CLI, build, transitions, evidence, updates |
 | Security | `tests/security` | cleanup, secret scan, service, validator sandbox, review integrity |
 | UI | `tests/ui` | generated-HTML structure, and browser-driven flows |
+
+The collected counts are in `docs/RELEASE-NOTES.md` and the README, where a test keeps them true.
 
 `make check` runs everything except the browser layer; `make test-ui` runs that.
 

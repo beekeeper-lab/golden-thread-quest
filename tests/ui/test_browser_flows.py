@@ -153,6 +153,12 @@ class TestCatalogFiltering:
         page.wait_for_timeout(150)
         after = page.eval_on_selector_all("[data-search]:not([hidden])", "n => n.length")
         assert 0 < after < before
+        # Round 17 L3: the attribute was set and the cards stayed on screen, because a
+        # component's `display` beat the browser's `[hidden]` rule. Count what is visible.
+        visible = page.eval_on_selector_all(
+            "[data-search]", "n => n.filter(x => x.getBoundingClientRect().height > 0).length"
+        )
+        assert visible == after
         page.close()
 
     def test_an_active_filter_appears_as_a_removable_chip(

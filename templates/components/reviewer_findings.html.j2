@@ -3,8 +3,14 @@
    has to act on them can read them. #}
 {% macro reviewer_findings_panel(review) -%}
 {% if review %}
+{% if review.addressed %}
+<section class="panel" aria-labelledby="reviewer-findings-heading">
+  <h2 id="reviewer-findings-heading">What the reviewer asked for last time</h2>
+  <p class="authority">You have resubmitted since. This is kept here so you can check the new submission against it.</p>
+{% else %}
 <section class="alert alert-warning" role="status" aria-labelledby="reviewer-findings-heading">
   <h2 id="reviewer-findings-heading">What the reviewer asked for</h2>
+{% endif %}
   <p class="authority">
     {{ review.reviewer_display_name }} recorded “{{ review.decision }}” on
     <time datetime="{{ review.reviewed_at }}" data-format>{{ review.reviewed_at }}</time>.
@@ -16,6 +22,7 @@
         <strong>{{ finding.summary }}</strong>
         <span class="state state-needs_changes">{{ finding.severity }}</span>
       </div>
+      {% if finding.criterion %}<p class="authority">About acceptance criterion {{ finding.criterion | replace('ac-', '') }}.</p>{% endif %}
       {% if finding.evidence %}<p>{{ finding.evidence }}</p>{% endif %}
       {% if finding.required_change %}<p><strong>Required change.</strong> {{ finding.required_change }}</p>{% endif %}
     </li>

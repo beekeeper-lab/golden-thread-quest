@@ -16,6 +16,7 @@
     <dt>Run</dt><dd><code>{{ result.run_id }}</code></dd>
     <dt>Started</dt><dd><time datetime="{{ result.started_at }}" data-format>{{ result.started_at }}</time></dd>
     <dt>Duration</dt><dd>{{ result.duration_ms }} ms</dd>
+    {% if result.result_path %}<dt>Result file</dt><dd><code>{{ result.result_path }}</code></dd>{% endif %}
     {% for key, value in result.environment.items() %}
     <dt>{{ key | replace('_', ' ') | capitalize }}</dt><dd>{{ value }}</dd>
     {% endfor %}

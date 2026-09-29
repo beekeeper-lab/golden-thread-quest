@@ -78,7 +78,8 @@ ignore = [
 # yaml.safe_load is required (ADR-025); yaml.load is caught by tools/check_yaml_safe.py too.
 
 [tool.mypy]
-python_version = "3.11"
+# Round 17 F10: the declared floor, so a 3.11-only API is flagged.
+python_version = "3.10"
 strict = true
 files = ["quest_app", "validators", "tools"]
 warn_unreachable = true

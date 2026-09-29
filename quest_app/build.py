@@ -49,6 +49,7 @@ from quest_app.view_models import (
     ActivityEvent,
     EnvironmentCheck,
     PageView,
+    ParameterView,
     PrerequisiteView,
     ServiceView,
     ValidatorView,
@@ -662,11 +663,18 @@ def _render_and_publish(
                         "quest": summaries[quest.id],
                         "result": result,
                         "ordered_checks": _checks_by_severity(result),
+                        # Round 17 L7: this was hard-coded disabled, so the page said "start
+                        # the local service" while the service was serving it.
                         "rerun_action": ActionView(
                             id=f"rerun-{result.validator_id}",
-                            label=f"Run {result.validator_id.replace('-', ' ')} again",
-                            enabled=False,
-                            reason="Start the local service to run checks from this page.",
+                            label=f"Run the {_validator_display_name(world, result.validator_id)} "
+                            "check again",
+                            enabled=service.available,
+                            route=routes.action("run-validator", quest.id, result.validator_id),
+                            reason=None
+                            if service.available
+                            else "Start the local service to run checks from this page.",
+                            parameters=_validator_choices(world, result.validator_id),
                         ),
                         "evidence_route": routes.evidence(quest.id),
                         "outcome_label": OUTCOME_LABELS.get(result.outcome, result.outcome),
@@ -787,7 +795,7 @@ def _render_and_publish(
                     heading="Environment health",
                 ),
             )
-            | {"checks": _environment_checks(world, stamp)},
+            | {"checks": _environment_checks(world, stamp, service)},
         )
     )
 
@@ -853,6 +861,10 @@ def _reviewer_findings(entry: QuestProgress) -> dict[str, Any] | None:
         "reviewer_display_name": review.reviewer_display_name,
         "reviewed_at": review.reviewed_at,
         "findings": review.findings,
+        # Round 17 L13: once the participant has resubmitted, these findings are what the
+        # reviewer asked for last time, not the current state, so they stop leading the page
+        # as a status alert.
+        "addressed": entry.state.id is QuestState.SUBMITTED,
     }
 
 
@@ -877,7 +889,9 @@ def _quest_detail_context(
         if entry.attempt is not None
         else None
     )
-    required, optional = build_proof_views(quest, detected)
+    required, optional = build_proof_views(
+        quest, detected, entry.attempt.evidence_path if entry.attempt is not None else None
+    )
     prerequisites = tuple(
         PrerequisiteView(
             id=pid,
@@ -896,7 +910,7 @@ def _quest_detail_context(
     validators = tuple(
         ValidatorView(
             id=vid,
-            display_name=vid.replace("-", " ").capitalize(),
+            display_name=_validator_display_name(world, vid),
             latest_outcome=latest[vid].outcome if vid in latest else None,
             latest_run_id=latest[vid].run_id if vid in latest else None,
             latest_completed_at=latest[vid].completed_at if vid in latest else None,
@@ -1000,12 +1014,12 @@ def _evidence_context(
     # skills/) is scanned too, not only the package.
     scan_findings = scan_declared_proof(world.config, quest, evidence_path) if evidence_path else []
     detected = detect_proof(quest, world.config, evidence_path, results)
-    required, optional = build_proof_views(quest, detected)
+    required, optional = build_proof_views(quest, detected, evidence_path)
     latest: dict[str, Any] = {r.validator_id: r for r in results}
     validators = tuple(
         ValidatorView(
             id=vid,
-            display_name=vid.replace("-", " ").capitalize(),
+            display_name=_validator_display_name(world, vid),
             latest_outcome=latest[vid].outcome if vid in latest else None,
             latest_run_id=latest[vid].run_id if vid in latest else None,
             latest_completed_at=latest[vid].completed_at if vid in latest else None,
@@ -1020,10 +1034,11 @@ def _evidence_context(
     run_actions = tuple(
         ActionView(
             id=f"run-{validator.id}",
-            label=f"Run {validator.display_name.lower()}",
+            label=f"Run the {validator.display_name[:1].lower()}{validator.display_name[1:]} check",
             enabled=service.available,
             route=routes.action("run-validator", quest.id, validator.id),
             reason=None if service.available else "Start the local service to run this check.",
+            parameters=_validator_choices(world, validator.id),
         )
         for validator in validators
     )
@@ -1074,6 +1089,8 @@ def _evidence_context(
         "run_actions": run_actions,
         "results": results,
         "stale_local_validation": stale_local_validation,
+        "changed_after_approval": tuple(_changed_after_approval(world, entry)),
+        "review_route": routes.review(quest.id),
         "proof_document": _proof_document(world, evidence_path),
         "secret_scan_clean": not scan_findings if evidence_path else None,
         "scan_kinds": scan_kinds(scan_findings),
@@ -1085,6 +1102,42 @@ def _evidence_context(
     }
 
 
+def _validator_display_name(world: LoadedWorld, validator_id: str) -> str:
+    """The registry's name for a check (round 17 L12), or one made from its ID."""
+    definition = world.registry.definitions.get(validator_id) if world.registry else None
+    return definition.display_name if definition else validator_id.replace("-", " ").capitalize()
+
+
+def _validator_choices(world: LoadedWorld, validator_id: str) -> tuple[ParameterView, ...]:
+    """The enum parameters a run control offers as choices (round 17 L4).
+
+    Only enums: a form field is a string, and an enum is the one parameter type whose every
+    accepted value can be listed on the page. The registry still checks what comes back.
+    """
+    definition = world.registry.definitions.get(validator_id) if world.registry else None
+    if definition is None:
+        return ()
+    return tuple(
+        ParameterView(
+            name=parameter.name,
+            description=parameter.description,
+            options=parameter.allowed,
+            default=parameter.default,
+        )
+        for parameter in definition.parameters.values()
+        if parameter.type == "enum"
+    )
+
+
+# Round 17 A-E10: shown in place of a PROOF.md whose secret-like value only a decoding other
+# than the rendered one can see, so redacting the rendered one would not have removed it.
+PROOF_DOCUMENT_WITHHELD = (
+    "*This PROOF.md is not previewed.* Part of it is saved in a different text encoding "
+    "(a PowerShell `>>` append writes UTF-16), and that part holds a value the secret scan "
+    "flagged. Remove the value — ideally re-save the file as UTF-8 — and the preview returns."
+)
+
+
 def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None:
     """The participant's own PROOF.md, rendered and sanitized.
 
@@ -1093,7 +1146,7 @@ def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None
     """
     if not evidence_path:
         return None
-    from quest_app.evidence import _decode_evidence_text, package_file
+    from quest_app.evidence import _decode_evidence_text, _secret_value_digests, package_file
     from quest_app.markdown_render import render_markdown
     from quest_app.safe_io import MAX_EVIDENCE_FILE_BYTES, UnsafeStateFileError, read_bounded_bytes
     from quest_app.secret_patterns import redact_text
@@ -1120,7 +1173,23 @@ def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None
     # pattern below without raising anything — the token was still there, readable once the
     # replacement characters were stripped back out (round 16 E3). Its best-guess candidate
     # (the first one, chosen the same way the scan chooses it) is redacted the same way.
-    text, _ = redact_text(_decode_evidence_text(raw)[0])
+    #
+    # Round 17 A-E10: only that first candidate was redacted. A mixed-encoding PROOF.md — a
+    # UTF-8 head with a UTF-16LE tail from a PowerShell `>>` append, NUL ratio far under the
+    # 30% trigger — has the plain UTF-8 decode as its first candidate, which reads the tail
+    # as `t\0o\0k\0…` and finds nothing there to redact; the scan's NUL-stripped candidate
+    # found the token, so submission was blocked, but the evidence and review pages carried
+    # it, recoverable by stripping NUL and U+FFFD. Redacting every candidate cannot help,
+    # because only one is rendered. So if any other candidate finds a value the rendered one
+    # did not, the page shows a notice in place of the file. The trade: such a PROOF.md loses
+    # its preview until the value is removed, which is what the blocking scan finding already
+    # asks for; a file whose every value the rendered candidate also found (plain UTF-8,
+    # whole-file UTF-16) still previews, redacted.
+    candidates = _decode_evidence_text(raw)
+    rendered_values = _secret_value_digests(candidates[0])
+    if any(_secret_value_digests(other) - rendered_values for other in candidates[1:]):
+        return render_markdown(PROOF_DOCUMENT_WITHHELD)
+    text, _ = redact_text(candidates[0])
     return render_markdown(text)
 
 
@@ -1156,6 +1225,19 @@ def _changes_since_approval(config: Any, attempt: Any, review: Any) -> list[str]
     return changes
 
 
+def _changed_after_approval(world: LoadedWorld, entry: QuestProgress) -> list[str]:
+    """What changed since a verified attempt was approved, or nothing (round 17 L5)."""
+    review = entry.review
+    if (
+        entry.attempt is None
+        or review is None
+        or not review.is_approval
+        or entry.state.id is not QuestState.VERIFIED
+    ):
+        return []
+    return _changes_since_approval(world.config, entry.attempt, review)
+
+
 def _review_context(
     entry: QuestProgress, summary: Any, world: LoadedWorld, service: ServiceView
 ) -> dict[str, Any]:
@@ -1172,7 +1254,9 @@ def _review_context(
     results = _results_for(entry, world)
     submission = read_submission(config, attempt) or {}
     required, _ = build_proof_views(
-        entry.quest, detect_proof(entry.quest, config, attempt.evidence_path, results)
+        entry.quest,
+        detect_proof(entry.quest, config, attempt.evidence_path, results),
+        attempt.evidence_path,
     )
     if attempt.quest_version != entry.quest.version:
         # Round 12 C5: the checklist above is the *published* quest's required evidence,
@@ -1246,6 +1330,7 @@ def _review_context(
         "results": results,
         "history": tuple(_decision_view(item) for item in history),
         "queue": (),
+        "changed_after_approval": (),
         "reproduction": _proof_document(world, attempt.evidence_path),
         # A decision needs the service, because recording one writes files.
         "can_decide": service.available and entry.state.id is QuestState.SUBMITTED,
@@ -1273,7 +1358,11 @@ def _decision_view(document: dict[str, Any]) -> Any:
         verification_statement=document.get("verification_statement"),
         findings=tuple(
             SimpleNamespace(
-                severity=finding.get("severity", ""), summary=finding.get("summary", "")
+                severity=finding.get("severity", ""),
+                summary=finding.get("summary", ""),
+                evidence=finding.get("evidence"),
+                criterion=finding.get("criterion"),
+                required_change=finding.get("required_change"),
             )
             for finding in document.get("findings", [])
         ),
@@ -1292,10 +1381,19 @@ def _review_queue_context(
             submitted_at=entry.attempt.updated_at,
             route=routes.review(quest_id),
         )
-        for quest_id, entry in sorted(states.items())
+        # Round 17 L13: oldest submission first, the order a reviewer works through it.
+        for quest_id, entry in sorted(
+            states.items(), key=lambda item: item[1].attempt.updated_at if item[1].attempt else ""
+        )
         if entry.attempt is not None and entry.state.id is QuestState.SUBMITTED
     )
-    del world
+    # Round 17 L5: evidence that changed after its approval was shown only on that attempt's
+    # own review page, which nothing links to once it is verified.
+    changed_after_approval = tuple(
+        {"quest": summaries[quest_id], "route": routes.review(quest_id), "paths": changed}
+        for quest_id, entry in sorted(states.items())
+        if (changed := _changed_after_approval(world, entry))
+    )
     return {
         "quest": None,
         "attempt_id": None,
@@ -1315,6 +1413,7 @@ def _review_queue_context(
         "results": (),
         "history": (),
         "queue": queue,
+        "changed_after_approval": changed_after_approval,
         "reproduction": None,
         "decision_route": None,
         "can_decide": False,
@@ -1409,7 +1508,9 @@ def _public_preview(world: LoadedWorld, totals_map: dict[str, int]) -> dict[str,
     }
 
 
-def _environment_checks(world: LoadedWorld, stamp: str) -> tuple[EnvironmentCheck, ...]:
+def _environment_checks(
+    world: LoadedWorld, stamp: str, service: ServiceView
+) -> tuple[EnvironmentCheck, ...]:
     """What a static page can honestly say about the environment.
 
     A generated page cannot inspect the machine at the moment it is read, so every check
@@ -1418,8 +1519,18 @@ def _environment_checks(world: LoadedWorld, stamp: str) -> tuple[EnvironmentChec
     """
     import sys
 
+    from quest_app.git_status import inspect
+
     config = world.config
+    git = inspect(config.repo_root)
     checks = [
+        EnvironmentCheck(
+            id="application",
+            name="Application and content",
+            importance="informational",
+            status="pass",
+            detail=f"Golden Thread Quest {APPLICATION_VERSION}; {world.content.site.curriculum}",
+        ),
         EnvironmentCheck(
             id="python",
             name="Python",
@@ -1452,13 +1563,49 @@ def _environment_checks(world: LoadedWorld, stamp: str) -> tuple[EnvironmentChec
             status="pass" if world.participant else "warning",
             detail="loaded" if world.participant else "no progress file yet — start a quest",
         ),
+        # Round 17 L6: the rows below are build-time facts the build already had. What
+        # needs a live read at the moment the page is opened (a write test, which external
+        # CLIs are installed) stays with deferred item D7.
+        EnvironmentCheck(
+            id="git",
+            name="Git repository",
+            importance="optional",
+            status=("pass" if git.upstream else "warning") if git.available else "warning",
+            detail=(
+                f"branch {git.branch or '(detached)'}, "
+                + (f"tracking {git.upstream}" if git.upstream else "no upstream")
+                + f", {git.changed} changed and {git.untracked} untracked file(s)"
+                + f" at {stamp}"
+                if git.available
+                else f"not available at {stamp}: {git.reason}"
+            ),
+            remediation=None if git.available and git.upstream else "git status",
+        ),
+        EnvironmentCheck(
+            id="output",
+            name="Generated and local-data directories",
+            importance="informational",
+            status="pass",
+            detail=(
+                f"{config.relative(config.generated_root)} (disposable); "
+                f"{config.relative(config.local_data_root)} "
+                + ("exists" if config.local_data_root.exists() else "not created yet")
+                + " (Gitignored)"
+            ),
+        ),
+        # Round 17 L6: the service builds the pages it serves, so when it built this one it
+        # can say so; a page from `quest build` still cannot know.
         EnvironmentCheck(
             id="service",
             name="Local action service",
             importance="required",
-            status="unknown",
-            detail="A generated page cannot tell whether it is running.",
-            remediation="make serve",
+            status="pass" if service.available else "unknown",
+            detail=(
+                "running on loopback; this page was built by it"
+                if service.available
+                else "A page built by `quest build` cannot tell whether the service is running."
+            ),
+            remediation=None if service.available else "make serve",
         ),
     ]
     return tuple(checks)

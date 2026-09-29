@@ -73,3 +73,22 @@ def test_an_absent_entry_is_not_an_error(tmp_path: Path) -> None:
     target = root / "service-ports" / "8799"
 
     unlink_regular_file(root, target, prefix=LOCAL_DATA)  # does not raise
+
+
+def test_atomic_write_fsyncs_the_directory_after_the_rename(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Round 17 E9: without a directory fsync a power loss can undo the rename."""
+    from quest_app import safe_io
+
+    synced: list[bool] = []
+    real_fsync = os.fsync
+
+    def recording_fsync(fd: int) -> None:
+        synced.append(stat.S_ISDIR(os.fstat(fd).st_mode))
+        real_fsync(fd)
+
+    monkeypatch.setattr(safe_io.os, "fsync", recording_fsync)
+    safe_io.atomic_write(tmp_path, tmp_path / "state.yaml", b"new\n")
+    assert (tmp_path / "state.yaml").read_bytes() == b"new\n"
+    assert synced == [False, True], "the file, then its directory"

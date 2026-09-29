@@ -12,14 +12,19 @@ from quest_app.config import AppConfig
 from quest_app.errors import ProblemReport
 from quest_app.evidence import (
     MAX_EVIDENCE_FILE_BYTES,
+    SecretFinding,
     _decode_evidence_text,
+    describe_scan_findings,
     detect_proof,
     evidence_hash,
     new_run_id,
+    proof_location,
     scan_evidence,
+    scan_kinds,
     store_result,
 )
 from quest_app.pipeline import load_world
+from quest_app.view_models import build_proof_views
 
 EVIDENCE = "participant/evidence/base-camp-repository-safety/base-camp-attempt-001"
 LEAKED = "ghp_abcdefghijklmnopqrstuvwxyz0123456789"  # secret-scan: allow
@@ -104,6 +109,40 @@ class TestProofDetection:
 
         states = detect_proof(quest, config, attempt.evidence_path, ())
         assert states[item.id] == "missing"
+
+    def test_a_file_at_the_literal_authored_attempt_path_is_not_detected(
+        self, world, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Round 17 L1: the literal `attempt-001/` folder is outside the real package, so
+        nothing scans or fingerprints it. Counting it as detected let an unscanned file carry
+        a submission and change after approval unseen."""
+        quest = world.content.quests["base-camp-repository-safety"]
+        attempt = world.participant.progress.attempt_for(quest.id)
+        item = next(i for i in quest.proof if i.type == "command-record")
+
+        literal = config.resolve_participant_path(item.path)
+        literal.parent.mkdir(parents=True, exist_ok=True)
+        literal.write_text(f"token={LEAKED}\n")
+
+        assert detect_proof(quest, config, attempt.evidence_path, ())[item.id] == "missing"
+
+    def test_proof_rows_show_the_path_inside_the_real_package(
+        self, world, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Round 17 L2: pages pointed participants and reviewers at `attempt-001/`."""
+        quest = world.content.quests["base-camp-repository-safety"]
+        attempt = world.participant.progress.attempt_for(quest.id)
+        item = next(i for i in quest.proof if i.type == "command-record")
+
+        shown = proof_location(item.path, attempt.evidence_path)
+        assert shown == f"{attempt.evidence_path}/logs/{Path(item.path).name}"
+        required, _ = build_proof_views(quest, None, attempt.evidence_path)
+        assert shown in [view.path for view in required]
+        # Without an attempt, and for a path outside the quest's own area, it is as authored.
+        assert proof_location(item.path, None) == item.path
+        assert proof_location("participant/context/x.md", attempt.evidence_path) == (
+            "participant/context/x.md"
+        )
 
     def test_a_traversing_proof_path_is_never_detected(self, world, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
         import dataclasses
@@ -207,6 +246,10 @@ class TestSecretScanning:
         finally:
             target.chmod(0o600)
         assert [finding.description for finding in findings] == ["could not be read to check it"]
+        # Round 17: and it is not worded as a secret to the participant or the reviewer.
+        assert scan_kinds(findings) == frozenset({"unreadable"})
+        (problem,) = describe_scan_findings(findings)
+        assert "secret" not in problem and "could not be read" in problem
 
     def test_a_traversing_evidence_path_scans_nothing(self, config: AppConfig) -> None:
         assert scan_evidence(config, "participant/evidence/../../etc") == []
@@ -234,10 +277,10 @@ class TestSecretScanning:
         ("name", "header"),
         [
             ("screenshot.txt", b"\x89PNG\r\n\x1a\n"),
-            ("notes.txt", b"%PDF-1.4\n"),
+            ("notes.txt", b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n"),
             ("archive.log", b"PK\x03\x04"),
             ("photo.md", b"\xff\xd8\xff"),
-            ("frame.dat", b"GIF89a"),
+            ("frame.dat", b"GIF89a\x01\x00\x01\x00\x80\x00\x00"),
             ("image.out", b"RIFF\x00\x00\x00\x00WEBP"),
         ],
     )
@@ -247,6 +290,30 @@ class TestSecretScanning:
         target = config.resolve_participant_path(EVIDENCE) / name
         target.write_bytes(header + f"token={LEAKED}".encode())
         assert scan_evidence(config, EVIDENCE) == []
+
+    # Round 17 E7: GIF and PDF signatures are plain ASCII, so a text file could open with
+    # one and be skipped unread.
+    @pytest.mark.parametrize("header", [b"GIF89a\n", b"GIF87a\n", b"%PDF-1.4\n"])
+    def test_a_text_file_opening_with_an_ascii_signature_is_still_scanned(
+        self, config: AppConfig, header: bytes
+    ) -> None:
+        target = config.resolve_participant_path(EVIDENCE) / "capture.gif"
+        target.write_bytes(header + f"GITHUB_TOKEN={LEAKED}\n".encode())
+        findings = scan_evidence(config, EVIDENCE)
+        assert [finding.path.rsplit("/", 1)[-1] for finding in findings] == ["capture.gif"]
+
+    def test_two_different_short_secrets_in_one_file_are_both_reported(
+        self, config: AppConfig
+    ) -> None:
+        """Round 17 E8: findings were deduplicated by excerpt, which for a value under 12
+        characters is only its length, so the second secret was never shown."""
+        target = config.resolve_participant_path(EVIDENCE) / "two.env"
+        target.write_text(
+            "password=Abcdefgh12\n"  # secret-scan: allow
+            "password=Zyxwvuts98\n"  # secret-scan: allow
+        )
+        findings = scan_evidence(config, EVIDENCE)
+        assert sorted(finding.line for finding in findings) == [1, 2]
 
     def test_an_oversize_real_image_is_skipped_rather_than_flagged_oversize(
         self, config: AppConfig
@@ -379,6 +446,41 @@ class TestSecretScanning:
         f\\x00é\\x00`), and NUL-stripping a multi-byte character garbles it too."""
         raw = ("﻿café").encode("utf-32")
         assert any("café" in candidate for candidate in _decode_evidence_text(raw))
+
+    def test_a_path_swapped_for_a_fifo_does_not_hang_the_header_read(
+        self, config: AppConfig, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Round 17 A-E13: the header read was a plain `open("rb")` after `is_file()`, so a
+        path swapped for a FIFO between the two blocked the scan forever under the store,
+        generated and service locks. `is_file` is made to answer for the file that was
+        there a moment ago, which is exactly what the race leaves the scan believing; the
+        scan runs in a thread so a regression fails on the timeout instead of hanging."""
+        import threading
+        from pathlib import Path as RealPath
+
+        target = config.resolve_participant_path(EVIDENCE) / "logs" / "swapped.log"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        os.mkfifo(target)
+        real_is_file = RealPath.is_file
+        monkeypatch.setattr(
+            RealPath, "is_file", lambda self: self.name == "swapped.log" or real_is_file(self)
+        )
+        outcome: list[list[SecretFinding]] = []
+        worker = threading.Thread(
+            target=lambda: outcome.append(list(scan_evidence(config, EVIDENCE))), daemon=True
+        )
+        worker.start()
+        worker.join(timeout=10)
+        if worker.is_alive():
+            # Unblock the stuck reader so the thread does not outlive the test.
+            with target.open("wb"):
+                pass
+            worker.join(timeout=10)
+            pytest.fail("the secret scan blocked opening a FIFO")
+        (findings,) = outcome
+        assert [(f.path.rsplit("/", 1)[-1], f.description) for f in findings] == [
+            ("swapped.log", "could not be read to check it")
+        ]
 
     def test_an_unreadable_directory_blocks_rather_than_passing(self, config: AppConfig) -> None:
         """Round 14 E5: `rglob` silently drops a directory it cannot list instead of raising,

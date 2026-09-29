@@ -1,6 +1,6 @@
 # Part 6. Key decisions
 
-`docs/DECISIONS.md` is the full log: forty-two architecture decision records (**ADRs**),
+`docs/DECISIONS.md` is the full log: forty-three architecture decision records (**ADRs**),
 appended rather than rewritten, several amended after an audit found the code and the
 decision disagreeing. This part groups them by the question each one answers and gives the
 reason in one or two sentences. Read the log for the evidence behind each.
@@ -59,6 +59,7 @@ reason in one or two sentences. Read the log for the evidence behind each.
 | 039 | A validator judges the attempt it was given | Records connect by ID, never by modification time |
 | 041 | The service answers only to a loopback name, and every request gets a response | Defeats DNS rebinding; no traceback, no silent drop |
 | 042 | Every participant write walks the tree component by component with `O_NOFOLLOW`, and an unusable `ACTIVITY.md` skips its line | Following a link was the escape route; blocking forever while holding both locks was the outage |
+| 043 | The build deletes only what it made, and nothing the application owns is written through a link | A `generated` path that was a link, or that overlapped the curriculum, turned a routine rebuild into deleting someone else's files |
 
 ## 6.5 Concurrency and failure
 

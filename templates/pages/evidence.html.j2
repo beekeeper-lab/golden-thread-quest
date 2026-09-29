@@ -67,12 +67,20 @@
   <aside class="panel stack" aria-label="Attempt status and actions">
     <h2 class="visually-hidden">Attempt status and actions</h2>
     <div>{{ state_badge(quest.state, show_authority=true) }}</div>
+    {# Round 17 L11: said only in the badge's tooltip here, visibly on the quest page. #}
+    <p>{{ quest.state.explanation }}</p>
     {% if stale_local_validation %}
     {# Round 12 C4: the state is earned once and a failing re-run never unwinds it
        (ADR-017), so this is not a contradiction with "Last run" below — but it reads like
        one without this note. #}
     <p class="authority">This state was earned on an earlier passing run. The latest run of
       {{ stale_local_validation | join(', ') }} did not pass; see Local validation below.</p>
+    {% endif %}
+    {% if changed_after_approval %}
+    {# Round 17 L5: the review page said this, and nothing linked to it once verified. #}
+    <div class="alert alert-warning" role="status">
+      <p><strong>Changed since approval.</strong> {% for path in changed_after_approval %}<code>{{ path }}</code>{% if not loop.last %}, {% endif %}{% endfor %} changed after the reviewer approved this. The approval stands, but it describes the evidence as it was then. <a href="{{ url(review_route) }}">See the review</a>.</p>
+    </div>
     {% endif %}
     <dl class="definition-list">
       <dt>Attempt</dt><dd><code>{{ attempt_id }}</code></dd>
@@ -91,6 +99,7 @@
       {% if 'secret' in scan_kinds %}<p>Remove it before submitting. The scan reports the pattern and never the value.</p>{% endif %}
       {% if 'link' in scan_kinds %}<p>A file is a link that leads outside the evidence package, so it cannot be checked or shown. Replace it with a copy of the file.</p>{% endif %}
       {% if 'oversize' in scan_kinds %}<p>A file is too large for the scan to read. Trim it, or keep the full file out of the package and describe it in PROOF.md.</p>{% endif %}
+      {% if 'unreadable' in scan_kinds %}<p>A file could not be read, so the scan could not check it. Fix its permissions, or take it out of the package.</p>{% endif %}
     </div>
     {% endif %}
     {% endif %}

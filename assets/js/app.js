@@ -275,6 +275,45 @@
     });
   }
 
+  /* ----------------------------------------------------------- Drafts */
+
+  function initDrafts() {
+    // Round 17 L8: a refused decision redirects back to this static page, which rendered
+    // the form empty, so a reviewer lost the statement and findings they had typed. The
+    // values are kept for this tab only and restored when the page comes back carrying a
+    // refusal; any other load clears them. Checkboxes and hidden fields are never kept, so
+    // an acknowledgement and the request token are always given fresh.
+    var refused = /[?&]problem=/.test(window.location.search);
+    document.querySelectorAll("form[data-keep-draft]").forEach(function (form) {
+      var key = "gtq-draft:" + form.getAttribute("data-keep-draft");
+      var fields = form.querySelectorAll(
+        "input[name]:not([type=hidden]):not([type=checkbox]):not([type=radio]), select[name], textarea[name]"
+      );
+      try {
+        var saved = refused ? JSON.parse(window.sessionStorage.getItem(key) || "null") : null;
+        if (saved && saved.length === fields.length) {
+          fields.forEach(function (field, index) {
+            field.value = saved[index];
+            field.dispatchEvent(new Event("change"));
+          });
+        }
+        if (!refused) window.sessionStorage.removeItem(key);
+      } catch (error) {
+        /* Storage unavailable: the form simply starts empty, as it did before. */
+      }
+      form.addEventListener("submit", function (event) {
+        if (event.defaultPrevented) return;
+        try {
+          var values = [];
+          fields.forEach(function (field) { values.push(field.value); });
+          window.sessionStorage.setItem(key, JSON.stringify(values));
+        } catch (error) {
+          /* Nothing to keep it in; the submission goes ahead regardless. */
+        }
+      });
+    });
+  }
+
   /* ----------------------------------------------------------- Timestamps */
 
   function initTimestamps() {
@@ -297,6 +336,7 @@
     initDrawer();
     initCatalog();
     initConfirmations();
+    initDrafts();
     initTimestamps();
   });
 })();

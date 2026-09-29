@@ -471,6 +471,7 @@ Update this section whenever work pauses.
 
 | Date/time | Branch | Current stage | Last completed item | Next action | Blockers |
 |---|---|---:|---|---|---|
+| 2026-09-29 | chore/round-17-audit | 10 | Round 17 recorded: 1 blocking, 5 high, all fixed; the earlier unrecorded pass (A-series) merged | Merge, then run round 18 against the merge commit | DH7 open |
 | 2026-09-16 | feature/golden-thread-implementation | 0 | Stage 0 audit: pass-with-advisories | Begin Stage 1 foundation |  |
 | 2026-09-16 | feature/golden-thread-implementation | 1 | Stage 1 audit: fail → fixed → pass-with-advisories | Complete Stage 2 content loading | `participant/` creation deferred to Stage 4 |
 | 2026-09-16 | feature/golden-thread-implementation | 2 | Stage 2 built and committed (93e91cd); independent audit commissioned | Record the Stage 2 audit in `docs/audits/stage-02-content-audit.md`, fix blocking/high findings, then finish Stage 3 | Stage 2 audit result not yet recorded |
@@ -497,4 +498,8 @@ Update this section whenever work pauses.
 | D10 | Secret-scanner coverage: keyword-distant assignments, bare 40-hex keys, base64 blobs, webhook URLs, any PII | The detectors are a safety net and are documented as one; widening them without a corpus risks false positives that make people route around the gate | Post-release | Implementation | Final re-audit R16 |
 | D11 | Role separation between participant and reviewer | `/review/` sits in the primary navigation with no separation, so a participant can open the reviewer page for their own work. ADR-030 already states that release-one provenance is conventional | Post-release | Program owner | Final re-audit, Job 2 |
 | D12 | A degraded view for an attempt whose evidence directory is missing | Today one deleted folder makes the whole site unbuildable until `progress.yaml` is hand-edited | Post-release | Implementation | Final re-audit R8 |
+| D13 | Type-tagged evidence hash chunks | Tagging changes every stored digest, so every approved attempt would read as changed once; the empty-directory collision hides nothing | Post-release | Implementation | Round 17 E6 |
+| D14 | Success notices after an action | The rebuilt page already shows the new state | Post-release | Implementation | Round 17 L13 |
+| D15 | Quest-page section order | The body renders in authored order; changing it is a content-model decision | Post-release | Curriculum maintainer | Round 17 L15 |
+| D16 | A per-test timeout for the scaling tests | Needs a new test dependency; best-of-three timing keeps the inputs small | Post-release | Implementation | Round 17 F9 |
 | D6 | Presentation-only reserved fields (`quest.tools`, `author`, `last_reviewed`, `risk.notes`, `region.icon`, `badge.icon`, `track.focus_tags`, `site.professional_role`) | Consumed by pages that arrive in Stage 3 and Stage 6 | Stages 3 and 6 | Implementation | Stage 2 audit M6 |

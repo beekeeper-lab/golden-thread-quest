@@ -12,7 +12,10 @@ Write quests as professional, demonstrable work—not trivia and not instruction
 4. Complete the YAML front matter.
 5. Write the Markdown body using the canonical headings.
 6. Define proof that another person can inspect or reproduce.
-7. Reference only registered validators.
+7. Reference only registered validators, and add the new quest's ID to each one's `quest_ids`
+   list in `validators/registry.yaml`: a validator runs only for the quests it names, so a
+   copied quest that keeps its source's `validators:` fails validation until it is listed
+   there (round 17 D5). A quest with no validators needs no registry change.
 8. Validate content before opening a pull request.
 9. Review the rendered page, evidence workspace, catalog entry, and prerequisite links.
 10. Run `make check`. Adding a quest, region, badge, or track changes the numbers two

@@ -2,10 +2,11 @@
 
 ## Current readiness
 
-**Status (2026-09-28):** Implemented. Stages 0 to 9 are complete and audited. The Stage 10
+**Status (2026-09-29):** Implemented. Stages 0 to 9 are complete and audited. The Stage 10
 release decision is still open on one criterion, DH7, which closes on an audit round that
-finds nothing. Sixteen rounds have run and each found something; the latest is
-`docs/audits/round-16-independent-audit.md`, and round 17 runs against its merge commit.
+finds no blocking or high finding. Seventeen rounds have run and each found at least one; the
+latest is `docs/audits/round-17-independent-audit.md` (one blocking, five high, all fixed),
+and round 18 runs against its merge commit.
 Every region has a quest, eight in total, and `docs/CURRICULUM-BACKLOG.md` holds the quests
 that would turn one-per-region into a journey. See `docs/RELEASE-NOTES.md` for what works and
 the known limitations, and `docs/audits/` for every audit including the ones that failed.

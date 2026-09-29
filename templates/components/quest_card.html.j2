@@ -3,7 +3,7 @@
    valid and keyboard order stays predictable. #}
 {% from "components/state_badge.html.j2" import state_badge %}
 
-{% macro quest_card(quest, url, recommended=false, heading_level=3) -%}
+{% macro quest_card(quest, url, recommended=false, heading_level=3, show_reasons=true) -%}
 <article class="card accent-{{ quest.region.accent }}{% if recommended %} is-recommended{% endif %}"
          data-search="{{ quest.search_text }}"
          data-region="{{ quest.region.id }}"
@@ -27,7 +27,7 @@
   <p class="authority">This quest is deprecated and is not recommended to new participants.</p>
   {% endif %}
 
-  {% if quest.recommendation_reasons %}
+  {% if show_reasons and quest.recommendation_reasons %}
   <ul class="tag-list" aria-label="Why this quest is recommended">
     {% for reason in quest.recommendation_reasons %}<li class="tag">{{ reason }}</li>{% endfor %}
   </ul>

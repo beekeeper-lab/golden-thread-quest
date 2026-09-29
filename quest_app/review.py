@@ -282,6 +282,22 @@ def record_decision(
             "The submission record does not describe this attempt, so there is nothing to decide."
         )
 
+    # Round 17 L9: a finding may name the criterion it is about. A name the quest does not
+    # have would point the participant at nothing, so it is refused, and an empty optional
+    # field is dropped rather than stored blank.
+    criteria = {criterion.id for criterion in quest.acceptance_criteria}
+    findings = [
+        {key: value for key, value in finding.items() if value not in (None, "")}
+        for finding in findings
+    ]
+    for finding in findings:
+        criterion = finding.get("criterion")
+        if criterion is not None and criterion not in criteria:
+            raise ReviewError(
+                f"{finding.get('id', 'A finding')} names {criterion!r}, which is not one of "
+                f"this quest's acceptance criteria ({', '.join(sorted(criteria))})."
+            )
+
     # Set only when the approval actually crossed the changed-evidence gate below, so the
     # record shows whether this specific approval needed and got the acknowledgement rather
     # than whether the caller happened to pass the flag (round 15 L2).
@@ -311,6 +327,21 @@ def record_decision(
             f"{exc.relative_path} in the evidence could not be read, so the decision cannot "
             "be recorded."
         ) from exc
+    if decision == Decision.APPROVED:
+        # Round 17 E5: evidence edited after submission could be approved into `verified`
+        # while holding a token the submission gate would have refused. The scan is cheap,
+        # so an approval runs the same one and refuses on the same findings; a
+        # needs-changes or rejected decision still records, since that is how the reviewer
+        # tells the participant to take the secret out.
+        scan_problems = describe_scan_findings(
+            scan_declared_proof(config, quest, attempt.evidence_path)
+        )
+        if scan_problems:
+            raise ReviewError(
+                "The evidence cannot be approved while the secret scan finds a problem in it: "
+                + " ".join(scan_problems)
+                + " Record needs changes instead, so the participant can fix it."
+            )
     # The same paths the submission recorded, so the review describes what was submitted.
     # A submission from before proof files were recorded falls back to what the quest
     # declares now, so even that attempt's approval can be checked for staleness later.
@@ -367,6 +398,7 @@ def record_decision(
                 summary=finding["summary"],
                 evidence=finding["evidence"],
                 required_change=finding.get("required_change"),
+                criterion=finding.get("criterion"),
             )
             for finding in findings
         ),
