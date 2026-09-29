@@ -56,7 +56,8 @@ and nothing a validator returns can produce it.
 7. **Record local validation.** This is a button. The state means "I have run the required
    checks and they qualify", and the application refuses it if the results do not support
    that. It comes *before* submitting, not after.
-8. **Submit for review.**
+8. **Submit for review.** It is refused while any required file on the evidence page is
+   missing or empty, and the refusal names each one.
 9. **Commit and push yourself:**
 
    ```bash

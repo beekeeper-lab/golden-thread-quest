@@ -32,6 +32,8 @@ from quest_app.pipeline import load_world  # noqa: E402
 from quest_app.serve import create_server  # noqa: E402
 from quest_app.view_models import online_service_view  # noqa: E402
 
+from proof_fixtures import place_required_proof  # noqa: E402
+
 pytestmark = pytest.mark.ui
 
 SYSTEM_BROWSERS = (
@@ -65,6 +67,7 @@ def _prepared_repo(tmp_path: Path, *, submit_review_quest: bool = False) -> Path
         report = ProblemReport()
         world = load_world(config, report)
         assert world is not None, report.to_text()
+        place_required_proof(config.participant_root, REVIEW_QUEST)
         create_submission(
             config,
             ProgressStore(config),

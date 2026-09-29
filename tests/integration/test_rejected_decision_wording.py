@@ -15,6 +15,8 @@ from quest_app.review import create_submission, record_decision
 from quest_app.store import ProgressStore
 from quest_app.view_models import offline_service_view
 
+from proof_fixtures import place_required_proof
+
 QUEST = "jira-read-assigned-stories"
 FINDING = {
     "id": "finding-1",
@@ -33,6 +35,7 @@ def _reject(config: AppConfig) -> None:
     assert world is not None, report.to_text()
     quest = world.content.quests[QUEST]
     attempt = world.participant.progress.attempt_for(QUEST)
+    place_required_proof(config.participant_root, quest.id)
     create_submission(
         config,
         store,

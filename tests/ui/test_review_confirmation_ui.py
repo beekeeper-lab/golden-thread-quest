@@ -20,6 +20,8 @@ from quest_app.serve import create_server  # noqa: E402
 from quest_app.state_machine import CONFIRMATIONS, DECISION_CONFIRMATIONS  # noqa: E402
 from quest_app.view_models import online_service_view  # noqa: E402
 
+from proof_fixtures import place_required_proof  # noqa: E402
+
 pytestmark = pytest.mark.ui
 
 QUEST = "jira-read-assigned-stories"
@@ -48,6 +50,7 @@ def served(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
     setup_report = ProblemReport()
     setup_world = load_world(config, setup_report)
     assert setup_world is not None, setup_report.to_text()
+    place_required_proof(config.participant_root, QUEST)
     create_submission(
         config,
         ProgressStore(config),

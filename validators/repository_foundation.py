@@ -174,15 +174,31 @@ def _check_evidence_package(workspace: Workspace, output: ValidatorOutput) -> No
         if not any(marker in text for marker in markers)
     ]
     # A template that has been filled in has content under its headings, not just headings.
+    # The template's own `Attempt:` line is not content the participant wrote.
     substantive = len(
         [
             line
             for line in text.splitlines()
-            if line.strip() and not line.strip().startswith(("#", "<!--"))
+            if line.strip() and not line.strip().startswith(("#", "<!--", "attempt:"))
         ]
     )
 
-    if unanswered:
+    if substantive == 0:
+        # The Phase 1 pilot run: the untouched template has every heading, so it answered
+        # every question by keyword, and the check reported "passed with advisories" on a
+        # package with nothing in it.
+        output.add(
+            Check(
+                id="proof-answers-reviewer-questions",
+                outcome="fail",
+                severity="medium",
+                summary="The proof document is still the empty template.",
+                evidence="Every heading is there, with nothing written under any of them.",
+                suggested_action="Say what you actually did under each heading.",
+                artifact=workspace.relative(newest),
+            )
+        )
+    elif unanswered:
         output.add(
             Check(
                 id="proof-answers-reviewer-questions",

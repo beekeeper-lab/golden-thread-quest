@@ -4,19 +4,21 @@
 **Curriculum:** The AI Context Engineer Journey
 **Tagline:** From human intent to verified delivery.
 
-> **Status: work in progress. Not released, and not yet recommended for use.**
+> **Status: work in progress. Pilot release 0.2.0: not for general use.**
 >
-> The engine is built and under test, and it has passed its release checklist: a true
-> clean clone, and the participant, reviewer, maintainer and failure flows in a real
-> browser. The recommendation is a pilot, released with advisories, and the program owner
-> has not yet made that decision (`docs/audits/final-audit.md`). Interfaces,
+> It is released to a small invited pilot.
+>
+> If you are in the pilot, start with [`docs/guides/PILOT.md`](docs/guides/PILOT.md).
+>
+> The engine is built and under test, and it passed its release checklist: a true clean
+> clone, and the participant, reviewer, maintainer and failure flows in a real browser
+> (`docs/audits/final-audit.md`). The curriculum is one quest per region. Interfaces,
 > content and file layouts can change without notice, and no upgrade path is promised
-> between now and a first release. Nobody has yet run this on the installed Cowork
-> app, which is its primary target surface.
+> between the pilot and a first general release. Nobody has yet run this on the installed
+> Cowork app, which is its primary target surface.
 >
 > `docs/ACCEPTANCE-CRITERIA.md` tracks what is done. `docs/audits/` holds the audit
-> record, including what is currently open. `docs/RELEASE-NOTES.md` lists the known
-> limitations.
+> record. `docs/RELEASE-NOTES.md` lists the known limitations.
 
 A local-first training application. The curriculum lives in Markdown and YAML, your work
 lives in ordinary files in your own Git repository, and the application reads them, checks
@@ -68,7 +70,7 @@ address. Open it.
 
 | | |
 |---|---|
-| Tests | 1439 — 1382 under `make check`, 57 driving a real browser. The line `make check` prints counts skips too, and it can read higher than the total above: a module that skips itself as a whole because an optional dependency is missing (`pytest.importorskip`) counts as one skip, not one per test it would have contained. |
+| Tests | 1439 — 1386 under `make check`, 57 driving a real browser. The line `make check` prints counts skips too, and it can read higher than the total above: a module that skips itself as a whole because an optional dependency is missing (`pytest.importorskip`) counts as one skip, not one per test it would have contained. |
 | Screens | 13 page templates, 11 reusable components |
 | Schemas | 10, validating content, progress, reviews, validation results and the validator registry |
 | Sample curriculum | 8 regions, 8 quests, 4 badges, 1 track |
@@ -111,8 +113,8 @@ application code. A test fails if one does.
 ## Status
 
 Stages 0 to 9 of `docs/IMPLEMENTATION-PLAN.md` are complete. The remaining work follows the
-phase plan in `docs/design/07-status-and-remaining-work.md`. Phase 1, the pilot release
-decision, has passed its checklist and closed DH7. The decision itself is taken at Gate 1.
+phase plan in `docs/design/07-status-and-remaining-work.md`. Phase 1 passed its release
+checklist, and at Gate 1 the program owner released 0.2.0 to a pilot.
 `docs/audits/` holds every audit. An external review, early in that
 history, left the engine a release candidate and the participant journey short: three quests
 across eight regions was a demonstration rather than a journey. Since then every region has a

@@ -19,6 +19,8 @@ from quest_app.models import QuestState
 from quest_app.pipeline import load_world
 from quest_app.view_models import offline_service_view, online_service_view
 
+from proof_fixtures import place_required_proof
+
 QUEST = "jira-read-assigned-stories"
 LOCKED_QUEST = "playwright-first-independent-test"
 
@@ -56,6 +58,7 @@ def submit_for_review(config: AppConfig, quest_id: str) -> None:
     report = ProblemReport()
     world = load_world(config, report)
     assert world is not None, report.to_text()
+    place_required_proof(config.participant_root, quest_id)
     create_submission(
         config,
         ProgressStore(config),

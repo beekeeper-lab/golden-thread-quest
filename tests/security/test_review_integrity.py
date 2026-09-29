@@ -7,6 +7,7 @@ actually made a judgment about this attempt's evidence.
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 
 import pytest
 import yaml
@@ -19,6 +20,7 @@ from quest_app.pipeline import load_world
 from quest_app.progress_calc import compute_states, totals
 from quest_app.review import (
     ReviewError,
+    blocking,
     create_submission,
     evidence_changed,
     readiness_problems,
@@ -26,6 +28,8 @@ from quest_app.review import (
     submission_instructions,
 )
 from quest_app.store import ProgressStore
+
+from proof_fixtures import place_required_proof
 
 QUEST = "jira-read-assigned-stories"
 STATEMENT = "I ran the documented command on a clean clone and reproduced the stated behavior."
@@ -51,6 +55,7 @@ def setup(config: AppConfig):  # type: ignore[no-untyped-def]
 
 def submit(setup, config: AppConfig):  # type: ignore[no-untyped-def]
     world, schemas, store, quest, attempt = setup
+    place_required_proof(config.participant_root, quest.id)
     return create_submission(
         config,
         store,
@@ -86,10 +91,54 @@ class TestSubmission:
 
     def test_readiness_separates_blockers_from_advisories(self, setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
         world, _, _, quest, attempt = setup
+        place_required_proof(config.participant_root, QUEST)
         problems = readiness_problems(quest, attempt, world.participant, config)
         # A validator that has not been run is an advisory: policy may allow submitting
         # anyway, and the reviewer can see it was not run.
         assert all(problem.startswith("advisory:") for problem in problems), problems
+
+    def test_missing_required_proof_blocks_submission_and_names_each_item(
+        self, setup, config: AppConfig
+    ) -> None:  # type: ignore[no-untyped-def]
+        """Phase 2A: a package with its required files missing reached a reviewer."""
+        world, _, _, quest, attempt = setup
+        blockers = blocking(readiness_problems(quest, attempt, world.participant, config))
+        file_like = [
+            item
+            for item in quest.proof
+            if item.required and item.type in ("file", "directory", "command-record")
+        ]
+        assert file_like, "the quest under test declares no file proof; this test is vacuous"
+        for item in file_like:
+            assert any(item.description in problem for problem in blockers), (item.id, blockers)
+        _, schemas, store, _, _ = setup
+        with pytest.raises(ReviewError, match="Required evidence is not in place"):
+            create_submission(
+                config,
+                store,
+                quest=quest,
+                attempt=attempt,
+                participant=world.participant,
+                schemas=schemas,
+            )
+        _, reloaded = reload_attempt(config)
+        assert reloaded.recorded_state is not AttemptState.SUBMITTED
+
+    def test_an_empty_required_file_blocks_submission(self, setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        world, _, _, quest, attempt = setup
+        place_required_proof(config.participant_root, QUEST)
+        item = next(i for i in quest.proof if i.required and i.type == "file" and i.path)
+        target = config.participant_root / Path(item.path).relative_to("participant")
+        target.write_text("")
+        blockers = blocking(readiness_problems(quest, attempt, world.participant, config))
+        assert blockers == [f"Required evidence is empty: {item.path} ({item.description})"]
+
+    def test_optional_and_undetectable_proof_does_not_block(self, setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+        """Validators stay advisory at submission; demonstrations cannot be detected."""
+        world, _, _, quest, attempt = setup
+        place_required_proof(config.participant_root, QUEST)
+        problems = readiness_problems(quest, attempt, world.participant, config)
+        assert blocking(problems) == [], problems
 
     def test_the_instructions_never_push_or_open_a_pull_request_for_you(self) -> None:
         text = submission_instructions(QUEST, "attempt-001", None)
@@ -542,6 +591,7 @@ class TestWhatApprovalProduces:
                 store, quest_id=QUEST, action=action, schemas=schemas, guard=lambda _action: None
             )
         world, attempt = reload_attempt(config)
+        place_required_proof(config.participant_root, quest.id)
         create_submission(
             config,
             store,
@@ -612,6 +662,7 @@ class TestWhatApprovalProduces:
                 store, quest_id=QUEST, action=action, schemas=schemas, guard=lambda _action: None
             )
         world, attempt = reload_attempt(config)
+        place_required_proof(config.participant_root, quest.id)
         create_submission(
             config,
             store,
@@ -639,6 +690,7 @@ class TestWhatApprovalProduces:
                 store, quest_id=QUEST, action=action, schemas=schemas, guard=lambda _action: None
             )
         world, attempt = reload_attempt(config)
+        place_required_proof(config.participant_root, quest.id)
         create_submission(
             config,
             store,

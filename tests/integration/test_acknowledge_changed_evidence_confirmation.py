@@ -23,6 +23,8 @@ from quest_app.errors import ProblemReport
 from quest_app.pipeline import load_world
 from quest_app.store import StoreError
 
+from proof_fixtures import place_required_proof
+
 QUEST = "jira-read-assigned-stories"
 STATEMENT = "I re-read the assigned-issue export and matched it against every criterion."
 
@@ -54,6 +56,7 @@ def _submit_then_edit_a_proof_file(config: AppConfig) -> None:
     report = ProblemReport()
     world = load_world(config, report)
     assert world is not None, report.to_text()
+    place_required_proof(config.participant_root, QUEST)
     create_submission(
         config,
         ProgressStore(config),

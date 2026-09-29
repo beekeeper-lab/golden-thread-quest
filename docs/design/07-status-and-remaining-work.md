@@ -21,11 +21,10 @@ gate.
 
 ## 7.2 Where we are (2026-09-29)
 
-**Current phase: Phase 1 is built and verified, and its demo is next.** The release
-checklist passed, and the verify pass (`docs/audits/phase-01-verify.md`) found no blocking or
-high finding within its flows, so DH7 is closed. The recommendation is
-`release-with-advisories`. Gate 1 comes after the program owner has run
-`docs/guides/DEMO.md`: the release decision, the parking lot, and the plan for Phase 2.
+**Current phase: Phase 2A, the pilot release.** Gate 1 passed on 2026-09-29, when the
+program owner decided to release to a pilot. Phase 1's checklist passed and DH7 is closed
+(`docs/audits/phase-01-verify.md`). Phase 2A fixes the two parking-lot items the program
+owner chose and builds the release. Phase 2B is the pilot itself.
 
 ### How we got here
 
@@ -114,7 +113,7 @@ recommendation: **do**, **decide** (at that phase's gate, likely on pilot eviden
 - **Gate 0 (2026-09-29): passed.** The program owner approved Phase 1 as written and the
   closing-rule change in its item 2.
 
-### Phase 1: Pilot release decision (built and verified; demo and Gate 1 next)
+### Phase 1: Pilot release decision (done)
 
 - **Goal:** decide on a fixed checklist whether the application as built goes to a pilot,
   and let the program owner see it working.
@@ -152,17 +151,50 @@ recommendation: **do**, **decide** (at that phase's gate, likely on pilot eviden
 - **Result:** every checklist item passed. CI on `main` first failed on a start-up race,
   which pull request 18 fixed. The verify pass found three Low wording problems in the demo,
   all fixed. Five observations are in the parking lot. See `docs/audits/phase-01-verify.md`.
+- **Gate 1 (2026-09-29): passed.** The program owner decided to release to a pilot of about
+  two participants, after fixing the two parking-lot items about missing proof.
 
-### Phase 2: Pilot (recommended next)
+### Phase 2A: Pilot release (current)
 
-- **Goal:** watch one to three real participants and one reviewer use the application, and
-  collect what confuses, blocks or delights them.
-- **Budget:** calendar time rather than sessions; little or no code.
-- **Scope, to be fixed at Gate 1:** who takes part, which of the eight quests they attempt,
-  how they report problems, and how long it runs. Code changes during the pilot are limited
-  to defects that stop a participant from continuing.
-- **Output:** a pilot report that ranks what to change. It is the main input for choosing
-  among Phases 3 to 7.
+- **Goal:** a tagged release that two participants can take up from a Slack message, with
+  the two missing-proof gaps closed.
+- **Budget:** one session.
+- **Scope:**
+  1. **Refuse a submission that is missing required proof.** A required file, folder or
+     command record that the evidence page shows as *Not detected* or *Needs attention*
+     (empty) blocks submission, and the refusal names each one. Validators stay advisory at
+     submission, as they are today, and demonstrations cannot be detected, so they are not
+     checked.
+  2. **An unfilled `PROOF.md` fails the Base Camp check.** A proof document that is still
+     the template, with headings and nothing under them, is a `fail`, not an advisory. The
+     check still looks at what the document says, not whether files exist, as
+     `docs/VALIDATOR-CONTRACT.md` asks.
+  3. **The release.** Version 0.2.0, the README and release notes say "pilot", and a Git tag
+     `v0.2.0` has a GitHub release whose notes link the pilot guide.
+  4. **`docs/guides/PILOT.md`**, for participants. It covers what they need installed,
+     forking and setup, the two pilot quests (Base Camp required, BA Ruins' transcript quest
+     if there is time), how to hand in evidence, how to send feedback, and a warning that
+     forks of a public repository are public, so the pilot uses fictional material only.
+  5. **`docs/guides/PILOT-LEAD.md`**, for the program owner. It holds the Slack message
+     ready to paste, how to review a participant's evidence from their fork, what feedback
+     to collect, and when the pilot ends.
+- **Out of scope:** the other three parking-lot items and everything in Phases 3 to 7.
+- **Done when:** items 1 to 5 are complete, with tests for 1 and 2 that fail without the
+  fix. `make check` and CI pass on `main`. A verify pass acting as a new participant follows
+  `PILOT.md` from the release through a Base Camp submission, then follows `PILOT-LEAD.md`'s
+  review steps, and finds no blocking or high finding.
+- **Demo:** the program owner reads the Slack message and `PILOT.md`, then sends the message.
+
+### Phase 2B: Pilot run
+
+- **Goal:** watch two participants and one reviewer use the application, and collect what
+  confuses, blocks or delights them.
+- **Budget:** calendar time. The program owner sets the end date in the Slack message, and
+  two weeks is suggested.
+- **Scope:** code changes only for a defect that stops a participant from continuing. Every
+  other observation goes to the parking lot.
+- **Output:** a pilot report that ranks what to change. It is the main input to Gate 2 and to
+  choosing among Phases 3 to 7.
 
 ### Phase 3: Participant and reviewer experience
 

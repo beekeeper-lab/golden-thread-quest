@@ -20,6 +20,8 @@ from quest_app.review import create_submission, record_decision
 from quest_app.store import ProgressStore
 from quest_app.view_models import offline_service_view
 
+from proof_fixtures import place_required_proof
+
 QUEST = "jira-read-assigned-stories"
 STATEMENT = "I ran the documented command on a clean clone and reproduced the stated behavior."
 
@@ -54,6 +56,7 @@ def _review_page_html(config: AppConfig) -> str:
 def test_still_submitted_keeps_the_pre_decision_banner(config: AppConfig) -> None:
     """Nothing changes for an attempt awaiting its first decision."""
     world, schemas, store, quest, attempt = _setup(config)
+    place_required_proof(config.participant_root, quest.id)
     create_submission(
         config, store, quest=quest, attempt=attempt, participant=world.participant, schemas=schemas
     )
@@ -70,6 +73,7 @@ def test_still_submitted_keeps_the_pre_decision_banner(config: AppConfig) -> Non
 def test_verified_with_acknowledgement_shows_no_stale_banner(config: AppConfig) -> None:
     """An approval that already acknowledged the change describes a *current* state of fact."""
     world, schemas, store, quest, attempt = _setup(config)
+    place_required_proof(config.participant_root, quest.id)
     create_submission(
         config, store, quest=quest, attempt=attempt, participant=world.participant, schemas=schemas
     )
@@ -101,6 +105,7 @@ def test_verified_with_acknowledgement_shows_no_stale_banner(config: AppConfig) 
 def test_verified_then_edited_shows_the_approval_aware_banner(config: AppConfig) -> None:
     """Editing the evidence *after* the decision is a different fact, worded differently."""
     world, schemas, store, quest, attempt = _setup(config)
+    place_required_proof(config.participant_root, quest.id)
     create_submission(
         config, store, quest=quest, attempt=attempt, participant=world.participant, schemas=schemas
     )

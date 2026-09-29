@@ -20,6 +20,8 @@ from quest_app.pipeline import load_world
 from quest_app.state_machine import CONFIRMATIONS, DECISION_CONFIRMATIONS, confirmation_for
 from quest_app.view_models import online_service_view
 
+from proof_fixtures import place_required_proof
+
 QUEST = "jira-read-assigned-stories"
 
 
@@ -121,6 +123,7 @@ def _submitted_review_page(config: AppConfig) -> str:
     setup_report = ProblemReport()
     world = load_world(config, setup_report)
     assert world is not None, setup_report.to_text()
+    place_required_proof(config.participant_root, QUEST)
     create_submission(
         config,
         ProgressStore(config),

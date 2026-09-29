@@ -1,11 +1,22 @@
-# Release Notes — Pilot Candidate
+# Release Notes: Pilot Release
 
-**Version:** 0.1.0
+**Version:** 0.2.0
 **Date:** 2026-09-29
-**Status:** pilot release candidate. It is not released yet. The release checklist passed
-and DH7 is closed (`docs/audits/phase-01-verify.md`). The recommendation is
-`release-with-advisories` (`docs/audits/final-audit.md`), and the program owner decides at
-Gate 1.
+**Status:** released to a small invited pilot, not for general use. The release checklist
+passed (`docs/audits/phase-01-verify.md`), and the program owner released it at Gate 1
+(`docs/audits/final-audit.md`). Pilot participants start with `docs/guides/PILOT.md`.
+
+## What changed in 0.2.0
+
+- **A submission is refused while required proof is missing.** Any required file, folder or
+  command record that the evidence page shows as *Not detected* or *Needs attention* blocks
+  it, and the refusal names each one. Before this, a package with three of four required
+  files missing could be submitted, and only the reviewer caught it.
+- **The Base Camp check fails on an untouched `PROOF.md`.** It used to report "passed with
+  advisories" on an empty package.
+- The service removes its port record even if it is stopped during start-up.
+- New guides: `docs/guides/PILOT.md` for participants, `docs/guides/PILOT-LEAD.md` for the
+  pilot lead, and `docs/guides/DEMO.md` for a fifteen-minute tour.
 
 ## What this is
 
@@ -59,7 +70,7 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 1382 under `make check`, plus 57 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
+| Tests | 1386 under `make check`, plus 57 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3 quest-facing, plus 2 registered environment probes and one unregistered slow probe used only to prove the timeout |
@@ -135,7 +146,8 @@ here.
 
 ## For the pilot cohort
 
-Start with `docs/USER-GUIDE.md`, the whole-journey guide the README points to, and keep
+Start with `docs/guides/PILOT.md`: what to install, which quests, how to hand in evidence
+and how to send feedback. For depth, read `docs/USER-GUIDE.md`, the whole-journey guide, and keep
 `docs/guides/PARTICIPANT.md` beside it as the short reference. Reviewers should read
 `docs/guides/REVIEWER.md`, particularly the provenance section — it says plainly what the
 application does and does not guarantee about who approved what.

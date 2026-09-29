@@ -28,6 +28,8 @@ from quest_app.errors import ProblemReport
 from quest_app.models import ProofRequirement
 from quest_app.pipeline import load_world
 
+from proof_fixtures import place_required_proof
+
 JIRA = "jira-read-assigned-stories"
 JIRA_OUTSIDE = (
     "participant/context/jira/assigned/index.md",
@@ -55,6 +57,7 @@ def _git_add_line(next_steps: str) -> str:
 def test_the_suggested_git_add_names_every_declared_proof_path_outside_the_package(
     config: AppConfig,
 ) -> None:
+    place_required_proof(config.participant_root, JIRA)
     result = _runner(config).perform("submit-for-review", {"quest_id": JIRA, "confirm": True})
 
     add_line = _git_add_line(result["next_steps"])
@@ -139,6 +142,7 @@ def test_the_text_cli_prints_the_next_steps(tmp_path: Path) -> None:
         "GTQ_GENERATED_ROOT": str(tmp_path / "generated"),
         "GTQ_LOCAL_DATA_ROOT": str(tmp_path / "local-data"),
     }
+    place_required_proof(participant, JIRA)
     result = subprocess.run(
         [
             sys.executable,

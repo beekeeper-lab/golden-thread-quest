@@ -140,11 +140,15 @@ def test_the_readme_states_the_curriculum_it_actually_has() -> None:
     )
 
 
-def test_the_readme_says_the_project_is_not_released() -> None:
-    """It is public and unfinished, and a reader must not have to infer the second part."""
+def test_the_readme_says_the_project_is_a_pilot_not_a_general_release() -> None:
+    """It is public and unfinished, and a reader must not have to infer the second part.
+
+    Released to a small pilot at Gate 1 (0.2.0), which is not a release for general use.
+    """
     head = (ROOT / "README.md").read_text().split("## ", 1)[0].lower()
     assert "work in progress" in head
-    assert "not released" in head
+    assert "pilot" in head
+    assert "not for general use" in head
 
 
 def test_release_one_ships_no_external_write() -> None:

@@ -33,6 +33,8 @@ from quest_app.serve import (
 )
 from quest_app.view_models import online_service_view
 
+from proof_fixtures import place_required_proof
+
 
 @pytest.fixture
 def service(config: AppConfig) -> Iterator[tuple[str, str]]:
@@ -1120,6 +1122,7 @@ class TestARebuildThatFailsAfterTheRecordIsWritten:
         self, service: tuple[str, str], failing_rebuild: None, config: AppConfig
     ) -> None:
         base, token = service
+        place_required_proof(config.participant_root, "jira-read-assigned-stories")
         status, body = post(
             base,
             {
@@ -1869,6 +1872,7 @@ class TestTheFormPathParsesAcknowledgeChangedEvidenceStrictly:
         report = ProblemReport()
         world = load_world(bound, report)
         assert world is not None, report.to_text()
+        place_required_proof(bound.participant_root, self.QUEST)
         create_submission(
             bound,
             ProgressStore(bound),
