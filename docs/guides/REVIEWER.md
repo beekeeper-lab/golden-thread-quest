@@ -37,8 +37,12 @@ quest-app action record-review --quest <quest-id> \
 
 `--decision` takes the same three values the browser form posts: `approved`,
 `needs_changes`, `rejected`. Repeat `--finding` for each one; each needs all three fields,
-`severity:summary:evidence`. Add `--acknowledge-changed-evidence` to approve evidence that
-changed after submission, which is the checkbox the browser form shows for the same purpose.
+`severity:summary:evidence`. Two parts are optional, as they are in the form: `@ac-N` after
+the severity names the acceptance criterion the finding is about, and `::` followed by text
+at the end says what the participant should change — for example
+`--finding "high@ac-3:Pagination stops after page one:only 50 of 120 stories::Request pages until none remain"`.
+Add `--acknowledge-changed-evidence` to approve evidence that changed after submission,
+which is the checkbox the browser form shows for the same purpose.
 
 ## What you are deciding
 

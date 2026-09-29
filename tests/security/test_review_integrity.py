@@ -1451,3 +1451,55 @@ def test_evidence_changed_after_approval_is_flagged_where_people_look(
     queue, evidence = pages()
     assert "Changed since approval" in queue
     assert "Changed since approval" in evidence
+
+
+def test_a_finding_can_name_its_criterion_and_the_change_it_needs(setup, config: AppConfig) -> None:  # type: ignore[no-untyped-def]
+    """Round 17 L9: ADR-016 says findings reference `ac-<n>`, and the schema had a
+    `required_change`, but neither could be entered from the form or the CLI."""
+    submit(setup, config)
+    world, attempt = reload_attempt(config)
+    _, schemas, store, quest, _ = setup
+
+    def decide(finding: dict[str, str]):  # type: ignore[no-untyped-def]
+        return record_decision(
+            config,
+            store,
+            quest=quest,
+            attempt=attempt,
+            participant=world.participant,
+            decision="needs_changes",
+            reviewer_name="A Reviewer",
+            verification_statement=None,
+            findings=[finding],
+            schemas=schemas,
+        )
+
+    with pytest.raises(ReviewError, match="not one of this quest's acceptance criteria"):
+        decide({**FINDING, "criterion": "ac-99"})
+
+    decision = decide({**FINDING, "criterion": "ac-3", "required_change": "Page until done."})
+    (finding,) = decision.findings
+    assert (finding.criterion, finding.required_change) == ("ac-3", "Page until done.")
+    stored = yaml.safe_load(
+        (config.resolve_participant_path(attempt.evidence_path) / "review.yaml").read_text()
+    )
+    assert stored["findings"][0]["criterion"] == "ac-3"
+
+
+def test_the_cli_carries_a_findings_criterion_and_required_change() -> None:
+    """The CLI half of L9: `severity@ac-N:summary:evidence::required change`."""
+    from quest_app.cli import findings_from_args
+
+    assert findings_from_args(
+        ["high@ac-3:Pagination stops early:Only page one was read::Request every page"]
+    ) == [
+        {
+            "id": "finding-1",
+            "severity": "high",
+            "summary": "Pagination stops early",
+            "evidence": "Only page one was read",
+            "criterion": "ac-3",
+            "required_change": "Request every page",
+        }
+    ]
+    assert findings_from_args(["low:Summary text:Evidence text"])[0]["criterion"] == ""

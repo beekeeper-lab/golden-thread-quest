@@ -314,17 +314,7 @@ def action_command(args: argparse.Namespace) -> int:
                 file=sys.stderr,
             )
             return EXIT_USAGE
-        payload["findings"] = [
-            {
-                "id": f"finding-{index + 1}",
-                "severity": severity,
-                "summary": summary,
-                "evidence": evidence,
-            }
-            for index, (severity, summary, evidence) in enumerate(
-                part.split(":", 2) for part in args.finding
-            )
-        ]
+        payload["findings"] = findings_from_args(args.finding)
 
     # An action rebuilds the site, and the page it writes says whether state can be changed
     # from it. Assuming "offline" here meant one CLI action from a second terminal disabled
@@ -365,6 +355,31 @@ def action_command(args: argparse.Namespace) -> int:
         if result.get("next_steps"):
             print(f"next steps:\n{result['next_steps']}")
     return EXIT_OK
+
+
+def findings_from_args(parts: list[str]) -> list[dict[str, str]]:
+    """`--finding` values as finding records.
+
+    Round 17 L9: `severity@ac-3:summary:evidence::required change`, both additions optional,
+    so the criterion and the required change the schema already had can be given from here
+    as well as from the form. Blank optional fields are dropped by the action layer.
+    """
+    findings: list[dict[str, str]] = []
+    for index, part in enumerate(parts):
+        head, _, required_change = part.partition("::")
+        severity, summary, evidence = head.split(":", 2)
+        severity, _, criterion = severity.partition("@")
+        findings.append(
+            {
+                "id": f"finding-{index + 1}",
+                "severity": severity,
+                "summary": summary,
+                "evidence": evidence,
+                "criterion": criterion,
+                "required_change": required_change.strip(),
+            }
+        )
+    return findings
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -412,7 +427,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--finding",
         action="append",
         default=[],
-        help="severity:summary:evidence — repeatable; at least one to request changes",
+        help="severity[@ac-N]:summary:evidence[::required change] — repeatable; at least one "
+        "to request changes. @ac-N names the acceptance criterion it is about",
     )
     action.add_argument(
         "--acknowledge-changed-evidence",

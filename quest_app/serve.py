@@ -719,6 +719,8 @@ class ActionHandler(BaseHTTPRequestHandler):
         severities = fields.get("finding_severity", [])
         summaries = fields.get("finding_summary", [])
         evidence = fields.get("finding_evidence", [])
+        criteria = fields.get("finding_criterion", [])
+        changes = fields.get("finding_required_change", [])
         findings = []
         for index, (severity, summary, observed) in enumerate(
             zip(severities, summaries, evidence, strict=False)
@@ -749,6 +751,9 @@ class ActionHandler(BaseHTTPRequestHandler):
                     "severity": severity,
                     "summary": summary,
                     "evidence": observed,
+                    # Round 17 L9: optional, and dropped by the action layer when blank.
+                    "criterion": criteria[index] if index < len(criteria) else "",
+                    "required_change": changes[index] if index < len(changes) else "",
                 }
             )
         extra: dict[str, Any] = {}

@@ -1329,7 +1329,11 @@ def _decision_view(document: dict[str, Any]) -> Any:
         verification_statement=document.get("verification_statement"),
         findings=tuple(
             SimpleNamespace(
-                severity=finding.get("severity", ""), summary=finding.get("summary", "")
+                severity=finding.get("severity", ""),
+                summary=finding.get("summary", ""),
+                evidence=finding.get("evidence"),
+                criterion=finding.get("criterion"),
+                required_change=finding.get("required_change"),
             )
             for finding in document.get("findings", [])
         ),

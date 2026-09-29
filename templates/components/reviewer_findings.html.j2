@@ -16,6 +16,7 @@
         <strong>{{ finding.summary }}</strong>
         <span class="state state-needs_changes">{{ finding.severity }}</span>
       </div>
+      {% if finding.criterion %}<p class="authority">About acceptance criterion {{ finding.criterion | replace('ac-', '') }}.</p>{% endif %}
       {% if finding.evidence %}<p>{{ finding.evidence }}</p>{% endif %}
       {% if finding.required_change %}<p><strong>Required change.</strong> {{ finding.required_change }}</p>{% endif %}
     </li>

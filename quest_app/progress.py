@@ -61,6 +61,8 @@ class ReviewFinding:
     summary: str
     evidence: str
     required_change: str | None = None
+    # Round 17 L9: ADR-016 says findings reference `ac-<n>`; nothing could record one.
+    criterion: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -458,6 +460,7 @@ def _load_review(
                 summary=str(f["summary"]),
                 evidence=str(f["evidence"]),
                 required_change=f.get("required_change"),
+                criterion=f.get("criterion"),
             )
             for f in data["findings"]
         ),

@@ -192,7 +192,10 @@
       <p class="authority">{{ decision.reviewer_display_name }}</p>
       {% if decision.verification_statement %}<p>{{ decision.verification_statement }}</p>{% endif %}
       {% for finding in decision.findings %}
-      <p><strong>{{ finding.severity }}:</strong> {{ finding.summary }}</p>
+      {# Round 17 L13: the evidence, criterion and required change were dropped here. #}
+      <p><strong>{{ finding.severity }}:</strong> {{ finding.summary }}{% if finding.criterion %} (criterion {{ finding.criterion | replace('ac-', '') }}){% endif %}</p>
+      {% if finding.evidence %}<p class="authority">{{ finding.evidence }}</p>{% endif %}
+      {% if finding.required_change %}<p class="authority">Required change: {{ finding.required_change }}</p>{% endif %}
       {% endfor %}
     </li>
     {% endfor %}
@@ -263,6 +266,17 @@
         <div class="field">
           <label for="finding-evidence-{{ index }}">What you observed</label>
           <input type="text" id="finding-evidence-{{ index }}" name="finding_evidence">
+        </div>
+        <div class="field">
+          <label for="finding-criterion-{{ index }}">Criterion</label>
+          <select id="finding-criterion-{{ index }}" name="finding_criterion">
+            <option value="">—</option>
+            {% for criterion in acceptance_criteria %}<option value="{{ criterion.id }}">{{ loop.index }}. {{ criterion.text | truncate(60) }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="finding-required-change-{{ index }}">What to change</label>
+          <input type="text" id="finding-required-change-{{ index }}" name="finding_required_change">
         </div>
       </div>
       {% endfor %}

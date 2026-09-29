@@ -282,6 +282,22 @@ def record_decision(
             "The submission record does not describe this attempt, so there is nothing to decide."
         )
 
+    # Round 17 L9: a finding may name the criterion it is about. A name the quest does not
+    # have would point the participant at nothing, so it is refused, and an empty optional
+    # field is dropped rather than stored blank.
+    criteria = {criterion.id for criterion in quest.acceptance_criteria}
+    findings = [
+        {key: value for key, value in finding.items() if value not in (None, "")}
+        for finding in findings
+    ]
+    for finding in findings:
+        criterion = finding.get("criterion")
+        if criterion is not None and criterion not in criteria:
+            raise ReviewError(
+                f"{finding.get('id', 'A finding')} names {criterion!r}, which is not one of "
+                f"this quest's acceptance criteria ({', '.join(sorted(criteria))})."
+            )
+
     # Set only when the approval actually crossed the changed-evidence gate below, so the
     # record shows whether this specific approval needed and got the acknowledgement rather
     # than whether the caller happened to pass the flag (round 15 L2).
@@ -382,6 +398,7 @@ def record_decision(
                 summary=finding["summary"],
                 evidence=finding["evidence"],
                 required_change=finding.get("required_change"),
+                criterion=finding.get("criterion"),
             )
             for finding in findings
         ),
