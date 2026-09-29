@@ -103,7 +103,7 @@ The validator reads `participant/context/jira/assigned/stories.json` and nothing
 }
 ```
 
-Run the validator against the fixture that matches what you want to demonstrate: `happy-path`, `pagination`, `stale-item` or `duplicate-comment`.
+Run the validator against the fixture that matches what you want to demonstrate: `happy-path`, `pagination`, `stale-item` or `duplicate-comment`. Choose it in the fixture list beside the run button, or pass `--param fixture_set=pagination` to `quest-app action run-validator`. The validator checks that `stories.json` holds every story in that fixture, so point your synchronization at `validators/fixtures/jira/<fixture>.json` as its source for this run instead of live Jira. A sync of your real project will not carry the fixture's story keys and will not pass.
 
 ## Safety constraints
 

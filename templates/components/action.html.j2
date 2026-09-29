@@ -32,6 +32,14 @@
       {% endif %}
     </div>
     {% endif %}
+    {% for parameter in action.parameters %}
+    <div class="field">
+      <label for="{{ action.id }}-{{ parameter.name }}">{{ parameter.description or parameter.name | replace('_', ' ') | capitalize }}</label>
+      <select id="{{ action.id }}-{{ parameter.name }}" name="param-{{ parameter.name }}">
+        {% for option in parameter.options %}<option value="{{ option }}"{% if option == parameter.default %} selected{% endif %}>{{ option }}</option>{% endfor %}
+      </select>
+    </div>
+    {% endfor %}
     <button type="submit" class="button {{ 'button-consequential' if action.consequential else 'button-primary' }}">{{ action.label }}</button>
   </form>
 {% endif %}

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from quest_app.config import AppConfig
 from quest_app.content_loader import SchemaSet, load_content
@@ -29,6 +30,9 @@ class LoadedWorld:
     config: AppConfig
     content: ContentBundle
     participant: ParticipantState | None
+    # Round 17 L4/L12: pages name a validator by its registry `display_name` and offer its
+    # enum parameters, so the build needs the registry the loader already reads.
+    registry: Any = None
 
 
 def load_world(
@@ -64,7 +68,7 @@ def load_world(
 
     if not report.ok:
         return None
-    return LoadedWorld(config=config, content=content, participant=participant)
+    return LoadedWorld(config=config, content=content, participant=participant, registry=registry)
 
 
 def _present(path: Path) -> bool:

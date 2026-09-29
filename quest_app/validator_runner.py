@@ -712,7 +712,14 @@ def run_validator(
         output_excerpt=excerpt,
         output_truncated=truncated,
         redaction_applied=redaction_applied,
-        environment={"validator_version": definition.version, "network": definition.network},
+        # Round 17 L4: which parameters the run used (the Jira check's fixture), so the result
+        # page says what was evaluated. Every bound value is an enum, integer or boolean, which
+        # the schema's scalar-only `environment` already admits.
+        environment={
+            "validator_version": definition.version,
+            "network": definition.network,
+            **{f"parameter_{name}": value for name, value in sorted(bound.items())},
+        },
     )
 
 

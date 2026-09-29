@@ -49,6 +49,7 @@ from quest_app.view_models import (
     ActivityEvent,
     EnvironmentCheck,
     PageView,
+    ParameterView,
     PrerequisiteView,
     ServiceView,
     ValidatorView,
@@ -662,11 +663,18 @@ def _render_and_publish(
                         "quest": summaries[quest.id],
                         "result": result,
                         "ordered_checks": _checks_by_severity(result),
+                        # Round 17 L7: this was hard-coded disabled, so the page said "start
+                        # the local service" while the service was serving it.
                         "rerun_action": ActionView(
                             id=f"rerun-{result.validator_id}",
-                            label=f"Run {result.validator_id.replace('-', ' ')} again",
-                            enabled=False,
-                            reason="Start the local service to run checks from this page.",
+                            label=f"Run the {_validator_display_name(world, result.validator_id)} "
+                            "check again",
+                            enabled=service.available,
+                            route=routes.action("run-validator", quest.id, result.validator_id),
+                            reason=None
+                            if service.available
+                            else "Start the local service to run checks from this page.",
+                            parameters=_validator_choices(world, result.validator_id),
                         ),
                         "evidence_route": routes.evidence(quest.id),
                         "outcome_label": OUTCOME_LABELS.get(result.outcome, result.outcome),
@@ -898,7 +906,7 @@ def _quest_detail_context(
     validators = tuple(
         ValidatorView(
             id=vid,
-            display_name=vid.replace("-", " ").capitalize(),
+            display_name=_validator_display_name(world, vid),
             latest_outcome=latest[vid].outcome if vid in latest else None,
             latest_run_id=latest[vid].run_id if vid in latest else None,
             latest_completed_at=latest[vid].completed_at if vid in latest else None,
@@ -1007,7 +1015,7 @@ def _evidence_context(
     validators = tuple(
         ValidatorView(
             id=vid,
-            display_name=vid.replace("-", " ").capitalize(),
+            display_name=_validator_display_name(world, vid),
             latest_outcome=latest[vid].outcome if vid in latest else None,
             latest_run_id=latest[vid].run_id if vid in latest else None,
             latest_completed_at=latest[vid].completed_at if vid in latest else None,
@@ -1022,10 +1030,11 @@ def _evidence_context(
     run_actions = tuple(
         ActionView(
             id=f"run-{validator.id}",
-            label=f"Run {validator.display_name.lower()}",
+            label=f"Run the {validator.display_name[:1].lower()}{validator.display_name[1:]} check",
             enabled=service.available,
             route=routes.action("run-validator", quest.id, validator.id),
             reason=None if service.available else "Start the local service to run this check.",
+            parameters=_validator_choices(world, validator.id),
         )
         for validator in validators
     )
@@ -1085,6 +1094,33 @@ def _evidence_context(
         "git_summary": git_summary_for(world, evidence_path),
         "reviewer_findings": _reviewer_findings(entry),
     }
+
+
+def _validator_display_name(world: LoadedWorld, validator_id: str) -> str:
+    """The registry's name for a check (round 17 L12), or one made from its ID."""
+    definition = world.registry.definitions.get(validator_id) if world.registry else None
+    return definition.display_name if definition else validator_id.replace("-", " ").capitalize()
+
+
+def _validator_choices(world: LoadedWorld, validator_id: str) -> tuple[ParameterView, ...]:
+    """The enum parameters a run control offers as choices (round 17 L4).
+
+    Only enums: a form field is a string, and an enum is the one parameter type whose every
+    accepted value can be listed on the page. The registry still checks what comes back.
+    """
+    definition = world.registry.definitions.get(validator_id) if world.registry else None
+    if definition is None:
+        return ()
+    return tuple(
+        ParameterView(
+            name=parameter.name,
+            description=parameter.description,
+            options=parameter.allowed,
+            default=parameter.default,
+        )
+        for parameter in definition.parameters.values()
+        if parameter.type == "enum"
+    )
 
 
 def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None:

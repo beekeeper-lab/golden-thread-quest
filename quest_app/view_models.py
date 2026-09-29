@@ -197,6 +197,16 @@ class ValidatorView:
 
 
 @dataclass(frozen=True, slots=True)
+class ParameterView:
+    """One enum parameter a run control offers as a choice (round 17 L4)."""
+
+    name: str
+    description: str | None
+    options: tuple[str, ...]
+    default: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class ActionView:
     """The one action a page offers, with an explicit reason when it is not available."""
 
@@ -208,6 +218,7 @@ class ActionView:
     reason: str | None = None
     consequential: bool = False
     confirm: str | None = None
+    parameters: tuple[ParameterView, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

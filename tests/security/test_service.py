@@ -239,6 +239,49 @@ class TestTheFormRoute:
         )
         assert status == 403
 
+    def test_the_page_offers_a_validator_parameter_and_the_form_carries_it(
+        self, service: tuple[str, str], config: AppConfig
+    ) -> None:
+        """Round 17 L4/L12: the Jira check's fixture could be chosen only through the JSON
+        API, and the button was labelled from the validator's ID."""
+        base, token = service
+        # As `serve` itself builds: with the service online, so run controls are live.
+        report = ProblemReport()
+        world = load_world(config, report)
+        assert world is not None, report.to_text()
+        build_site(world, service=online_service_view())
+        with urllib.request.urlopen(  # noqa: S310 - fixed loopback URL built in this test
+            f"{base}/evidence/jira-read-assigned-stories/", timeout=10
+        ) as response:
+            page = response.read().decode()
+        assert 'name="param-fixture_set"' in page
+        assert '<option value="pagination">' in page
+        assert "Jira assigned-story synchronization" in page, "the registry's display name"
+
+        status, _ = post_form(
+            base,
+            "/api/action/run-validator/jira-read-assigned-stories/validate-jira-read-assigned",
+            {"token": token, "param-fixture_set": "stale-item"},
+        )
+        assert status == 200
+        stored = sorted(
+            (config.participant_root / "evidence" / "jira-read-assigned-stories").rglob(
+                "validation/*.json"
+            ),
+            key=lambda path: path.stat().st_mtime_ns,
+        )
+        document = json.loads(stored[-1].read_text())
+        assert document["environment"]["parameter_fixture_set"] == "stale-item"
+
+        # Round 17 L7: the result page's rerun control was hard-coded off, even here.
+        with urllib.request.urlopen(  # noqa: S310 - fixed loopback URL built in this test
+            f"{base}/evidence/jira-read-assigned-stories/validation/{document['run_id']}/",
+            timeout=10,
+        ) as response:
+            result_page = response.read().decode()
+        assert "Start the local service to run checks from this page." not in result_page
+        assert "Parameter fixture set" in result_page and "stale-item" in result_page
+
     def test_a_locked_quest_is_refused(self, service: tuple[str, str]) -> None:
         """The same rule the CLI enforces, from the other caller of the shared action layer.
 

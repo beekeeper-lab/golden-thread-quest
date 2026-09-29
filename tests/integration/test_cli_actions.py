@@ -609,3 +609,30 @@ def test_a_broken_template_after_the_change_is_an_advisory_not_a_traceback(
     progress = yaml.safe_load((config.participant_root / "progress.yaml").read_text())
     started = [a for a in progress["attempts"] if a["quest_id"] == "trello-read-board"]
     assert started, "the change the advisory says was recorded must actually be recorded"
+
+
+def test_a_validator_parameter_can_be_chosen_from_the_cli(participant: Path) -> None:
+    """Round 17 L4: the Jira quest asks for a run against a chosen fixture, and neither the
+    CLI nor the browser form could say which one; only the JSON API could."""
+    quest = "jira-read-assigned-stories"
+    unlock(participant, quest)
+    assert run(participant, "start-quest", "--quest", quest).returncode == 0
+
+    refused = run(
+        participant, "run-validator", "--quest", quest,
+        "--validator", "validate-jira-read-assigned", "--param", "fixture_set=bogus",
+    )  # fmt: skip
+    assert refused.returncode != 0
+    assert "pagination" in refused.stderr, "the refusal names the values the registry allows"
+
+    result = run(
+        participant, "run-validator", "--quest", quest,
+        "--validator", "validate-jira-read-assigned", "--param", "fixture_set=pagination",
+    )  # fmt: skip
+    assert result.returncode == 0, result.stderr
+    stored = sorted((participant / "evidence" / quest).rglob("validation/*.json"))
+    assert stored, "the run stored a result"
+    import json
+
+    document = json.loads(stored[-1].read_text())
+    assert document["environment"]["parameter_fixture_set"] == "pagination"

@@ -661,6 +661,15 @@ class ActionHandler(BaseHTTPRequestHandler):
         payload: dict[str, Any] = {"action": action, "quest_id": quest_id}
         if len(parts) == 3:
             payload["validator_id"] = parts[2]
+            # Round 17 L4: a run control's enum choices arrive as `param-<name>` fields. They
+            # are passed on as strings; the registry's allowlist accepts or refuses them.
+            chosen = {
+                name[len("param-") :]: values[0]
+                for name, values in fields.items()
+                if name.startswith("param-") and values
+            }
+            if chosen:
+                payload["parameters"] = chosen
         try:
             payload.update(self._review_fields(fields))
         except ValueError as exc:

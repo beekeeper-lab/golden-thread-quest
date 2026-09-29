@@ -286,6 +286,19 @@ def action_command(args: argparse.Namespace) -> int:
     }
     if args.validator:
         payload["validator_id"] = args.validator
+    if args.param:
+        # Round 17 L4: the Jira quest asks for a run against a chosen fixture, and only the
+        # JSON API could say which. The registry's allowlist still decides what is accepted.
+        parameters: dict[str, object] = {}
+        for item in args.param:
+            name, separator, raw = item.partition("=")
+            if not separator or not name:
+                print(f"--param needs NAME=VALUE; {item!r} has no '='.", file=sys.stderr)
+                return 2
+            parameters[name] = (
+                raw == "true" if raw in ("true", "false") else int(raw) if raw.isdigit() else raw
+            )
+        payload["parameters"] = parameters
     if args.decision:
         payload["decision"] = args.decision
         payload["reviewer_name"] = args.reviewer
@@ -381,6 +394,13 @@ def build_parser() -> argparse.ArgumentParser:
     action.add_argument("--list", action="store_true", help="List the actions and exit")
     action.add_argument("--quest", help="Quest ID the action applies to")
     action.add_argument("--validator", help="Validator ID, for run-validator")
+    action.add_argument(
+        "--param",
+        action="append",
+        default=[],
+        help="NAME=VALUE — a validator parameter for run-validator, repeatable "
+        "(e.g. fixture_set=pagination); the registry says which names and values it accepts",
+    )
     action.add_argument(
         "--decision",
         choices=[member.value for member in Decision],
