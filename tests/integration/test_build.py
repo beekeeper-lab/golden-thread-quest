@@ -681,3 +681,22 @@ def test_make_clean_knows_about_build_debris() -> None:
     from clean import REMOVABLE
 
     assert {"generated", "generated.building", "generated.previous"} <= set(REMOVABLE)
+
+
+def test_environment_health_reports_what_the_build_knew(config: AppConfig) -> None:
+    """Round 17 L6: five rows, "Unknown" for the service even on a page the service built,
+    and nothing about Git or the output directories the build had already looked at."""
+    from quest_app.view_models import offline_service_view, online_service_view
+
+    def health(service: object) -> str:
+        report = ProblemReport()
+        world = load_world(config, report)
+        assert world is not None, report.to_text()
+        build_site(world, service=service)  # type: ignore[arg-type]
+        return (config.generated_root / "health" / "index.html").read_text()
+
+    served = health(online_service_view())
+    for name in ("Application and content", "Git repository", "Generated and local-data"):
+        assert name in served, name
+    assert "this page was built by it" in served
+    assert "cannot tell whether the service is running" in health(offline_service_view())

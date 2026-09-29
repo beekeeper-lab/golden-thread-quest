@@ -795,7 +795,7 @@ def _render_and_publish(
                     heading="Environment health",
                 ),
             )
-            | {"checks": _environment_checks(world, stamp)},
+            | {"checks": _environment_checks(world, stamp, service)},
         )
     )
 
@@ -1479,7 +1479,9 @@ def _public_preview(world: LoadedWorld, totals_map: dict[str, int]) -> dict[str,
     }
 
 
-def _environment_checks(world: LoadedWorld, stamp: str) -> tuple[EnvironmentCheck, ...]:
+def _environment_checks(
+    world: LoadedWorld, stamp: str, service: ServiceView
+) -> tuple[EnvironmentCheck, ...]:
     """What a static page can honestly say about the environment.
 
     A generated page cannot inspect the machine at the moment it is read, so every check
@@ -1488,8 +1490,18 @@ def _environment_checks(world: LoadedWorld, stamp: str) -> tuple[EnvironmentChec
     """
     import sys
 
+    from quest_app.git_status import inspect
+
     config = world.config
+    git = inspect(config.repo_root)
     checks = [
+        EnvironmentCheck(
+            id="application",
+            name="Application and content",
+            importance="informational",
+            status="pass",
+            detail=f"Golden Thread Quest {APPLICATION_VERSION}; {world.content.site.curriculum}",
+        ),
         EnvironmentCheck(
             id="python",
             name="Python",
@@ -1522,13 +1534,49 @@ def _environment_checks(world: LoadedWorld, stamp: str) -> tuple[EnvironmentChec
             status="pass" if world.participant else "warning",
             detail="loaded" if world.participant else "no progress file yet — start a quest",
         ),
+        # Round 17 L6: the rows below are build-time facts the build already had. What
+        # needs a live read at the moment the page is opened (a write test, which external
+        # CLIs are installed) stays with deferred item D7.
+        EnvironmentCheck(
+            id="git",
+            name="Git repository",
+            importance="optional",
+            status=("pass" if git.upstream else "warning") if git.available else "warning",
+            detail=(
+                f"branch {git.branch or '(detached)'}, "
+                + (f"tracking {git.upstream}" if git.upstream else "no upstream")
+                + f", {git.changed} changed and {git.untracked} untracked file(s)"
+                + f" at {stamp}"
+                if git.available
+                else f"not available at {stamp}: {git.reason}"
+            ),
+            remediation=None if git.available and git.upstream else "git status",
+        ),
+        EnvironmentCheck(
+            id="output",
+            name="Generated and local-data directories",
+            importance="informational",
+            status="pass",
+            detail=(
+                f"{config.relative(config.generated_root)} (disposable); "
+                f"{config.relative(config.local_data_root)} "
+                + ("exists" if config.local_data_root.exists() else "not created yet")
+                + " (Gitignored)"
+            ),
+        ),
+        # Round 17 L6: the service builds the pages it serves, so when it built this one it
+        # can say so; a page from `quest build` still cannot know.
         EnvironmentCheck(
             id="service",
             name="Local action service",
             importance="required",
-            status="unknown",
-            detail="A generated page cannot tell whether it is running.",
-            remediation="make serve",
+            status="pass" if service.available else "unknown",
+            detail=(
+                "running on loopback; this page was built by it"
+                if service.available
+                else "A page built by `quest build` cannot tell whether the service is running."
+            ),
+            remediation=None if service.available else "make serve",
         ),
     ]
     return tuple(checks)
