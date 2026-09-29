@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from quest_app.safe_io import MAX_EVIDENCE_FILE_BYTES
 from quest_app.validator_runner import ValidatorOutput, Workspace
 from validators.jira_read_assigned import _check_disappearances_reported
 from validators.playwright_quality import BRITTLE_SELECTORS
@@ -166,7 +167,7 @@ class TestNoSecretsCheckReportsWhatItCouldNotRead:
         workspace = self._workspace_over(tmp_path)
         secret = "ghp_" + "A" * 36
         (workspace.evidence_root / "run.log").write_text(  # type: ignore[union-attr]
-            ("x" * 200_000) + f"\ntoken={secret}\n"
+            ("x" * (MAX_EVIDENCE_FILE_BYTES + 1)) + f"\ntoken={secret}\n"
         )
         output = ValidatorOutput()
         _check_no_secrets_in_evidence(workspace, output)
@@ -174,6 +175,28 @@ class TestNoSecretsCheckReportsWhatItCouldNotRead:
         assert check.id == "evidence-carries-no-secrets"
         assert check.outcome != "pass", check
         assert "too large" in check.summary.lower() or "could not" in check.summary.lower()
+
+    def test_a_text_file_named_like_a_pdf_is_scanned(self, tmp_path: Path) -> None:
+        """Round 17 C5: the check skipped `.pdf` by name while the submission gate read it."""
+        workspace = self._workspace_over(tmp_path)
+        shots = workspace.evidence_root / "screenshots"  # type: ignore[operator]
+        shots.mkdir()
+        (shots / "terminal.pdf").write_text("GITHUB_TOKEN=ghp_" + "A1b2" * 9 + "\n")
+        output = ValidatorOutput()
+        _check_no_secrets_in_evidence(workspace, output)
+        (check,) = output.checks
+        assert check.outcome == "fail", check
+        assert "terminal.pdf" in (check.evidence or "")
+
+    def test_a_utf16_secret_is_found(self, tmp_path: Path) -> None:
+        """Round 17 C5: the check decoded UTF-8 only, the gate decodes UTF-16 as well."""
+        workspace = self._workspace_over(tmp_path)
+        text = "GITHUB_TOKEN=ghp_" + "A1b2" * 9 + "\r\n"
+        (workspace.evidence_root / "ps.log").write_bytes(b"\xff\xfe" + text.encode("utf-16-le"))  # type: ignore[operator]
+        output = ValidatorOutput()
+        _check_no_secrets_in_evidence(workspace, output)
+        (check,) = output.checks
+        assert check.outcome == "fail", check
 
     def test_a_file_inside_the_window_still_passes(self, tmp_path: Path) -> None:
         workspace = self._workspace_over(tmp_path)

@@ -398,6 +398,20 @@ def _scan_one(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
     return findings
 
 
+def scan_file(path: Path, relative: str, boundary: Path) -> list[SecretFinding]:
+    """The submission gate's rules for one file, for a check that must agree with it.
+
+    Round 17 C5: the repository-foundation validator kept its own copy of these rules — an
+    extension skip list and a single UTF-8 decode — so a text file named `terminal.pdf`
+    passed its check while this module's scan blocked the same package. One implementation
+    means the two cannot disagree again.
+    """
+    return _scan_one(path, relative, boundary)
+
+
+UNREADABLE_DESCRIPTIONS = frozenset({OVERSIZE_DESCRIPTION, "could not be read to check it"})
+
+
 def scan_evidence(config: AppConfig, evidence_path: str) -> list[SecretFinding]:
     """Every secret-like value in an evidence package.
 
