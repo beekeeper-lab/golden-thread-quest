@@ -198,7 +198,7 @@ def read_metadata() -> dict[str, str]:
             f"docs/design/README.md says version {rows.get('Version')!r}; VERSION says "
             f"{version!r}. Make them agree."
         )
-    for key in ("Date", "Describes", "Audit status from"):
+    for key in ("Date", "Describes", "Plan status"):
         if key not in rows:
             raise SystemExit(f"docs/design/README.md has no {key!r} row in its table")
     return {"version": version, **rows}
@@ -389,7 +389,7 @@ the system.</p>
 <dt>Version</dt><dd class="version">{html.escape(version)}</dd>
 <dt>Date</dt><dd>{inline(meta["Date"])}</dd>
 <dt>Describes</dt><dd>{inline(meta["Describes"])}</dd>
-<dt>Audit status from</dt><dd>{inline(meta["Audit status from"])}</dd>
+<dt>Plan status</dt><dd>{inline(meta["Plan status"])}</dd>
 <dt>Source</dt><dd><code>docs/design/</code> (Markdown is the source of truth)</dd>
 </dl>
 </header>"""

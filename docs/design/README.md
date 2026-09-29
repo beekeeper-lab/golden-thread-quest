@@ -2,11 +2,11 @@
 
 | | |
 |---|---|
-| Version | 1.3.0 |
+| Version | 2.0.0 |
 | Date | 2026-09-29 |
-| Describes | `main` at `bc190e9` (round 16's merge commit), amended by the round 17 fixes landing in this pull request |
-| Audit status from | `docs/audits/round-17-independent-audit.md`: seventeen rounds have run and each found a blocking or high finding; round 18 runs against round 17's merge commit. DH7 is still open (Part 7, Section 7.2) |
-| Rendered copies | `artifacts/html/design/golden-thread-system-design-v1.3.0.html`, `artifacts/pdf/design/golden-thread-system-design-v1.3.0.pdf` |
+| Describes | `main` at `a837e7a` (round 17's merge, with its timing-test fix) |
+| Plan status | Phase 0 (reset and plan) complete; Gate 0 open: the program owner approves Phase 1 (Part 7, Section 7.4) |
+| Rendered copies | `artifacts/html/design/golden-thread-system-design-v2.0.0.html`, `artifacts/pdf/design/golden-thread-system-design-v2.0.0.pdf` |
 
 ## About this document
 
@@ -15,7 +15,8 @@ for a developer or technical stakeholder who has never seen the system, and it h
 
 1. explain what the system is for and how it is designed, in order, with the reason for
    each design choice;
-2. say what is finished, what is open, and what is deliberately left for later.
+2. say where the work stands and how the rest of it is planned: the goal, the phases, and
+   the gate between each phase where scope may change.
 
 It describes the code at the commit above. Where the code and the specification documents
 (`docs/ARCHITECTURE.md`, `docs/CONTENT-MODEL.md` and others) disagree, this document follows
@@ -42,8 +43,8 @@ them and carry the same version in their file names and on their title page.
    writes, validator containment, the secret scan, review integrity.
 6. [Key decisions](06-decisions.md): the forty-three ADRs grouped by the question each
    answers.
-7. [Status and remaining work](07-status-and-remaining-work.md): stages, DH7, the audit
-   history, the open round 12 findings, known limitations and deferred work.
+7. [Where we are, and the phase plan](07-status-and-remaining-work.md): the goal, the
+   current state, how every phase runs, the phases, and release one's known limitations.
 8. [Glossary](08-glossary.md).
 
 Also in this folder: `VERSION`, `CHANGELOG.md`, `REGENERATING.md`.
@@ -52,8 +53,8 @@ Also in this folder: `VERSION`, `CHANGELOG.md`, `REGENERATING.md`.
 
 - Every diagram is Mermaid, drawn from the code, with a numbered walkthrough beside it.
   GitHub renders the Mermaid blocks; the HTML carries them as inline SVG.
-- `ADR-nnn` refers to `docs/DECISIONS.md`. Round 12 finding IDs (C1, E1, T1 and so on) refer
-  to `docs/audits/round-12-independent-audit.md`, now merged to `main`. `Dn` refers to the
+- `ADR-nnn` refers to `docs/DECISIONS.md`. Audit finding IDs (C1, E9 and so on) refer to the
+  round record named beside them under `docs/audits/`. `Dn` refers to the
   deferred-work register in `docs/IMPLEMENTATION-PLAN.md`.
 - Commands are run from the repository root. `quest-app` needs the virtual environment
   active: `make setup`, then `source .venv/bin/activate`.

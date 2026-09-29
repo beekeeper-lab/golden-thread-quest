@@ -2,14 +2,17 @@
 
 ## Current readiness
 
-**Status (2026-09-29):** Implemented. Stages 0 to 9 are complete and audited. The Stage 10
-release decision is still open on one criterion, DH7, which closes on an audit round that
-finds no blocking or high finding. Seventeen rounds have run and each found at least one; the
-latest is `docs/audits/round-17-independent-audit.md` (one blocking, five high, all fixed),
-and round 18 runs against its merge commit.
-Every region has a quest, eight in total, and `docs/CURRICULUM-BACKLOG.md` holds the quests
-that would turn one-per-region into a journey. See `docs/RELEASE-NOTES.md` for what works and
-the known limitations, and `docs/audits/` for every audit including the ones that failed.
+**Status (2026-09-29):** Implemented; working to a phase plan. Stages 0 to 9 are complete
+and audited. The plan for everything that remains is Part 7 of the system design,
+`docs/design/07-status-and-remaining-work.md` (version 2.0.0): the goal, where the work
+stands, how every phase runs, and the phases. Scope changes only at a gate between phases;
+ideas that arrive mid-phase wait in `docs/PARKING-LOT.md`.
+
+Seventeen Stage 10 audit rounds ran under a closing rule for DH7 that no round met, and the
+round loop has stopped; round 18 is not run. **Gate 0 is open:** the program owner approves
+Phase 1, the pilot release decision, which replaces DH7's closing rule with a fixed release
+checklist. See `docs/RELEASE-NOTES.md` for what works and the known limitations, and
+`docs/audits/` for every audit.
 
 The original planning status follows, preserved because it is the specification the
 implementation was held to.
