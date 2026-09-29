@@ -457,6 +457,7 @@ _PATTERN_ADVERSARIAL_UNITS: dict[str, str] = dict(  # noqa: C406 - a `{"id": "un
         ("basic-auth-header", "authorization: basic Z"),
         ("curl-user-credential", "curl -u Z "),
         ("xml-element-credential", "<password>Z"),
+        ("xml-attribute-credential", 'name="password" value="Z'),
         ("yaml-block-scalar-credential", "password: >-\nZ\n"),
         ("secret-assignment", 'password="Z'),
         ("secret-assignment-unquoted", "password=Z"),
@@ -949,4 +950,44 @@ def test_a_passphrase_starting_with_a_code_root_is_detected(text: str) -> None:
     ["password = settings.DB_PASSWORD", "token = self.config.github_token", "secret = os.environ"],
 )
 def test_a_real_attribute_path_from_a_code_root_stays_exempted(text: str) -> None:
+    assert scan_text(text) == []
+
+
+# Round 17 E7: only a bare single-line `<keyword>` element was matched.
+XML_COMPOUND_TAG = "<db_password>Sup3rS3cretValue9</db_password>"  # secret-scan: allow
+XML_WITH_ATTRIBUTES = (
+    '<password encrypted="false">Sup3rS3cretValue9</password>'  # secret-scan: allow
+)
+XML_VALUE_ON_ITS_OWN_LINE = "<password>\n  Sup3rS3cretValue9\n</password>"  # secret-scan: allow
+XML_SPRING_PROPERTY = '<property name="password" value="Sup3rS3cretValue9"/>'  # secret-scan: allow
+XML_DOTNET_APP_SETTING = '<add key="DbPassword" value="Sup3rS3cretValue9" />'  # secret-scan: allow
+
+
+@pytest.mark.parametrize(
+    ("pattern_id", "text"),
+    [
+        ("xml-element-credential", XML_COMPOUND_TAG),
+        ("xml-element-credential", XML_WITH_ATTRIBUTES),
+        ("xml-element-credential", XML_VALUE_ON_ITS_OWN_LINE),
+        ("xml-attribute-credential", XML_SPRING_PROPERTY),
+        ("xml-attribute-credential", XML_DOTNET_APP_SETTING),
+    ],
+)
+def test_xml_credential_variants_are_detected(pattern_id: str, text: str) -> None:
+    (match,) = scan_text(text)
+    assert match.pattern_id == pattern_id
+    redacted, _ = redact_text(text)
+    assert "Sup3rS3cretValue9" not in redacted
+    assert scan_text(redacted) == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        '<input type="hidden" name="request_token" value="__GTQ_REQUEST_TOKEN__">',
+        '<input name="password" value="{{ value }}">',
+        '<label for="password">Password</label>',
+    ],
+)
+def test_xml_markup_that_names_a_credential_without_holding_one_is_clean(text: str) -> None:
     assert scan_text(text) == []

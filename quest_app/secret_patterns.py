@@ -382,10 +382,39 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     # scalar (`password: >-` / `password: |`, followed by an indented value on its own
     # line) is valid YAML the flow-style unquoted pattern below never reaches, since it
     # requires the value on the same line as the keyword.
+    #
+    # Round 17 E7: the element pattern only matched a bare `<keyword>` tag with the value on
+    # the same line, so the ordinary variants were all missed: a compound tag name
+    # (`<db_password>`), a tag with attributes (`<password encrypted="false">`), and a value
+    # on its own line between the tags, as any pretty-printed XML writes it. The tag name may
+    # now carry a bounded prefix and suffix around the keyword and up to 200 characters of
+    # attributes, and the value may sit on the line after the opening tag with the closing
+    # tag on the line after it. The value is bounded at 512 characters and must start and
+    # end on a non-space character, which is what keeps the trailing-whitespace run in
+    # front of the closing tag from backtracking against it. Any closing tag ends it: a
+    # well-formed document only ever closes the tag it opened.
     SecretPattern(
         "xml-element-credential",
         "Secret-like value in an XML element",
-        _c(r"<(?:" + _KEYWORDS + r")>([^<>\n]{8,})</(?:" + _KEYWORDS + r")>"),
+        _c(
+            r"<[A-Za-z0-9_:.-]{0,40}?"
+            + _KEY
+            + r"(?:\s[^<>]{0,200})?>[ \t]*(?:\r?\n[ \t]*)?"
+            + r"([^<>\s][^<>\n]{6,510}[^<>\s])[ \t]*(?:\r?\n[ \t]*)?</[A-Za-z0-9_:.-]{1,80}>"
+        ),
+    ),
+    # Round 17 E7: Spring's `<property name="password" value="…"/>` and .NET's
+    # `<add key="DbPassword" value="…"/>` hold the credential in an attribute, next to an
+    # attribute that names it; neither the element pattern nor the assignment patterns
+    # (which need `=`/`:` straight after the name) ever reached it.
+    SecretPattern(
+        "xml-attribute-credential",
+        "Secret-like value in an XML attribute",
+        _c(
+            r"\b(?:name|key)[ \t]*=[ \t]*[\"'][A-Za-z0-9_.:-]{0,40}?"
+            + _KEY
+            + r"[\"'][ \t\r\n]{1,40}value[ \t]*=[ \t]*[\"']([^\"'<>\n]{8,512})[\"']"
+        ),
     ),
     SecretPattern(
         "yaml-block-scalar-credential",
@@ -651,6 +680,17 @@ def _is_placeholder(value: str, *, allow_call_expression: bool = False) -> bool:
     # api_key)` and `load_api_key(config[` — the real code this repository's own source
     # contains — all still pass.
     if allow_call_expression and _is_code_expression(value.strip()):
+        return True
+    # Round 17 E7: an `UPPER_SNAKE` name that itself contains a credential keyword is the
+    # *name* of a credential — an environment variable or a marker this application
+    # substitutes at serve time (`value="__GTQ_REQUEST_TOKEN__"` in its own templates, now
+    # that an XML attribute is scanned) — not a value. Digits, lowercase or no underscore
+    # at all and it is a value again.
+    if (
+        re.fullmatch(r"[A-Z_]+", value.strip())
+        and "_" in value
+        and re.search(_KEYWORDS, value, re.IGNORECASE)
+    ):
         return True
     # Round 17 E1: once a keyword can carry a suffix, the unquoted pattern reads three more
     # code shapes from this repository's own source that no suffix-free name ever produced:
