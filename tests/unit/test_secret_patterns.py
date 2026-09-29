@@ -453,6 +453,8 @@ _PATTERN_ADVERSARIAL_UNITS: dict[str, str] = dict(  # noqa: C406 - a `{"id": "un
         ("stripe-key", "sk_live_"),
         ("npm-token", "npm_"),
         ("url-query-credential", "?key=Z"),
+        ("slack-webhook", "hooks.slack.com/services/"),
+        ("azure-connection-key", "AccountKey="),
         ("bearer-header", "authorization: bearer Z"),
         ("basic-auth-header", "authorization: basic Z"),
         ("curl-user-credential", "curl -u Z "),
@@ -845,3 +847,21 @@ def test_an_escaped_quote_inside_a_value_is_redacted_with_it() -> None:
     text = '{"password":"abc\\"Sup3rS3cret9"}'  # secret-scan: allow
     expected = '{"password":"' + REDACTION_PLACEHOLDER + '"}'  # secret-scan: allow
     assert redact_text(text)[0] == expected
+
+
+# Round 17 L10: planted in Trello evidence, each reached `evidence_ready`.
+ENCODED_QUERY = "next=%2Fcards%3Ftoken%3Dab12cd34ef56ab12cd34ef56"  # secret-scan: allow
+SLACK_WEBHOOK = "https://hooks.slack.com/services/" + "T0ABCDEFG/B0ABCDEFG/" + "aBcDeFgHiJkLmNoPqRsTuVwX"  # secret-scan: allow  # noqa: E501
+AZURE_KEY = "AccountName=x;AccountKey=Ab3dEfGh12Ij4kLm56NoPq==;"  # secret-scan: allow
+
+
+@pytest.mark.parametrize(
+    ("pattern_id", "text"),
+    [
+        ("url-query-credential", ENCODED_QUERY),
+        ("slack-webhook", SLACK_WEBHOOK),
+        ("azure-connection-key", AZURE_KEY),
+    ],
+)
+def test_keywordless_credential_shapes_are_detected(pattern_id: str, text: str) -> None:
+    assert pattern_id in {match.pattern_id for match in scan_text(text)}, text

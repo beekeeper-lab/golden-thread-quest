@@ -303,7 +303,25 @@ PATTERNS: Final[tuple[SecretPattern, ...]] = (
     SecretPattern(
         "url-query-credential",
         "Credential in a URL query parameter",
-        _c(r"[?&](?:key|token)=([A-Za-z0-9_-]{16,})"),
+        # Round 17 L10: also percent-encoded (`%3Ftoken%3D…`), the shape a URL takes once it
+        # is itself a query value — a redirect target or a logged request line.
+        _c(r"(?:[?&]|%3F|%26)(?:key|token)(?:=|%3D)([A-Za-z0-9_-]{16,})"),
+    ),
+    # Round 17 L10: a Slack incoming-webhook URL is its own credential, with no keyword.
+    SecretPattern(
+        "slack-webhook",
+        "Slack incoming-webhook URL",
+        _c(
+            r"(hooks\.slack\.com/(?:services|workflows|triggers)/[A-Za-z0-9_/-]{20,200})",
+            case_sensitive=True,
+        ),
+    ),
+    # Round 17 L10: an Azure storage or Service Bus connection string carries its key as a
+    # `;`-separated field no assignment pattern reads (`AccountKey=` has no keyword).
+    SecretPattern(
+        "azure-connection-key",
+        "Key in an Azure connection string",
+        _c(r"(?:AccountKey|SharedAccessKey)=([A-Za-z0-9+/=]{20,200})"),
     ),
     SecretPattern(
         "bearer-header",
