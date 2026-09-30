@@ -471,6 +471,7 @@ Update this section whenever work pauses.
 
 | Date/time | Branch | Current stage | Last completed item | Next action | Blockers |
 |---|---|---:|---|---|---|
+| 2026-09-30 | phase-2a1/non-technical-onboarding | 2A.1 | Participants are BAs and manual testers: `install.sh`, `gtq start`/`hand-in`/`get-review`, `PILOT.md` rewritten, release 0.2.1. Verify pass: two high findings fixed, cycle 2 clean | Program owner runs `install.sh` on their Mac and asks participants which computer they use; then sends the invitation (Phase 2B) | Windows participants: WSL only |
 | 2026-09-29 | phase-2/pilot-release | 2A | Gate 1: released to a pilot. Both missing-proof fixes built, with the pilot guides and version 0.2.0 | Verify pass, merge, tag `v0.2.0`, then the program owner sends the invitation | |
 | 2026-09-29 | phase-1/pilot-release | 10 | Phase 1 built and verified: release checklist passed, DH7 closed, `docs/guides/DEMO.md` written, recommendation `release-with-advisories` | Gate 1: the program owner runs the demo and makes the release decision |  |
 | 2026-09-29 | docs/phase-plan | 10 | Round loop stopped; round 18 not run. Phase plan written as system design v2.0.0, Part 7 | Gate 0: program owner approves Phase 1 (pilot release decision) | DH7 closing-rule change awaits approval |

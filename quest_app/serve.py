@@ -1016,7 +1016,13 @@ def claim_port_file(config: AppConfig, bound: int) -> Path | None:
     return claimed
 
 
-def run_service(config: AppConfig, *, host: str | None = None, port: int | None = None) -> int:
+def run_service(
+    config: AppConfig,
+    *,
+    host: str | None = None,
+    port: int | None = None,
+    open_browser: bool = False,
+) -> int:
     """Build once, then serve until interrupted."""
     from quest_app.config import AppConfig as Config
 
@@ -1083,6 +1089,13 @@ def run_service(config: AppConfig, *, host: str | None = None, port: int | None 
             file=sys.stderr,
         )
         print("Stop with Ctrl-C.", file=sys.stderr)
+        if open_browser:
+            # The socket is already listening, so the browser's first request waits in the
+            # backlog until `serve_forever` takes it. A machine with no browser just says so.
+            import webbrowser
+
+            if not webbrowser.open(address):
+                print(f"Open {address} in your browser.", file=sys.stderr)
         server.serve_forever()
     except KeyboardInterrupt:
         print("\nstopped", file=sys.stderr)

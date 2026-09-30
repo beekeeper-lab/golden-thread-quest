@@ -21,7 +21,7 @@ gate.
 
 ## 7.2 Where we are (2026-09-29)
 
-**Current phase: Phase 2B, the pilot run. It starts when the program owner sends the invitation.** The hand-in was rehearsed at `v0.2.0` with two local clones on 2026-09-29 and passes along the path `PILOT.md` describes (`docs/pilot/PILOT-LOG.md`). The GitHub fork and pull request can only be tested by the first real hand-in. Gate 1 passed on 2026-09-29, when the
+**Current phase: Phase 2A.1, setup and hand-in for non-developers (added 2026-09-30). Phase 2B, the pilot run, starts when the program owner sends the invitation for 0.2.1.** The hand-in was rehearsed at `v0.2.0` with two local clones on 2026-09-29 and passes along the path `PILOT.md` describes (`docs/pilot/PILOT-LOG.md`). The GitHub fork and pull request can only be tested by the first real hand-in. Gate 1 passed on 2026-09-29, when the
 program owner decided to release to a pilot. Phase 1's checklist passed and DH7 is closed
 (`docs/audits/phase-01-verify.md`). Phase 2A fixes the two parking-lot items the program
 owner chose and builds the release. Phase 2B is the pilot itself.
@@ -154,7 +154,7 @@ recommendation: **do**, **decide** (at that phase's gate, likely on pilot eviden
 - **Gate 1 (2026-09-29): passed.** The program owner decided to release to a pilot of about
   two participants, after fixing the two parking-lot items about missing proof.
 
-### Phase 2A: Pilot release (current)
+### Phase 2A: Pilot release
 
 - **Goal:** a tagged release that two participants can take up from a Slack message, with
   the two missing-proof gaps closed.
@@ -188,6 +188,40 @@ recommendation: **do**, **decide** (at that phase's gate, likely on pilot eviden
   high findings in cycle 1: refusals were cut short, and reviewing from a clone always showed
   a false "evidence changed" warning. Both were fixed and passed in cycle 2. The fork and
   pull-request step on GitHub itself is untested.
+
+### Phase 2A.1: Setup and hand-in for non-developers (current)
+
+Added on 2026-09-30, before the invitation was sent. The program owner confirmed that
+participants are business analysts and manual testers, not developers, and approved this
+scope. For them, 0.2.0 asks for too much terminal and Git work before the first quest.
+
+- **Goal:** a participant who has never used Git gets from the Slack message to the
+  running application, hands in a quest and gets the review back, each with one command.
+- **Budget:** about a day.
+- **Scope:**
+  1. **`install.sh`, one pasted line on Mac, Linux or WSL.** It installs what is missing
+     (uv, which brings its own Python, and the GitHub CLI), asking before each install. It
+     signs the participant in to GitHub in the browser, forks and clones the repository,
+     creates their pilot branch at the release tag, installs the application and starts it.
+  2. **`gtq start`, `gtq hand-in` and `gtq get-review`.** Hand-in commits the participant's
+     folder, pushes it and opens or updates their pull request. Get-review pulls the
+     reviewer's decision and explains any refusal in plain words. Each works from any folder.
+  3. **`PILOT.md` rewritten for a non-developer.** It says what they will see after each
+     step, and it uses no Git vocabulary they do not need.
+  4. **Release 0.2.1.** The invitation points at the `v0.2.1` guide.
+- **Out of scope:** native Windows. The file-safety layer relies on Mac and Linux
+  operating-system features, so a port is a separate decision at Gate 2. Also out of scope:
+  WSL setup on Windows, until the participants say whether they use Windows; and any quest
+  content change.
+- **Done when:** a test drives hand-in and get-review against local repositories and a
+  stand-in for the GitHub CLI. `install.sh` runs to a working application in a clean Linux
+  container, with GitHub sign-in and forking stubbed out. `make check` and CI pass. The
+  program owner reads the new `PILOT.md`.
+- **Demo:** the program owner runs `install.sh` on their own machine.
+- **Result:** built and verified (`docs/audits/phase-02a1-verify.md`). Cycle 1 found two high
+  findings: an edit after hand-in could leave the copy stuck, and re-running setup with a
+  differently typed name hid all progress. Both were fixed and passed in cycle 2. The macOS
+  path and real GitHub sign-in, forking and pull requests are untested until the demo.
 
 ### Phase 2B: Pilot run
 

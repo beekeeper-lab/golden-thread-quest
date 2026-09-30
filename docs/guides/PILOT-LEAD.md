@@ -5,8 +5,15 @@ collect their feedback. Participants follow `docs/guides/PILOT.md`.
 
 ## 1. The invitation
 
+Participants are business analysts and manual testers. Setup is one pasted line
+(`install.sh`), and hand-in and review pickup are one command each, so they need no Git.
+
+**Before you send it, ask each participant which computer they use.** Setup works on a Mac,
+on Linux, and inside WSL on Windows. It does not install WSL, and native Windows is not
+supported yet. A Windows participant needs WSL set up already, or a Mac to borrow.
+
 Fill in the date and paste this into Slack. The link points at the pilot guide exactly as
-tagged for 0.2.0, so it will not change under anyone.
+tagged for 0.2.1, so it will not change under anyone.
 
 > Hi all, I'd love your help with a short pilot of *The Golden Thread Quest*. It's a
 > self-paced training app for AI Context Engineers: the people who connect what was asked
@@ -14,12 +21,13 @@ tagged for 0.2.0, so it will not change under anyone.
 >
 > *What:* one required quest (about an hour) and one optional one.
 > *When:* by *<date>*.
-> *You need:* a Mac or Linux machine (Windows via WSL), Git, Python 3.10+, uv, and a GitHub account.
-> *Start here:* https://github.com/beekeeper-lab/golden-thread-quest/blob/v0.2.0/docs/guides/PILOT.md
+> *You need:* a Mac or Linux computer (on Windows, tell me first) and a free GitHub account. No coding: setup is one line you paste, and
+> the guide walks you through it.
+> *Start here:* https://github.com/beekeeper-lab/golden-thread-quest/blob/v0.2.1/docs/guides/PILOT.md
 >
-> Your fork will be public, so please use made-up material only. I'll review your work
-> through your pull request, and at the end I'll ask five quick questions. Anything
-> confusing is exactly what I want to hear. Reply here or DM me. Thanks!
+> Your work is stored on GitHub where anyone can read it, so please use made-up material
+> only. At the end I'll ask five quick questions. Anything confusing is exactly what I want
+> to hear. Reply here or DM me. Thanks!
 
 Two weeks is a reasonable window. Post the invitation as a thread, so hand-ins and questions
 stay together.
@@ -37,7 +45,7 @@ You also need the GitHub CLI signed in: `gh auth status`.
 ## 3. Review a hand-in
 
 A participant posts in the thread when a quest is ready. Each participant has one pull
-request, titled `Pilot: <name>`.
+request, titled `Pilot: <name>`, which their `gtq hand-in` opened.
 
 1. `cd ~/gtq-review`
 2. `gh pr list`, and note the pull request's number.
@@ -52,11 +60,12 @@ request, titled `Pilot: <name>`.
 7. `git add participant/`
 8. `git commit -m "Review: <quest-id>"`
 9. `git push`
-10. Reply in the thread with the decision. The participant then runs `git pull` to see it.
+10. Reply in the thread with the decision. The participant then runs `gtq get-review` to
+    see it.
 
 `git push` in step 9 goes to the participant's branch, which works because their pull
-request allows edits by maintainers. If it is refused, ask them to tick **Allow edits by
-maintainers** on the pull request.
+request allows edits by maintainers, which `gtq hand-in` leaves on. If the push is refused,
+ask them to tick **Allow edits by maintainers** on the pull request page.
 
 **Never merge a pilot pull request.** Its evidence belongs to the participant, not to the
 program's `main`.

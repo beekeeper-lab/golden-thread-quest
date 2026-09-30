@@ -1,10 +1,27 @@
 # Release Notes: Pilot Release
 
-**Version:** 0.2.0
-**Date:** 2026-09-29
+**Version:** 0.2.1
+**Date:** 2026-09-30
 **Status:** released to a small invited pilot, not for general use. The release checklist
 passed (`docs/audits/phase-01-verify.md`), and the program owner released it at Gate 1
 (`docs/audits/final-audit.md`). Pilot participants start with `docs/guides/PILOT.md`.
+
+## What changed in 0.2.1
+
+Pilot participants are business analysts and manual testers, not developers (Phase 2A.1).
+
+- **Setup is one pasted line on a Mac, Linux or Windows WSL: `install.sh`.** It installs
+  what is missing, asking before each install: Apple's command line tools or Git, uv (which
+  brings its own Python) and the GitHub command line tool. Then it signs the participant in
+  to GitHub in the browser, forks and clones the repository, creates their `pilot/<name>`
+  branch at `v0.2.1`, installs the application and starts it. Running it again is safe.
+- **`gtq start`, `gtq hand-in` and `gtq get-review`,** from any folder. Hand-in commits
+  `participant/`, pushes it and opens or updates the participant's pull request. Get-review
+  brings in the reviewer's decision, names it, and rebuilds the site so a reload shows it.
+  Both explain every refusal in plain words (ADR-044).
+- `quest serve --open` opens the home page in a browser.
+- `docs/guides/PILOT.md` is rewritten for someone who has not used Git.
+- **Not yet:** native Windows. The setup runs in WSL, but installing WSL is not automated.
 
 ## What changed in 0.2.0
 
@@ -76,7 +93,7 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 1388 under `make check`, plus 57 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
+| Tests | 1403 under `make check`, plus 57 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3 quest-facing, plus 2 registered environment probes and one unregistered slow probe used only to prove the timeout |
