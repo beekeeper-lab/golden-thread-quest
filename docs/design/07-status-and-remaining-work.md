@@ -21,7 +21,7 @@ gate.
 
 ## 7.2 Where we are (2026-09-29)
 
-**Current phase: Phase 2A, the pilot release, is built and verified; next, the program owner sends the invitation and Phase 2B, the pilot, begins.** Gate 1 passed on 2026-09-29, when the
+**Current phase: Phase 2B, the pilot run. It starts when the program owner sends the invitation.** The hand-in was rehearsed at `v0.2.0` with two local clones on 2026-09-29 and passes along the path `PILOT.md` describes (`docs/pilot/PILOT-LOG.md`). The GitHub fork and pull request can only be tested by the first real hand-in. Gate 1 passed on 2026-09-29, when the
 program owner decided to release to a pilot. Phase 1's checklist passed and DH7 is closed
 (`docs/audits/phase-01-verify.md`). Phase 2A fixes the two parking-lot items the program
 owner chose and builds the release. Phase 2B is the pilot itself.
