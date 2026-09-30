@@ -764,3 +764,21 @@ root from the other direction, at build time). A configured root anywhere else �
 one reached through a symbolic link, since the participant root is resolved before this
 check runs — stays trusted exactly as ADR-042 already says.
 
+## ADR-044 — A participant's own terminal command may push and open their pull request
+
+**Decision:** `gtq hand-in` (`quest_app.handin`) commits `participant/` and nothing else,
+pushes the participant's branch to `origin`, and opens a pull request to `upstream` with the
+GitHub CLI, or reports the one already open. `gtq get-review` refuses while anything under
+`participant/` is uncommitted, then fetches the branch and fast-forwards only. Every refusal
+is worded for a non-developer and says whether anything changed. The browser and the local
+service still never push, open a pull request or merge. `install.sh` creates the layout
+these commands assume: `origin` is the fork, `upstream` the program's repository, and the
+participant works on a `pilot/<name>` branch that is not `main`.
+
+**Reason:** Participants are business analysts and manual testers (Phase 2A.1). The 0.2.0
+hand-in was five Git commands and a web form, and the pre-pilot rehearsal found that a
+participant who followed a slightly different recipe could not bring in their review at all.
+`review.submission_instructions` keeps pushing out of the application because it claims on
+the participant's behalf that work is ready. A command the participant types is that claim,
+made by them, so the reasoning holds. Keeping the commands out of the browser keeps the
+service's rule simple: it performs no Git write.

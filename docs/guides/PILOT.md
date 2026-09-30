@@ -2,11 +2,13 @@
 
 Thank you for trying the Golden Thread Quest. It is a self-paced training application for
 the AI Context Engineer: the person who connects what people ask for to delivery that has
-been checked. It runs on your own machine. Your work is ordinary files in your own copy of
-the repository, and a reviewer decides what counts as verified.
+been checked. It runs on your own computer, and a reviewer decides what counts as done.
 
-This is a pilot of version 0.2.0. It works, but it is new, so if something is confusing,
-that is what we most want to hear about.
+This is a pilot of version 0.2.1. It works, but it is new. If anything is confusing, even
+for a moment, that is exactly what we want to hear.
+
+You do not need to be a developer. You will paste a few short commands into a terminal
+window, and this guide says what you will see each time.
 
 ## What you are asked to do
 
@@ -16,89 +18,115 @@ that is what we most want to hear about.
 | **Ingest a Meeting Transcript Without Losing Its Source** (BA Ruins) | If you have time | One to two hours |
 
 The second quest unlocks once the first is verified. Finish by the date in your invitation,
-then answer the five feedback questions at the end of this guide.
+then answer the five questions at the end of this guide.
 
 ## Before you start
 
-- A Mac or Linux machine. On Windows, use WSL.
-- Git, Python 3.10 or newer, `make`, and uv (<https://docs.astral.sh/uv/>).
-- A GitHub account.
+- **A Mac, or a Linux computer.** On Windows, tell the pilot lead before you start. If you
+  already use WSL (Ubuntu on Windows), open Ubuntu and follow the steps below as written.
+- **A free GitHub account.** If you do not have one, create it at <https://github.com/signup>.
+  Your GitHub name will appear on your work.
+- **About ten minutes** for setup, and your computer password if it asks for it.
 
-**Your fork is public.** Anything you commit can be read by anyone, so use fictional
-material only: made-up tickets, a transcript you wrote yourself, fake names. Never commit a
-real token, password, customer name or real meeting transcript.
+**Use made-up material only.** Your work is stored on GitHub where anyone can read it. Use
+fictional tickets, a transcript you wrote yourself and fake names. Never include a real
+password, customer name or real meeting.
 
-## Set up (about ten minutes)
+## Step 1: Set up (once)
 
-1. Fork <https://github.com/beekeeper-lab/golden-thread-quest> on GitHub, using the **Fork**
-   button.
-2. `git clone https://github.com/<your-github-name>/golden-thread-quest ~/golden-thread-quest`
-3. `cd ~/golden-thread-quest`
-4. `git switch -c pilot/<your-name>`
-5. `make setup`
-6. `make serve`
-7. Open <http://127.0.0.1:8765/>. The home page recommends the Base Camp quest.
+1. **Open a terminal window.** On a Mac, press Cmd-Space, type `Terminal` and press Return.
+   On Linux, open Terminal from your applications.
+2. **Copy this line, paste it into the terminal and press Return:**
 
-To stop the application, press Ctrl-C in that terminal. To start it again, run `make serve`
-from the same folder. Your progress is kept in files, so nothing is lost.
+   ```
+   curl -fsSL https://raw.githubusercontent.com/beekeeper-lab/golden-thread-quest/v0.2.1/install.sh | bash
+   ```
 
-## Doing a quest
+3. **Answer its questions.** It works through seven steps and says which one it is on.
+   - "Install ...? [Y/n]": press Return to say yes. It asks before it installs anything.
+   - On a Mac, a window may ask to install "command line developer tools". Click
+     **Install** and wait; the terminal carries on by itself afterwards.
+   - If it asks for your password, type your computer password and press Return. Nothing
+     appears as you type. That is normal.
+   - **Sign in to GitHub:** it shows a code like `ABCD-1234` and opens your browser. Paste
+     the code on the GitHub page and click **Authorize**.
+   - "Your first name": type it and press Return. It labels your work for the reviewer.
+4. **The application opens in your browser** when it asks "Start the application now?"
+   and you press Return. The home page recommends the Base Camp quest.
 
-1. Read the whole quest page first. The acceptance criteria are numbered, and a reviewer's
-   feedback will refer to them by number.
-2. Tick the confirmation box and click **Start quest**. It creates your evidence folder, and
-   the page shows its path.
-3. Do the work in your editor and terminal, not in the application. Put each file where the
-   quest page's **Required evidence** list says, and fill in the `PROOF.md` in your
-   evidence folder.
-4. On the evidence page, run the check. A failing check is not a failed quest: it tells you
-   what to fix.
-5. Click **Mark evidence ready**, then **Record local validation**, then tick the box and
-   click **Submit for review**. Submission is refused while a required file is missing, and
-   the notice names it.
+If a step fails, the terminal says what went wrong in plain words. Fix that, then paste
+the same line again. It picks up where it stopped, and it never deletes your work.
 
-**Redacting.** Where a quest asks for redacted output, put `[REDACTED]` where the value was,
-with nothing glued after it: `token: [REDACTED]`. The secret check treats a closing bracket
-or parenthesis straight after the placeholder as part of a possible secret. If it flags your
-line, reword it as `token: [REDACTED]` or "the token was redacted".
+## Starting and stopping the application
 
-**The second quest.** After Base Camp is verified, the home page may recommend a Jira
-quest, which needs a Jira account. For the pilot, open **Quest Map**, then **BA Ruins**,
-and take **Ingest a Meeting Transcript Without Losing Its Source** instead.
+- **To start it:** open a terminal window and type `gtq start`. Your browser opens it.
+- **Leave that terminal window open** while you use the application.
+- **To stop it:** click in that terminal window and press Ctrl-C.
 
-`docs/guides/PARTICIPANT.md` is the one-page reference, and `docs/USER-GUIDE.md` is the full
-guide.
+Your progress is kept in files on your computer, so stopping loses nothing.
 
-## Hand in your work for review
+## Step 2: Do a quest
 
-After you submit in the application, run these commands in a second terminal, from the same
-folder:
+1. **Read the whole quest page first.** The acceptance criteria are numbered, and your
+   reviewer's feedback refers to them by number.
+2. **Tick the confirmation box and click Start quest.** This creates your evidence folder,
+   and the page shows where it is.
+3. **Write the files the quest asks for.** The **Required evidence** list on the quest page
+   names each file and the folder it goes in. Your copy of the quest is the
+   `golden-thread-quest` folder in your home folder. To open it, type
+   `open ~/golden-thread-quest` in a terminal on a Mac, or `xdg-open ~/golden-thread-quest`
+   on Linux.
+   - The files are plain text. Any plain-text editor works. On a Mac, TextEdit works if you
+     choose **Format → Make Plain Text** before saving. Visual Studio Code, which is free,
+     is easier if you have it.
+   - Fill in the `PROOF.md` file in your evidence folder. It tells the reviewer what you
+     did and where to look.
+4. **On the evidence page, run the check.** A failing check is not a failed quest. It tells
+   you what to fix.
+5. **Click Mark evidence ready, then Record local validation, then tick the box and click
+   Submit for review.** If a required file is missing, the page says which one.
 
-1. `git add participant/`
-2. `git commit -m "Pilot evidence: <quest-id>"`
-3. `git push -u origin pilot/<your-name>`
-4. The first time only: open the link `git push` printed, or your fork's page on GitHub, and
-   create a pull request to `beekeeper-lab/golden-thread-quest`. Title it
-   `Pilot: <your name>`, and leave **Allow edits by maintainers** ticked.
-5. Post in the pilot's Slack thread that a quest is ready for review.
+**Redacting.** Where a quest asks for redacted output, write `[REDACTED]` where the value
+was, with nothing straight after it: `token: [REDACTED]`. If the check still flags the
+line, reword it as "the token was redacted".
 
-While a quest is waiting for review, leave its evidence alone. The reviewer is told if it
-changes, and has to re-read it.
+**The second quest.** After Base Camp is verified, the home page may suggest a Jira quest,
+which needs a Jira account. For the pilot, open **Quest Map**, then **BA Ruins**, and take
+**Ingest a Meeting Transcript Without Losing Its Source** instead.
 
-Use this one branch and one pull request for the whole pilot. It is never merged; it is only
-how your reviewer sees your work and hands the review back.
+## Step 3: Hand in your work
 
-## Get your review back
+After you click **Submit for review**, open a second terminal window and type:
 
-The reviewer adds the decision to your pull request. Then:
+```
+gtq hand-in
+```
 
-1. `git pull`
-2. `make serve`, or reload the page if it is already running.
+You will see **"Handed in. Your pull request is open."** and a link. The link is your
+pull request: it is how your reviewer sees your work. You do not need to do anything on
+that page.
 
-**Verified** means you are done with that quest, and the next one unlocks. **Needs changes**
-shows the reviewer's findings at the top of the evidence page. Click **Resume after
-review**, fix what they listed, submit again, and repeat the hand-in steps. Step 4 is not
-needed again, because the pull request updates itself.
+Then post in the pilot's Slack thread that a quest is ready for review.
+
+While a quest is waiting for review, try to leave its files alone. If you do change one,
+run `gtq hand-in` again so your reviewer sees the latest version.
+
+## Step 4: Get your review back
+
+When your reviewer says in Slack that they have reviewed it, type:
+
+```
+gtq get-review
+```
+
+It shows the decision, for example **"base-camp-repository-safety: Verified"**. Reload the
+application in your browser to see it there, or type `gtq start` if it is not running.
+
+- **Verified** means that quest is done, and the next one unlocks.
+- **Needs changes** means the reviewer's findings are at the top of the evidence page.
+  Click **Resume after review** and fix what they listed. Then do step 2.4 and 2.5 again:
+  run the check, click **Mark evidence ready**, **Record local validation** and **Submit
+  for review**. Then run `gtq hand-in` again.
 
 ## Feedback: five questions
 
@@ -115,12 +143,16 @@ and did another.
 
 ## If something goes wrong
 
-- **`make setup` cannot find uv.** Install uv, or see `docs/SETUP.md`.
-- **Port 8765 is taken.** `.venv/bin/python -m quest_app.cli serve --port 8766`, then open
-  that port instead.
-- **An action is refused.** The red notice at the top of the page says why, and nothing
-  changed.
-- **Anything else.** Ask in Slack. A screenshot of the page, plus the last lines from the
-  terminal running `make serve`, is enough to go on.
+- **"gtq: command not found".** Close the terminal window and open a new one. Setup adds
+  `gtq` for new windows. If it still happens, type `~/.local/bin/gtq start` instead.
+- **"Not handed in" or "Review not brought in".** The message says why, and nothing was
+  lost. "Nothing is waiting for review" means you have not clicked **Submit for review**
+  yet. For a connection problem, run the same command again once you are back online.
+- **The application says the port is taken.** It is probably already running in another
+  terminal window. Use that one, or stop it there with Ctrl-C.
+- **An action on a page is refused.** The red notice at the top of the page says why, and
+  nothing changed.
+- **Anything else.** Ask in Slack. A screenshot of the page, plus the last few lines in
+  the terminal, is enough to go on.
 
 The known limitations are listed in `docs/RELEASE-NOTES.md`.

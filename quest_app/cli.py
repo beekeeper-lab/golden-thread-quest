@@ -154,7 +154,44 @@ def build_command(args: argparse.Namespace) -> int:
 def serve_command(args: argparse.Namespace) -> int:
     from quest_app.serve import run_service
 
-    return run_service(_config_from_args(args), host=args.host, port=args.port)
+    return run_service(
+        _config_from_args(args),
+        host=args.host,
+        port=args.port,
+        open_browser=getattr(args, "open_browser", False),
+    )
+
+
+def hand_in_command(args: argparse.Namespace) -> int:
+    """Commit `participant/`, push it and open or update the pull request (Phase 2A.1)."""
+    from quest_app.handin import HandInError, hand_in
+
+    try:
+        outcome = hand_in(_config_from_args(args).repo_root)
+    except HandInError as exc:
+        print(f"Not handed in. {exc}", file=sys.stderr)
+        return EXIT_USAGE
+    if outcome.brought_in:
+        build_command(argparse.Namespace(**{**vars(args), "json": False}))
+    print(outcome.to_text())
+    return EXIT_OK
+
+
+def get_review_command(args: argparse.Namespace) -> int:
+    """Bring in the reviewer's decision, then rebuild so a reload shows it (Phase 2A.1)."""
+    from quest_app.handin import HandInError, get_review
+
+    try:
+        outcome = get_review(_config_from_args(args).repo_root)
+    except HandInError as exc:
+        print(f"Review not brought in. {exc}", file=sys.stderr)
+        return EXIT_USAGE
+    if outcome.brought_in:
+        build_status = build_command(argparse.Namespace(**{**vars(args), "json": False}))
+        if build_status != EXIT_OK:
+            return build_status
+    print(outcome.to_text())
+    return EXIT_OK
 
 
 def update_command(args: argparse.Namespace) -> int:
@@ -399,7 +436,26 @@ def build_parser() -> argparse.ArgumentParser:
     _common_arguments(serve)
     serve.add_argument("--host", default=None, help="Bind address (loopback only)")
     serve.add_argument("--port", type=int, default=None)
+    serve.add_argument(
+        "--open", dest="open_browser", action="store_true", help="Open the home page too"
+    )
     serve.set_defaults(func=serve_command)
+
+    start = subparsers.add_parser("start", help="Start the application and open it in a browser")
+    _common_arguments(start)
+    start.set_defaults(func=serve_command, host=None, port=None, open_browser=True)
+
+    hand_in = subparsers.add_parser(
+        "hand-in", help="Send your quest work to GitHub and open or update your pull request"
+    )
+    _common_arguments(hand_in)
+    hand_in.set_defaults(func=hand_in_command)
+
+    get_review = subparsers.add_parser(
+        "get-review", help="Bring in your reviewer's decision from GitHub"
+    )
+    _common_arguments(get_review)
+    get_review.set_defaults(func=get_review_command)
 
     action = subparsers.add_parser(
         "action", help="Perform a quest action without a browser (Cowork, SSH, CI)"
