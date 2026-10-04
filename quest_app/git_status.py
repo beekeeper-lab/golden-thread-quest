@@ -12,6 +12,7 @@ evidence would be making a claim on their behalf about work being finished.
 from __future__ import annotations
 
 import subprocess
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -26,6 +27,7 @@ READ_ONLY_COMMANDS: frozenset[tuple[str, ...]] = frozenset(
         ("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"),
         ("status", "--porcelain=v1", "--untracked-files=normal"),
         ("log", "-1", "--format=%H"),
+        ("check-ignore", "-z", "--stdin"),
     }
 )
 
@@ -175,3 +177,32 @@ def summary_for(repo_root: Path, evidence_path: str | None) -> dict[str, object]
             else None
         ),
     }
+
+
+def ignored_paths(directory: Path, relatives: Sequence[str]) -> frozenset[str]:
+    """Which of `relatives` (paths under `directory`) Git ignores and would never carry.
+
+    Phase 2A.2: an ignored file in an evidence package is never handed in, so the reviewer's
+    clone does not have it. Counting it in the evidence hash made every such package read as
+    "changed" on one side or the other. A tracked file is not reported even if a pattern
+    matches it, because Git does carry it. Outside a repository, or if Git cannot be run,
+    nothing is reported and the hash covers every file, as before.
+    """
+    arguments = ("check-ignore", "-z", "--stdin")
+    if arguments not in READ_ONLY_COMMANDS or not relatives:
+        return frozenset()
+    try:
+        result = subprocess.run(  # noqa: S603
+            ["git", "-C", str(directory), *arguments],  # noqa: S607
+            input="\0".join(relatives) + "\0",
+            capture_output=True,
+            text=True,
+            timeout=TIMEOUT_SECONDS,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return frozenset()
+    # 0: some paths are ignored. 1: none are. Anything else: not a repository, or an error.
+    if result.returncode != 0:
+        return frozenset()
+    return frozenset(path for path in result.stdout.split("\0") if path)

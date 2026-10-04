@@ -211,7 +211,7 @@ The first release uses an explainable deterministic score rather than AI inferen
 Consider:
 
 - quest is available;
-- track membership;
+- track membership, and the track's order: the first quest of the track not yet done ranks above the rest of it (Phase 2A.2);
 - prerequisite continuity;
 - participant's selected focus tags;
 - estimated time versus stated session capacity;

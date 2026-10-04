@@ -625,7 +625,23 @@ def evidence_hash(config: AppConfig, evidence_path: str) -> str | None:
         # Exactly the review records the loader checks (`progress.review_archive_paths`). The
         # looser `review-*.yaml` also hid a participant's own `review-notes.yaml` from it.
         skip_globs=("submission.yaml", "review.yaml", *REVIEW_ARCHIVE_GLOBS),
+        # Phase 2A.2: files Git ignores (`*.token`, `secrets/`, a Finder `.DS_Store`) are
+        # never handed in, so the reviewer's clone lacks them. Counted here, they made an
+        # approved attempt read as changed on the participant's machine, and a package
+        # that held one at submission read as changed on the reviewer's. The same reasoning
+        # left empty folders out (ADR-031, amended in Phase 2A).
+        skip_paths=_git_ignored_files(root),
     )
+
+
+def _git_ignored_files(root: Path) -> frozenset[str]:
+    from quest_app.git_status import ignored_paths
+
+    relatives: list[str] = []
+    for dirpath, _dirnames, filenames in os.walk(root):
+        for name in filenames:
+            relatives.append((Path(dirpath) / name).relative_to(root).as_posix())
+    return ignored_paths(root, relatives)
 
 
 # Proof types that name a path. The others are checked by a validator or a person.

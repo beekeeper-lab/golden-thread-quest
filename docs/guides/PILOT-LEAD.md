@@ -13,17 +13,17 @@ on Linux, and inside WSL on Windows. It does not install WSL, and native Windows
 supported yet. A Windows participant needs WSL set up already, or a Mac to borrow.
 
 Fill in the date and paste this into Slack. The link points at the pilot guide exactly as
-tagged for 0.2.1, so it will not change under anyone.
+tagged for 0.2.2, so it will not change under anyone.
 
 > Hi all, I'd love your help with a short pilot of *The Golden Thread Quest*. It's a
 > self-paced training app for AI Context Engineers: the people who connect what was asked
 > for to delivery that has been checked. It runs locally on your own machine.
 >
-> *What:* one required quest (about an hour) and one optional one.
+> *What:* one required quest (one to two hours) and one optional one.
 > *When:* by *<date>*.
 > *You need:* a Mac or Linux computer (on Windows, tell me first) and a free GitHub account. No coding: setup is one line you paste, and
 > the guide walks you through it.
-> *Start here:* https://github.com/beekeeper-lab/golden-thread-quest/blob/v0.2.1/docs/guides/PILOT.md
+> *Start here:* https://github.com/beekeeper-lab/golden-thread-quest/blob/v0.2.2/docs/guides/PILOT.md
 >
 > Your work is stored on GitHub where anyone can read it, so please use made-up material
 > only. At the end I'll ask five quick questions. Anything confusing is exactly what I want

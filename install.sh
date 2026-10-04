@@ -2,7 +2,7 @@
 # Golden Thread Quest setup for Mac, Linux and Windows WSL (Phase 2A.1).
 #
 # Participants paste one line from docs/guides/PILOT.md:
-#   curl -fsSL https://raw.githubusercontent.com/beekeeper-lab/golden-thread-quest/v0.2.1/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/beekeeper-lab/golden-thread-quest/v0.2.2/install.sh | bash
 #
 # It installs what is missing (Apple's command line tools or Git, uv, the GitHub CLI),
 # asking before each install. Then it signs the participant in to GitHub, forks and clones
@@ -15,6 +15,7 @@
 #   GTQ_NAME         the participant's name, instead of asking
 #   GTQ_ASSUME_YES   answer yes to every question
 #   GTQ_NO_START     do not start the application at the end
+#   GTQ_TEST_GH_DOWNLOAD  download the GitHub CLI even when one is installed (with a stub curl)
 set -euo pipefail
 
 # Everything is inside main, called on the last line, so `curl | bash` has read the whole
@@ -23,7 +24,7 @@ main() {
 ORIGINAL_PATH="$PATH"
 SUDO=""
 [ "$(id -u)" -eq 0 ] || SUDO=sudo
-GTQ_VERSION="${GTQ_VERSION:-v0.2.1}"
+GTQ_VERSION="${GTQ_VERSION:-v0.2.2}"
 UPSTREAM="beekeeper-lab/golden-thread-quest"
 TARGET="${GTQ_DIR:-$HOME/golden-thread-quest}"
 BIN_DIR="$HOME/.local/bin"
@@ -103,12 +104,19 @@ ok "uv is ready"
 
 # 4. The GitHub CLI, which signs in and opens the pull request
 step "3/7  The GitHub command line tool"
-if [ -z "${GTQ_TEST_SOURCE:-}" ] && ! have gh; then
+if [ -n "${GTQ_TEST_GH_DOWNLOAD:-}" ] || { [ -z "${GTQ_TEST_SOURCE:-}" ] && ! have gh; }; then
   ask "Install it now? It installs into your home folder and needs no password." ||
     fail "The GitHub tool is needed to hand in your work."
-  tag="$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest |
-    sed -n 's/.*"tag_name": *"v\([^"]*\)".*/\1/p' | head -n 1)"
-  [ -n "$tag" ] || fail "Could not reach GitHub to download its tool."
+  # Phase 2A.2: the latest version comes from the release page's redirect, not from
+  # api.github.com. The tool is not installed yet, so nothing can be signed in, and the
+  # API allows 60 unsigned requests an hour per address: a room of participants behind
+  # one office address would hit that. The page redirect is not counted that way.
+  latest="$(curl -fsSL -o /dev/null -w '%{url_effective}' https://github.com/cli/cli/releases/latest)" ||
+    fail "Could not reach GitHub to download its tool."
+  tag="${latest##*/tag/v}"
+  case "$tag" in
+    '' | *[!0-9.]*) fail "Could not tell which version of GitHub's tool to download." ;;
+  esac
   scratch="$(mktemp -d)"
   if [ "$OS" = mac ]; then
     folder="gh_${tag}_macOS_${ARCH}"
