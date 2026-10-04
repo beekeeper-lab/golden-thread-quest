@@ -19,7 +19,13 @@ First-day fixes for business analysts and manual testers (Phase 2A.2).
 - **Hand-in names what it left out.** A file under `participant/` that matches
   `.gitignore` (a `*.token` file, anything in a `secrets/` folder, and the rest) is still
   never handed in, but `gtq hand-in` now lists each one and says what to do if it is proof
-  the quest asks for.
+  the quest asks for. The application's own lock file and what an operating system drops
+  into a folder (`.DS_Store`) are not listed.
+- **Ignored files are not part of the evidence fingerprint** (ADR-031, amended), since the
+  reviewer's copy never has them. A `.DS_Store` no longer makes an approved quest read as
+  changed.
+- **The home page's "Start at" box names the recommended quest's region**, not always the
+  first region on the map.
 - **Setup makes no unsigned GitHub API call.** It reads the GitHub tool's latest version
   from the release page instead of the API, which allows 60 unsigned requests an hour per
   address and could stop a room of participants behind one office address.
@@ -111,7 +117,7 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 1407 under `make check`, plus 57 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
+| Tests | 1411 under `make check`, plus 57 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3 quest-facing, plus 2 registered environment probes and one unregistered slow probe used only to prove the timeout |

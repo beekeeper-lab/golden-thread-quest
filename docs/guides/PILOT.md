@@ -128,7 +128,7 @@ gtq get-review
 It shows the decision, for example **"ba-ingest-transcript: Verified"**. Reload the
 application in your browser to see it there, or type `gtq start` if it is not running.
 
-- **Verified** means that quest is done, and the next one unlocks.
+- **Verified** means that quest is done, and the home page recommends the next one.
 - **Needs changes** means the reviewer's findings are at the top of the evidence page.
   Click **Resume after review** and fix what they listed. Then do step 2.4 and 2.5 again:
   run the check, click **Mark evidence ready**, **Record local validation** and **Submit

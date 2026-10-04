@@ -290,5 +290,19 @@ def test_hand_in_names_every_file_it_left_out(world: dict[str, Path]) -> None:
 
 
 def test_hand_in_with_nothing_left_out_says_nothing_about_it(world: dict[str, Path]) -> None:
-    outcome = hand_in(world["participant"], runner=FakeGh())
+    """The verify pass found the application's own lock file and a Finder `.DS_Store`
+    reported as secret-like on every hand-in after a browser action."""
+    participant = world["participant"]
+    (participant / ".gitignore").write_text(".progress.lock\n.DS_Store\n*.token\n")
+    (participant / "participant" / ".progress.lock").write_text("")
+    (participant / EVIDENCE / ".DS_Store").write_bytes(b"\0\0\0\1Bud1")
+    outcome = hand_in(participant, runner=FakeGh())
     assert "Not sent" not in outcome.to_text()
+
+
+def test_a_left_out_name_is_shown_as_it_was_saved(world: dict[str, Path]) -> None:
+    participant = world["participant"]
+    (participant / ".gitignore").write_text("*.token\n")
+    (participant / EVIDENCE / "my café key.token").write_text("redacted\n")
+    outcome = hand_in(participant, runner=FakeGh())
+    assert f"{EVIDENCE}/my café key.token" in outcome.to_text()

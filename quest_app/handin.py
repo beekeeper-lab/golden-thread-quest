@@ -157,12 +157,19 @@ class _Repo:
         the reviewer saw a required file as missing. They stay out, because the patterns
         are there for real secrets; hand-in now names each one instead.
         """
+        # `-z` so Git prints each path as it is: without it a name with a space comes back in
+        # quotes and a non-ASCII one as octal escapes, which is not what the participant saved.
         result = self.git(
-            "status", "--porcelain", "--ignored", "--untracked-files=all", "--", PARTICIPANT_DIR
-        )
+            "status", "--porcelain", "-z", "--ignored", "--untracked-files=all",
+            "--", PARTICIPANT_DIR,
+        )  # fmt: skip
         if result.returncode != 0:
             return []
-        return sorted(line[3:] for line in result.stdout.splitlines() if line.startswith("!! "))
+        return sorted(
+            entry[3:]
+            for entry in result.stdout.split("\0")
+            if entry.startswith("!! ") and not _is_housekeeping(entry[3:])
+        )
 
     def unpushed(self, branch: str) -> bool:
         if self.git("rev-parse", "--verify", "--quiet", f"origin/{branch}").returncode != 0:
@@ -299,6 +306,23 @@ def hand_in(repo_root: Path, runner: Runner = run_command) -> Outcome:
     return Outcome(
         "Handed in. Your pull request is open.",
         [url, *left_out, "Post in the pilot's Slack thread that a quest is ready."],
+    )
+
+
+# Ignored files that are nobody's proof: the application's own lock beside progress.yaml
+# (`store.LOCK_FILENAME`, created on the first action and kept), and what an operating system
+# or editor drops into a folder it opens. Phase 2A.2's verify pass found the lock and a Mac
+# Finder `.DS_Store` reported as "named like passwords or keys" on every hand-in.
+_HOUSEKEEPING_NAMES = frozenset({".progress.lock", ".DS_Store", "Thumbs.db", "desktop.ini"})
+_HOUSEKEEPING_SUFFIXES = (".swp", ".pyc", ".pyo")
+
+
+def _is_housekeeping(path: str) -> bool:
+    parts = path.split("/")
+    return (
+        parts[-1] in _HOUSEKEEPING_NAMES
+        or parts[-1].endswith(_HOUSEKEEPING_SUFFIXES)
+        or "__pycache__" in parts
     )
 
 
