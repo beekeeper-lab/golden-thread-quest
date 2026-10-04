@@ -1,0 +1,30 @@
+{
+  "name": "golden-thread-quest",
+  "full_name": "gdreed31/golden-thread-quest",
+  "owner": {
+    "login": "gdreed31",
+    "type": "User"
+  },
+  "fork": true,
+  "private": false,
+  "parent": {
+    "name": "golden-thread-quest",
+    "full_name": "beekeeper-lab/golden-thread-quest",
+    "owner": {
+      "login": "beekeeper-lab",
+      "type": "User"
+    },
+    "fork": false,
+    "private": false
+  },
+  "source": {
+    "name": "golden-thread-quest",
+    "full_name": "beekeeper-lab/golden-thread-quest",
+    "owner": {
+      "login": "beekeeper-lab",
+      "type": "User"
+    },
+    "fork": false,
+    "private": false
+  }
+}
