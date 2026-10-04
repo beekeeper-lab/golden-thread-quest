@@ -21,7 +21,7 @@ gate.
 
 ## 7.2 Where we are (2026-09-29)
 
-**Current phase: Phase 2A.1, setup and hand-in for non-developers (added 2026-09-30). Phase 2B, the pilot run, starts when the program owner sends the invitation for 0.2.1.** The hand-in was rehearsed at `v0.2.0` with two local clones on 2026-09-29 and passes along the path `PILOT.md` describes (`docs/pilot/PILOT-LOG.md`). The GitHub fork and pull request can only be tested by the first real hand-in. Gate 1 passed on 2026-09-29, when the
+**Current phase: Phase 2A.2, first-day fixes for non-developers (added 2026-10-04). Phase 2B, the pilot run, starts when the program owner sends the invitation for 0.2.2.** The hand-in was rehearsed at `v0.2.0` with two local clones on 2026-09-29 and passes along the path `PILOT.md` describes (`docs/pilot/PILOT-LOG.md`). The GitHub fork and pull request can only be tested by the first real hand-in. Gate 1 passed on 2026-09-29, when the
 program owner decided to release to a pilot. Phase 1's checklist passed and DH7 is closed
 (`docs/audits/phase-01-verify.md`). Phase 2A fixes the two parking-lot items the program
 owner chose and builds the release. Phase 2B is the pilot itself.
@@ -189,7 +189,7 @@ recommendation: **do**, **decide** (at that phase's gate, likely on pilot eviden
   a false "evidence changed" warning. Both were fixed and passed in cycle 2. The fork and
   pull-request step on GitHub itself is untested.
 
-### Phase 2A.1: Setup and hand-in for non-developers (current)
+### Phase 2A.1: Setup and hand-in for non-developers (done)
 
 Added on 2026-09-30, before the invitation was sent. The program owner confirmed that
 participants are business analysts and manual testers, not developers, and approved this
@@ -222,6 +222,39 @@ scope. For them, 0.2.0 asks for too much terminal and Git work before the first 
   findings: an edit after hand-in could leave the copy stuck, and re-running setup with a
   differently typed name hid all progress. Both were fixed and passed in cycle 2. The macOS
   path and real GitHub sign-in, forking and pull requests are untested until the demo.
+
+### Phase 2A.2: First-day fixes for non-developers (current)
+
+Added on 2026-10-04, before the invitation was sent. At the gate after Phase 2A.1 the
+program owner chose three parking-lot items that would stop a business analyst or manual
+tester on their first day, and approved this scope. Phase 2A.1's demo (the program owner
+running `install.sh`) moves to this phase's demo, on 0.2.2.
+
+- **Goal:** nothing a participant does on day one is silently lost, refused or aimed at a
+  developer.
+- **Budget:** one session.
+- **Scope:**
+  1. **Hand-in names what it left out.** A file under `participant/` that matches
+     `.gitignore` (`*.token`, `**/secrets/` and the rest) is still not committed, but
+     `gtq hand-in` lists each one, says the reviewer will not see it, and says what to do if
+     it is proof the quest asks for.
+  2. **`install.sh` makes no unauthenticated GitHub API call.** The GitHub CLI's latest
+     version is read from the `github.com` release redirect, which is not rate-limited the
+     way the API's 60 requests an hour per address is.
+  3. **BA Ruins' transcript quest is the required first quest.** Its Base Camp
+     prerequisite is removed (quest version 4). A pilot track lists it first and Base Camp
+     second, and new participants start on that track. The recommendation follows the
+     track's order, so the home page offers the transcript quest first and Base Camp after
+     it. `PILOT.md` and `PILOT-LEAD.md` say the same.
+  4. **Release 0.2.2.** The setup line and the invitation point at `v0.2.2`.
+- **Out of scope:** every other parking-lot item, native Windows and WSL, and any change to
+  a quest's acceptance criteria or proof.
+- **Done when:** items 1 to 4 are complete, with tests for 1 to 3 that fail without the
+  change. `make check`, `make test-ui` and CI pass on `main`. A verify pass acting as a new
+  participant follows `PILOT.md` from the home page through the transcript quest's
+  hand-in, with an ignored file in the folder, and finds no blocking or high finding.
+- **Demo:** the program owner runs the `v0.2.2` setup line on their own machine, sees the
+  home page offer the transcript quest, and runs `gtq hand-in` once.
 
 ### Phase 2B: Pilot run
 
