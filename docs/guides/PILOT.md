@@ -4,7 +4,7 @@ Thank you for trying the Golden Thread Quest. It is a self-paced training applic
 the AI Context Engineer: the person who connects what people ask for to delivery that has
 been checked. It runs on your own computer, and a reviewer decides what counts as done.
 
-This is a pilot of version 0.2.2. It works, but it is new. If anything is confusing, even
+This is a pilot of version 0.2.3. It works, but it is new. If anything is confusing, even
 for a moment, that is exactly what we want to hear.
 
 You do not need to be a developer. You will paste a few short commands into a terminal
@@ -40,7 +40,7 @@ password, customer name or real meeting.
 2. **Copy this line, paste it into the terminal and press Return:**
 
    ```
-   curl -fsSL https://raw.githubusercontent.com/beekeeper-lab/golden-thread-quest/v0.2.2/install.sh | bash
+   curl -fsSL https://raw.githubusercontent.com/beekeeper-lab/golden-thread-quest/v0.2.3/install.sh | bash
    ```
 
 3. **Answer its questions.** It works through seven steps and says which one it is on.

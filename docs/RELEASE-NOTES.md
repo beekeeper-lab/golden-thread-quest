@@ -1,10 +1,20 @@
 # Release Notes: Pilot Release
 
-**Version:** 0.2.2
+**Version:** 0.2.3
 **Date:** 2026-10-04
 **Status:** released to a small invited pilot, not for general use. The release checklist
 passed (`docs/audits/phase-01-verify.md`), and the program owner released it at Gate 1
 (`docs/audits/final-audit.md`). Pilot participants start with `docs/guides/PILOT.md`.
+
+## What changed in 0.2.3
+
+- **Setup finds the participant's copy on GitHub.** 0.2.1 and 0.2.2 made the fork, then
+  checked it through a field the GitHub tool does not provide, so setup stopped at step 5
+  with "Could not make your copy on GitHub" for every participant. Found by the Phase 2A.2
+  demo, the first run against real GitHub. The check now uses GitHub's documented answer,
+  and a test runs setup's GitHub step against recorded GitHub responses.
+- **Setup on the account that owns the quest says so,** instead of suggesting a repository
+  be renamed. An account cannot fork its own repository; sign in with your own.
 
 ## What changed in 0.2.2
 
@@ -117,7 +127,7 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 1411 under `make check`, plus 57 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
+| Tests | 1413 under `make check`, plus 57 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3 quest-facing, plus 2 registered environment probes and one unregistered slow probe used only to prove the timeout |

@@ -44,3 +44,17 @@ A fresh new-participant run at `9405093`, from a new home folder and a new local
 | V4 | Pass: ignored files present at submission left the lead's clone with no "changed" warning; after approval, adding more ignored files kept it clean, and editing `PROOF.md` still raised "changed since it was approved" |
 
 No new blocking or high finding inside the scope.
+
+## Demo (2026-10-04)
+
+The program owner ran the `v0.2.2` setup line on their own Linux machine, the first run
+against real GitHub.
+
+| # | Severity | Finding | Fix |
+|---|---|---|---|
+| D1 | Blocking | Setup made the participant's fork, then reported "Could not make your copy on GitHub" at step 5. It checked the copy through `gh repo view --json parent` and the field `nameWithOwner`, which that object does not have, so the check read empty for every participant. Every test, and both verify passes, took the test hook around this step | The check reads GitHub's REST `parent.full_name`. `test_setup_finds_the_fork_it_made_on_github` runs the GitHub step against a stand-in `gh` answering from recorded GitHub responses; with the old check it fails with the demo's message. Release 0.2.3 |
+| D2 | Low | On the account that owns the repository, the same step said to rename a repository; an account cannot fork its own | Setup says it is the owner's account and to sign in with your own. Test: `test_setup_on_the_owners_account_says_so` |
+
+**What we learned:** a test hook that skips the external system also skips every assumption
+about that system's answers. The new test keeps the hook's speed but answers from recorded
+real responses, and hand-in's own `gh pr list` fields were checked against real output.

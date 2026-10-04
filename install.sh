@@ -2,7 +2,7 @@
 # Golden Thread Quest setup for Mac, Linux and Windows WSL (Phase 2A.1).
 #
 # Participants paste one line from docs/guides/PILOT.md:
-#   curl -fsSL https://raw.githubusercontent.com/beekeeper-lab/golden-thread-quest/v0.2.2/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/beekeeper-lab/golden-thread-quest/v0.2.3/install.sh | bash
 #
 # It installs what is missing (Apple's command line tools or Git, uv, the GitHub CLI),
 # asking before each install. Then it signs the participant in to GitHub, forks and clones
@@ -24,7 +24,7 @@ main() {
 ORIGINAL_PATH="$PATH"
 SUDO=""
 [ "$(id -u)" -eq 0 ] || SUDO=sudo
-GTQ_VERSION="${GTQ_VERSION:-v0.2.2}"
+GTQ_VERSION="${GTQ_VERSION:-v0.2.3}"
 UPSTREAM="beekeeper-lab/golden-thread-quest"
 TARGET="${GTQ_DIR:-$HOME/golden-thread-quest}"
 BIN_DIR="$HOME/.local/bin"
@@ -164,10 +164,18 @@ elif [ -n "${GTQ_TEST_SOURCE:-}" ]; then
   git -C "$TARGET" remote set-url origin "https://github.com/$LOGIN/golden-thread-quest.git"
   git -C "$TARGET" remote add upstream "https://github.com/$UPSTREAM.git"
 else
+  # An account cannot fork its own repository: the pilot lead trying the setup line on the
+  # account that owns the quest got the "rename it" message below, which was not the cause.
+  [ "$LOGIN" != "${UPSTREAM%%/*}" ] ||
+    fail "You are signed in to GitHub as $LOGIN, the account that owns the quest, and it cannot copy its own repository. Run gh auth login, sign in with your own account, then paste the same line again."
   gh repo fork "$UPSTREAM" --clone=false >/dev/null 2>&1 || true
+  # The copy's parent comes from GitHub's REST answer, whose `parent.full_name` is
+  # documented. 0.2.1 and 0.2.2 asked `gh repo view --json parent` for `nameWithOwner`,
+  # a field that object does not have, so every participant's fork was made and then
+  # reported as not made (found by the Phase 2A.2 demo).
   parent=""
   for _ in 1 2 3 4 5 6 7 8 9 10; do
-    parent="$(gh repo view "$LOGIN/golden-thread-quest" --json parent --jq .parent.nameWithOwner 2>/dev/null || true)"
+    parent="$(gh api "repos/$LOGIN/golden-thread-quest" --jq '.parent.full_name // empty' 2>/dev/null || true)"
     [ "$parent" = "$UPSTREAM" ] && break
     sleep 3
   done
