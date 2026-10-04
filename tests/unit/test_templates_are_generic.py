@@ -44,7 +44,9 @@ def content_identifiers(repo_root: Path) -> set[str]:
     for directory, fields in (
         ("regions", ("title", "short_title", "summary")),
         ("badges", ("title", "summary")),
-        ("tracks", ("title", "summary")),
+        # Every track's ID, not only the default one: Phase 2A.2 made a second track the
+        # default, and the first one's ID would have dropped out of the guard's sight.
+        ("tracks", ("id", "title", "summary")),
     ):
         for path in (repo_root / "content" / directory).glob("*.yaml"):
             data = yaml.safe_load(path.read_text())

@@ -1,10 +1,28 @@
 # Release Notes: Pilot Release
 
-**Version:** 0.2.1
-**Date:** 2026-09-30
+**Version:** 0.2.2
+**Date:** 2026-10-04
 **Status:** released to a small invited pilot, not for general use. The release checklist
 passed (`docs/audits/phase-01-verify.md`), and the program owner released it at Gate 1
 (`docs/audits/final-audit.md`). Pilot participants start with `docs/guides/PILOT.md`.
+
+## What changed in 0.2.2
+
+First-day fixes for business analysts and manual testers (Phase 2A.2).
+
+- **The transcript quest comes first.** *Ingest a Meeting Transcript Without Losing Its
+  Source* (BA Ruins) no longer needs Base Camp verified first; it is now quest version 4.
+  New participants start on the *Pilot for Analysts and Testers* track, which lists it
+  before Base Camp, and the home page follows the track's order. An attempt started on
+  version 3 is reported as on an older version; none exists, since the invitation was not
+  yet sent.
+- **Hand-in names what it left out.** A file under `participant/` that matches
+  `.gitignore` (a `*.token` file, anything in a `secrets/` folder, and the rest) is still
+  never handed in, but `gtq hand-in` now lists each one and says what to do if it is proof
+  the quest asks for.
+- **Setup makes no unsigned GitHub API call.** It reads the GitHub tool's latest version
+  from the release page instead of the API, which allows 60 unsigned requests an hour per
+  address and could stop a room of participants behind one office address.
 
 ## What changed in 0.2.1
 
@@ -93,7 +111,7 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 1403 under `make check`, plus 57 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
+| Tests | 1407 under `make check`, plus 57 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3 quest-facing, plus 2 registered environment probes and one unregistered slow probe used only to prove the timeout |

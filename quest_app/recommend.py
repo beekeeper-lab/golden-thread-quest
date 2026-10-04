@@ -44,6 +44,7 @@ class Recommendation:
 W_IN_PROGRESS = 100
 W_NEEDS_CHANGES = 120
 W_TRACK = 40
+W_TRACK_NEXT = 30
 W_UNBLOCKS = 15
 W_FOCUS_TAG = 20
 W_FITS_SESSION = 12
@@ -59,12 +60,29 @@ def recommend(
     progress: ParticipantProgress | None,
     *,
     limit: int = 4,
+    default_track: str | None = None,
 ) -> list[Recommendation]:
-    """Eligible quests, best first. Ties break on region order then ID, so the list is stable."""
+    """Eligible quests, best first. Ties break on region order then ID, so the list is stable.
+
+    `default_track` is the track a participant with no progress file yet will start on, so
+    the home page before the first quest already follows it.
+    """
     focus_tags = set(progress.focus_tags) if progress else set()
     capacity = progress.session_capacity_minutes if progress else None
-    track = bundle.tracks.get(progress.selected_track) if progress else None
+    track_id = progress.selected_track if progress else default_track
+    track = bundle.tracks.get(track_id) if track_id else None
     track_quests = set(track.quest_ids) if track else set()
+    # Phase 2A.2: a track is an order, not only a set. A track may start with a quest that
+    # unlocks nothing, and a later quest that unlocks several outscored it, so the first
+    # quest a new participant was offered was not the one their track starts with.
+    next_in_track = next(
+        (
+            quest_id
+            for quest_id in (track.quest_ids if track else ())
+            if quest_id in states and _is_eligible(states[quest_id])
+        ),
+        None,
+    )
 
     # How many quests each quest would unlock, so finishing a bottleneck ranks above a leaf.
     unlocks: dict[str, int] = {}
@@ -90,6 +108,7 @@ def recommend(
             regions=regions,
             track_quests=track_quests,
             track_title=track.title if track else None,
+            next_in_track=next_in_track,
             focus_tags=focus_tags,
             capacity=capacity,
             unlocks=unlocks.get(quest.id, 0),
@@ -139,6 +158,7 @@ def _signals(
     regions: dict[str, RegionProgress],
     track_quests: set[str],
     track_title: str | None,
+    next_in_track: str | None,
     focus_tags: set[str],
     capacity: int | None,
     unlocks: int,
@@ -161,6 +181,8 @@ def _signals(
 
     if quest.id in track_quests and track_title:
         signals.append(Signal(W_TRACK, f"It is part of your current track, {track_title}"))
+        if quest.id == next_in_track:
+            signals.append(Signal(W_TRACK_NEXT, "It is the next quest in that track"))
 
     overlap = focus_tags & set(quest.tags)
     if overlap:

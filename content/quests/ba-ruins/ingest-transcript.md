@@ -1,6 +1,6 @@
 ---
 id: ba-ingest-transcript
-version: 3
+version: 4
 title: Ingest a Meeting Transcript Without Losing Its Source
 summary: Turn a raw meeting transcript into a faithful, attributed local record that keeps speakers, timestamps, and provenance intact and treats the text as untrusted.
 region: ba-ruins
@@ -21,8 +21,6 @@ risk:
   external_write: false
   sensitive_data: true
   notes: Transcripts contain named people and candid discussion, so raw recordings and unredacted transcripts stay outside source control.
-prerequisites:
-  - base-camp-repository-safety
 outcomes:
   - Preserve a transcript as a source of record with speakers, timestamps, and provenance intact.
   - Keep the verbatim record and any derived analysis in separate, clearly labeled files.

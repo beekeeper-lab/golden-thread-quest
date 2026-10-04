@@ -425,7 +425,11 @@ def _render_and_publish(
     totals_map = totals(states)
     badges = badge_progress(bundle, states, participant)
     recommendations = recommend(
-        bundle, states, regions, participant.progress if participant else None
+        bundle,
+        states,
+        regions,
+        participant.progress if participant else None,
+        default_track=bundle.site.default_track,
     )
 
     stamp = built_at or build_stamp()
