@@ -149,6 +149,21 @@ class _Repo:
             raise HandInError(f"Git could not read your folder: {_last_line(result)}")
         return [line[3:] for line in result.stdout.splitlines() if line.strip()]
 
+    def ignored_files(self) -> list[str]:
+        """Files under `participant/` that `.gitignore` keeps out of every hand-in.
+
+        Phase 2A.2: `git add participant/` skips them without a word, so a participant who
+        saved proof as `api.token` or under a `secrets/` folder handed in without it, and
+        the reviewer saw a required file as missing. They stay out, because the patterns
+        are there for real secrets; hand-in now names each one instead.
+        """
+        result = self.git(
+            "status", "--porcelain", "--ignored", "--untracked-files=all", "--", PARTICIPANT_DIR
+        )
+        if result.returncode != 0:
+            return []
+        return sorted(line[3:] for line in result.stdout.splitlines() if line.startswith("!! "))
+
     def unpushed(self, branch: str) -> bool:
         if self.git("rev-parse", "--verify", "--quiet", f"origin/{branch}").returncode != 0:
             return True
@@ -213,6 +228,7 @@ def hand_in(repo_root: Path, runner: Runner = run_command) -> Outcome:
             "and click Submit for review on its evidence page first."
         )
 
+    left_out = _left_out_note(repo.ignored_files())
     changes = repo.pending_changes()
     if changes:
         if _identity_problem(repo):
@@ -262,7 +278,7 @@ def hand_in(repo_root: Path, runner: Runner = run_command) -> Outcome:
             headline = "Nothing new to hand in. Your pull request already has all your work."
         return Outcome(
             headline,
-            [existing[0], *review_note, "Post in the pilot's Slack thread."],
+            [existing[0], *review_note, *left_out, "Post in the pilot's Slack thread."],
             brought_in=bool(decisions),
         )
 
@@ -282,8 +298,21 @@ def hand_in(repo_root: Path, runner: Runner = run_command) -> Outcome:
     url = created.stdout.strip().splitlines()[-1] if created.stdout.strip() else ""
     return Outcome(
         "Handed in. Your pull request is open.",
-        [url, "Post in the pilot's Slack thread that a quest is ready."],
+        [url, *left_out, "Post in the pilot's Slack thread that a quest is ready."],
     )
+
+
+def _left_out_note(paths: list[str]) -> list[str]:
+    """What hand-in tells the participant about files it would not send."""
+    if not paths:
+        return []
+    return [
+        "Not sent: these files are named like passwords or keys, so they are never handed in, "
+        "and your reviewer will not see them:",
+        *(f"  {path}" for path in paths),
+        "If one of them is proof the quest asks for, take any secret out of it, save it under "
+        "the name the quest's evidence page shows, and run `gtq hand-in` again.",
+    ]
 
 
 def _decisions(repo: _Repo, before: str) -> list[str]:

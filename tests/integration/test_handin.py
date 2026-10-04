@@ -268,3 +268,27 @@ def test_hand_in_refuses_when_nothing_is_submitted(world: dict[str, Path]) -> No
 def test_get_review_before_any_hand_in_says_so(world: dict[str, Path]) -> None:
     outcome = get_review(world["participant"], runner=FakeGh())
     assert outcome.headline.startswith("Nothing handed in yet")
+
+
+def test_hand_in_names_every_file_it_left_out(world: dict[str, Path]) -> None:
+    """Phase 2A.2: files matching `.gitignore` were left out of the hand-in without a word."""
+    participant = world["participant"]
+    (participant / ".gitignore").write_text("*.token\n**/secrets/\n")
+    (participant / EVIDENCE / "api.token").write_text("redacted\n")
+    (participant / EVIDENCE / "secrets").mkdir()
+    (participant / EVIDENCE / "secrets" / "env.txt").write_text("redacted\n")
+
+    outcome = hand_in(participant, runner=FakeGh())
+
+    pushed = git(world["fork"], "ls-tree", "-r", "--name-only", "pilot/alice")
+    assert "api.token" not in pushed
+    assert "secrets/env.txt" not in pushed
+    text = outcome.to_text()
+    assert f"{EVIDENCE}/api.token" in text
+    assert f"{EVIDENCE}/secrets/env.txt" in text
+    assert "reviewer will not see them" in text
+
+
+def test_hand_in_with_nothing_left_out_says_nothing_about_it(world: dict[str, Path]) -> None:
+    outcome = hand_in(world["participant"], runner=FakeGh())
+    assert "Not sent" not in outcome.to_text()
