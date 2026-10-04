@@ -29,3 +29,6 @@ column empty until the gate.
 | 2026-09-30 | 2A.1 | On WSL, `gtq start` may open a text-mode browser inside the terminal | Phase 2A.1 verify pass | Only matters once WSL is supported | |
 | 2026-09-30 | 2A.1 | `install.sh` reads GitHub's release list without signing in, which allows 60 requests an hour per address | Phase 2A.1 verify pass | A room of participants behind one office address could hit it | |
 | 2026-09-30 | 2A.1 | A copy made the 0.2.0 way, with no `upstream` link, fails `install.sh` at the tag download | Phase 2A.1 verify pass | Nobody has a 0.2.0 copy yet, since the invitation was never sent | |
+| 2026-10-04 | 2A.2 | `submitted_by` and the reviewer page's name come from the computer's login name, not the first name typed during setup | Phase 2A.2 verify pass | Same as the 2A row about operating-system user names; setup now knows the typed name | |
+| 2026-10-04 | 2A.2 | The transcript quest says 60 minutes; `PILOT.md` and the invitation say one to two hours | Phase 2A.2 verify pass | Changing the quest's estimate is a content change, out of this phase's scope | |
+| 2026-10-04 | 2A.2 | A required proof file whose name matches `.gitignore` is still left out, so the reviewer sees it missing | Phase 2A.2 scoping | Hand-in now names it and says what to do; refusing such a hand-in outright is a product decision | |
