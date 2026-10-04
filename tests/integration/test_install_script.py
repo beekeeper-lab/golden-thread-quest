@@ -105,3 +105,59 @@ def test_running_install_again_keeps_the_branch_whatever_name_is_typed(
     assert _run(["git", "config", "user.name"], copy, env).stdout.strip() == "Pat Tester"
     assert marker.read_text() == "my work\n"
     assert (home / ".bashrc").read_text().count(".local/bin") == 1
+
+
+STUB_CURL = """#!/bin/sh
+# Records every URL, and answers the two the GitHub CLI download needs.
+printf '%s\\n' "$*" >>"$CURL_LOG"
+case "$*" in
+  *api.github.com*) printf '{"tag_name": "v2.99.0"}\\n' ;;
+  *releases/latest*) printf 'https://github.com/cli/cli/releases/tag/v2.99.0' ;;
+  *gh_2.99.0_linux_*.tar.gz*) cat "$GH_TARBALL" ;;
+  *) exit 22 ;;
+esac
+"""
+
+
+def test_the_github_tool_download_makes_no_unsigned_api_call(
+    installed: dict[str, object],
+) -> None:
+    """Phase 2A.2: the latest version came from api.github.com, before anything could be
+    signed in. That allows 60 requests an hour per address, which a room of participants
+    behind one office address could use up. The release page's redirect is used instead."""
+    if os.uname().sysname != "Linux":
+        pytest.skip("the stub serves the Linux archive")
+    tmp = Path(str(installed["tmp"]))
+    arch = {"x86_64": "amd64", "aarch64": "arm64", "arm64": "arm64"}[os.uname().machine]
+    folder = tmp / "tarball" / f"gh_2.99.0_linux_{arch}" / "bin"
+    folder.mkdir(parents=True)
+    (folder / "gh").write_text("#!/bin/sh\necho stub gh\n")
+    (folder / "gh").chmod(0o755)
+    tarball = tmp / "gh.tar.gz"
+    subprocess.run(
+        ["tar", "-czf", str(tarball), "-C", str(tmp / "tarball"), f"gh_2.99.0_linux_{arch}"],
+        check=True,
+    )
+    stubs = tmp / "stubs"
+    stubs.mkdir()
+    (stubs / "curl").write_text(STUB_CURL)
+    (stubs / "curl").chmod(0o755)
+    log = tmp / "curl.log"
+    env = dict(installed["env"])  # type: ignore[call-overload]
+    env.update(
+        {
+            "PATH": f"{stubs}:{env['PATH']}",
+            "CURL_LOG": str(log),
+            "GH_TARBALL": str(tarball),
+            "GTQ_TEST_GH_DOWNLOAD": "1",
+        }
+    )
+
+    result = _run(["bash", str(ROOT / "install.sh")], tmp, env)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    asked = log.read_text()
+    assert "api.github.com" not in asked, asked
+    assert "github.com/cli/cli/releases/latest" in asked
+    home = Path(str(installed["home"]))
+    assert (home / ".local" / "bin" / "gh").read_text().endswith("echo stub gh\n")
