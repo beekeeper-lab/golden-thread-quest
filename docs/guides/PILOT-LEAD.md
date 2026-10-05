@@ -13,7 +13,7 @@ on Linux, and inside WSL on Windows. It does not install WSL, and native Windows
 supported yet. A Windows participant needs WSL set up already, or a Mac to borrow.
 
 Fill in the date and paste this into Slack. The link points at the pilot guide exactly as
-tagged for 0.2.3, so it will not change under anyone.
+tagged for 0.2.4, so it will not change under anyone.
 
 > Hi all, I'd love your help with a short pilot of *The Golden Thread Quest*. It's a
 > self-paced training app for AI Context Engineers: the people who connect what was asked
@@ -23,7 +23,7 @@ tagged for 0.2.3, so it will not change under anyone.
 > *When:* by *<date>*.
 > *You need:* a Mac or Linux computer (on Windows, tell me first) and a free GitHub account. No coding: setup is one line you paste, and
 > the guide walks you through it.
-> *Start here:* https://github.com/beekeeper-lab/golden-thread-quest/blob/v0.2.3/docs/guides/PILOT.md
+> *Start here:* https://github.com/beekeeper-lab/golden-thread-quest/blob/v0.2.4/docs/guides/PILOT.md
 >
 > Your work is stored on GitHub where anyone can read it, so please use made-up material
 > only. At the end I'll ask five quick questions. Anything confusing is exactly what I want

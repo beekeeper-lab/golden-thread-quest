@@ -2,7 +2,7 @@
 # Golden Thread Quest setup for Mac, Linux and Windows WSL (Phase 2A.1).
 #
 # Participants paste one line from docs/guides/PILOT.md:
-#   curl -fsSL https://raw.githubusercontent.com/beekeeper-lab/golden-thread-quest/v0.2.3/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/beekeeper-lab/golden-thread-quest/v0.2.4/install.sh | bash
 #
 # It installs what is missing (Apple's command line tools or Git, uv, the GitHub CLI),
 # asking before each install. Then it signs the participant in to GitHub, forks and clones
@@ -24,7 +24,7 @@ main() {
 ORIGINAL_PATH="$PATH"
 SUDO=""
 [ "$(id -u)" -eq 0 ] || SUDO=sudo
-GTQ_VERSION="${GTQ_VERSION:-v0.2.3}"
+GTQ_VERSION="${GTQ_VERSION:-v0.2.4}"
 UPSTREAM="beekeeper-lab/golden-thread-quest"
 TARGET="${GTQ_DIR:-$HOME/golden-thread-quest}"
 BIN_DIR="$HOME/.local/bin"

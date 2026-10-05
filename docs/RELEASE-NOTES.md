@@ -1,10 +1,17 @@
 # Release Notes: Pilot Release
 
-**Version:** 0.2.3
-**Date:** 2026-10-04
+**Version:** 0.2.4
+**Date:** 2026-10-05
 **Status:** released to a small invited pilot, not for general use. The release checklist
 passed (`docs/audits/phase-01-verify.md`), and the program owner released it at Gate 1
 (`docs/audits/final-audit.md`). Pilot participants start with `docs/guides/PILOT.md`.
+
+## What changed in 0.2.4
+
+- **No "Request timed out" lines after a normal page load.** A browser keeps spare
+  connections open; the application closes them after 30 seconds, and used to report each
+  one in the terminal, which read as a failure. Other errors are still reported. Found by
+  the Phase 2A.2 demo.
 
 ## What changed in 0.2.3
 
@@ -127,7 +134,7 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 1413 under `make check`, plus 57 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
+| Tests | 1414 under `make check`, plus 57 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3 quest-facing, plus 2 registered environment probes and one unregistered slow probe used only to prove the timeout |

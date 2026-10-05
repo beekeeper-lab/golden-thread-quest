@@ -19,7 +19,7 @@ from quest_app.compat import Self
 # rather than partially interpreted.
 SUPPORTED_SCHEMA_VERSION: Final = 1
 
-APPLICATION_VERSION: Final = "0.2.3"
+APPLICATION_VERSION: Final = "0.2.4"
 
 DEFAULT_SERVICE_HOST: Final = "127.0.0.1"
 DEFAULT_SERVICE_PORT: Final = 8765

@@ -47,13 +47,18 @@ No new blocking or high finding inside the scope.
 
 ## Demo (2026-10-04)
 
-The program owner ran the `v0.2.2` setup line on their own Linux machine, the first run
-against real GitHub.
+The program owner ran the setup line on their own Linux machine, the first run against
+real GitHub.
 
 | # | Severity | Finding | Fix |
 |---|---|---|---|
 | D1 | Blocking | Setup made the participant's fork, then reported "Could not make your copy on GitHub" at step 5. It checked the copy through `gh repo view --json parent` and the field `nameWithOwner`, which that object does not have, so the check read empty for every participant. Every test, and both verify passes, took the test hook around this step | The check reads GitHub's REST `parent.full_name`. `test_setup_finds_the_fork_it_made_on_github` runs the GitHub step against a stand-in `gh` answering from recorded GitHub responses; with the old check it fails with the demo's message. Release 0.2.3 |
 | D2 | Low | On the account that owns the repository, the same step said to rename a repository; an account cannot fork its own | Setup says it is the owner's account and to sign in with your own. Test: `test_setup_on_the_owners_account_says_so` |
+| D3 | Low | After setup finished and the browser opened, three "Request timed out" lines appeared in the terminal: a browser's spare connections, closed when idle for 30 seconds | An idle connection closing is not logged; other errors are. Test: `test_an_idle_connection_closing_is_not_reported_as_an_error`. Release 0.2.4 |
+
+On the second run, with the fix, setup finished on real GitHub, reusing the fork the first
+run had made, and the home page showed "Start at BA Ruins" with the transcript quest as
+"Recommended next". A real `gtq hand-in` was not run in the demo.
 
 **What we learned:** a test hook that skips the external system also skips every assumption
 about that system's answers. The new test keeps the hook's speed but answers from recorded
