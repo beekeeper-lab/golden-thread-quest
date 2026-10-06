@@ -4,7 +4,7 @@
 **Curriculum:** The AI Context Engineer Journey
 **Tagline:** From human intent to verified delivery.
 
-> **Status: work in progress. Pilot release 0.2.3: not for general use.**
+> **Status: work in progress. Pilot release 0.2.4: not for general use.**
 >
 > It is released to a small invited pilot.
 >
@@ -70,7 +70,7 @@ address. Open it.
 
 | | |
 |---|---|
-| Tests | 1470 — 1413 under `make check`, 57 driving a real browser. The line `make check` prints counts skips too, and it can read higher than the total above: a module that skips itself as a whole because an optional dependency is missing (`pytest.importorskip`) counts as one skip, not one per test it would have contained. |
+| Tests | 1471 — 1414 under `make check`, 57 driving a real browser. The line `make check` prints counts skips too, and it can read higher than the total above: a module that skips itself as a whole because an optional dependency is missing (`pytest.importorskip`) counts as one skip, not one per test it would have contained. |
 | Screens | 13 page templates, 11 reusable components |
 | Schemas | 10, validating content, progress, reviews, validation results and the validator registry |
 | Sample curriculum | 8 regions, 8 quests, 4 badges, 2 tracks |

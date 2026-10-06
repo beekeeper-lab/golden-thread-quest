@@ -49,3 +49,11 @@ real GitHub sign-in, forking and pull requests. The program owner's own run of
 ## Answers to the five questions
 
 One section per participant, filled in at the end.
+
+## Before the pilot: the Phase 2A.2 demo (2026-10-04 and 05)
+
+The program owner ran the setup line on their own Linux machine, the first run against real
+GitHub. At `v0.2.2` it stopped at step 5 for every account (`docs/audits/phase-02a2-verify.md`,
+D1). At `v0.2.3` it finished, reused the fork, and the home page offered the transcript
+quest first. The invitation points at `v0.2.4`. A real hand-in, and the lead's push to a
+participant's fork, are still untested: watch the first one.
