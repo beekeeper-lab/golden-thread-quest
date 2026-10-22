@@ -1,0 +1,27 @@
+schema_version: 1
+participant:
+  id: participant
+  display_name: beaubrown
+selected_track: golden-thread-foundations
+attempts:
+- attempt_id: base-attempt-001
+  quest_id: base-camp-repository-safety
+  quest_version: 2
+  content_hash: sha256:961a703db315b6da63e2a0e8f9cd3bc8db210f269a6451505236a78d84d250b3
+  state: verified
+  started_at: '2026-10-14T17:19:15Z'
+  updated_at: '2026-10-14T22:26:47Z'
+  evidence_path: participant/evidence/base-camp-repository-safety/base-attempt-001
+  submission_id: submission-20261014175155-58f16c
+  review_id: review-20261014222647-4e1067
+- attempt_id: jira-attempt-001
+  quest_id: jira-read-assigned-stories
+  quest_version: 2
+  content_hash: sha256:983e44712d01f69de6ca4b3dbe7eb180fdf0040ebb722453749e959d0dde5c0b
+  state: verified
+  started_at: '2026-10-22T17:38:17Z'
+  updated_at: '2026-10-22T21:25:09Z'
+  evidence_path: participant/evidence/jira-read-assigned-stories/jira-attempt-001
+  submission_id: submission-20261022204218-2fac7a
+  review_id: review-20261022212509-203cbb
+updated_at: '2026-10-22T21:25:09Z'

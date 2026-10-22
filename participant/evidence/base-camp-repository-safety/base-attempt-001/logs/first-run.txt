@@ -1,0 +1,13 @@
+Run started 2026-10-14 17:42:43 UTC
+Fake outside system: local-data/fake-tracker.json
+Read: 0 item(s) in the fake system; 0 with key GTQ-DEMO-1
+
+PREVIEW: this is the exact write that would happen:
+{
+  "key": "GTQ-DEMO-1",
+  "title": "Fake ticket for the Base Camp rerun test",
+  "system": "fake tracker (local file, not a real service)"
+}
+
+Type yes to create it, anything else to cancel: You typed: 'yes'
+Created GTQ-DEMO-1.
