@@ -151,20 +151,114 @@ def test_the_readme_says_the_project_is_a_pilot_not_a_general_release() -> None:
     assert "not for general use" in head
 
 
-def test_release_one_ships_no_external_write() -> None:
-    """`docs/SECURITY-AND-PRIVACY.md` describes controls for a write nothing performs.
+EXPECTED_WRITE_QUESTS = {
+    "jira-create-story",
+    "jira-create-subtask",
+    "jira-add-comment",
+    "jira-update-fields",
+    "jira-transition-status",
+    "jira-link-work",
+    "jira-idempotent-create",
+    "github-create-issue",
+    "github-add-comment",
+    "github-update-metadata",
+    "github-close-reopen",
+    "github-link-delivery",
+    "github-idempotent-write",
+    "trello-create-card",
+    "trello-add-checklist-item",
+    "trello-add-comment",
+    "trello-move-card",
+    "trello-update-card",
+    "trello-idempotent-write",
+}
 
-    The requirements in that section are conditions on a quest that does not exist yet, and
-    the "required security tests" list names an external-write test that cannot be written
-    until one does. What can be asserted is the invariant the section rests on, so the day a
-    quest declares a write, this is the test that says those controls now have to be built.
-    """
+
+def _quest_fronts() -> dict[str, dict]:
     import yaml
 
+    fronts: dict[str, dict] = {}
     for quest in sorted((ROOT / "content" / "quests").rglob("*.md")):
-        front = quest.read_text().split("---", 2)[1]
-        risk = (yaml.safe_load(front) or {}).get("risk") or {}
-        assert risk.get("external_write") is False, f"{quest.name} declares an external write"
+        front = yaml.safe_load(quest.read_text().split("---", 2)[1]) or {}
+        fronts[front["id"]] = front
+    return fronts
+
+
+def _prerequisite_closure(fronts: dict[str, dict], quest_id: str) -> set[str]:
+    seen: set[str] = set()
+    pending = list(fronts[quest_id].get("prerequisites") or [])
+    while pending:
+        current = pending.pop()
+        if current in seen:
+            continue
+        seen.add(current)
+        pending.extend(fronts[current].get("prerequisites") or [])
+    return seen
+
+
+def test_a_quest_that_writes_to_an_external_system_carries_the_stated_controls() -> None:
+    """`docs/SECURITY-AND-PRIVACY.md` lists five conditions for a quest that writes.
+
+    This test used to assert that no quest declares a write, and said that the day one did,
+    the controls would have to be built. The Jira write quests are that day. The controls are
+    properties of the quest's content, so what can be held is that every quest declaring an
+    external write requires evidence of each one: a preview of the target and exact changes,
+    duplicate and permission checks, an explicit confirmation tied to the preview, a result
+    record with the external identifier and time, and rerun safety. It also has to follow
+    the preview quest, keep to a sandbox, and say so in its risk note.
+
+    A quest that declares a write and drops any of these fails here, so the invariant is
+    stricter than before: it no longer assumes writes are absent, it refuses a write quest
+    that is under-specified.
+    """
+    fronts = _quest_fronts()
+    writers = {q for q, f in fronts.items() if (f.get("risk") or {}).get("external_write") is True}
+    # The set of write quests is named here so that adding one is a deliberate edit to this
+    # file, and so that a write quest cannot be flipped to `false` and quietly leave the
+    # check: a quest tagged `write` must declare it, and every declared write must be named.
+    assert writers == EXPECTED_WRITE_QUESTS, (
+        f"external-write quests changed: declared {sorted(writers)}, "
+        f"expected {sorted(EXPECTED_WRITE_QUESTS)}"
+    )
+    tagged = {q for q, f in fronts.items() if "write" in (f.get("tags") or [])}
+    assert tagged == writers, (
+        f"quests tagged write differ from declared writes: {sorted(tagged ^ writers)}"
+    )
+    for quest_id in writers:
+        front = fronts[quest_id]
+        text = " ".join(
+            str(item.get("description", "")) for item in front["proof"].get("required", [])
+        ).lower()
+        body = (
+            next(
+                p
+                for p in (ROOT / "content" / "quests").rglob("*.md")
+                if f"id: {quest_id}\n" in p.read_text()
+            )
+            .read_text()
+            .lower()
+        )
+        for needle, control in (
+            ("preview", "a preview of the target and exact changes"),
+            ("confirmation", "an explicit confirmation"),
+            ("permission check", "a permission check"),
+            ("duplicate", "a duplicate check or its stated limit"),
+            ("timestamp", "a result record with a time"),
+            ("second time", "rerun behavior"),
+            ("allowlist", "a sandbox allowlist"),
+        ):
+            assert needle in text, f"{quest_id}: required proof does not show {control}"
+        assert "sandbox" in str((front.get("risk") or {}).get("notes", "")).lower(), (
+            f"{quest_id}: its risk note does not say the target is a sandbox"
+        )
+        assert "base-camp-write-preview" in _prerequisite_closure(fronts, quest_id), (
+            f"{quest_id}: it does not follow the preview quest"
+        )
+        assert "sandbox" in body and "production" in body, (
+            f"{quest_id}: its safety constraints do not rule out production"
+        )
+
+    import yaml
 
     registry = yaml.safe_load((ROOT / "validators" / "registry.yaml").read_text())
     for entry in registry["validators"]:

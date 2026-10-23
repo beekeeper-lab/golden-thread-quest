@@ -540,6 +540,49 @@ rations amber to that single meaning across the state chips, the passport marks 
 totals. A brand mark introducing a second accent for approval would contradict the product
 before a participant opened it. Two colors, no third.
 
+### Image 16: 05-passport-outcome-v3
+
+- **File**: docs/media/images/05-passport-outcome-v3.png
+- **Page**: User guide, Section 11 — Knowing when you are finished
+- **Fixes**: v2 draws eight region marks, and the application has had nine regions since
+  0.3.0 (the ninth is Trap Cards). The idea the image carries is unchanged, so this is a
+  correction of the count only: nine marks, six outlined for claimed and three solid gold
+  for verified, with the two figures agreeing with the marks (claimed 9, verified 3).
+- **Alt text**: "The passport shows claimed and verified progress as two separate totals that
+  are never added together: nine region marks, six outlined for claimed and three filled
+  amber for verified, with claimed at nine and verified at three kept deliberately apart."
+- **Description**: A single flat passport page, centered, with a thin ruled header carrying the
+  word passport. Its body is one row of nine square region marks, sized to fill the page
+  width comfortably: the first six outlined in ink-navy, the last three solid amber-gold.
+  Beneath the row sit two separate boxed totals, set far apart with open parchment between
+  them and nothing joining them — the left reads claimed 9, the right reads verified 3. The
+  figures agree with the marks above: nine marks in total, three of them gold. Nothing else
+  appears on the page.
+- **Prompt**:
+  Goal: Show that claimed progress and verified progress are two separate figures the
+    application never combines, that verified is always the smaller, and that only verified
+    marks are gold.
+  Scene: One flat passport page with a thin ruled header reading "passport". Below it, a
+    single row of nine large square marks — the first six outlined ink-navy, the last three
+    solid amber-gold. Below that, two separated boxed totals with wide open parchment between
+    them and no line, bar or arrow joining them: the left box reads "claimed 9" and the right
+    box reads "verified 3".
+  Style: Flat vector, restrained and formal, thin rules, generous whitespace, subtle paper
+    texture, amber-gold used only for verified marks, no shadows, no gradients.
+  Aspect ratio: 3:2
+  Background: warm parchment #f7f4ec
+  Text in image: exactly three pieces of text — "passport", "claimed 9", "verified 3". No
+    region names, no other numerals, no other text.
+  Avoid: any number other than 9 and 3, a verified figure larger than the claimed figure,
+    trophies, medals, stars, ribbons, a single progress bar merging the two values,
+    percentage rings, confetti, document stacks, large empty areas, any sentence-length text
+- **Result**: Generated 2026-10-22 after the program owner approved the plan. Nine marks, six
+  outlined and three gold, "claimed 9" and "verified 3", and the only other text is
+  "passport". Gemini reported 2,026 tokens and an estimated cost of $0.14 (the plan quoted
+  about $0.12). The guide now uses this file; v2 stays on disk for comparison.
+
+---
+
 ### Image 11: icon
 
 - **File**: docs/media/brand/icon.png
@@ -729,10 +772,11 @@ round-1 takes until this table existed. It is the record of what the guide actua
 | Section | File the guide references | Why |
 |---|---|---|
 | 3 — The first hour | `01-first-hour-flow-v3.png` | Round 3 take; v1 and v2 superseded. |
+| 3 — Choosing a quest | `06-quest-map.png` | Not generated: a screenshot of the Quest Map, taken by `scripts/screenshot_quest_map.py` after `make build`. Retake it whenever the map changes. |
 | 4 — The eight states | `02-state-authority-v2.png` | v1 placed `locally validated` in the reviewer column, contradicting the one rule the image exists to state. |
 | 6 — What the application writes | `03-ownership-zones-v4.png` | Round 4 take; the first one with no misleading text. See below. |
 | 7 — Evidence | `04-evidence-package.png` | Correct in round 1; never superseded. |
-| 11 — Knowing when you are finished | `05-passport-outcome-v2.png` | v1 read `claimed 10601 / verified 10602`, showing verified exceeding claimed, which the application cannot produce. |
+| 11 — Knowing when you are finished | `05-passport-outcome-v3.png` | v3 draws nine region marks to match the nine regions since 0.3.0; v2 drew eight. v1 read `claimed 10601 / verified 10602`, showing verified exceeding claimed, which the application cannot produce; v2 fixed that and v3 keeps it (claimed 9, verified 3). |
 
 ### Why section 6 ships the v4 take
 

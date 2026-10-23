@@ -1,13 +1,15 @@
 id: jira-jungle
-version: 1
+version: 2
 title: Jira Jungle
 short_title: Jira
 summary: Build repeatable Jira read and synchronization workflows that keep every change a human's to make.
 order: 20
 accent: blue
 icon: jira
+terrain: jungle
 outcomes:
-  - Synchronize the work assigned to you into traceable local Markdown, without hardcoding who you are.
-  - Read without writing, so nothing in Jira changes and the synchronization records that it did not.
-  - Follow pagination to the end, and resynchronize without duplicating comments or overwriting participant notes.
+  - Read Jira into traceable local Markdown without hardcoding who you are, following pagination to the end and resynchronizing without duplicating comments or overwriting your notes.
+  - Keep local analysis, report conflicts between local and Jira values instead of choosing one, and account for every item as synchronized, missing, stale, conflicted or failed.
+  - Write to Jira only in a sandbox and only after a person has seen a preview and confirmed it, with a permission and duplicate check, a result record and safe reruns.
+  - Recommend the next item from local context, citing the fields behind each reason.
 tags: [jira, integration, work-management]

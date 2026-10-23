@@ -6,6 +6,7 @@ summary: Design risk-based tests, build maintainable Playwright automation, capt
 order: 80
 accent: rose
 icon: validation
+terrain: maze
 outcomes:
   - Translate intent and risk into maintainable automated tests.
   - Execute tagged, independent tests and preserve useful evidence.

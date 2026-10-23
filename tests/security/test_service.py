@@ -2007,3 +2007,33 @@ class TestTheFormPathParsesAcknowledgeChangedEvidenceStrictly:
             },
         )
         assert self._state_of(config) == "verified"
+
+
+class TestIdleConnectionLog:
+    def test_an_idle_connection_closing_is_not_reported_as_an_error(
+        self,
+        service: tuple[str, str],
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """Phase 2A.2 demo D3: a browser's spare connections, idle until the timeout, put
+        "Request timed out" lines in a participant's terminal after a normal page load."""
+        import socket
+
+        from quest_app.serve import ActionHandler
+
+        monkeypatch.setattr(ActionHandler, "timeout", 0.3)
+        base, _ = service
+        port = int(base.rsplit(":", 1)[1])
+        with socket.create_connection(("127.0.0.1", port)) as idle:
+            idle.settimeout(3)
+            assert idle.recv(1) == b"", "the server closes the idle connection"
+        with socket.create_connection(("127.0.0.1", port)) as bad:
+            bad.sendall(b"NONSENSE / HTTP/9.9\r\n\r\n")
+            bad.settimeout(3)
+            bad.recv(4096)
+        time.sleep(0.2)
+
+        log = capsys.readouterr().err
+        assert "Request timed out" not in log
+        assert "code 505" in log, "other errors are still reported"

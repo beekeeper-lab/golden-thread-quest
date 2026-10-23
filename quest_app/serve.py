@@ -375,6 +375,19 @@ class ActionHandler(BaseHTTPRequestHandler):
         """
         sys.stderr.write(f"{self.address_string()} {format % args}\n")
 
+    def log_error(self, format: str, *args: Any) -> None:  # noqa: A002 - base class signature
+        """Errors go to the same log, except an idle connection closing.
+
+        A browser keeps spare connections open and sends nothing on them; after `timeout`
+        the standard library logs "Request timed out" for each. The Phase 2A.2 demo showed
+        three of those in a participant's terminal after a normal page load, which reads as a
+        failure to someone who is not a developer. The connection is still closed; it is
+        only not reported.
+        """
+        if format.startswith("Request timed out"):
+            return
+        self.log_message(format, *args)
+
     def _send(self, status: HTTPStatus, payload: dict[str, Any]) -> None:
         body = json.dumps(payload, indent=2, sort_keys=True).encode("utf-8")
         self.send_response(status)

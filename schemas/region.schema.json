@@ -17,6 +17,10 @@
       "enum": ["slate", "amber", "green", "blue", "violet", "rust", "teal", "rose"]
     },
     "icon": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "terrain": {
+      "type": "string",
+      "enum": ["mountain", "cave", "jungle", "ruins", "village", "library", "maze", "islands", "swamp", "plain"]
+    },
     "outcomes": {
       "type": "array",
       "minItems": 1,

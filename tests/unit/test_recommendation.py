@@ -134,3 +134,35 @@ def test_it_survives_a_participant_with_no_progress(world) -> None:  # type: ign
     results = recommend(world.content, states, regions, None)
     assert results
     assert all(len(result.top_reasons) == 3 for result in results)
+
+
+def test_a_new_participant_is_offered_the_first_quest_of_the_default_track(  # type: ignore[no-untyped-def]
+    world,
+) -> None:
+    """Phase 2A.2: the pilot track starts with the transcript quest, and Base Camp, which
+    unlocks more quests, outscored it on the home page of someone who had not started."""
+    bundle = world.content
+    states = compute_states(bundle, None)
+    regions = region_progress(bundle, states)
+
+    results = recommend(bundle, states, regions, None, default_track=bundle.site.default_track)
+
+    track = bundle.tracks[bundle.site.default_track]
+    assert [r.quest.id for r in results[:2]] == list(track.quest_ids[:2])
+    assert "It is the next quest in that track" in results[0].top_reasons
+
+
+def test_the_track_moves_on_once_its_first_quest_is_verified(world) -> None:  # type: ignore[no-untyped-def]
+    import dataclasses
+
+    bundle = world.content
+    states = compute_states(bundle, None)
+    track = bundle.tracks[bundle.site.default_track]
+    first, second = track.quest_ids[:2]
+    verified = dataclasses.replace(states[first].state, id=QuestState.VERIFIED)
+    states[first] = dataclasses.replace(states[first], state=verified)
+    regions = region_progress(bundle, states)
+
+    results = recommend(bundle, states, regions, None, default_track=track.id)
+
+    assert results[0].quest.id == second

@@ -11,7 +11,7 @@ The application must transform authored content into normalized view models. Tem
 | Content | Canonical format | Notes |
 |---|---|---|
 | Quest narrative | Markdown with YAML front matter | One quest per file |
-| Region definition | YAML | Ordering, theme token, outcomes |
+| Region definition | YAML | Ordering, theme token, outcomes, terrain drawn on the Quest Map |
 | Track definition | YAML | Ordered or rule-based quest selection |
 | Badge definition | YAML | Machine-evaluable or reviewer-awarded criteria |
 | Site configuration | YAML | Identity and generic navigation labels |
@@ -211,7 +211,7 @@ The first release uses an explainable deterministic score rather than AI inferen
 Consider:
 
 - quest is available;
-- track membership;
+- track membership, and the track's order: the first quest of the track not yet done ranks above the rest of it (Phase 2A.2);
 - prerequisite continuity;
 - participant's selected focus tags;
 - estimated time versus stated session capacity;

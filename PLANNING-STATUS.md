@@ -11,8 +11,9 @@ ideas that arrive mid-phase wait in `docs/PARKING-LOT.md`.
 Seventeen Stage 10 audit rounds ran under a closing rule for DH7 that no round met, and the
 round loop has stopped. Gate 0 and Gate 1 passed on 2026-09-29. Phase 1's release checklist
 passed and DH7 is closed, and the program owner released version 0.2.0 to a pilot. Phase 2A
-built it. **Now: Phase 2A.1**, one-command setup and hand-in for participants who are not
-developers (release 0.2.1), then Phase 2B, the pilot itself (`docs/guides/PILOT.md`). See `docs/RELEASE-NOTES.md` for what works and the known limitations, and
+built it, and Phase 2A.1 added one-command setup and hand-in for participants who are not
+developers (release 0.2.1). Phase 2A.2 added first-day fixes for them, and its demo fixed
+setup's GitHub step (release 0.2.4). On 2026-10-21, at the program owner's instruction and while the pilot runs, the curriculum was built out to the full 128-quest backlog and released as 0.3.0 (`docs/design/08-curriculum-plan.md`, `docs/audits/curriculum-final-audit.md`). **Now: Phase 2B**, the pilot itself (`docs/guides/PILOT.md`). See `docs/RELEASE-NOTES.md` for what works and the known limitations, and
 `docs/audits/` for every audit.
 
 The original planning status follows, preserved because it is the specification the

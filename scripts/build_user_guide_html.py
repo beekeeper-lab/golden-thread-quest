@@ -35,7 +35,7 @@ DIAGRAMS = [
     "02-state-authority-v2",
     "03-ownership-zones-v4",
     "04-evidence-package",
-    "05-passport-outcome-v2",
+    "05-passport-outcome-v3",
 ]
 
 # Project palette over the canonical tokens, plus the dark mode the canonical

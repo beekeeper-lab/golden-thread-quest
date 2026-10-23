@@ -331,8 +331,12 @@ def hash_directory(
     *,
     skip_names: frozenset[str] = frozenset(),
     skip_globs: tuple[str, ...] = (),
+    skip_paths: frozenset[str] = frozenset(),
 ) -> str:
     """The identity of a directory tree: sorted relative names plus file contents.
+
+    `skip_paths` names relative paths left out wherever they are; the evidence hash passes
+    the files Git ignores, which a hand-in never carries (Phase 2A.2).
 
     A symbolic link that resolves inside the tree is hashed by what it points at, because
     that is what the build renders and the secret scan reads: hashing only the link text let
@@ -378,7 +382,7 @@ def hash_directory(
         # `skip_globs` both name only records the application itself writes at the top of
         # the package (ADR-031); anything with the same name deeper in a participant's own
         # tree is their content, not the application's bookkeeping.
-        if parts[0] in skip_names:
+        if parts[0] in skip_names or relative in skip_paths:
             continue
         if len(parts) == 1 and any(fnmatch(parts[-1], pattern) for pattern in skip_globs):
             continue

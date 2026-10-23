@@ -3,6 +3,23 @@
 The version rule is in `REGENERATING.md`: major for a restructure, minor for new content or a
 phase gate, patch for corrections.
 
+## 2.3.0 (2026-10-05)
+
+The Phase 2A.2 gate. Describes `main` at `24e76f0`, plus release 0.2.4.
+
+- **Phases 2A.1 and 2A.2 recorded.** 2A.1 (one-command setup and hand-in for
+  non-developers, 0.2.1) and 2A.2 (first-day fixes: the transcript quest first, hand-in
+  naming what it left out, no unsigned API call, 0.2.2) are done, with their verify passes.
+- **The demo reached real GitHub for the first time** and found that setup stopped at step 5
+  for every participant (fixed in 0.2.3), plus two low findings (0.2.3 and 0.2.4).
+- **What we learned.** A test hook that skips an external system skips every assumption
+  about its answers; tests of an external step now answer from recorded real responses.
+- Part 3 states which files the evidence hash leaves out: plain directories and files Git
+  ignores (ADR-031, amended in Phases 2A and 2A.2).
+- Part 7: Phase 2B is current. The parking lot stays as it is until the pilot report.
+- Rendered as `artifacts/html/design/golden-thread-system-design-v2.3.0.html` and
+  `artifacts/pdf/design/golden-thread-system-design-v2.3.0.pdf`.
+
 ## 2.2.0 (2026-09-29)
 
 Gate 1. Describes `main` at `be2b766`, plus Phase 2A.

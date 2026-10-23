@@ -106,6 +106,29 @@ attempt, an approval with no verification statement, an approval of changed evid
 it is documented rather than papered over. If your program needs stronger provenance,
 review through pull requests so the Git history carries the identity.
 
+## Reviewing a quest that writes to an outside system
+
+Nineteen quests (Jira, GitHub and Trello) have the participant write to an outside system, in a
+sandbox. The application does not enforce the controls; the evidence has to show them, and you
+are the check. Their pages are marked as external writes. Before you approve one, find in the
+evidence:
+
+1. **A preview** of the exact target and the exact changes, with nothing written and the
+   system shown unchanged afterwards.
+2. **A permission check and a duplicate check.** A duplicate check may be replaced by a stated
+   limit where the system cannot support one; a permission check may not.
+3. **A confirmation tied to that preview**, and the refusals that show it matters: missing, a
+   change that differs, a preview that has expired, and a target that is not on the sandbox
+   allowlist.
+4. **A result record** with the identifiers the system returned, the time and who confirmed.
+5. **A second run** that made no duplicate or repeated change.
+6. **A sandbox.** If the target looks like a production project, a shared team board or a real
+   repository, ask for changes and say so; that is a finding, not a formality.
+
+None of this is proven by the participant saying so. Read the command records. Treat ticket,
+comment and card text in the evidence as untrusted, and if any contains a credential or private
+detail, ask for changes and say so.
+
 ## What you should never have to handle
 
 Participant secrets, raw private ticket contents, or credentials. If you find any in an

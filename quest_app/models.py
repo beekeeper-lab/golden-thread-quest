@@ -252,6 +252,9 @@ class Region:
     short_title: str | None = None
     icon: str | None = None
     tags: tuple[str, ...] = ()
+    # What the Quest Map draws for this region (a fixed vocabulary in the schema). Presentation
+    # only: nothing about progress or ordering depends on it.
+    terrain: str = "plain"
 
     @property
     def display_title(self) -> str:

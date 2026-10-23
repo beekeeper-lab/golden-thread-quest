@@ -4,7 +4,7 @@ Thank you for trying the Golden Thread Quest. It is a self-paced training applic
 the AI Context Engineer: the person who connects what people ask for to delivery that has
 been checked. It runs on your own computer, and a reviewer decides what counts as done.
 
-This is a pilot of version 0.2.1. It works, but it is new. If anything is confusing, even
+This is a pilot of version 0.3.1. It works, but it is new. If anything is confusing, even
 for a moment, that is exactly what we want to hear.
 
 You do not need to be a developer. You will paste a few short commands into a terminal
@@ -14,11 +14,12 @@ window, and this guide says what you will see each time.
 
 | Quest | | Time |
 |---|---|---|
-| **Establish a Safe Local Quest Repository** (Base Camp) | Required | About an hour |
-| **Ingest a Meeting Transcript Without Losing Its Source** (BA Ruins) | If you have time | One to two hours |
+| **Ingest a Meeting Transcript Without Losing Its Source** (BA Ruins) | Required | One to two hours |
+| **Establish a Safe Local Quest Repository** (Base Camp) | If you have time | About an hour |
 
-The second quest unlocks once the first is verified. Finish by the date in your invitation,
-then answer the five questions at the end of this guide.
+Start with the transcript quest. The home page offers it first, and Base Camp after it.
+Finish by the date in your invitation, then answer the five questions at the end of this
+guide.
 
 ## Before you start
 
@@ -39,7 +40,7 @@ password, customer name or real meeting.
 2. **Copy this line, paste it into the terminal and press Return:**
 
    ```
-   curl -fsSL https://raw.githubusercontent.com/beekeeper-lab/golden-thread-quest/v0.2.1/install.sh | bash
+   curl -fsSL https://raw.githubusercontent.com/beekeeper-lab/golden-thread-quest/v0.3.1/install.sh | bash
    ```
 
 3. **Answer its questions.** It works through seven steps and says which one it is on.
@@ -52,7 +53,7 @@ password, customer name or real meeting.
      the code on the GitHub page and click **Authorize**.
    - "Your first name": type it and press Return. It labels your work for the reviewer.
 4. **The application opens in your browser** when it asks "Start the application now?"
-   and you press Return. The home page recommends the Base Camp quest.
+   and you press Return. The home page recommends the transcript quest.
 
 If a step fails, the terminal says what went wrong in plain words. Fix that, then paste
 the same line again. It picks up where it stopped, and it never deletes your work.
@@ -90,9 +91,12 @@ Your progress is kept in files on your computer, so stopping loses nothing.
 was, with nothing straight after it: `token: [REDACTED]`. If the check still flags the
 line, reword it as "the token was redacted".
 
-**The second quest.** After Base Camp is verified, the home page may suggest a Jira quest,
-which needs a Jira account. For the pilot, open **Quest Map**, then **BA Ruins**, and take
-**Ingest a Meeting Transcript Without Losing Its Source** instead.
+**The second quest.** After the transcript quest is verified, the home page recommends
+Base Camp. The application now lists 128 quests, and after Base Camp the home page may suggest
+others. Only the two quests above are part of the pilot, so stop after them. Many of the
+others need an account on Jira, GitHub or Trello, and 19 of them write to those systems and
+need a sandbox you would have to be given. If you are curious, you can read any quest page,
+but please do not start one unless your pilot lead has asked you to.
 
 ## Step 3: Hand in your work
 
@@ -105,6 +109,11 @@ gtq hand-in
 You will see **"Handed in. Your pull request is open."** and a link. The link is your
 pull request: it is how your reviewer sees your work. You do not need to do anything on
 that page.
+
+If it also says **"Not sent"** and lists files, those files are named like passwords or
+keys (for example `something.token`, or anything in a `secrets` folder), so they are never
+handed in. If one of them is a file the quest asks for, take any secret out of it, save it
+under the name the evidence page shows, and run `gtq hand-in` again.
 
 Then post in the pilot's Slack thread that a quest is ready for review.
 
@@ -119,10 +128,10 @@ When your reviewer says in Slack that they have reviewed it, type:
 gtq get-review
 ```
 
-It shows the decision, for example **"base-camp-repository-safety: Verified"**. Reload the
+It shows the decision, for example **"ba-ingest-transcript: Verified"**. Reload the
 application in your browser to see it there, or type `gtq start` if it is not running.
 
-- **Verified** means that quest is done, and the next one unlocks.
+- **Verified** means that quest is done, and the home page recommends the next one.
 - **Needs changes** means the reviewer's findings are at the top of the evidence page.
   Click **Resume after review** and fix what they listed. Then do step 2.4 and 2.5 again:
   run the check, click **Mark evidence ready**, **Record local validation** and **Submit

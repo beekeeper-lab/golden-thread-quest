@@ -1,0 +1,14 @@
+id: trap-cards
+version: 1
+title: Trap Cards
+short_title: Trap Cards
+summary: Adversarial challenges that reveal whether your workflows hold up when work is duplicated, stale, contradictory, hostile, partly done or deceptively green.
+order: 90
+accent: teal
+icon: trap
+terrain: swamp
+outcomes:
+  - Catch duplicates, stale context and contradictions across systems without being told where to look.
+  - Keep hostile text and partial failures from changing what a workflow does.
+  - Tell a real repair from one that only makes a test pass.
+tags: [trap, adversarial, judgment]

@@ -670,6 +670,7 @@ def build_region(document: ParsedDocument) -> Region:
         short_title=data.get("short_title"),
         icon=data.get("icon"),
         tags=_tuple(data.get("tags")),
+        terrain=str(data.get("terrain", "plain")),
     )
 
 

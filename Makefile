@@ -5,7 +5,7 @@
 VENV := .venv
 BIN := $(VENV)/bin
 
-.PHONY: help setup setup-ui format format-check lint typecheck secret-scan yaml-safe test test-ui build serve validate-content update-check migrate clean check
+.PHONY: help setup setup-ui format format-check lint typecheck secret-scan yaml-safe test test-quick test-ui build serve validate-content update-check migrate clean check
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-16s %s\n", $$1, $$2}'
@@ -39,6 +39,14 @@ yaml-safe: ## Fail if YAML is parsed with anything but safe_load (ADR-025)
 
 test: ## Run every test except the browser-driven ones
 	$(BIN)/pytest -m "not ui"
+
+SHARD_COUNT ?= 1
+SHARD_INDEX ?= 0
+test-shard: ## Run one shard of the non-browser tests: make test-shard SHARD_COUNT=8 SHARD_INDEX=3
+	$(BIN)/pytest -m "not ui" --shard-count=$(SHARD_COUNT) --shard-index=$(SHARD_INDEX)
+
+test-quick: ## About a minute: the unit, contract, semantic and release-fact tests. What a pull request runs in CI
+	$(BIN)/pytest -m "not ui" tests/unit tests/contract tests/semantic tests/test_release_facts.py
 
 test-ui: ## Run the browser-driven tests (requires make setup-ui)
 	$(BIN)/pytest -m ui
@@ -82,4 +90,4 @@ verify-package: package ## Prove the exported archive installs and builds on its
 clean: ## Remove generated output and caches (never participant files)
 	$(BIN)/python tools/clean.py --apply
 
-check: format-check lint typecheck yaml-safe secret-scan test ## Everything CI's `check` job runs (see `test-ui`, `verify-package` for the other two jobs)
+check: format-check lint typecheck yaml-safe secret-scan test ## The static checks and every non-browser test: CI's `check` and `tests` jobs (see `test-ui`, `verify-package` for the other two)

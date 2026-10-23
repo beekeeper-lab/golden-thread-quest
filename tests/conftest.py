@@ -23,6 +23,41 @@ if TYPE_CHECKING:
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    """Split a run across processes or CI jobs: `--shard-count=8 --shard-index=3`.
+
+    The suite grew with the curriculum until one job outran GitHub's six-hour limit, because
+    many tests run once per quest and each walks that quest's prerequisite chain. Sharding
+    runs every selected test exactly once across the shards without a new dependency.
+    """
+    group = parser.getgroup("sharding")
+    group.addoption(
+        "--shard-count", type=int, default=1, help="number of shards the run is split into"
+    )
+    group.addoption("--shard-index", type=int, default=0, help="which shard to run, from 0")
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Keep every `count`-th test, in node-id order, so quests of similar depth interleave.
+
+    Last, so the marker deselection (`-m "not ui"`) has already happened and the shards
+    partition what would otherwise have run.
+    """
+    count = config.getoption("--shard-count")
+    index = config.getoption("--shard-index")
+    if count == 1:
+        return
+    if count < 1 or not 0 <= index < count:
+        raise pytest.UsageError(f"--shard-index must be in [0, {count}); got {index}")
+    ordered = sorted(items, key=lambda item: item.nodeid)
+    mine = {id(item) for position, item in enumerate(ordered) if position % count == index}
+    others = [item for item in items if id(item) not in mine]
+    config.hook.pytest_deselected(items=others)
+    items[:] = [item for item in items if id(item) in mine]
+
+
 # The three roots the application ever writes to (ADR-018) — never the repository's own
 # copies while the test suite runs. `fixtures/participant` is a different, read-only path
 # and is not one of these.

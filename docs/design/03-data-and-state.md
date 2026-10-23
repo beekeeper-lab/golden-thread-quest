@@ -171,7 +171,12 @@ hash (round 16 finding E10). Content that is not UTF-8 is still folded, but only
 pairs and only when Git's own `core.autocrlf` would convert it — no NUL byte, no lone `\r`,
 and Git's printable-byte ratio — so a cp1252 or Latin-1 log converted by Git is not a change
 either (round 17 finding E14). A directory symbolic link inside the package is hashed by its
-link text, as a file link is, so retargeting it is a change (round 17 finding E15).
+link text, as a file link is, so retargeting it is a change (round 17 finding E15). Neither a
+plain directory nor a file Git ignores is hashed (ADR-031, amended in Phases 2A and 2A.2): a
+hand-in carries neither, so a reviewer's clone of the participant's branch lacks them, and
+counting them made every package with an empty `screenshots/` folder, or a `.DS_Store`, read
+as changed. Which files are ignored is asked of `git check-ignore`; outside a repository
+every file counts.
 
 The submission records both fingerprints. The reviewer's approval is refused if either has
 changed since submission unless the reviewer acknowledges the change, and after approval the

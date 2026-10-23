@@ -6,6 +6,15 @@ You can take improvements to the curriculum and keep everything you wrote. That 
 because program-owned and participant-owned files live in separate top-level directories and
 nothing upstream touches yours.
 
+## What an update to 0.3.0 does
+
+Version 0.3.0 added 120 quests and changed none of the original eight. It changed no schema
+and no part of `participant/progress.yaml`, so `make update-check` should report it safe,
+`make migrate` has nothing to do, and your existing attempts stay exactly as they were, verified
+ones included. After the merge your catalog lists 128 quests; a quest whose prerequisites you
+have not verified shows as locked. Pilot participants who installed with `install.sh` run
+`gtq update` for the same check.
+
 ## First, name where updates come from
 
 A fresh clone has one remote, `origin`, pointing at wherever you cloned from. Every command

@@ -56,6 +56,28 @@ def test_the_site_builds_with_no_participant_at_all(empty_participant: AppConfig
     assert "Start at" in home, "a new participant is told where to begin"
 
 
+def test_a_new_participant_starts_where_the_default_track_does(
+    empty_participant: AppConfig,
+) -> None:
+    """Phase 2A.2 verify V1 and V3: the home page of someone who has done nothing must
+    follow the default track. The build did not pass it to the recommendation, and the
+    "Start at" box always named the first region, above a recommendation from another."""
+    import html as html_lib
+
+    report = ProblemReport()
+    world = load_world(empty_participant, report)
+    assert world is not None, report.to_text()
+    build_site(world, built_at="2026-09-17T00:00:00+00:00")
+    home = html_lib.unescape((empty_participant.generated_root / "index.html").read_text())
+
+    bundle = world.content
+    first = bundle.quests[bundle.tracks[bundle.site.default_track].quest_ids[0]]
+    region = bundle.regions[first.region]
+    recommended = home[home.index('id="recommended-heading"') : home.index("Why this one")]
+    assert first.title in recommended
+    assert f"Start at {region.title}" in home
+
+
 def test_starting_a_quest_creates_the_progress_file(empty_participant: AppConfig) -> None:
     """The circular refusal: starting was the only way to create the file it required."""
     report = ProblemReport()

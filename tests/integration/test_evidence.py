@@ -500,6 +500,34 @@ class TestSecretScanning:
 
 
 class TestEvidenceHash:
+    def test_a_file_git_ignores_is_not_part_of_the_hash(
+        self, config: AppConfig, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Phase 2A.2 verify V4: an ignored file is never handed in, so the reviewer's clone
+        lacks it. Counted in the hash, a Finder `.DS_Store` made an approved attempt read as
+        changed since approval on the participant's machine."""
+        import subprocess
+
+        monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+        subprocess.run(["git", "init", "--quiet", str(config.repo_root)], check=True)
+        package = config.resolve_participant_path(EVIDENCE)
+        before = evidence_hash(config, EVIDENCE)
+
+        (package / "notes.token").write_text("redacted\n")
+        (package / "secrets").mkdir()
+        (package / "secrets" / "env.txt").write_text("redacted\n")
+        (package / ".DS_Store").write_bytes(b"\0\0\0\1Bud1")
+        assert evidence_hash(config, EVIDENCE) == before
+
+        (package / "notes.md").write_text("handed in\n")
+        assert evidence_hash(config, EVIDENCE) != before
+
+    def test_outside_a_repository_every_file_counts(self, config: AppConfig) -> None:
+        """No Git, no ignore rules to apply: the hash covers every file, as it always did."""
+        before = evidence_hash(config, EVIDENCE)
+        (config.resolve_participant_path(EVIDENCE) / "notes.token").write_text("redacted\n")
+        assert evidence_hash(config, EVIDENCE) != before
+
     def test_the_hash_changes_when_the_evidence_changes(self, config: AppConfig) -> None:
         before = evidence_hash(config, EVIDENCE)
         (config.resolve_participant_path(EVIDENCE) / "PROOF.md").write_text("# Different\n")

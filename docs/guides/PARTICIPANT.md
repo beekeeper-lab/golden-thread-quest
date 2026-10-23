@@ -9,6 +9,12 @@ set of them; it does not own them.
 
 ## Getting started
 
+**Pilot participants** follow [`PILOT.md`](PILOT.md) instead: one line sets everything up, and
+`gtq start`, `gtq hand-in` and `gtq get-review` replace the commands below. The rest of this
+guide, the states and what the application writes, applies to everyone.
+
+Otherwise:
+
 ```bash
 make setup
 source .venv/bin/activate
@@ -58,7 +64,8 @@ and nothing a validator returns can produce it.
    that. It comes *before* submitting, not after.
 8. **Submit for review.** It is refused while any required file on the evidence page is
    missing or empty, and the refusal names each one.
-9. **Commit and push yourself:**
+9. **Hand in your work.** With the pilot setup, `gtq hand-in` commits `participant/`, pushes
+   your branch and opens or updates your pull request. Without it, commit and push yourself:
 
    ```bash
    git switch -c evidence/<quest-id>
@@ -70,6 +77,15 @@ and nothing a validator returns can produce it.
 
    The application runs none of these. Pushing your evidence is a claim that the work is
    finished and ready for someone else's attention, and that claim is yours to make.
+
+## Choosing a quest, and quests that write
+
+The catalog lists 128 quests in nine regions; a quest is locked until its prerequisites are
+verified. The Jira, GitHub and Trello regions need an account on that system. Nineteen of their
+quests write to it, and each is marked as an external write: do those in a sandbox you are
+allowed to change, never a production project, and follow the quest's preview, confirmation,
+result-record and rerun requirements. If you have no sandbox, stop and ask. The application
+itself never writes to an outside system. `docs/USER-GUIDE.md` has the longer version.
 
 ## What the application writes
 

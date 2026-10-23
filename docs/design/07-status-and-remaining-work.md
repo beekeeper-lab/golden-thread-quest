@@ -19,9 +19,9 @@ quests that exist today, with the known limitations written down (Section 7.6). 
 finished curriculum and not a hardened product. Everything after the pilot is chosen at a
 gate.
 
-## 7.2 Where we are (2026-09-29)
+## 7.2 Where we are (2026-10-05)
 
-**Current phase: Phase 2A.1, setup and hand-in for non-developers (added 2026-09-30). Phase 2B, the pilot run, starts when the program owner sends the invitation for 0.2.1.** The hand-in was rehearsed at `v0.2.0` with two local clones on 2026-09-29 and passes along the path `PILOT.md` describes (`docs/pilot/PILOT-LOG.md`). The GitHub fork and pull request can only be tested by the first real hand-in. Gate 1 passed on 2026-09-29, when the
+**Current phase: Phase 2B, the pilot run. It starts when the program owner sends the invitation for 0.2.4 (`docs/guides/PILOT-LEAD.md`).** Phase 2A.2 passed its gate on 2026-10-05: its demo was the first run of setup against real GitHub, and it found and fixed a defect that had stopped every participant at step 5 (Section 7.4, Phase 2A.2). The hand-in was rehearsed at `v0.2.0` with two local clones on 2026-09-29 and passes along the path `PILOT.md` describes (`docs/pilot/PILOT-LOG.md`). Setup's fork step now works against real GitHub. The pull request a hand-in opens is still tested only by the first real hand-in. Gate 1 passed on 2026-09-29, when the
 program owner decided to release to a pilot. Phase 1's checklist passed and DH7 is closed
 (`docs/audits/phase-01-verify.md`). Phase 2A fixes the two parking-lot items the program
 owner chose and builds the release. Phase 2B is the pilot itself.
@@ -189,7 +189,7 @@ recommendation: **do**, **decide** (at that phase's gate, likely on pilot eviden
   a false "evidence changed" warning. Both were fixed and passed in cycle 2. The fork and
   pull-request step on GitHub itself is untested.
 
-### Phase 2A.1: Setup and hand-in for non-developers (current)
+### Phase 2A.1: Setup and hand-in for non-developers (done)
 
 Added on 2026-09-30, before the invitation was sent. The program owner confirmed that
 participants are business analysts and manual testers, not developers, and approved this
@@ -222,6 +222,57 @@ scope. For them, 0.2.0 asks for too much terminal and Git work before the first 
   findings: an edit after hand-in could leave the copy stuck, and re-running setup with a
   differently typed name hid all progress. Both were fixed and passed in cycle 2. The macOS
   path and real GitHub sign-in, forking and pull requests are untested until the demo.
+
+### Phase 2A.2: First-day fixes for non-developers (done)
+
+Added on 2026-10-04, before the invitation was sent. At the gate after Phase 2A.1 the
+program owner chose three parking-lot items that would stop a business analyst or manual
+tester on their first day, and approved this scope. Phase 2A.1's demo (the program owner
+running `install.sh`) moves to this phase's demo, on 0.2.2.
+
+- **Goal:** nothing a participant does on day one is silently lost, refused or aimed at a
+  developer.
+- **Budget:** one session.
+- **Scope:**
+  1. **Hand-in names what it left out.** A file under `participant/` that matches
+     `.gitignore` (`*.token`, `**/secrets/` and the rest) is still not committed, but
+     `gtq hand-in` lists each one, says the reviewer will not see it, and says what to do if
+     it is proof the quest asks for.
+  2. **`install.sh` makes no unauthenticated GitHub API call.** The GitHub CLI's latest
+     version is read from the `github.com` release redirect, which is not rate-limited the
+     way the API's 60 requests an hour per address is.
+  3. **BA Ruins' transcript quest is the required first quest.** Its Base Camp
+     prerequisite is removed (quest version 4). A pilot track lists it first and Base Camp
+     second, and new participants start on that track. The recommendation follows the
+     track's order, so the home page offers the transcript quest first and Base Camp after
+     it. `PILOT.md` and `PILOT-LEAD.md` say the same.
+  4. **Release 0.2.2.** The setup line and the invitation point at `v0.2.2`.
+- **Out of scope:** every other parking-lot item, native Windows and WSL, and any change to
+  a quest's acceptance criteria or proof.
+- **Done when:** items 1 to 4 are complete, with tests for 1 to 3 that fail without the
+  change. `make check`, `make test-ui` and CI pass on `main`. A verify pass acting as a new
+  participant follows `PILOT.md` from the home page through the transcript quest's
+  hand-in, with an ignored file in the folder, and finds no blocking or high finding.
+- **Demo:** the program owner runs the `v0.2.2` setup line on their own machine, sees the
+  home page offer the transcript quest, and runs `gtq hand-in` once.
+- **Result:** built and verified (`docs/audits/phase-02a2-verify.md`). Cycle 1 found two
+  high findings: the home page's "Start at" box named Base Camp above the transcript quest,
+  and every hand-in listed the application's own lock file as a secret. Both were fixed and
+  passed in cycle 2, with two medium findings (an untested build path, and ignored files in
+  the evidence hash). Released as 0.2.2.
+- **Demo (2026-10-04 and 05):** the program owner ran setup on their own Linux machine.
+  It stopped at step 5 for every participant: the fork was made and then checked through a
+  field the GitHub tool does not have (D1, blocking). Fixed in 0.2.3, with a test that runs
+  the GitHub step against recorded GitHub responses. On the second run setup finished, and
+  the home page offered the transcript quest first. Two low findings: the owner's account
+  was told to rename a repository (D2, fixed in 0.2.3), and idle browser connections printed
+  "Request timed out" lines (D3, fixed in 0.2.4). A real `gtq hand-in` was not run; the
+  first participant's hand-in tests the pull request on GitHub.
+- **What we learned:** a test hook that skips an external system also skips every
+  assumption about that system's answers. Both verify passes used the hook, and only the
+  demo reached GitHub. Tests of an external step now answer from recorded real responses.
+- **Gate (2026-10-05):** the parking lot stays as it is until the pilot report, as at
+  Gate 1; Phase 2B allows only fixes for a defect that stops a participant.
 
 ### Phase 2B: Pilot run
 
@@ -265,6 +316,10 @@ Labyrinth 20, and 7 hidden challenges.
   capability as its own scope item.
 - **Recommendation:** decide how many regions to build after the pilot. The full 128 is a
   plan, not a promise.
+- **Plan:** `08-curriculum-plan.md` (2026-10-20) orders the regions and sizes the 120 unbuilt quests.
+  At the program owner's instruction, all nine steps (C1 to C9) were built, audited and merged on
+  2026-10-20 and 2026-10-21 while the pilot runs, and released as 0.3.0. The curriculum now has
+  128 quests in nine regions. See `docs/audits/curriculum-final-audit.md`.
 
 ### Phase 5: Engineering hygiene
 

@@ -1,10 +1,93 @@
 # Release Notes: Pilot Release
 
-**Version:** 0.2.1
-**Date:** 2026-09-30
+**Version:** 0.3.1
+**Date:** 2026-10-22
 **Status:** released to a small invited pilot, not for general use. The release checklist
 passed (`docs/audits/phase-01-verify.md`), and the program owner released it at Gate 1
 (`docs/audits/final-audit.md`). Pilot participants start with `docs/guides/PILOT.md`.
+
+## What changed in 0.3.1
+
+- **The Quest Map is a drawn map.** An atlas-style picture: a continent with a rough coast and
+  shaded relief, rivers, lakes, mountains and forests, a dark sea, and a dotted trail through the
+  regions in curriculum order. Each region is land sized by its quest count, with a picture
+  chosen by a new optional `terrain` field on the region (Base Camp at the foot of a mountain,
+  GitHub Caverns at a cave mouth, Trello Islands out at sea as its own island) and a label
+  reading, for example, "0 of 18 verified". A region's marker glows brighter as more of its
+  quests are verified.
+  Selecting a region opens its card in a dialog; without scripting the label goes to the region page.
+  The card list stays below the map for anyone who prefers text. The layout is computed from
+  quest counts alone, in `quest_app/map_layout.py`, and is the same on every build. This is
+  content-visible but changes the page. The user guide shows it.
+- **CI runs the tests in shards**, because one job outgrew GitHub's six-hour limit.
+
+## What changed in 0.3.0
+
+- **The whole curriculum.** 128 quests across nine regions, up from eight quests, one per
+  region: Base Camp 9, BA Ruins 13, Scrum Village 9, Context Library 12, Playwright Labyrinth
+  20, Jira Jungle 23, GitHub Caverns 18, Trello Islands 17, and a new region, Trap Cards, with
+  7 adversarial challenges. Every row of `docs/CURRICULUM-BACKLOG.md` now has a quest. The
+  quests are content only: no application code, schema, template or validator changed.
+- **Nineteen quests write to an outside system, to a sandbox.** They are the first that
+  declare `risk.external_write: true` (Jira 7, GitHub 6, Trello 6). Each requires a preview of
+  the target and exact changes, permission and duplicate checks, a confirmation tied to the
+  preview, a result record with identifiers and a time, rerun safety and a sandbox allowlist.
+  The application still performs no write; these are controls the participant builds and the
+  reviewer reads. `tests/test_release_facts.py` now holds them in the content: it names the
+  nineteen quests and fails if any control is missing from a quest's required proof, if a
+  write quest is untagged, or if one is added without being named. The old test, which said no
+  quest writes, is replaced by this stricter one. `docs/SECURITY-AND-PRIVACY.md` says what is
+  and is not enforced.
+- **A test helper handles shared prerequisites.** `unlock` in the integration tests skips a
+  prerequisite already verified, so a quest reachable by two paths can be tested.
+- **The pilot quest is unchanged.** `ba-ingest-transcript` keeps its version, and so do the
+  seven other original quests. A participant's existing progress is unaffected.
+
+What this release does not do: nobody outside the project has reviewed the content of the new
+quests, only independent audit passes (`docs/audits/curriculum-final-audit.md`). Participants
+who want to do a write quest need a sandbox Jira project, GitHub repository or Trello board;
+who provides them is not yet decided.
+
+## What changed in 0.2.4
+
+- **No "Request timed out" lines after a normal page load.** A browser keeps spare
+  connections open; the application closes them after 30 seconds, and used to report each
+  one in the terminal, which read as a failure. Other errors are still reported. Found by
+  the Phase 2A.2 demo.
+
+## What changed in 0.2.3
+
+- **Setup finds the participant's copy on GitHub.** 0.2.1 and 0.2.2 made the fork, then
+  checked it through a field the GitHub tool does not provide, so setup stopped at step 5
+  with "Could not make your copy on GitHub" for every participant. Found by the Phase 2A.2
+  demo, the first run against real GitHub. The check now uses GitHub's documented answer,
+  and a test runs setup's GitHub step against recorded GitHub responses.
+- **Setup on the account that owns the quest says so,** instead of suggesting a repository
+  be renamed. An account cannot fork its own repository; sign in with your own.
+
+## What changed in 0.2.2
+
+First-day fixes for business analysts and manual testers (Phase 2A.2).
+
+- **The transcript quest comes first.** *Ingest a Meeting Transcript Without Losing Its
+  Source* (BA Ruins) no longer needs Base Camp verified first; it is now quest version 4.
+  New participants start on the *Pilot for Analysts and Testers* track, which lists it
+  before Base Camp, and the home page follows the track's order. An attempt started on
+  version 3 is reported as on an older version; none exists, since the invitation was not
+  yet sent.
+- **Hand-in names what it left out.** A file under `participant/` that matches
+  `.gitignore` (a `*.token` file, anything in a `secrets/` folder, and the rest) is still
+  never handed in, but `gtq hand-in` now lists each one and says what to do if it is proof
+  the quest asks for. The application's own lock file and what an operating system drops
+  into a folder (`.DS_Store`) are not listed.
+- **Ignored files are not part of the evidence fingerprint** (ADR-031, amended), since the
+  reviewer's copy never has them. A `.DS_Store` no longer makes an approved quest read as
+  changed.
+- **The home page's "Start at" box names the recommended quest's region**, not always the
+  first region on the map.
+- **Setup makes no unsigned GitHub API call.** It reads the GitHub tool's latest version
+  from the release page instead of the API, which allows 60 unsigned requests an hour per
+  address and could stop a room of participants behind one office address.
 
 ## What changed in 0.2.1
 
@@ -93,7 +176,7 @@ them. It does not own them.
 
 | | |
 |---|---|
-| Tests | 1403 under `make check`, plus 57 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
+| Tests | 1702 under `make check`, plus 65 browser-driven under `make test-ui`. Both are collected counts; a run also reports whatever it skipped. |
 | Screens | 11, plus tag pages |
 | Schemas | 10 |
 | Sample validators | 3 quest-facing, plus 2 registered environment probes and one unregistered slow probe used only to prove the timeout |
@@ -167,17 +250,33 @@ here.
     rather than "fixed": every shipped validator is reviewed code that does not do this,
     and the gap only matters against one that is not.
 
+12. **The 120 quests added in 0.3.0 have been audited, not read by their audience.** Independent
+    review passes checked structure, proof coverage and safety. Nobody the quests are written
+    for has worked through one yet, so expect unclear wording and wrong time estimates.
+13. **The 19 quests that write to an outside system need a sandbox that nobody provides yet.**
+    The application performs no external write; the controls (preview, confirmation, result
+    record, rerun safety, sandbox allowlist) are in the quest content and are read by a
+    reviewer. `tests/test_release_facts.py` holds them in the content, not at run time.
+14. **The full test suite takes about 90 minutes in one process.** CI splits it into eight
+    shards per Python version. One test, `TestThePortFileLifecycle`, fails if shards share a
+    machine, because they share the service's port file.
+
 ## For the pilot cohort
 
 Start with `docs/guides/PILOT.md`: what to install, which quests, how to hand in evidence
-and how to send feedback. For depth, read `docs/USER-GUIDE.md`, the whole-journey guide, and keep
+and how to send feedback. The pilot is still two quests, although the catalog now lists 128. For depth, read `docs/USER-GUIDE.md`, the whole-journey guide, and keep
 `docs/guides/PARTICIPANT.md` beside it as the short reference. Reviewers should read
 `docs/guides/REVIEWER.md`, particularly the provenance section — it says plainly what the
 application does and does not guarantee about who approved what.
 
 ## Upgrading
 
-There is nothing to upgrade from. Schema version 1 is the first. The migration machinery
+**From 0.2.x to 0.3.0:** 0.3.0 is content only. It adds 120 quests and changes none of the
+original eight, and no schema or progress-file shape changed, so `make update-check` should report
+it safe, `make migrate` should have nothing to do and an existing attempt, verified or not, is
+untouched. The new quests appear in your catalog after you take the update.
+
+Otherwise there is nothing to upgrade from. Schema version 1 is the first. The migration machinery
 exists already because the first real migration is the wrong moment to be designing the
 safety around it.
 

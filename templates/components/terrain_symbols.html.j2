@@ -1,0 +1,155 @@
+{# C22 — the pictures the Quest Map can draw on a region's land. One symbol per terrain
+   named in schemas/region.schema.json. The vocabulary is generic ("a mountain", "a cave");
+   which region gets which is the region's own content. Colours come from the m-* classes in
+   app.css, which draw on the design tokens. Purely decorative: the map's labels carry the
+   information. #}
+<svg class="map-symbols" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="terrain-mountain" viewBox="0 0 100 100">
+      <polygon class="m-rock" points="2,90 36,20 54,50 66,32 98,90"/>
+      <polygon class="m-rock-dark" points="36,20 54,50 48,90 26,90"/>
+      <polygon class="m-snow" points="36,20 27,42 34,38 40,45 46,37 52,46 44,34"/>
+      <polygon class="m-tent" points="56,92 69,72 82,92"/>
+      <polygon class="m-tent-dark" points="69,72 74,92 82,92"/>
+      <line class="m-pole" x1="69" y1="72" x2="69" y2="58"/>
+      <polygon class="m-flag" points="69,58 80,62 69,66"/>
+    </symbol>
+
+    <symbol id="terrain-cave" viewBox="0 0 100 100">
+      <path class="m-rock" d="M2,92 C2,44 26,12 52,12 C78,12 98,46 98,92 Z"/>
+      <path class="m-rock-dark" d="M70,16 C88,30 98,56 98,92 L74,92 C76,60 74,36 70,16 Z"/>
+      <path class="m-dark" d="M30,92 C30,64 40,46 52,46 C64,46 74,64 74,92 Z"/>
+      <polygon class="m-rock" points="38,56 43,56 41,66"/>
+      <polygon class="m-rock" points="50,50 55,50 53,62"/>
+      <polygon class="m-rock" points="62,56 67,56 65,65"/>
+      <ellipse class="m-stone" cx="18" cy="92" rx="10" ry="5"/>
+      <ellipse class="m-stone" cx="86" cy="93" rx="9" ry="4"/>
+      <ellipse class="m-stone" cx="52" cy="95" rx="6" ry="3"/>
+    </symbol>
+
+    <symbol id="terrain-jungle" viewBox="0 0 100 100">
+      <rect class="m-wood" x="26" y="52" width="6" height="40"/>
+      <circle class="m-leaf-dark" cx="29" cy="40" r="22"/>
+      <circle class="m-leaf" cx="22" cy="34" r="15"/>
+      <circle class="m-leaf" cx="38" cy="36" r="13"/>
+      <rect class="m-wood" x="66" y="48" width="6" height="44"/>
+      <circle class="m-leaf-dark" cx="69" cy="36" r="20"/>
+      <circle class="m-leaf" cx="62" cy="30" r="13"/>
+      <circle class="m-leaf" cx="78" cy="32" r="12"/>
+      <rect class="m-wood" x="47" y="68" width="5" height="24"/>
+      <circle class="m-leaf-dark" cx="49.5" cy="62" r="13"/>
+      <circle class="m-leaf" cx="45" cy="58" r="8"/>
+      <path class="m-vine" d="M10,92 C14,76 8,66 12,54"/>
+      <path class="m-vine" d="M90,92 C86,80 94,70 88,58"/>
+    </symbol>
+
+    <symbol id="terrain-ruins" viewBox="0 0 100 100">
+      <rect class="m-stone" x="4" y="86" width="92" height="8"/>
+      <rect class="m-stone" x="12" y="40" width="14" height="46"/>
+      <polygon class="m-stone" points="12,40 17,31 21,38 26,33 26,40"/>
+      <rect class="m-stone" x="40" y="22" width="14" height="64"/>
+      <rect class="m-stone-dark" x="36" y="16" width="22" height="7"/>
+      <rect class="m-stone" x="68" y="54" width="14" height="32"/>
+      <polygon class="m-stone" points="68,54 72,47 77,52 82,49 82,54"/>
+      <rect class="m-stone-dark" x="46" y="38" width="2.5" height="46"/>
+      <rect class="m-stone-dark" x="18.5" y="46" width="2.5" height="38"/>
+      <rect class="m-stone-dark" x="74.5" y="58" width="2.5" height="26"/>
+      <rect class="m-stone" x="84" y="76" width="13" height="10" rx="1"/>
+    </symbol>
+
+    <symbol id="terrain-village" viewBox="0 0 100 100">
+      <rect class="m-wall" x="6" y="56" width="32" height="34"/>
+      <polygon class="m-roof" points="2,56 22,32 42,56"/>
+      <rect class="m-dark" x="17" y="72" width="10" height="18"/>
+      <rect class="m-wall" x="36" y="44" width="34" height="46"/>
+      <polygon class="m-roof" points="32,44 53,16 74,44"/>
+      <rect class="m-dark" x="48" y="68" width="11" height="22"/>
+      <rect class="m-window" x="40" y="52" width="8" height="8"/>
+      <rect class="m-window" x="58" y="52" width="8" height="8"/>
+      <rect class="m-wall" x="68" y="60" width="28" height="30"/>
+      <polygon class="m-roof" points="64,60 82,40 100,60"/>
+      <rect class="m-dark" x="78" y="74" width="9" height="16"/>
+      <rect class="m-chimney" x="60" y="24" width="6" height="14"/>
+    </symbol>
+
+    <symbol id="terrain-library" viewBox="0 0 100 100">
+      <polygon class="m-stone" points="6,40 50,10 94,40"/>
+      <polygon class="m-stone-dark" points="16,38 50,16 84,38"/>
+      <rect class="m-stone" x="6" y="40" width="88" height="8"/>
+      <rect class="m-stone" x="14" y="48" width="9" height="32"/>
+      <rect class="m-stone" x="34" y="48" width="9" height="32"/>
+      <rect class="m-stone" x="57" y="48" width="9" height="32"/>
+      <rect class="m-stone" x="77" y="48" width="9" height="32"/>
+      <rect class="m-stone-dark" x="22" y="48" width="12" height="32"/>
+      <rect class="m-stone-dark" x="43" y="48" width="14" height="32"/>
+      <rect class="m-stone-dark" x="66" y="48" width="11" height="32"/>
+      <rect class="m-stone" x="4" y="80" width="92" height="6"/>
+      <rect class="m-stone" x="0" y="86" width="100" height="7"/>
+      <rect class="m-book" x="42" y="22" width="16" height="10" rx="1"/>
+    </symbol>
+
+    <symbol id="terrain-maze" viewBox="0 0 100 100">
+      <rect class="m-hedge-bed" x="6" y="6" width="88" height="88" rx="3"/>
+      <path class="m-hedge" d="M40,93 H7 V7 H93 V93 H60"/>
+      <path class="m-hedge" d="M21,78 V21 H79 V79 H42"/>
+      <path class="m-hedge" d="M36,64 V36 H64 V64 H48"/>
+      <circle class="m-flag-dot" cx="50" cy="50" r="4"/>
+    </symbol>
+
+    <symbol id="terrain-islands" viewBox="0 0 100 100">
+      <path class="m-wood-line" d="M44,88 C46,72 50,58 58,44"/>
+      <path class="m-leaf-line" d="M58,44 C46,36 36,40 28,50"/>
+      <path class="m-leaf-line" d="M58,44 C52,30 42,24 32,26"/>
+      <path class="m-leaf-line" d="M58,44 C62,30 72,24 82,28"/>
+      <path class="m-leaf-line" d="M58,44 C70,38 80,42 88,52"/>
+      <path class="m-leaf-line" d="M58,44 C58,36 60,28 66,20"/>
+      <circle class="m-coconut" cx="60" cy="48" r="2.6"/>
+      <circle class="m-coconut" cx="55" cy="48" r="2.6"/>
+      <path class="m-hull" d="M10,92 H34 L30,98 H15 Z"/>
+      <polygon class="m-sail" points="22,92 22,74 33,92"/>
+    </symbol>
+
+    <symbol id="terrain-swamp" viewBox="0 0 100 100">
+      <ellipse class="m-bog" cx="50" cy="72" rx="46" ry="20"/>
+      <ellipse class="m-dark" cx="50" cy="68" rx="30" ry="11"/>
+      <polygon class="m-spike" points="24,66 28,52 32,68"/>
+      <polygon class="m-spike" points="36,62 41,46 45,64"/>
+      <polygon class="m-spike" points="48,60 53,44 57,62"/>
+      <polygon class="m-spike" points="60,62 65,48 69,65"/>
+      <polygon class="m-spike" points="71,67 75,54 78,69"/>
+      <path class="m-reed" d="M8,88 C8,66 12,52 10,38"/>
+      <path class="m-reed" d="M14,90 C16,74 20,62 22,50"/>
+      <path class="m-reed" d="M90,88 C92,68 88,54 92,40"/>
+      <path class="m-reed" d="M84,90 C84,76 80,66 80,54"/>
+      <ellipse class="m-cattail" cx="10" cy="36" rx="2.6" ry="6"/>
+      <ellipse class="m-cattail" cx="92" cy="38" rx="2.6" ry="6"/>
+    </symbol>
+
+    <symbol id="terrain-plain" viewBox="0 0 100 100">
+      <ellipse class="m-stone" cx="50" cy="88" rx="38" ry="9"/>
+      <line class="m-pole" x1="50" y1="88" x2="50" y2="34"/>
+      <polygon class="m-flag" points="50,34 74,43 50,52"/>
+    </symbol>
+
+    {# Scenery: the generic furniture of a map. Drawn between and around the regions. #}
+    <symbol id="decor-mountain" viewBox="0 0 100 100">
+      <polygon class="m-ridge" points="50,6 6,94 94,94"/>
+      <polygon class="m-ridge-dark" points="50,6 94,94 58,94"/>
+      <polygon class="m-snow" points="50,6 38,32 47,27 53,35 60,28"/>
+    </symbol>
+    <symbol id="decor-tree" viewBox="0 0 100 100">
+      <rect class="m-trunk" x="45" y="72" width="10" height="24"/>
+      <polygon class="m-pine" points="50,4 20,48 80,48"/>
+      <polygon class="m-pine" points="50,26 14,72 86,72"/>
+    </symbol>
+    <symbol id="decor-wave" viewBox="0 0 100 40">
+      <path class="m-wave" d="M4,24 Q17,6 30,24 T56,24 T82,24 T96,20"/>
+    </symbol>
+    <symbol id="decor-ship" viewBox="0 0 100 100">
+      <polygon class="m-sail" points="48,10 48,62 18,62"/>
+      <polygon class="m-sail" points="53,20 53,62 82,62"/>
+      <line class="m-pole" x1="50" y1="6" x2="50" y2="72"/>
+      <path class="m-hull" d="M8,68 H92 L78,90 H22 Z"/>
+    </symbol>
+  </defs>
+</svg>

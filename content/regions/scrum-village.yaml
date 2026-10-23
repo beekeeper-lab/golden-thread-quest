@@ -6,6 +6,7 @@ summary: Use agentic context to improve planning, flow, team awareness, retrospe
 order: 70
 accent: green
 icon: village
+terrain: village
 outcomes:
   - Produce team summaries from local canonical context alone, citing the work item and retrieval time behind every statement.
   - Identify blocked work, aging work, and scope change from recorded fields rather than from the language of a title.

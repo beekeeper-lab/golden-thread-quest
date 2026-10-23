@@ -477,6 +477,15 @@ submitted. A directory that holds anything is still covered by the relative name
 holds; a directory link is still hashed by its link text. Every package created before 0.2.0
 hashes differently once, and is handled the same way as the resets above.
 
+**Amended (Phase 2A.2):** a file Git ignores is not hashed, for the same reason: a hand-in
+never carries it, so the reviewer's clone does not have it. Found by the Phase 2A.2 verify
+pass, where a Finder `.DS_Store` in the evidence folder made an approved attempt read as
+changed since approval. The evidence hash asks `git check-ignore` which of the package's
+files are ignored; a tracked file is never reported, since Git carries it. Outside a
+repository, or if Git cannot run, nothing is skipped and the hash covers every file. A
+package that held an ignored file hashes differently once; none existed, since the pilot
+invitation had not yet been sent.
+
 ## ADR-032 — The application never pushes, opens a pull request, or merges
 
 **Decision:** Submission prints the exact Git commands and stops. `git_status.py` runs only

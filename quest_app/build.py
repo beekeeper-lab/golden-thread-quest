@@ -42,7 +42,7 @@ from quest_app.progress_calc import (
     region_progress,
     totals,
 )
-from quest_app.recommend import recommend
+from quest_app.recommend import Recommendation, recommend
 from quest_app.state_machine import CONFIRMATIONS, DECISION_CONFIRMATIONS, allowed_actions
 from quest_app.view_models import (
     ActionView,
@@ -51,11 +51,13 @@ from quest_app.view_models import (
     PageView,
     ParameterView,
     PrerequisiteView,
+    RegionCardView,
     ServiceView,
     ValidatorView,
     build_badge_views,
     build_filter_options,
     build_legend,
+    build_map_layout,
     build_participant_view,
     build_proof_views,
     build_quest_summary,
@@ -425,7 +427,11 @@ def _render_and_publish(
     totals_map = totals(states)
     badges = badge_progress(bundle, states, participant)
     recommendations = recommend(
-        bundle, states, regions, participant.progress if participant else None
+        bundle,
+        states,
+        regions,
+        participant.progress if participant else None,
+        default_track=bundle.site.default_track,
     )
 
     stamp = built_at or build_stamp()
@@ -493,7 +499,7 @@ def _render_and_publish(
                 "activity": _recent_activity(world, states),
                 "environment_warning": None,
                 "is_new_participant": participant is None or not participant.progress.attempts,
-                "first_region": region_cards[0] if region_cards else None,
+                "first_region": _starting_region(region_cards, recommendations),
             },
         )
     )
@@ -513,7 +519,13 @@ def _render_and_publish(
                     heading="Quest map",
                 ),
             )
-            | {"regions": region_cards, "totals": totals_map, "legend": build_legend()},
+            | {
+                "regions": region_cards,
+                "cards": {card.region.id: card for card in region_cards},
+                "layout": build_map_layout(region_cards),
+                "totals": totals_map,
+                "legend": build_legend(),
+            },
         )
     )
 
@@ -1191,6 +1203,25 @@ def _proof_document(world: LoadedWorld, evidence_path: str | None) -> str | None
         return render_markdown(PROOF_DOCUMENT_WITHHELD)
     text, _ = redact_text(candidates[0])
     return render_markdown(text)
+
+
+def _starting_region(
+    region_cards: tuple[RegionCardView, ...], recommendations: list[Recommendation]
+) -> RegionCardView | None:
+    """The region a new participant is pointed at: the top recommendation's, else the first.
+
+    Phase 2A.2: this was always the first region in curriculum order, so a participant whose
+    track starts elsewhere was told "Start at" one region directly above a recommendation
+    from another.
+    """
+    if not region_cards:
+        return None
+    if recommendations:
+        region_id = recommendations[0].quest.region
+        for card in region_cards:
+            if card.region.id == region_id:
+                return card
+    return region_cards[0]
 
 
 def git_summary_for(world: LoadedWorld, evidence_path: str | None) -> dict[str, Any]:

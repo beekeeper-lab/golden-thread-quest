@@ -1,13 +1,15 @@
 id: trello-islands
-version: 1
+version: 2
 title: Trello Islands
 short_title: Trello
 summary: Apply the same context-engineering discipline to boards, lists, cards, checklists, comments, and member assignments.
 order: 30
 accent: teal
 icon: trello
+terrain: islands
 outcomes:
-  - Normalize Trello work without erasing Trello-specific structure.
-  - Read a board into local context without changing a single card.
-  - Reconcile local context with board and list movement.
+  - Normalize Trello work without erasing Trello-specific structure, including lists and their order, checklists, labels, members, dates and archived cards.
+  - Read a board into local context without changing a card, and follow its activity so moves and archives are not missed.
+  - Write to Trello only on a sandbox board and only after a previewed, confirmed and recorded step that is safe to rerun.
+  - Reconcile local context with board and list movement by identifier, and recommend the next card from local context.
 tags: [trello, integration, work-management]

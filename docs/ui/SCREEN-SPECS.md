@@ -33,7 +33,8 @@ New participants see Base Camp orientation, setup health, and the first availabl
 ### Required sections
 
 - Overall verified progress
-- Region cards in configured order
+- The map: each region drawn as land, with its name and how many of its quests are verified
+- Region cards in configured order, as a list
 - Region outcomes
 - Quest state distribution per region
 - Prerequisite or recommended progression cues
@@ -41,7 +42,7 @@ New participants see Base Camp orientation, setup health, and the first availabl
 
 ### Behavior
 
-The map is a responsive semantic card grid. Decorative connections may be added, but they cannot be required to understand progression.
+The map is a drawing of the curriculum, in the style of an atlas: a dark sea, a continent with a rough coastline and shaded relief, rivers, lakes, mountain ranges and forests, and a dotted trail joining the regions in curriculum order. A region whose `terrain` is `islands` lies out at sea as a separate island. The scenery is decoration, generated from the layout and hidden from assistive technology; a region's marker glows brighter as more of its quests are verified. Each region is a stretch of land whose area follows its quest count, with a picture chosen by the region's `terrain` (a fixed vocabulary in `schemas/region.schema.json`) and a label giving its name and `N of M verified`. The label is the real, focusable link; the drawing is hidden from assistive technology. With scripting on, selecting a label opens the region's card in a modal dialog, with a link to the region page and a Close button, and Escape closes it. Without scripting the label goes to the region page. The same cards remain below the map as a list (a disclosure, closed by default), so no one has to read a picture to see progression. The layout is designed for up to 18 regions; beyond that the labels may overlap, and the list stays complete. The layout is computed from quest counts alone (`quest_app/map_layout.py`) and is the same on every build. The map scrolls inside its own box on narrow screens; the page itself never scrolls sideways.
 
 ## U03 — Region
 

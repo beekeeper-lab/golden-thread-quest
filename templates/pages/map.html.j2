@@ -14,13 +14,160 @@
   {{ meter(totals.verified_quests, totals.total_quests, 'Verified quests', 'reviewer', totals.claimed_quests, 'Claimed') }}
 </section>
 
-{# A semantic card grid, not a drawing. Decorative connections may be added later, but
-   progression must never require reading a picture (docs/ui/SCREEN-SPECS.md U02). #}
+{# The drawn map. Each region is a stretch of land whose size follows its quest count, with
+   a text label that is the real, focusable link. The drawing is aria-hidden: everything it
+   shows is also in the labels and in the list below, so progression never depends on reading
+   a picture (docs/ui/SCREEN-SPECS.md U02). Selecting a label opens the region card in a
+   dialog when scripting is on, and goes to the region page when it is not. #}
+<section class="stack" aria-labelledby="map-heading">
+  <h2 id="map-heading">The map</h2>
+  <p class="authority">Larger land holds more quests. Select a region to see what it develops. Counts are quests verified by a reviewer.</p>
+  {% include "components/terrain_symbols.html.j2" %}
+  <div class="map-scroll">
+    <div class="map-board">
+      <svg class="map-art" viewBox="0 0 {{ layout.width | int }} {{ layout.height | int }}" preserveAspectRatio="xMidYMid meet" role="group" aria-label="Map of the regions. Each region's label is a link.">
+        <defs>
+          <clipPath id="map-clip"><rect x="0" y="0" width="{{ layout.width | int }}" height="{{ layout.height | int }}" rx="14"/></clipPath>
+          <clipPath id="map-land-clip">
+            {% for d in layout.decor.continent %}<path d="{{ d }}"/>{% endfor %}
+            {% for land in layout.lands if land.terrain == 'islands' %}{% for d in land.paths %}<path d="{{ d }}"/>{% endfor %}{% endfor %}
+          </clipPath>
+          <radialGradient id="map-sea-gradient" cx="0.5" cy="0.5" r="0.78">
+            <stop offset="0" stop-color="#2b5a6e"/>
+            <stop offset="0.7" stop-color="#17303f"/>
+            <stop offset="1" stop-color="#0d1c28"/>
+          </radialGradient>
+          <radialGradient id="map-vignette" cx="0.5" cy="0.5" r="0.74">
+            <stop offset="0.55" stop-color="#070f16" stop-opacity="0"/>
+            <stop offset="1" stop-color="#070f16" stop-opacity="0.7"/>
+          </radialGradient>
+          <filter id="map-sea-texture" x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.006 0.011" numOctaves="4" seed="11"/>
+            <feColorMatrix type="matrix" values="0 0 0 0 0.45  0 0 0 0 0.68  0 0 0 0 0.78  0 0 0 0.55 -0.12"/>
+          </filter>
+          <filter id="map-clouds" x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.004 0.007" numOctaves="5" seed="23"/>
+            <feColorMatrix type="matrix" values="0 0 0 0 0.85  0 0 0 0 0.78  0 0 0 0 0.62  0 0 0 1.35 -0.62"/>
+          </filter>
+          <filter id="map-coast-halo" x="-5%" y="-5%" width="110%" height="110%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="5" result="warp"/>
+            <feDisplacementMap in="SourceGraphic" in2="warp" scale="20" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+            <feGaussianBlur in="rough" stdDeviation="9"/>
+          </filter>
+          <filter id="map-coast-line" x="-5%" y="-5%" width="110%" height="110%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="5" result="warp"/>
+            <feDisplacementMap in="SourceGraphic" in2="warp" scale="20" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+          <filter id="map-land-relief" x="-5%" y="-5%" width="110%" height="110%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="5" result="warp"/>
+            <feDisplacementMap in="SourceGraphic" in2="warp" scale="20" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+            <feTurbulence type="fractalNoise" baseFrequency="0.016 0.02" numOctaves="5" seed="3" result="height"/>
+            <feDiffuseLighting in="height" surfaceScale="9" diffuseConstant="1.25" lighting-color="#fff2d2" result="lit">
+              <feDistantLight azimuth="235" elevation="50"/>
+            </feDiffuseLighting>
+            <feComposite in="lit" in2="rough" operator="in" result="shaded"/>
+            <feBlend in="shaded" in2="rough" mode="multiply"/>
+          </filter>
+          <filter id="map-blur-soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="13"/></filter>
+          <filter id="map-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>
+          <filter id="map-paper" x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7"/>
+            <feColorMatrix type="matrix" values="0 0 0 0 0.3  0 0 0 0 0.22  0 0 0 0 0.12  0 0 0 0.16 0"/>
+          </filter>
+        </defs>
+        <g aria-hidden="true" clip-path="url(#map-clip)">
+          <rect class="map-sea" x="0" y="0" width="{{ layout.width | int }}" height="{{ layout.height | int }}"/>
+          <rect class="map-sea-texture" x="0" y="0" width="{{ layout.width | int }}" height="{{ layout.height | int }}" filter="url(#map-sea-texture)"/>
+          <rect class="map-clouds" x="0" y="0" width="{{ layout.width | int }}" height="{{ (layout.height * 0.5) | int }}" filter="url(#map-clouds)"/>
+          {% for x, y in layout.decor.waves %}<use href="#decor-wave" x="{{ x - 22 }}" y="{{ y - 9 }}" width="44" height="18"/>{% endfor %}
+          {% for word, x, y, turn in layout.decor.sea_names %}<text class="map-sea-name" x="{{ x }}" y="{{ y }}" text-anchor="middle" transform="rotate({{ turn }} {{ x }} {{ y }})">{{ word }}</text>{% endfor %}
+          {% for d in layout.decor.sea_routes %}<path class="map-sea-route" d="{{ d }}"/>{% endfor %}
+          {% for x, y in layout.decor.ships %}<use href="#decor-ship" x="{{ x - 17 }}" y="{{ y - 17 }}" width="34" height="34"/>{% endfor %}
+          <g class="continent-halo-group" filter="url(#map-coast-halo)">
+            {% for d in layout.decor.continent %}<path class="continent-halo" d="{{ d }}"/>{% endfor %}
+            {% for land in layout.lands if land.terrain == 'islands' %}{% for d in land.paths %}<path class="continent-halo" d="{{ d }}"/>{% endfor %}{% endfor %}
+          </g>
+          <g class="continent-coast" filter="url(#map-coast-line)">
+            {% for d in layout.decor.continent %}<path class="continent-edge" d="{{ d }}"/>{% endfor %}
+            {% for land in layout.lands if land.terrain == 'islands' %}{% for d in land.paths %}<path class="continent-edge" d="{{ d }}"/>{% endfor %}{% endfor %}
+          </g>
+          <g class="continent-land" filter="url(#map-land-relief)">
+            {% for d in layout.decor.continent %}<path class="continent-fill" d="{{ d }}"/>{% endfor %}
+            {% for land in layout.lands if land.terrain == 'islands' %}{% for d in land.paths %}<path class="continent-fill" d="{{ d }}"/>{% endfor %}{% endfor %}
+          </g>
+          <g clip-path="url(#map-land-clip)">
+            <g filter="url(#map-blur-soft)">
+              {% for x, y, r in layout.decor.forests %}<circle class="biome-forest" cx="{{ x }}" cy="{{ y }}" r="{{ r }}"/>{% endfor %}
+              {% for x, y, r in layout.decor.ranges %}<circle class="biome-rock" cx="{{ x }}" cy="{{ y }}" r="{{ r }}"/>{% endfor %}
+            </g>
+          </g>
+          {% for d in layout.decor.lakes %}<path class="map-lake" d="{{ d }}"/>{% endfor %}
+          {% for d in layout.decor.rivers %}<path class="map-river-bank" d="{{ d }}"/><path class="map-river" d="{{ d }}"/>{% endfor %}
+          {% for x, y, s in layout.decor.mountains %}<use href="#decor-mountain" x="{{ x - s }}" y="{{ y - s }}" width="{{ s * 2 }}" height="{{ s * 2 }}"/>{% endfor %}
+          {% for x, y, s in layout.decor.trees %}<use href="#decor-tree" x="{{ x - s / 2 }}" y="{{ y - s }}" width="{{ s }}" height="{{ s * 1.5 }}"/>{% endfor %}
+          <rect class="map-paper" x="0" y="0" width="{{ layout.width | int }}" height="{{ layout.height | int }}" filter="url(#map-paper)"/>
+          {% for d in layout.decor.trails %}<path class="map-trail" d="{{ d }}"/>{% endfor %}
+          {% for land in layout.lands %}
+          {% set card = cards[land.id] %}
+          {% set lit = (card.progress.verified / card.progress.total) if card.progress.total else 0 %}
+          <a class="land-link" href="{{ url(card.route) }}" data-region-dialog="map-dialog-{{ land.id }}" tabindex="-1">
+            <g class="land accent-{{ card.region.accent }} terrain-{{ land.terrain }}">
+              {% for d in land.paths %}<path class="land-shape" d="{{ d }}"/>{% endfor %}
+              <circle class="land-glow" cx="{{ land.medal_x }}" cy="{{ land.medal_y }}" r="{{ land.medal_radius + 5 }}" fill-opacity="{{ (0.3 + 0.6 * lit) | round(2) }}" filter="url(#map-glow)"/>
+              <circle class="land-medal" cx="{{ land.medal_x }}" cy="{{ land.medal_y }}" r="{{ land.medal_radius }}"/>
+              <circle class="land-medal-ring" cx="{{ land.medal_x }}" cy="{{ land.medal_y }}" r="{{ land.medal_radius - 4 }}"/>
+              <use href="#terrain-{{ land.terrain }}" x="{{ land.emblem_x }}" y="{{ land.emblem_y }}" width="{{ land.emblem_size }}" height="{{ land.emblem_size }}"/>
+            </g>
+          </a>
+          {% endfor %}
+          <g class="map-compass" transform="translate({{ layout.decor.compass[0] }},{{ layout.decor.compass[1] }})">
+            <circle r="36" class="compass-ring"/>
+            <circle r="28" class="compass-ring compass-inner"/>
+            <polygon class="compass-needle compass-minor" points="-21,-21 4,-4 21,21 -4,4"/>
+            <polygon class="compass-needle compass-minor" points="21,-21 4,4 -21,21 -4,-4"/>
+            <polygon class="compass-needle" points="0,-33 7,0 0,33 -7,0"/>
+            <polygon class="compass-needle" points="-33,0 0,-7 33,0 0,7"/>
+            <polygon class="compass-north" points="0,-33 7,0 -7,0"/>
+            <circle r="4" class="compass-hub"/>
+            <text class="compass-n" y="-42" text-anchor="middle">N</text>
+          </g>
+          <rect class="map-vignette" x="0" y="0" width="{{ layout.width | int }}" height="{{ layout.height | int }}"/>
+          <rect class="map-frame map-frame-outer" x="4" y="4" width="{{ (layout.width - 8) | int }}" height="{{ (layout.height - 8) | int }}" rx="12"/>
+          <rect class="map-frame" x="11" y="11" width="{{ (layout.width - 22) | int }}" height="{{ (layout.height - 22) | int }}" rx="8"/>
+          <rect class="map-frame map-frame-inner" x="17" y="17" width="{{ (layout.width - 34) | int }}" height="{{ (layout.height - 34) | int }}" rx="5"/>
+        </g>
+        {% for land in layout.lands %}
+        {% set card = cards[land.id] %}
+        <foreignObject x="{{ land.label_x - layout.label_width / 2 }}" y="{{ land.label_y - layout.label_height / 2 }}" width="{{ layout.label_width }}" height="{{ layout.label_height }}">
+          <a class="map-label accent-{{ card.region.accent }}" href="{{ url(card.route) }}" data-region-dialog="map-dialog-{{ land.id }}" title="{{ card.region.title }}">
+            <span class="map-label-name">{{ card.region.title }}</span>
+            <span class="map-label-count">{{ card.progress.verified }} of {{ card.progress.total }} verified</span>
+          </a>
+        </foreignObject>
+        {% endfor %}
+      </svg>
+    </div>
+  </div>
+</section>
+
+{% for card in regions %}
+<dialog class="region-dialog" id="map-dialog-{{ card.region.id }}" aria-label="{{ card.region.title }}">
+  {{ region_card(card, url, heading_level=2) }}
+  <form method="dialog" class="dialog-actions">
+    <a class="button button-primary" href="{{ url(card.route) }}">Open {{ card.region.title }}</a>
+    <button type="submit" class="button" data-dialog-close>Close</button>
+  </form>
+</dialog>
+{% endfor %}
+
 <section class="stack" aria-labelledby="regions-heading">
   <h2 id="regions-heading">Regions in order</h2>
-  <div class="card-grid">
-    {% for card in regions %}{{ region_card(card, url, heading_level=3) }}{% endfor %}
-  </div>
+  <details class="region-list">
+    <summary>Show the regions as a list</summary>
+    <div class="card-grid">
+      {% for card in regions %}{{ region_card(card, url, heading_level=3) }}{% endfor %}
+    </div>
+  </details>
 </section>
 
 <section class="panel" aria-labelledby="legend-heading">

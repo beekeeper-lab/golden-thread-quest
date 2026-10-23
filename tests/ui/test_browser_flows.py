@@ -145,6 +145,114 @@ class TestStylesActuallyApply:
         )
 
 
+class TestQuestMap:
+    """The drawn map: a label is a real link, and with scripting on it opens the region card."""
+
+    def test_selecting_a_region_opens_its_card_and_escape_closes_it(
+        self, browser: object, served: str
+    ) -> None:
+        page = page_for(browser, f"{served}/map/")
+        label = page.locator("a.map-label").first
+        name = label.locator(".map-label-name").inner_text()
+        label.click()
+        dialog = page.locator("dialog.region-dialog[open]")
+        assert dialog.count() == 1
+        assert name.lower() in dialog.inner_text().lower()
+        assert "verified" in dialog.inner_text().lower()
+        page.keyboard.press("Escape")
+        assert page.locator("dialog.region-dialog[open]").count() == 0
+        page.close()
+
+    def test_a_label_is_reached_and_opened_from_the_keyboard(
+        self, browser: object, served: str
+    ) -> None:
+        page = page_for(browser, f"{served}/map/")
+        page.locator("a.map-label").first.focus()
+        page.keyboard.press("Enter")
+        assert page.locator("dialog.region-dialog[open]").count() == 1
+        page.locator("dialog.region-dialog[open] [data-dialog-close]").click()
+        assert page.locator("dialog.region-dialog[open]").count() == 0
+        page.close()
+
+    def test_the_focus_ring_is_drawn_inside_the_label_where_it_cannot_be_clipped(
+        self, browser: object, served: str
+    ) -> None:
+        page = page_for(browser, f"{served}/map/")
+        page.locator("a.map-label").first.focus()
+        style = page.evaluate(
+            "(() => { const s = getComputedStyle(document.activeElement);"
+            " return {width: parseFloat(s.outlineWidth), offset: parseFloat(s.outlineOffset),"
+            " style: s.outlineStyle}; })()"
+        )
+        assert style["style"] != "none" and style["width"] >= 2
+        assert style["offset"] <= -style["width"], "the ring would fall outside the clipped box"
+        page.close()
+
+    def test_no_label_clips_its_own_text_and_each_carries_its_full_title(
+        self, browser: object, served: str
+    ) -> None:
+        page = page_for(browser, f"{served}/map/")
+        clipped = page.eval_on_selector_all(
+            "a.map-label",
+            "nodes => nodes.filter(n => n.scrollHeight > n.clientHeight + 1)"
+            ".map(n => n.textContent.trim())",
+        )
+        assert clipped == []
+        titled = page.eval_on_selector_all(
+            "a.map-label", "nodes => nodes.every(n => n.getAttribute('title'))"
+        )
+        assert titled
+        page.close()
+
+    def test_closing_the_dialog_returns_focus_to_the_label(
+        self, browser: object, served: str
+    ) -> None:
+        page = page_for(browser, f"{served}/map/")
+        page.locator("a.map-label").nth(2).focus()
+        page.keyboard.press("Enter")
+        page.keyboard.press("Escape")
+        assert "map-label" in page.evaluate("document.activeElement.className")
+        page.close()
+
+    def test_every_label_shows_its_count_without_opening_anything(
+        self, browser: object, served: str
+    ) -> None:
+        page = page_for(browser, f"{served}/map/")
+        counts = page.eval_on_selector_all(
+            "a.map-label .map-label-count", "nodes => nodes.map(n => n.textContent.trim())"
+        )
+        assert counts and all(" of " in c and c.endswith("verified") for c in counts)
+        assert page.locator("dialog[open]").count() == 0
+        page.close()
+
+    def test_without_scripting_a_label_goes_to_the_region_page(
+        self, browser: object, served: str
+    ) -> None:
+        context = browser.new_context(java_script_enabled=False)  # type: ignore[attr-defined]
+        page = context.new_page()
+        page.goto(f"{served}/map/", wait_until="load")
+        page.locator("a.map-label").first.click()
+        page.wait_for_load_state("load")
+        assert "/regions/" in page.url
+        context.close()
+
+    def test_the_map_scrolls_inside_its_own_box_on_a_phone(
+        self, browser: object, served: str
+    ) -> None:
+        context = browser.new_context(viewport={"width": 390, "height": 800})  # type: ignore[attr-defined]
+        page = context.new_page()
+        page.goto(f"{served}/map/", wait_until="load")
+        assert not page.evaluate(
+            "document.documentElement.scrollWidth > document.documentElement.clientWidth"
+        )
+        scrolls = (
+            "(() => { const s = document.querySelector('.map-scroll');"
+            " return s.scrollWidth > s.clientWidth; })()"
+        )
+        assert page.evaluate(scrolls)
+        context.close()
+
+
 class TestCatalogFiltering:
     def test_filtering_narrows_the_results(self, browser: object, served: str) -> None:
         page = page_for(browser, f"{served}/catalog/")
@@ -180,7 +288,16 @@ class TestCatalogFiltering:
         page.wait_for_timeout(150)
         assert page.input_value("#filter-region") == "jira-jungle"
         shown = page.eval_on_selector_all("[data-search]:not([hidden])", "n => n.length")
-        assert shown == 1
+        # The expected number is what the content tree holds for the region, not a constant:
+        # this assertion used to say 1 when every region had one quest.
+        in_region = len(
+            list(
+                (Path(__file__).resolve().parents[2] / "content" / "quests" / "jira-jungle").glob(
+                    "*.md"
+                )
+            )
+        )
+        assert shown == in_region
         page.close()
 
     def test_sorting_reorders_the_results(self, browser: object, served: str) -> None:

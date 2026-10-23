@@ -319,13 +319,20 @@ silently absent from both.
 
 ## External-system writes
 
-**Release one performs none.** Every quest declares `risk.external_write: false`, every
+**The application performs none.** It makes no outbound request of its own and every
 validator is registered `network: denied` (a declaration that review holds, not a socket
-block: see `docs/VALIDATOR-CONTRACT.md`), and the application makes no outbound request of
-its own. The requirements below are the conditions a write-capable quest must meet before it
-is added — not a description of a mechanism running today. `tests/test_release_facts.py`
-asserts the invariant while it holds, so the day a quest declares a write, the test that
-fails says this section now has to be built.
+block: see `docs/VALIDATOR-CONTRACT.md`). From curriculum step C6 (2026-10-21) some quests
+teach the participant to make a write themselves, to a sandbox, and declare
+`risk.external_write: true`. The write is the participant's; the application only shows the
+risk notice. The controls below are therefore properties of the quest's content, evidenced
+by the participant's command records and read by a reviewer. They are not a mechanism the
+application enforces.
+
+`tests/test_release_facts.py` holds the content side of this. A quest that declares an
+external write fails the test unless its required proof shows each control below (preview,
+permission and duplicate checks, confirmation tied to the preview, a result record with a time,
+rerun behavior and a sandbox allowlist), it follows `base-camp-write-preview`, its risk note
+names the sandbox, and its safety constraints rule out production.
 
 Any quest that creates or modifies Jira, Trello, GitHub, or another service must require:
 
@@ -372,5 +379,5 @@ Opening a page, running a build, or viewing a quest must never perform an extern
 - secret-like values in logs and evidence
 - forged verified state without approval
 - modified evidence after approval
-- external-write action without preview or confirmation — not yet reachable: no quest
-  declares an external write, so the assertion that stands today is that none does
+- external-write action without preview or confirmation — held in content by the test above;
+  the application itself performs no write, so there is no runtime path to test

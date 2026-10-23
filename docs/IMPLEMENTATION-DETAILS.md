@@ -22,6 +22,7 @@ quest_app/           the application
 ├── progress_calc.py     derived states, totals, badges
 ├── recommend.py         deterministic weighted recommendation
 ├── view_models.py       display-ready models, one per screen
+├── map_layout.py        where each region goes on the Quest Map and the shape of its land
 ├── routes.py            every URL, derived from stable IDs
 ├── build.py             rendering, indexes, manifest, atomic swap
 ├── state_machine.py     the transitions a participant may make
@@ -133,6 +134,8 @@ is atomic, validated before it lands, and recorded in `participant/ACTIVITY.md`.
 | Reviewer identity | — | Display name and Git history, not signatures | ADR-030 — a half-implemented signature invites trust it has not earned |
 | Catalog filtering without JavaScript | "Works by reloading with a query string" | Region and tag pages are the scripting-free routes; live filtering is an enhancement | A static page cannot filter itself; the honest routes are real pages |
 | Environment Health | Live checks | Build-time facts, labeled as such | Deferred (D7) — a generated page cannot inspect the machine when it is read |
+| Quests that write to an outside system | None in release one ("Release one performs none") | Nineteen, from 0.3.0, each with the five controls in its content and held by a test; the application itself still performs no write | `docs/design/08-curriculum-plan.md` step C6, `docs/audits/phase-c6-jira-jungle.md` |
+| Curriculum size | Eight sample quests, one per region | 128 quests in nine regions; the ninth, Trap Cards, holds the backlog's adversarial challenges | `docs/CURRICULUM-BACKLOG.md`, `docs/audits/curriculum-final-audit.md` |
 | Badge awards | Reviewer-awarded badges | Always "pending" | Release one has no badge-award record; granting one by arithmetic would be the blurring ADR-011 forbids |
 
 ## Test layers
@@ -148,7 +151,10 @@ is atomic, validated before it lands, and recorded in `participant/ACTIVITY.md`.
 
 The collected counts are in `docs/RELEASE-NOTES.md` and the README, where a test keeps them true.
 
-`make check` runs everything except the browser layer; `make test-ui` runs that.
+`make check` runs everything except the browser layer; `make test-ui` runs that. The suite
+takes about 90 minutes in one process at 128 quests, because many tests run once per quest and
+walk its prerequisite chain, so CI runs the non-browser tests as eight shards per Python
+version (`--shard-count`, `--shard-index`, `make test-shard`).
 
 ## Known limitations
 

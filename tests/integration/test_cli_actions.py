@@ -203,6 +203,10 @@ def unlock(participant: Path, quest: str) -> None:
     adding one would delete the guarantee these tests exist to hold.
     """
     for prerequisite in PREREQUISITES.get(quest, ()):
+        if state_of(participant, prerequisite) == "verified":
+            # Reached already by another path: a prerequisite shared by two branches of
+            # the graph is walked once, and a second start would be refused.
+            continue
         unlock(participant, prerequisite)
         for action in ("start-quest", "mark-evidence-ready", "submit-for-review"):
             result = run(participant, action, "--quest", prerequisite)

@@ -1,13 +1,15 @@
 id: github-caverns
-version: 1
+version: 2
 title: GitHub Caverns
 short_title: GitHub
 summary: Connect issues, pull requests, commits, CI results, and test evidence into a traceable delivery record.
 order: 40
 accent: violet
 icon: github
+terrain: cave
 outcomes:
-  - Read assigned Issues into local context using the narrowest token scope that answers the question.
-  - Record the links from an issue to the pull requests, commits, and issues that answer it, so the thread from request to delivery can be followed.
+  - Read assigned issues, comments and timeline events into local context using the narrowest token scope that answers the question, and resynchronize without losing your notes.
+  - Record the links from an issue to the pull requests, commits, CI runs and tests that answer it, and compare a pull request with the issue's acceptance criteria.
+  - Write to GitHub only in a sandbox repository and only after a previewed, confirmed and recorded step that is safe to rerun.
   - Report what could not be read, and what disappeared between runs, instead of dropping it silently.
 tags: [github, integration, traceability]

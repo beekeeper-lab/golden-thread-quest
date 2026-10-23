@@ -332,7 +332,35 @@
     });
   }
 
+  /* ----------------------------------------------------------- Quest map dialogs */
+
+  // A region's label is a real link to its page. With scripting on, selecting it opens the
+  // same card in a dialog instead, so the map stays in view. The native <dialog> gives the
+  // focus trap, Escape and the return of focus; this only opens it and closes it on a click
+  // outside the card. Without it the link simply goes to the region page.
+  function initRegionDialogs() {
+    var triggers = document.querySelectorAll("[data-region-dialog]");
+    if (!triggers.length || typeof HTMLDialogElement === "undefined") return;
+
+    Array.prototype.forEach.call(triggers, function (trigger) {
+      trigger.addEventListener("click", function (event) {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+        var dialog = document.getElementById(trigger.getAttribute("data-region-dialog"));
+        if (!dialog || typeof dialog.showModal !== "function") return;
+        event.preventDefault();
+        dialog.showModal();
+      });
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll("dialog.region-dialog"), function (dialog) {
+      dialog.addEventListener("click", function (event) {
+        if (event.target === dialog) dialog.close();
+      });
+    });
+  }
+
   ready(function () {
+    initRegionDialogs();
     initDrawer();
     initCatalog();
     initConfirmations();

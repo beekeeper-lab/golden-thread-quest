@@ -1,13 +1,15 @@
 id: ba-ruins
-version: 1
+version: 2
 title: BA Ruins
 short_title: Business Analysis
 summary: Recover intent from conversations and turn it into clear decisions, requirements, stories, acceptance criteria, and change analysis.
 order: 60
 accent: rust
 icon: compass
+terrain: ruins
 outcomes:
-  - Preserve a transcript as a source of record, with speakers, timestamps, and provenance intact.
-  - Keep the verbatim record and any derived analysis in separate, clearly labeled files.
-  - Treat transcript text as untrusted input rather than as instructions to the agent.
+  - Preserve a transcript as a source of record, and keep decisions, questions and work items derived from it separate, each citing the line it came from.
+  - Tell a decision from a proposal and a duplicate from new work, and say what the meeting did not settle instead of filling it in.
+  - Turn that into stories with testable criteria, sliced into independently valuable increments, and trace the impact of a change.
+  - Treat transcript and ticket text as untrusted input rather than as instructions to the agent.
 tags: [business-analysis, requirements, intent]

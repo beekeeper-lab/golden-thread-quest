@@ -6,6 +6,7 @@ summary: Establish the repository, safety, context, and audit foundations requir
 order: 10
 accent: slate
 icon: camp
+terrain: mountain
 outcomes:
   - Operate through a reviewable repository with explicit ownership boundaries.
   - Protect secrets and require confirmation for consequential writes.

@@ -558,3 +558,179 @@ textarea { min-height: 8rem; resize: vertical; }
   .app { display: block; }
   .app-sidebar, .app-topbar, .button-row { display: none; }
 }
+
+/* ---------------------------------------------------------------- Quest map (U02, C22) */
+
+:root {
+  /* Map palette: muted, drawn from the ink and paper tokens. Region colour comes from the
+     region's accent, never from here. */
+  --map-sea: #1d3b4d;
+  --map-shallow: #4a8294;
+  --map-land: #dac793;
+  --map-ink: #4d3a24;
+  --map-river: #5f9fc0;
+  --map-ridge: #9a8f7c;
+  --map-ridge-dark: #7a705f;
+  --map-pine: #4b7a52;
+  --map-rock: #8d9298;
+  --map-rock-dark: #6d737b;
+  --map-snow: #f4f6f8;
+  --map-wood: #7b5a3a;
+  --map-leaf: #5d9163;
+  --map-leaf-dark: #3f6e47;
+  --map-stone: #c3bba8;
+  --map-stone-dark: #a39b87;
+  --map-wall: #eadfc8;
+  --map-roof: #b3563a;
+  --map-dark: #27303a;
+  --map-water: #7fb0c4;
+  --map-flag: #c0392b;
+}
+
+.map-symbols { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+.map-scroll { overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--map-ink); background: #14293a; }
+/* The ratio matches CANVAS_WIDTH / CANVAS_HEIGHT in quest_app/map_layout.py; a test holds them
+   together. It lives here, not in a style attribute, because the Content Security Policy
+   allows stylesheets from this origin only. */
+.map-board { min-width: 56rem; width: 100%; aspect-ratio: 1000 / 640; }
+.map-art { width: 100%; height: 100%; display: block; }
+.map-sea { fill: url(#map-sea-gradient); }
+.map-sea-name { font: italic 600 22px Georgia, 'Times New Roman', serif; letter-spacing: 8px; fill: #cfe4ea; fill-opacity: 0.5; }
+.m-wave { fill: none; stroke: #8fb9c7; stroke-width: 2.4; stroke-linecap: round; opacity: 0.45; }
+.continent-halo { fill: var(--map-shallow); stroke: var(--map-shallow); stroke-width: 30; stroke-linejoin: round; opacity: 0.7; }
+.continent-edge { fill: none; stroke: #3a2a16; stroke-width: 5; stroke-linejoin: round; }
+.continent-fill { fill: var(--map-land); stroke: none; }
+.map-sea-texture { opacity: 0.5; mix-blend-mode: screen; pointer-events: none; }
+.map-clouds { opacity: 0.4; mix-blend-mode: screen; pointer-events: none; }
+.biome-forest { fill: #3f7a3a; fill-opacity: 0.4; }
+.biome-rock { fill: #7d7261; fill-opacity: 0.42; }
+.map-trail { fill: none; stroke: #f6cd68; stroke-width: 3.4; stroke-dasharray: 0.1 9; stroke-linecap: round; opacity: 0.95; pointer-events: none; }
+.map-sea-route { fill: none; stroke: #d3e6ec; stroke-width: 2; stroke-dasharray: 7 8; stroke-linecap: round; opacity: 0.5; pointer-events: none; }
+.land-glow { fill: #ffc857; pointer-events: none; }
+.map-lake { fill: #a6cfdc; stroke: var(--map-river); stroke-width: 1.6; }
+.map-river-bank { fill: none; stroke: var(--map-ink); stroke-width: 6.5; stroke-linecap: round; stroke-linejoin: round; opacity: 0.35; }
+.map-river { fill: none; stroke: var(--map-river); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.m-ridge { fill: var(--map-ridge); stroke: var(--map-ink); stroke-width: 3; stroke-linejoin: round; }
+.m-ridge-dark { fill: var(--map-ridge-dark); }
+.m-pine { fill: var(--map-pine); stroke: #2f5236; stroke-width: 2.5; stroke-linejoin: round; }
+.m-trunk { fill: var(--map-wood); }
+.map-paper { fill: none; pointer-events: none; }
+.map-vignette { fill: url(#map-vignette); pointer-events: none; }
+.map-frame { fill: none; stroke: #d3b779; stroke-width: 2.4; pointer-events: none; }
+.map-frame-outer { stroke: #20150b; stroke-width: 8; }
+.map-frame-inner { stroke-width: 1.2; }
+.compass-ring { fill: #f3e8c8; fill-opacity: 0.75; stroke: var(--map-ink); stroke-width: 1.6; }
+.compass-inner { fill: none; stroke-width: 1; }
+.compass-needle { fill: var(--map-ink); opacity: 0.7; }
+.compass-minor { opacity: 0.4; }
+.compass-hub { fill: #f3e8c8; stroke: var(--map-ink); stroke-width: 1.4; }
+.compass-north { fill: var(--map-flag); }
+.compass-n { font: 700 17px Georgia, serif; fill: var(--map-ink); }
+
+.land-link { cursor: pointer; }
+.land-shape {
+  fill: var(--region-accent, var(--ink-500));
+  fill-opacity: 0.4;
+  stroke: var(--map-ink);
+  stroke-width: 1.8;
+  stroke-dasharray: 8 5;
+  stroke-linejoin: round;
+  transition: fill-opacity var(--duration-fast) var(--easing);
+}
+.terrain-islands .land-shape { stroke-dasharray: none; fill-opacity: 0.3; }
+.land-link:hover .land-shape { fill-opacity: 0.62; }
+.land-medal { fill: #f6ecd0; fill-opacity: 0.95; stroke: var(--map-ink); stroke-width: 2.6; }
+.land-medal-ring { fill: none; stroke: var(--map-ink); stroke-width: 1; stroke-opacity: 0.55; }
+
+/* Emblem colours. Each class is one material; a terrain symbol is built from a few. */
+.m-rock { fill: var(--map-rock); }
+.m-rock-dark { fill: var(--map-rock-dark); }
+.m-snow { fill: var(--map-snow); }
+.m-tent { fill: #e9a53b; stroke: var(--map-dark); stroke-width: 1; }
+.m-tent-dark { fill: #c88427; }
+.m-pole { stroke: var(--map-dark); stroke-width: 1.6; }
+.m-flag { fill: var(--map-flag); }
+.m-dark { fill: var(--map-dark); }
+.m-stone { fill: var(--map-stone); stroke: var(--map-stone-dark); stroke-width: 0.8; }
+.m-stone-dark { fill: var(--map-stone-dark); }
+.m-wood { fill: var(--map-wood); }
+.m-leaf { fill: var(--map-leaf); }
+.m-leaf-dark { fill: var(--map-leaf-dark); }
+.m-vine { fill: none; stroke: var(--map-leaf-dark); stroke-width: 2.4; stroke-linecap: round; }
+.m-wall { fill: var(--map-wall); stroke: var(--map-dark); stroke-width: 0.8; }
+.m-roof { fill: var(--map-roof); stroke: var(--map-dark); stroke-width: 0.8; }
+.m-window { fill: var(--map-water); }
+.m-chimney { fill: var(--map-stone-dark); }
+.m-book { fill: var(--map-roof); stroke: var(--map-dark); stroke-width: 0.8; }
+.m-hedge-bed { fill: color-mix(in srgb, var(--map-leaf) 30%, var(--map-wall)); stroke: var(--map-leaf-dark); stroke-width: 1; }
+.m-hedge { fill: none; stroke: var(--map-leaf-dark); stroke-width: 5.5; stroke-linecap: round; stroke-linejoin: round; }
+.m-flag-dot { fill: var(--map-flag); }
+.m-wood-line { fill: none; stroke: var(--map-wood); stroke-width: 4.5; stroke-linecap: round; }
+.m-leaf-line { fill: none; stroke: var(--map-leaf-dark); stroke-width: 5; stroke-linecap: round; }
+.m-coconut { fill: var(--map-wood); }
+.m-hull { fill: var(--map-wood); }
+.m-sail { fill: var(--map-snow); stroke: var(--map-dark); stroke-width: 0.8; }
+.m-bog { fill: color-mix(in srgb, var(--map-leaf-dark) 55%, var(--map-water)); }
+.m-spike { fill: var(--map-stone); stroke: var(--map-dark); stroke-width: 0.8; }
+.m-reed { fill: none; stroke: var(--map-leaf-dark); stroke-width: 2.4; stroke-linecap: round; }
+.m-cattail { fill: var(--map-wood); }
+
+/* The label is the real link: name and count in a small plate set on the land. */
+.map-label {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 1px 8px;
+  border-radius: 8px;
+  border: 1.5px solid var(--ink-700);
+  border-left: 6px solid var(--region-accent, var(--ink-500));
+  background: var(--surface);
+  color: var(--ink-900);
+  text-align: center;
+  text-decoration: none;
+  line-height: 1.15;
+  overflow: hidden;
+}
+.map-label:hover { background: var(--surface-muted); }
+/* Inside the box, because a foreignObject clips anything drawn outside it. */
+.map-label:focus-visible { outline: 3px solid var(--focus); outline-offset: -6px; }
+/* A name longer than two lines is cut with an ellipsis; the full title is on the link's title
+   attribute and in the dialog and the list. */
+.map-label-name {
+  font-weight: 700;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+.map-label-count { font-size: 14.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+/* The region card, shown over the map. */
+.region-dialog {
+  width: min(34rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 0;
+  border: 1px solid var(--ink-700);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink-900);
+  box-shadow: var(--shadow-md);
+  overflow: auto;
+}
+.region-dialog::backdrop { background: rgba(16, 25, 35, 0.55); }
+.region-dialog .card { border: 0; box-shadow: none; border-radius: 0; }
+.dialog-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: flex-end; padding: 0 var(--space-4) var(--space-4) calc(var(--space-4) + 4px); margin: 0; }
+
+.region-list > summary { cursor: pointer; font-weight: 600; padding: var(--space-2) 0; }
+.region-list[open] > summary { margin-bottom: var(--space-3); }

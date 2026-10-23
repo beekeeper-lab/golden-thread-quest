@@ -17,6 +17,7 @@ from typing import Any
 
 from quest_app import routes
 from quest_app.config import APPLICATION_VERSION
+from quest_app.map_layout import MapLayout, MapRegionInput, build_layout
 from quest_app.models import (
     AcceptanceCriterion,
     Badge,
@@ -597,6 +598,21 @@ def build_region_cards(
             )
         )
     return tuple(cards)
+
+
+def build_map_layout(cards: tuple[RegionCardView, ...]) -> MapLayout:
+    """Where each region goes on the Quest Map. Derived from the quest counts alone."""
+    return build_layout(
+        [
+            MapRegionInput(
+                id=card.region.id,
+                order=card.region.order,
+                quest_count=card.progress.total,
+                terrain=card.region.terrain,
+            )
+            for card in cards
+        ]
+    )
 
 
 def build_filter_options(

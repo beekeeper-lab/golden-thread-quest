@@ -6,6 +6,7 @@ summary: Build trustworthy local Markdown context that reconciles multiple syste
 order: 50
 accent: amber
 icon: library
+terrain: library
 outcomes:
   - Define a canonical work-item model with required fields, optional fields, and explicit non-goals.
   - Map each source system onto that model without losing source-specific structure, and report what cannot be mapped rather than writing a partial record that looks complete.
