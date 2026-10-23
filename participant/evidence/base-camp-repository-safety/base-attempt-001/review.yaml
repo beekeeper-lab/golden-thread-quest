@@ -1,0 +1,23 @@
+schema_version: 1
+review_id: review-20261021172804-2b2f7b
+quest_id: base-camp-repository-safety
+quest_version: 2
+attempt_id: base-attempt-001
+evidence_hash: sha256:b4a65c2c26c9a6b76781d796f8c222830f3a3aa1abf7f053ed82fbb57c56630e
+reviewer:
+  display_name: Gregg Reed
+reviewed_at: '2026-10-21T17:28:04Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/audit-log.md
+  digest: sha256:4582a25db766fff5e970d8ca01680741410cd283998c3a76957a8d97119417df
+- path: participant/context/repository-ownership.md
+  digest: sha256:f00880018512c23d36ae3b59b95ade53e9925cc213a153beb129635e96f592ea
+verification_statement: 'Re-ran the fake bug tracker on a real terminal: typed confirmation
+  filed once, the rerun created no duplicate, a crash after the write was recovered
+  without repeating it, no token and a piped yes were refused, and the token appears
+  in neither the audit log nor the data. Checked the proof digests, the validator
+  result, the secret scan and the ignore rules.'
+validation_result_ids:
+- validate-repository-foundation-20261021152101174306-631eda

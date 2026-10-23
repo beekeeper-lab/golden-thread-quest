@@ -1,0 +1,37 @@
+schema_version: 1
+participant:
+  id: participant
+  display_name: thomascarter
+selected_track: pilot-analysts-and-testers
+attempts:
+- attempt_id: ba-attempt-001
+  quest_id: ba-ingest-transcript
+  quest_version: 4
+  content_hash: sha256:237610e383705248804a8bcc80cf44ba44ab1b14e560816f01fb38623147976e
+  state: verified
+  started_at: '2026-10-19T14:13:10Z'
+  updated_at: '2026-10-20T18:28:05Z'
+  evidence_path: participant/evidence/ba-ingest-transcript/ba-attempt-001
+  submission_id: submission-20261019162845-0a428e
+  review_id: review-20261020182805-3a5480
+- attempt_id: base-attempt-001
+  quest_id: base-camp-repository-safety
+  quest_version: 2
+  content_hash: sha256:961a703db315b6da63e2a0e8f9cd3bc8db210f269a6451505236a78d84d250b3
+  state: verified
+  started_at: '2026-10-20T19:14:21Z'
+  updated_at: '2026-10-21T17:28:04Z'
+  evidence_path: participant/evidence/base-camp-repository-safety/base-attempt-001
+  submission_id: submission-20261021152317-5bbdaa
+  review_id: review-20261021172804-2b2f7b
+- attempt_id: context-attempt-001
+  quest_id: context-staleness
+  quest_version: 1
+  content_hash: sha256:30409ed9f20734f7c419564045e38b7cf74d44118555f2c8e5e0ecb8c8a14f7b
+  state: verified
+  started_at: '2026-10-23T12:59:16Z'
+  updated_at: '2026-10-23T17:40:53Z'
+  evidence_path: participant/evidence/context-staleness/context-attempt-001
+  submission_id: submission-20261023161641-d369b9
+  review_id: review-20261023174053-1c90a6
+updated_at: '2026-10-23T17:40:53Z'

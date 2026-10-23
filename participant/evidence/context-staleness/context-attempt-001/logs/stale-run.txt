@@ -1,0 +1,66 @@
+$ .venv/bin/python participant/tools/answer-blockers.py --context participant/context/freshness/tixly-context.yaml --now 2026-10-20T17:00:00-04:00
+# answer-blockers.py 1.11.0
+Clock set to: 10-20-2026 5:00 PM (UTC-0400) (from --now, not the computer's clock)
+Question: What is blocking release 3.0?
+
+Notes used:
+  BRD-21   sprint-board  retrieved 2026-10-20T09:00:00-04:00  age 8 hours           limit 1 day   FRESH
+  BRD-22   sprint-board  retrieved 2026-10-20T09:00:00-04:00  age 8 hours           limit 1 day   FRESH
+  BUG-31   bug-list      retrieved 2026-10-20T09:00:00-04:00  age 8 hours           limit 1 day   FRESH
+  BUG-32   bug-list      retrieved 2026-10-20T09:00:00-04:00  age 8 hours           limit 1 day   FRESH
+  RUN-41   test-runs     retrieved 2026-10-20T09:00:00-04:00  age 8 hours           limit 1 day   FRESH
+  REL-51   release-plan  retrieved 2026-10-17T09:00:00-04:00  age 3 days 8 hours    limit 7 days  FRESH
+  TEAM-61  team-roster   retrieved 2026-10-01T09:00:00-04:00  age 19 days 8 hours   limit 30 days FRESH
+
+Oldest note used: TEAM-61 (team-roster), 19 days 8 hours old
+Answer: BRD-21 Checkout redesign is still In Progress; BUG-31 Payment fails on Safari is open (High); RUN-41 build 512: 3 of 120 tests failed.
+All notes are within their limits.
+result: ANSWERED (all notes fresh) (exit status 0)
+$ .venv/bin/python participant/tools/answer-blockers.py --context participant/context/freshness/tixly-context.yaml --now 2026-10-21T15:00:00-04:00
+# answer-blockers.py 1.11.0
+Clock set to: 10-21-2026 3:00 PM (UTC-0400) (from --now, not the computer's clock)
+Question: What is blocking release 3.0?
+
+Notes used:
+  BRD-21   sprint-board  retrieved 2026-10-20T09:00:00-04:00  age 1 day 6 hours     limit 1 day   STALE
+  BRD-22   sprint-board  retrieved 2026-10-20T09:00:00-04:00  age 1 day 6 hours     limit 1 day   STALE
+  BUG-31   bug-list      retrieved 2026-10-20T09:00:00-04:00  age 1 day 6 hours     limit 1 day   STALE
+  BUG-32   bug-list      retrieved 2026-10-20T09:00:00-04:00  age 1 day 6 hours     limit 1 day   STALE
+  RUN-41   test-runs     retrieved 2026-10-20T09:00:00-04:00  age 1 day 6 hours     limit 1 day   STALE
+  REL-51   release-plan  retrieved 2026-10-17T09:00:00-04:00  age 4 days 6 hours    limit 7 days  FRESH
+  TEAM-61  team-roster   retrieved 2026-10-01T09:00:00-04:00  age 20 days 6 hours   limit 30 days FRESH
+
+Oldest note used: TEAM-61 (team-roster), 20 days 6 hours old
+Answer: BRD-21 Checkout redesign is still In Progress; BUG-31 Payment fails on Safari is open (High); RUN-41 build 512: 3 of 120 tests failed.
+WARNING: this answer relies on stale notes and may be out of date:
+  BRD-21: 1 day 6 hours old, past its 1-day limit
+  BRD-22: 1 day 6 hours old, past its 1-day limit
+  BUG-31: 1 day 6 hours old, past its 1-day limit
+  BUG-32: 1 day 6 hours old, past its 1-day limit
+  RUN-41: 1 day 6 hours old, past its 1-day limit
+Your options: use this answer with the caveats above, or refresh these notes first: BRD-21, BRD-22, BUG-31, BUG-32, RUN-41. Fresh notes don't need refreshing.
+result: WARNED (stale notes) (exit status 1)
+$ .venv/bin/python participant/tools/answer-blockers.py --context participant/context/freshness/tixly-context.yaml --now 2026-10-29T09:00:00-04:00
+# answer-blockers.py 1.11.0
+Clock set to: 10-29-2026 9:00 AM (UTC-0400) (from --now, not the computer's clock)
+Question: What is blocking release 3.0?
+
+Notes used:
+  BRD-21   sprint-board  retrieved 2026-10-20T09:00:00-04:00  age 9 days            limit 1 day   TOO OLD
+  BRD-22   sprint-board  retrieved 2026-10-20T09:00:00-04:00  age 9 days            limit 1 day   TOO OLD
+  BUG-31   bug-list      retrieved 2026-10-20T09:00:00-04:00  age 9 days            limit 1 day   TOO OLD
+  BUG-32   bug-list      retrieved 2026-10-20T09:00:00-04:00  age 9 days            limit 1 day   TOO OLD
+  RUN-41   test-runs     retrieved 2026-10-20T09:00:00-04:00  age 9 days            limit 1 day   TOO OLD
+  REL-51   release-plan  retrieved 2026-10-17T09:00:00-04:00  age 12 days           limit 7 days  STALE
+  TEAM-61  team-roster   retrieved 2026-10-01T09:00:00-04:00  age 28 days           limit 30 days FRESH
+
+Oldest note used: TEAM-61 (team-roster), 28 days old
+Answer: REFUSED. These notes can't be relied on:
+  BRD-21: 9 days old, over twice its 1-day limit
+  BRD-22: 9 days old, over twice its 1-day limit
+  BUG-31: 9 days old, over twice its 1-day limit
+  BUG-32: 9 days old, over twice its 1-day limit
+  RUN-41: 9 days old, over twice its 1-day limit
+  REL-51: stale, 12 days old, past its 7-day limit
+Your options: refresh these notes first, then ask again: BRD-21, BRD-22, BUG-31, BUG-32, RUN-41, REL-51. Fresh notes don't need refreshing.
+result: REFUSED (notes too old) (exit status 2)
