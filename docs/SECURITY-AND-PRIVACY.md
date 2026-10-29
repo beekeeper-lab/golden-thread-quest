@@ -344,6 +344,25 @@ Any quest that creates or modifies Jira, Trello, GitHub, or another service must
 
 Opening a page, running a build, or viewing a quest must never perform an external write.
 
+## Pull-request automation
+
+`.github/workflows/pilot-precheck.yml` runs on `pull_request_target` for branches named
+`pilot/*`, so it has a write token and the pull request comes from a fork. The rules that keep
+that safe:
+
+- It checks out the base repository, never the pull request, and fetches the participant's
+  `participant/` folder with `git archive` into a separate folder as data.
+- `tools/precheck.py` parses that data with the application's own safe loaders and scanners. It
+  executes nothing from it, and it stops before reading anything if a path is outside
+  `participant/` (`tools/review_check.py`).
+- The workflow's only secret is an optional notification address. No credential the program
+  needs for anything else is available to it.
+- Pull-request text (title, branch name) is never interpolated into a shell command.
+- The check never approves. Labels and comments are information; verified completion comes only
+  from a recorded reviewer decision.
+
+Do not add a step that builds, runs or imports the pull request's files.
+
 ## Review integrity
 
 - Review decisions contain stable review and attempt IDs.

@@ -1091,6 +1091,22 @@ def _evidence_context(
             ("resume-quest", "Resume after review", False, None),
         )
     )
+    # Not a state change, so it is not in `allowed`: it brings in what the reviewer pushed. It is
+    # offered only while the quest waits for a review, and it reads from GitHub only when the
+    # participant presses it.
+    check_for_review = (
+        (
+            ActionView(
+                id="check-for-review",
+                label="Check for my review",
+                enabled=service.available,
+                route=routes.action("check-for-review", quest.id),
+                reason="Start the local service to check, or run `gtq get-review` in a terminal.",
+            ),
+        )
+        if entry.attempt and entry.state.id is QuestState.SUBMITTED
+        else ()
+    )
     return {
         "quest": summary,
         "attempt_id": entry.attempt.attempt_id if entry.attempt else None,
@@ -1106,9 +1122,11 @@ def _evidence_context(
         "proof_document": _proof_document(world, evidence_path),
         "secret_scan_clean": not scan_findings if evidence_path else None,
         "scan_kinds": scan_kinds(scan_findings),
-        "actions": tuple(a for a in actions if a.enabled or a.id in allowed)
-        if entry.attempt
-        else (),
+        "actions": (
+            (*(a for a in actions if a.enabled or a.id in allowed), *check_for_review)
+            if entry.attempt
+            else ()
+        ),
         "git_summary": git_summary_for(world, evidence_path),
         "reviewer_findings": _reviewer_findings(entry),
     }

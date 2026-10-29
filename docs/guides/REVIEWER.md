@@ -44,6 +44,18 @@ at the end says what the participant should change — for example
 Add `--acknowledge-changed-evidence` to approve evidence that changed after submission,
 which is the checkbox the browser form shows for the same purpose.
 
+## What the automatic check has already done
+
+Every pilot pull request is checked by `.github/workflows/pilot-precheck.yml` when it opens and
+on every push. It reads the participant's files as data and runs nothing they wrote. It looks
+that nothing is changed outside `participant/`, that every required proof file is present and not
+empty, that the secret scan is clean, and that nothing changed after submission. It labels the
+pull request `gtq:needs-fixes`, `gtq:ready-for-review` or `gtq:reviewed`, and comments in plain
+words. A pull request labelled `gtq:ready-for-review` has passed those mechanical checks and
+nothing more. **The check is not a review and never approves.** Your decision is still the only
+thing that produces verified completion, and the check re-runs after you push it and tells the
+participant by a new comment, which GitHub emails.
+
 ## What you are deciding
 
 Whether the evidence in front of you demonstrates the quest's outcomes strongly enough to

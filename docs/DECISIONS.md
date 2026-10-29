@@ -791,3 +791,28 @@ participant who followed a slightly different recipe could not bring in their re
 the participant's behalf that work is ready. A command the participant types is that claim,
 made by them, so the reasoning holds. Keeping the commands out of the browser keeps the
 service's rule simple: it performs no Git write.
+
+## ADR-045 — Pilot hand-ins are checked automatically, and a participant learns of a review without Slack
+
+**Decision:** A workflow (`.github/workflows/pilot-precheck.yml`, `tools/precheck.py`) checks every
+pull request from a `pilot/*` branch when it opens and on each push. It labels the pull request
+`gtq:needs-fixes`, `gtq:ready-for-review` or `gtq:reviewed`, keeps one comment up to date in plain
+words, and, when a reviewer's decision appears, posts one new comment so GitHub emails the
+participant. The check never approves. The evidence page of a submitted quest offers **Check for
+my review** (`check-for-review`), which runs the same code as `gtq get-review` and reports where
+the pull request stands. It reads from GitHub only when pressed; the application makes no
+background network calls. `gtq hand-in` no longer tells the participant to post in Slack.
+
+**Amends ADR-044.** ADR-044 said the local service performs no Git write. `check-for-review` makes
+it run `git fetch` and a merge into the participant's own branch, bringing in what the reviewer
+pushed, and undoes the merge on a conflict. It still never pushes, never opens a pull request and
+never merges anything into `main`; those stay terminal commands the participant types.
+
+**Reason:** Slack was the only notification channel in both directions, so a hand-in waited on a
+person noticing a message and a decision waited on another message back. Participants are not
+developers, so the pick-up needs a button, not a command.
+
+**Not decided here:** an automated reviewer that records approvals. The program owner prefers it
+(2026-10-29), but it needs its own identity in review records, the escalation rules for the 19
+external-write quests, and a shadow period in which it drafts and a human decides. It is parked
+in `docs/PARKING-LOT.md` for the next gate.

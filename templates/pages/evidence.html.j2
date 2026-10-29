@@ -133,6 +133,9 @@
       <p class="authority">This panel only reports. Commit and push yourself.</p>
     </section>
 
+    {% if actions | selectattr('id', 'equalto', 'check-for-review') | list %}
+    <p class="authority">Waiting for a reviewer. You do not need to tell anyone: GitHub emails you when a decision is ready. Then click <strong>Check for my review</strong>.</p>
+    {% endif %}
     {% for item in actions %}{{ action_button(item, url) }}{% endfor %}
   </aside>
 </div>

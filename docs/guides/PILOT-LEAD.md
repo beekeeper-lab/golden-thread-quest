@@ -50,11 +50,14 @@ You also need the GitHub CLI signed in: `gh auth status`.
 
 ## 3. Review a hand-in
 
-A participant posts in the thread when a quest is ready. Each participant has one pull
-request, titled `Pilot: <name>`, which their `gtq hand-in` opened.
+Participants no longer message you. When a hand-in passes the automatic check
+(`.github/workflows/pilot-precheck.yml`), its pull request gets the label `gtq:ready-for-review`,
+and you are pinged if the repository secret `PILOT_NTFY_URL` is set. A hand-in with a problem gets
+`gtq:needs-fixes` and a plain comment telling the participant what to fix; it does not need you.
+Each participant has one pull request, titled `Pilot: <name>`, which their `gtq hand-in` opened.
 
 1. `cd ~/gtq-review`
-2. `gh pr list`, and note the pull request's number.
+2. `gh pr list --label gtq:ready-for-review`, and note the pull request's number.
 3. `python tools/review_check.py <number>`. It must say SAFE, meaning every changed file is under
    `participant/`. If it says NOT SAFE, stop: do not check the pull request out or run anything in
    it. It also lists any code the participant wrote, which you read before running.
@@ -69,8 +72,9 @@ request, titled `Pilot: <name>`, which their `gtq hand-in` opened.
 8. `git add participant/`
 9. `git commit -m "Review: <quest-id>"`
 10. `git push`
-11. Reply in the thread with the decision. The participant then runs `gtq get-review` to
-    see it.
+11. Nothing to send. Pushing your review makes the check run again, and it posts a new comment
+    on the pull request, so GitHub emails the participant. They click **Check for my review** on
+    the quest's page, or run `gtq get-review`.
 
 `git push` in step 10 goes to the participant's branch, which works because their pull
 request allows edits by maintainers, which `gtq hand-in` leaves on. If the push is refused,
