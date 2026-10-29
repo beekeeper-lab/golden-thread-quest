@@ -124,7 +124,8 @@ run `gtq hand-in` again so your reviewer sees the latest version.
 
 ## Step 4: Get your review back
 
-GitHub emails you when your reviewer has decided. Then open the quest's page in the application
+GitHub emails you when a reviewer has decided. The reviewer is usually automatic, and anything it
+is unsure of goes to a person, who tells you on the pull request. Then open the quest's page in the application
 and click **Check for my review**. If the application is not running, type this instead:
 
 ```

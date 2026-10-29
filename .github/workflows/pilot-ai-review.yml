@@ -1,0 +1,163 @@
+name: Pilot AI review
+
+# Reviews a pilot hand-in and, in `live` mode, records the decision on the participant's branch
+# (docs/design/08-ai-reviewer-specification.md, ADR-046).
+#
+# Two jobs hold different credentials and never meet:
+#   review  has the model key (ANTHROPIC_API_KEY), read-only, and writes only a plan file
+#   apply   has the bot token (PILOT_BOT_TOKEN), no model key, and reads only that plan
+# Neither executes anything from the pull request: its files are fetched as data and parsed.
+# Do not add a step that builds, runs or imports them, and do not give one job both secrets.
+#
+# Triggers: the pre-check dispatches this for a hand-in that is ready; a sweep every 30
+# minutes finds any labelled `gtq:ready-for-review` that was missed; the Actions tab runs one
+# by hand (enter its number).
+#
+# Mode is the repository variable PILOT_AI_REVIEW_MODE: off, shadow (the default) or live.
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "Pull request number (leave blank to sweep every ready hand-in)"
+        required: false
+  schedule:
+    - cron: "*/30 * * * *"
+
+permissions:
+  contents: read
+
+# A dispatch and the sweep can overlap on one pull request. The one that pushes second finds the
+# branch moved or the attempt already decided and skips, so a review is never applied twice.
+concurrency:
+  group: pilot-ai-review-${{ inputs.pr || 'sweep' }}
+  cancel-in-progress: false
+
+env:
+  REPO: ${{ github.repository }}
+  MODE: ${{ vars.PILOT_AI_REVIEW_MODE || 'shadow' }}
+
+jobs:
+  select:
+    if: vars.PILOT_AI_REVIEW_MODE != 'off'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      prs: ${{ steps.pick.outputs.prs }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      INPUT_PR: ${{ inputs.pr }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v5
+      - name: Install
+        run: |
+          uv venv .venv --python 3.13
+          uv pip install --python .venv/bin/python -e .
+      - name: Pick the pull requests
+        id: pick
+        run: |
+          case "$INPUT_PR" in
+            "") prs=$(.venv/bin/python tools/ai_review.py select --repo "$REPO") ;;
+            *[!0-9]*) echo "not a number"; exit 1 ;;
+            *) prs="[$INPUT_PR]" ;;
+          esac
+          echo "prs=$prs" >> "$GITHUB_OUTPUT"
+          echo "reviewing: $prs"
+
+  review:
+    needs: select
+    if: needs.select.outputs.prs != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: read
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        pr: ${{ fromJSON(needs.select.outputs.prs) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      SAMPLE_EVERY: ${{ vars.PILOT_AI_SAMPLE_EVERY || '5' }}
+      MODEL: ${{ vars.PILOT_AI_MODEL || 'claude-opus-5-5' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v5
+      - name: Install
+        run: |
+          uv venv .venv --python 3.13
+          uv pip install --python .venv/bin/python -e . anthropic
+      - name: Fetch the participant's files as data
+        id: fetch
+        run: tools/fetch_pr_data.sh "${{ matrix.pr }}" "$RUNNER_TEMP/pr"
+      - name: Review
+        run: |
+          .venv/bin/python tools/ai_review.py review \
+            --participant-root "$RUNNER_TEMP/pr/participant" \
+            --files-json "$RUNNER_TEMP/pr/files.json" \
+            --labels-json "$RUNNER_TEMP/pr/labels.json" \
+            --head-sha "${{ steps.fetch.outputs.sha }}" \
+            --mode "$MODE" --sample-every "$SAMPLE_EVERY" --model "$MODEL" \
+            --out "$RUNNER_TEMP/plan.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plan-${{ matrix.pr }}
+          path: ${{ runner.temp }}/plan.json
+          retention-days: 7
+
+  apply:
+    needs: [select, review]
+    # Each pull request is applied on its own: one failed review must not block the others.
+    if: ${{ !cancelled() && needs.select.result == 'success' && needs.select.outputs.prs != '[]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        pr: ${{ fromJSON(needs.select.outputs.prs) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PILOT_BOT_TOKEN: ${{ secrets.PILOT_BOT_TOKEN }}
+      NTFY_URL: ${{ secrets.PILOT_NTFY_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v5
+      - name: Install
+        run: |
+          uv venv .venv --python 3.13
+          uv pip install --python .venv/bin/python -e .
+      - uses: actions/download-artifact@v4
+        id: plan
+        continue-on-error: true
+        with:
+          name: plan-${{ matrix.pr }}
+          path: ${{ runner.temp }}/plan
+      - name: Fetch the participant's files as data
+        id: fetch
+        if: steps.plan.outcome == 'success'
+        run: tools/fetch_pr_data.sh "${{ matrix.pr }}" "$RUNNER_TEMP/pr"
+      - name: Apply
+        if: steps.plan.outcome == 'success'
+        run: |
+          .venv/bin/python tools/ai_review.py apply \
+            --plan "$RUNNER_TEMP/plan/plan.json" \
+            --pr "${{ matrix.pr }}" \
+            --mode "$MODE" \
+            --fetched-sha "${{ steps.fetch.outputs.sha }}" \
+            --data-root "$RUNNER_TEMP/pr"

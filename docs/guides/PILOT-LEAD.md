@@ -50,7 +50,8 @@ You also need the GitHub CLI signed in: `gh auth status`.
 
 ## 3. Review a hand-in
 
-Participants no longer message you. When a hand-in passes the automatic check
+Most hand-ins are reviewed automatically (`docs/guides/AI-REVIEWER-SETUP.md`); you review the ones
+labelled `gtq:needs-human`. Participants no longer message you. When a hand-in passes the automatic check
 (`.github/workflows/pilot-precheck.yml`), its pull request gets the label `gtq:ready-for-review`,
 and you are pinged if the repository secret `PILOT_NTFY_URL` is set. A hand-in with a problem gets
 `gtq:needs-fixes` and a plain comment telling the participant what to fix; it does not need you.

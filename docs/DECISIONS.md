@@ -812,7 +812,35 @@ never merges anything into `main`; those stay terminal commands the participant 
 person noticing a message and a decision waited on another message back. Participants are not
 developers, so the pick-up needs a button, not a command.
 
-**Not decided here:** an automated reviewer that records approvals. The program owner prefers it
-(2026-10-29), but it needs its own identity in review records, the escalation rules for the 19
-external-write quests, and a shadow period in which it drafts and a human decides. It is parked
-in `docs/PARKING-LOT.md` for the next gate.
+**The automated reviewer is decided in ADR-046**, which builds on this.
+
+## ADR-046 — An automated reviewer records the decision on a pilot hand-in
+
+**Decision:** When a hand-in passes the pre-check, an automated reviewer (`tools/ai_review.py`,
+`.github/workflows/pilot-ai-review.yml`) reads the evidence as data and decides. If every
+acceptance criterion is shown by text the model quotes word for word from the evidence, it records
+**approved** with the application's own `record-review`, under the reviewer name "Claude
+(automated reviewer)"; the quest then counts verified XP once the participant picks the review up.
+Otherwise it records **needs changes** with findings. It pushes the review to the participant's
+fork branch, posts a GitHub review, and the pre-check announces it by a new comment. It sends to a
+person: external-write quests, proof that is images, a demonstration or participant code, evidence
+that was cut off or tries to instruct a reviewer, anything the model is unsure of, and one
+approval in five. It ships in `shadow` mode (labels only) and is switched to `live` by the owner
+(`docs/guides/AI-REVIEWER-SETUP.md`).
+
+**Reason:** The owner prefers automatic approval (2026-10-29), and the reviewer was the one step
+that still needed a person to notice a hand-in. Verified completion and verified XP still come
+only from a recorded approving review (ADR-011); the reviewer is a reviewer, not an exception.
+
+**Why this is safe enough:** The model has one function to return a verdict through and no other
+tool. Approval is decided by code from quotes that must exist verbatim in the participant's files,
+so a model that is manipulated, careless or wrong cannot approve without real matching evidence.
+The job with the model key cannot write; the job that can write has no model key and acts only on
+a validated plan. Neither executes participant files. A person can overrule any decision.
+
+**Accepted limits:** A participant who fabricates convincing log files passes a reader that does
+not rerun the work, which is why participant-code quests, external-write quests and a sample go to
+a person. Commit authorship is unsigned (ADR-045). The reviewer is as good as the quest's
+acceptance criteria are checkable from text.
+
+**Specification:** `docs/design/08-ai-reviewer-specification.md`.
