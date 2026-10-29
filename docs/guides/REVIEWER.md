@@ -56,6 +56,16 @@ nothing more. **The check is not a review and never approves.** Your decision is
 thing that produces verified completion, and the check re-runs after you push it and tells the
 participant by a new comment, which GitHub emails.
 
+## The automatic reviewer
+
+Most pilot hand-ins are reviewed before you see them (ADR-046, `docs/guides/AI-REVIEWER-SETUP.md`).
+It records its decisions as "Claude (automated reviewer)". You are the reviewer for what it sends
+you: the pull requests labelled `gtq:needs-human`, which are the external-write quests, proof that
+is images or participant code, anything it was unsure of or could not read, evidence that tried to
+instruct it, and a sample of its approvals. The run summary and the participant's comment say why.
+Review them exactly as below. To overrule one of its decisions, record your own; it supersedes the
+earlier one, which is archived beside it.
+
 ## What you are deciding
 
 Whether the evidence in front of you demonstrates the quest's outcomes strongly enough to

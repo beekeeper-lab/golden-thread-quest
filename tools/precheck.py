@@ -57,6 +57,9 @@ class Decision:
     decision: str
     review_id: str
     findings: int
+    statement: str = ""
+    summaries: list[str] = field(default_factory=list)
+    reviewer: str = ""
 
 
 @dataclass
@@ -160,6 +163,9 @@ def _check_participant(repo_root: Path, participant_root: Path, trust_reviews: b
                         str(current.get("decision", "")),
                         str(current.get("review_id", "")),
                         len(current.get("findings") or ()),
+                        str(current.get("verification_statement") or ""),
+                        [str(f.get("summary", "")) for f in current.get("findings") or ()],
+                        str((current.get("reviewer") or {}).get("display_name", "")),
                     )
                 )
             continue
@@ -260,12 +266,19 @@ def render_review_ready(result: Result) -> list[tuple[str, str]]:
         marker = REVIEW_MARKER.format(review_id=decision.review_id)
         if decision.decision == "approved":
             action = "Open the app and click **Check for my review**, then reload to see it."
+            detail = f"\n> {_safe(decision.statement)[:600]}\n" if decision.statement else ""
         else:
             action = (
                 f"There are {decision.findings} finding(s) to look at. Open the app, click "
                 "**Check for my review**, then **Resume after review** on the quest."
             )
-        body = f"{marker}\n### Your review is ready\n\n**{decision.title}**: {word}.\n\n{action}\n"
+            detail = "".join(f"\n- {_safe(summary)[:300]}" for summary in decision.summaries[:10])
+            detail = f"\n{detail}\n" if detail else ""
+        who = f" by {_safe(decision.reviewer)}" if decision.reviewer else ""
+        body = (
+            f"{marker}\n### Your review is ready\n\n**{decision.title}**: {word}{who}.\n"
+            f"{detail}\n{action}\n"
+        )
         comments.append((decision.review_id, body))
     return comments
 

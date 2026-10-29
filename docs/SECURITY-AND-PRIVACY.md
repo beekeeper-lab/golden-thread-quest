@@ -363,6 +363,21 @@ that safe:
 
 Do not add a step that builds, runs or imports the pull request's files.
 
+`.github/workflows/pilot-ai-review.yml` (ADR-046) adds a model and a write path under the same
+rules, plus:
+
+- The job that holds `ANTHROPIC_API_KEY` is read-only and writes one plan file; the job that holds
+  `PILOT_BOT_TOKEN` has no model key and acts only on that plan, which it validates again
+  (`tools/ai_review.py::validate_plan`) and whose every path, identifier and length it constrains.
+  `tests/unit/test_pilot_workflows.py` fails if one job ever holds both.
+- The model sees the evidence as data between unguessable markers, has one function to return a
+  verdict through, and cannot act. Approval is decided in code from quotes that must appear verbatim
+  in the participant's files; instruction-like text in the evidence sends the hand-in to a person
+  without a model call.
+- A review is pushed only when the branch is still at the commit it was read at, only files under
+  `participant/` are written, and the push is never forced.
+- Only numbers and commit hashes are interpolated into shell steps (tested).
+
 ## Review integrity
 
 - Review decisions contain stable review and attempt IDs.

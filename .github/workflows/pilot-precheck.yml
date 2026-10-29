@@ -17,6 +17,7 @@ permissions:
   contents: read
   pull-requests: write
   issues: write
+  actions: write
 
 concurrency:
   group: pilot-precheck-${{ github.event.pull_request.number }}
@@ -48,19 +49,7 @@ jobs:
 
       # Data only: the tree is written to a folder and never executed.
       - name: Fetch the participant's files as data
-        run: |
-          mkdir -p "$RUNNER_TEMP/pr"
-          git fetch --no-tags --depth=1 origin "refs/pull/${NUMBER}/head"
-          if git cat-file -e FETCH_HEAD:participant 2>/dev/null; then
-            git archive FETCH_HEAD participant | tar -x --no-same-owner --no-same-permissions -C "$RUNNER_TEMP/pr"
-          else
-            mkdir -p "$RUNNER_TEMP/pr/participant"
-          fi
-          # Links are never followed: a link in the pull request could point at the runner.
-          find "$RUNNER_TEMP/pr" -type l -delete
-          gh api --paginate --slurp "repos/${REPO}/pulls/${NUMBER}/files?per_page=100" \
-            | .venv/bin/python -c 'import json,sys; print(json.dumps([r for page in json.load(sys.stdin) for r in page]))' \
-            > "$RUNNER_TEMP/files.json"
+        run: tools/fetch_pr_data.sh "$NUMBER" "$RUNNER_TEMP/pr"
 
       # A review record is a file the participant can write too, so a decision is announced
       # only when someone other than the pull request's author has a commit on the branch
@@ -72,12 +61,12 @@ jobs:
           AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
           other=$(gh api --paginate "repos/${REPO}/pulls/${NUMBER}/commits" \
-            --jq '.[] | select((.author.login // "") != env.AUTHOR) | .sha' | head -n 1)
+            --jq '.[] | select(.author.login != null and .author.login != env.AUTHOR) | .sha' | head -n 1)
           trust=""
           if [ -n "$other" ]; then trust="--trust-reviews"; fi
           .venv/bin/python tools/precheck.py $trust \
             --participant-root "$RUNNER_TEMP/pr/participant" \
-            --files-json "$RUNNER_TEMP/files.json" \
+            --files-json "$RUNNER_TEMP/pr/files.json" \
             --json "$RUNNER_TEMP/verdict.json" \
             --comment "$RUNNER_TEMP/comment.md" \
             --review-dir "$RUNNER_TEMP/reviews"
@@ -90,7 +79,8 @@ jobs:
           for name in gtq:needs-fixes gtq:ready-for-review gtq:reviewed; do
             gh label create "$name" --repo "$REPO" --force >/dev/null
           done
-          for name in gtq:needs-fixes gtq:ready-for-review gtq:reviewed; do
+          # A new push starts a new review, so the reviewer's own labels are cleared too.
+          for name in gtq:needs-fixes gtq:ready-for-review gtq:reviewed gtq:needs-human gtq:ai-approve gtq:ai-changes; do
             if [ "$name" != "$label" ] && echo ",$had," | grep -q ",$name,"; then
               gh pr edit "$NUMBER" --repo "$REPO" --remove-label "$name"
             fi
@@ -101,6 +91,7 @@ jobs:
           newly=false
           if [ "$label" = "gtq:ready-for-review" ] && ! echo ",$had," | grep -q ",gtq:ready-for-review,"; then newly=true; fi
           echo "newly_ready=$newly" >> "$GITHUB_OUTPUT"
+          echo "label=$label" >> "$GITHUB_OUTPUT"
 
       # One comment, edited in place on every push, so the thread does not fill up. An edit
       # sends no email, which is right for "still working on it".
@@ -140,3 +131,11 @@ jobs:
           if [ -n "$NTFY_URL" ]; then
             curl -fsS -H "Title: Pilot hand-in ready" -d "PR #${NUMBER} passed the automatic check: https://github.com/${REPO}/pull/${NUMBER}" "$NTFY_URL" >/dev/null || true
           fi
+
+      # Hand a ready hand-in to the automatic reviewer (pilot-ai-review.yml). A dispatch is
+      # allowed with the workflow token. If it is lost, the reviewer's 30-minute sweep finds the
+      # pull request by its ready-for-review label.
+      - name: Hand to the reviewer
+        if: steps.labels.outputs.label == 'gtq:ready-for-review'
+        run: |
+          gh workflow run pilot-ai-review.yml --repo "$REPO" -f pr="$NUMBER" || true
