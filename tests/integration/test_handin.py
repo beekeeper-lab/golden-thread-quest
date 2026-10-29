@@ -17,7 +17,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
-from quest_app.handin import HandInError, get_review, hand_in, run_command
+from quest_app.handin import HandInError, check_for_review, get_review, hand_in, run_command
 
 FORK_URL = "https://github.com/alice/golden-thread-quest.git"
 UPSTREAM_URL = "https://github.com/beekeeper-lab/golden-thread-quest.git"
@@ -37,6 +37,7 @@ class FakeGh:
     def __init__(self) -> None:
         self.calls: list[list[str]] = []
         self.pull_request: str | None = None
+        self.labels = ""
 
     def __call__(self, command: Sequence[str], cwd: Path) -> subprocess.CompletedProcess[str]:
         if command[0] != "gh":
@@ -45,6 +46,8 @@ class FakeGh:
         out = ""
         if command[1:3] == ["pr", "list"]:
             out = self.pull_request or ""
+            if out and "url,labels,headRepositoryOwner" in command:
+                out = f"{out}\t{self.labels}\n"
         elif command[1:3] == ["pr", "create"]:
             self.pull_request = "https://github.com/beekeeper-lab/golden-thread-quest/pull/7"
             out = self.pull_request + "\n"
@@ -306,3 +309,59 @@ def test_a_left_out_name_is_shown_as_it_was_saved(world: dict[str, Path]) -> Non
     (participant / EVIDENCE / "my café key.token").write_text("redacted\n")
     outcome = hand_in(participant, runner=FakeGh())
     assert f"{EVIDENCE}/my café key.token" in outcome.to_text()
+
+
+def test_check_for_review_says_where_the_pull_request_stands(world: dict[str, Path]) -> None:
+    gh = FakeGh()
+    hand_in(world["participant"], runner=gh)
+
+    gh.labels = ""
+    waiting = check_for_review(world["participant"], runner=gh)
+    assert waiting.headline.startswith("No review yet")
+    assert any("has not run yet" in line for line in waiting.details)
+
+    gh.labels = "gtq:needs-fixes"
+    assert any(
+        "found something to fix" in line
+        for line in check_for_review(world["participant"], runner=gh).details
+    )
+
+    gh.labels = "gtq:ready-for-review"
+    ready = check_for_review(world["participant"], runner=gh)
+    assert any("waiting for a reviewer" in line for line in ready.details)
+    assert gh.pull_request in ready.details
+
+
+def test_check_for_review_brings_a_decision_in(world: dict[str, Path]) -> None:
+    gh = FakeGh()
+    hand_in(world["participant"], runner=gh)
+    _review(world, "approved")
+    outcome = check_for_review(world["participant"], runner=gh)
+    assert outcome.brought_in
+    assert f"{QUEST}: Verified" in outcome.details
+
+
+def test_hand_in_no_longer_tells_the_participant_to_post_in_slack(
+    world: dict[str, Path],
+) -> None:
+    outcome = hand_in(world["participant"], runner=FakeGh())
+    assert "Slack" not in outcome.to_text()
+    assert "You do not need to tell anyone" in outcome.to_text()
+
+
+def test_a_branch_carrying_changes_outside_participant_is_not_brought_in(
+    world: dict[str, Path],
+) -> None:
+    gh = FakeGh()
+    hand_in(world["participant"], runner=gh)
+    _review(world, "approved")
+    lead = world["root"] / "lead-copy"
+    (lead / "README.md").write_text("changed program\n")
+    git(lead, "add", "README.md")
+    git(lead, "commit", "--quiet", "-m", "Not a review")
+    git(lead, "push", "--quiet")
+    head = git(world["participant"], "rev-parse", "HEAD")
+
+    with pytest.raises(HandInError, match="outside your participant folder"):
+        check_for_review(world["participant"], runner=gh)
+    assert git(world["participant"], "rev-parse", "HEAD") == head

@@ -35,6 +35,26 @@ NOTHING_HANDED_IN = (
     "submit a quest."
 )
 
+# Hand-in used to end by telling the participant to post in Slack. An automatic check runs on
+# the pull request now, and GitHub emails the participant when a reviewer has decided.
+_NO_NEED_TO_TELL_ANYONE = (
+    "You do not need to tell anyone. An automatic check runs on your pull request, and "
+    "GitHub emails you when a reviewer has decided."
+)
+
+# What the automatic check's labels mean to a participant (`tools/precheck.py` sets them).
+_CHECK_STATUS = {
+    "gtq:needs-fixes": (
+        "The automatic check found something to fix. Read the comment on your pull request, "
+        "fix it, then submit and hand in again."
+    ),
+    "gtq:ready-for-review": (
+        "Your hand-in passed the automatic check and is waiting for a reviewer."
+    ),
+    "gtq:reviewed": "A reviewer has decided, but it has not reached your copy yet. Try again.",
+}
+_CHECK_NOT_RUN = "The automatic check has not run yet. It usually takes a minute or two."
+
 # A GitHub remote URL, HTTPS or SSH, reduced to owner/name.
 _GITHUB_REMOTE = re.compile(r"github\.com[:/](?P<owner>[^/]+)/(?P<name>[^/]+?)(?:\.git)?/?$")
 
@@ -211,6 +231,18 @@ def _combine_with_github(repo: _Repo, branch: str) -> str | None:
             f"Could not reach GitHub: {_last_line(fetched)}. Check your internet connection "
             "and try again. Nothing was changed."
         )
+    # Only the participant's own folder may come in. A branch carrying anything else is not a
+    # hand-in or a review, and merging it would change the program this copy runs from.
+    incoming = repo.git("diff", "--name-only", "HEAD...FETCH_HEAD")
+    outside = [
+        path for path in incoming.stdout.splitlines() if not path.startswith(f"{PARTICIPANT_DIR}/")
+    ]
+    if incoming.returncode != 0 or outside:
+        raise HandInError(
+            "Your branch on GitHub has changes outside your participant folder, so none of it "
+            "was brought in. Nothing on this computer was changed. Ask in the pilot's Slack "
+            "thread; this needs a person to look."
+        )
     before = repo.git("rev-parse", "HEAD").stdout.strip()
     if repo.git("merge", "--ff-only", "--quiet", "FETCH_HEAD").returncode == 0:
         return before
@@ -285,7 +317,7 @@ def hand_in(repo_root: Path, runner: Runner = run_command) -> Outcome:
             headline = "Nothing new to hand in. Your pull request already has all your work."
         return Outcome(
             headline,
-            [existing[0], *review_note, *left_out, "Post in the pilot's Slack thread."],
+            [existing[0], *review_note, *left_out, _NO_NEED_TO_TELL_ANYONE],
             brought_in=bool(decisions),
         )
 
@@ -305,7 +337,7 @@ def hand_in(repo_root: Path, runner: Runner = run_command) -> Outcome:
     url = created.stdout.strip().splitlines()[-1] if created.stdout.strip() else ""
     return Outcome(
         "Handed in. Your pull request is open.",
-        [url, *left_out, "Post in the pilot's Slack thread that a quest is ready."],
+        [url, *left_out, _NO_NEED_TO_TELL_ANYONE],
     )
 
 
@@ -379,11 +411,55 @@ def get_review(repo_root: Path, runner: Runner = run_command) -> Outcome:
     after = repo.git("rev-parse", "HEAD").stdout.strip()
     if after == before:
         return Outcome(
-            "No review yet. Your reviewer posts in Slack when it is ready; run this again then."
+            "No review yet. GitHub emails you when your reviewer has decided; check again then."
         )
     decisions = _decisions(repo, before) or ["Your reviewer's changes are in."]
     return Outcome(
         "Your review is in.",
         [*decisions, "Reload the application in your browser, or run `gtq start`."],
         brought_in=True,
+    )
+
+
+def _check_status(repo: _Repo, branch: str) -> list[str]:
+    """What the automatic check says about the open pull request, in the participant's words.
+
+    Best effort: a failure to ask GitHub is not a failure to bring a review in, so it returns
+    nothing rather than raising.
+    """
+    try:
+        upstream_owner, upstream_name = repo.remote_slug(UPSTREAM_REMOTE)
+        fork_owner, _ = repo.remote_slug("origin")
+    except HandInError:
+        return []
+    listed = repo.gh(
+        "pr", "list", "--repo", f"{upstream_owner}/{upstream_name}", "--head", branch,
+        "--state", "open", "--json", "url,labels,headRepositoryOwner",
+        "--jq",
+        f'.[] | select(.headRepositoryOwner.login == "{fork_owner}")'
+        ' | [.url, ([.labels[].name] | join(","))] | @tsv',
+    )  # fmt: skip
+    if listed.returncode != 0 or not listed.stdout.strip():
+        return []
+    url, _, labels = listed.stdout.splitlines()[0].partition("\t")
+    for label in labels.split(","):
+        if label in _CHECK_STATUS:
+            return [_CHECK_STATUS[label], url]
+    return [_CHECK_NOT_RUN, url]
+
+
+def check_for_review(repo_root: Path, runner: Runner = run_command) -> Outcome:
+    """`get_review`, and when nothing has come in yet, where the pull request stands.
+
+    This is what the evidence page's "Check for my review" button runs. It reads from GitHub
+    only when the participant asks: the application makes no background network calls.
+    """
+    outcome = get_review(repo_root, runner)
+    if outcome.brought_in or outcome.headline == NOTHING_HANDED_IN:
+        return outcome
+    repo = _Repo(repo_root, runner)
+    return Outcome(
+        outcome.headline,
+        [*outcome.details, *_check_status(repo, repo.branch())],
+        brought_in=False,
     )

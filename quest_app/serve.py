@@ -726,6 +726,8 @@ class ActionHandler(BaseHTTPRequestHandler):
         # discarded it, so a rebuild that failed after a change landed was invisible to
         # everyone not reading JSON.
         advisories = [str(item) for item in (result.get("advisories") or ())]
+        if result.get("notice"):
+            advisories.insert(0, str(result["notice"]))
         self._redirect_back(None, notice=" ".join(advisories) or None)
 
     @staticmethod
@@ -866,7 +868,7 @@ class ActionHandler(BaseHTTPRequestHandler):
             # missing file from a submission refusal that promised to name each one (Phase 2A).
             location = f"{location}?problem={self.state.remember_flash(message[:PROBLEM_LIMIT])}"
         elif notice:
-            location = f"{location}?notice={self.state.remember_flash(notice[:300])}"
+            location = f"{location}?notice={self.state.remember_flash(notice[:PROBLEM_LIMIT])}"
         self.send_response(HTTPStatus.SEE_OTHER)
         self.send_header("Location", location)
         self.send_header("Content-Length", "0")

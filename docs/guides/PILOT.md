@@ -115,20 +115,23 @@ keys (for example `something.token`, or anything in a `secrets` folder), so they
 handed in. If one of them is a file the quest asks for, take any secret out of it, save it
 under the name the evidence page shows, and run `gtq hand-in` again.
 
-Then post in the pilot's Slack thread that a quest is ready for review.
+You do not need to tell anyone. An automatic check runs on your pull request within a few
+minutes and leaves a comment on it: either what to fix, or that it is waiting for a reviewer.
+That comment is not a review.
 
 While a quest is waiting for review, try to leave its files alone. If you do change one,
 run `gtq hand-in` again so your reviewer sees the latest version.
 
 ## Step 4: Get your review back
 
-When your reviewer says in Slack that they have reviewed it, type:
+GitHub emails you when your reviewer has decided. Then open the quest's page in the application
+and click **Check for my review**. If the application is not running, type this instead:
 
 ```
 gtq get-review
 ```
 
-It shows the decision, for example **"ba-ingest-transcript: Verified"**. Reload the
+Either way it shows the decision, for example **"ba-ingest-transcript: Verified"**. Reload the
 application in your browser to see it there, or type `gtq start` if it is not running.
 
 - **Verified** means that quest is done, and the home page recommends the next one.

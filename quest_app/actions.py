@@ -47,7 +47,12 @@ def quest_id_of(payload: dict[str, Any]) -> str:
 # Every action this application will perform. Anything else is refused before it is looked
 # at, whichever caller asked. Kept here rather than in the HTTP layer because the CLI needs
 # the same allowlist and a second copy is a second thing to drift.
-MUTATING_ACTIONS = frozenset(BY_ACTION) | {"rebuild", "run-validator", "record-review"}
+MUTATING_ACTIONS = frozenset(BY_ACTION) | {
+    "rebuild",
+    "run-validator",
+    "record-review",
+    "check-for-review",
+}
 READ_ACTIONS = frozenset({"health", "git-status", "actions"})
 
 # Re-exported so callers of the action layer need not know where it is defined.
@@ -162,6 +167,9 @@ class ActionRunner:
         if action == "record-review":
             return self._record_review(world, quest_id_of(payload), payload)
 
+        if action == "check-for-review":
+            return self._check_for_review(quest_id)
+
         if action == "run-validator":
             # Not a transition (ADR-017). It appends a result and changes nothing else.
             return self._run_validator(world, quest_id, payload)
@@ -211,6 +219,31 @@ class ActionRunner:
             "quest_id": quest_id,
             "state": state,
             "attempt_id": attempt_id,
+            "advisories": tuple(advisories),
+        }
+
+    def _check_for_review(self, quest_id: str) -> dict[str, Any]:
+        """Bring in the reviewer's decision, and say where the pull request stands.
+
+        The same code as `gtq get-review`, reached from the evidence page so a participant
+        who was told by email that a review is ready never has to open a terminal. It only
+        fetches and merges what the reviewer pushed to the participant's own branch; it never
+        pushes, never opens a pull request and never changes a state itself, so the claim
+        that only the terminal's `gtq hand-in` sends work to GitHub still holds.
+        """
+        from quest_app.handin import HandInError, check_for_review
+
+        try:
+            outcome = check_for_review(self.config.repo_root)
+        except HandInError as exc:
+            raise ValueError(str(exc)) from exc
+        advisories = self._rebuild() if outcome.brought_in else []
+        return {
+            "ok": True,
+            "action": "check-for-review",
+            "quest_id": quest_id,
+            "brought_in": outcome.brought_in,
+            "notice": outcome.to_text(),
             "advisories": tuple(advisories),
         }
 

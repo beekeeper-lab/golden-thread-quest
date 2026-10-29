@@ -1,0 +1,142 @@
+name: Pilot pre-check
+
+# Tells a participant, in plain words, whether their hand-in is complete, and tells the
+# program owner when one is ready to review, so nobody has to send a message to say so.
+#
+# Trust boundary. This runs on `pull_request_target`, so it has a write token and runs the
+# BASE repository's code, never the pull request's. The participant's files are fetched as
+# data into a separate folder and read by `tools/precheck.py`, which parses them and runs
+# nothing a participant wrote. Do not add a step that checks out, builds or executes the
+# pull request. It also holds no secret except the optional notification address, and a
+# pre-check never approves: only a reviewer's decision produces verified completion.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: pilot-precheck-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  precheck:
+    # Hand-ins come from a participant's own `pilot/<name>` branch. Every other pull request
+    # (a program change) is left to the ordinary CI.
+    if: startsWith(github.event.pull_request.head.ref, 'pilot/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      NUMBER: ${{ github.event.pull_request.number }}
+      REPO: ${{ github.repository }}
+    steps:
+      # No `ref:`. The default for this event is the base branch, which is the point.
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Install
+        run: |
+          uv venv .venv --python 3.13
+          uv pip install --python .venv/bin/python -e .
+
+      # Data only: the tree is written to a folder and never executed.
+      - name: Fetch the participant's files as data
+        run: |
+          mkdir -p "$RUNNER_TEMP/pr"
+          git fetch --no-tags --depth=1 origin "refs/pull/${NUMBER}/head"
+          if git cat-file -e FETCH_HEAD:participant 2>/dev/null; then
+            git archive FETCH_HEAD participant | tar -x --no-same-owner --no-same-permissions -C "$RUNNER_TEMP/pr"
+          else
+            mkdir -p "$RUNNER_TEMP/pr/participant"
+          fi
+          # Links are never followed: a link in the pull request could point at the runner.
+          find "$RUNNER_TEMP/pr" -type l -delete
+          gh api --paginate --slurp "repos/${REPO}/pulls/${NUMBER}/files?per_page=100" \
+            | .venv/bin/python -c 'import json,sys; print(json.dumps([r for page in json.load(sys.stdin) for r in page]))' \
+            > "$RUNNER_TEMP/files.json"
+
+      # A review record is a file the participant can write too, so a decision is announced
+      # only when someone other than the pull request's author has a commit on the branch
+      # (the reviewer pushes theirs). Commit authorship is not signed, so this keeps a casual
+      # forgery from being announced; it is not proof. Only a reviewer's decision, read by a
+      # person, is ever "verified".
+      - name: Check
+        env:
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          other=$(gh api --paginate "repos/${REPO}/pulls/${NUMBER}/commits" \
+            --jq '.[] | select((.author.login // "") != env.AUTHOR) | .sha' | head -n 1)
+          trust=""
+          if [ -n "$other" ]; then trust="--trust-reviews"; fi
+          .venv/bin/python tools/precheck.py $trust \
+            --participant-root "$RUNNER_TEMP/pr/participant" \
+            --files-json "$RUNNER_TEMP/files.json" \
+            --json "$RUNNER_TEMP/verdict.json" \
+            --comment "$RUNNER_TEMP/comment.md" \
+            --review-dir "$RUNNER_TEMP/reviews"
+
+      - name: Labels
+        id: labels
+        run: |
+          label=$(.venv/bin/python -c 'import json,os; print(json.load(open(os.environ["RUNNER_TEMP"]+"/verdict.json"))["label"] or "")')
+          had=$(gh pr view "$NUMBER" --repo "$REPO" --json labels --jq '[.labels[].name] | join(",")')
+          for name in gtq:needs-fixes gtq:ready-for-review gtq:reviewed; do
+            gh label create "$name" --repo "$REPO" --force >/dev/null
+          done
+          for name in gtq:needs-fixes gtq:ready-for-review gtq:reviewed; do
+            if [ "$name" != "$label" ] && echo ",$had," | grep -q ",$name,"; then
+              gh pr edit "$NUMBER" --repo "$REPO" --remove-label "$name"
+            fi
+          done
+          if [ -n "$label" ]; then
+            gh pr edit "$NUMBER" --repo "$REPO" --add-label "$label"
+          fi
+          newly=false
+          if [ "$label" = "gtq:ready-for-review" ] && ! echo ",$had," | grep -q ",gtq:ready-for-review,"; then newly=true; fi
+          echo "newly_ready=$newly" >> "$GITHUB_OUTPUT"
+
+      # One comment, edited in place on every push, so the thread does not fill up. An edit
+      # sends no email, which is right for "still working on it".
+      - name: Sticky comment
+        run: |
+          existing=$(gh api --paginate "repos/${REPO}/issues/${NUMBER}/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("<!-- gtq-precheck -->"))) | .id' | head -n 1)
+          if [ -n "$existing" ]; then
+            gh api --method PATCH "repos/${REPO}/issues/comments/${existing}" -F body=@"$RUNNER_TEMP/comment.md" >/dev/null
+          else
+            gh pr comment "$NUMBER" --repo "$REPO" --body-file "$RUNNER_TEMP/comment.md"
+          fi
+
+      # A decision gets a NEW comment, because a new comment is what makes GitHub email the
+      # participant. Each review id is announced once.
+      - name: Announce a decision
+        run: |
+          [ -d "$RUNNER_TEMP/reviews" ] || exit 0
+          for file in "$RUNNER_TEMP"/reviews/*.md; do
+            [ -e "$file" ] || continue
+            id=$(basename "$file" .md)
+            case "$id" in *[!A-Za-z0-9_-]*) continue ;; esac
+            seen=$(gh api --paginate "repos/${REPO}/issues/${NUMBER}/comments" \
+              --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | contains(\"<!-- gtq-review-ready:${id} -->\"))) | .id" | head -n 1)
+            if [ -z "$seen" ]; then
+              gh pr comment "$NUMBER" --repo "$REPO" --body-file "$file"
+            fi
+          done
+
+      # Optional. Set the repository secret PILOT_NTFY_URL (an ntfy topic URL) to be told
+      # when a hand-in becomes ready for review. Absent, nothing is sent.
+      - name: Tell the program owner
+        if: steps.labels.outputs.newly_ready == 'true'
+        env:
+          NTFY_URL: ${{ secrets.PILOT_NTFY_URL }}
+        run: |
+          if [ -n "$NTFY_URL" ]; then
+            curl -fsS -H "Title: Pilot hand-in ready" -d "PR #${NUMBER} passed the automatic check: https://github.com/${REPO}/pull/${NUMBER}" "$NTFY_URL" >/dev/null || true
+          fi
