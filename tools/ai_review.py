@@ -697,7 +697,9 @@ def _git(cwd: Path, *args: str, token: str | None = None) -> subprocess.Complete
     config = [("core.hooksPath", os.devnull)]
     if token:
         basic = base64.b64encode(f"x-access-token:{token}".encode()).decode()
-        config.append(("http.https://github.com/.extraheader", f"AUTHORIZATION: basic {basic}"))
+        # The header's shape, built from the token at run time; nothing is stored here.
+        header = f"AUTHORIZATION: basic {basic}"  # secret-scan: allow
+        config.append(("http.https://github.com/.extraheader", header))
     for key, value in config:
         env[f"GIT_CONFIG_KEY_{count}"] = key
         env[f"GIT_CONFIG_VALUE_{count}"] = value
