@@ -221,18 +221,16 @@ def main(argv: list[str]) -> int:
             base = work / "base"
             cloned = _run(
                 [
-                    "gh",
-                    "repo",
+                    "git",
                     "clone",
-                    args.repo,
-                    str(base),
-                    "--",
                     "--depth",
                     "1",
                     *(["--branch", args.ref] if args.ref else []),
+                    f"https://github.com/{args.repo}.git",
+                    str(base),
                 ],
                 cwd=work,
-                env=_env(),
+                env=_env(add=GIT_AUTH),
                 timeout=300,
             )
             if cloned.returncode != 0:
