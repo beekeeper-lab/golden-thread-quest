@@ -1,0 +1,16 @@
+[Unit]
+Description=Golden Thread Quest: review ready pilot hand-ins
+Documentation=https://github.com/beekeeper-lab/golden-thread-quest/blob/main/docs/guides/AI-REVIEWER-SETUP.md
+
+[Service]
+Type=oneshot
+# Runs tools/forge_review.py from a fresh clone of main, never from a working checkout. The
+# runner reads each hand-in as data and executes nothing a participant wrote.
+ExecStart=/usr/bin/python3 %h/.local/share/gtq-reviewer/forge_review.py
+EnvironmentFile=-%h/.config/gtq-reviewer.env
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+NoNewPrivileges=true
+TimeoutStartSec=3600
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gtq-reviewer
