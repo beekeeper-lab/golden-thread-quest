@@ -41,12 +41,12 @@ ADR-045 already added.
 participant: gtq hand-in  ->  PR  fork:pilot/<name> -> upstream main
                                   |
         pilot-precheck.yml  (pull_request_target; reads files as data)
-          labels, plain comment; if ready-for-review: dispatches ->
+          labels, plain comment, gtq:ready-for-review
                                   |
-        pilot-ai-review.yml   (workflow_dispatch; schedule sweep every 30 min)
+        forge_review.py       (systemd timer on Forge every 10 min; ADR-047)
           select  : which PRs need a verdict
-          review  : [model key, read-only]  tools/ai_review.py review  -> plan.json
-          apply   : [bot token, no model key] tools/ai_review.py apply  <- plan.json
+          review  : [claude login, no GitHub token] tools/ai_review.py review --backend cli -> plan
+          apply   : [gh login, no model]            tools/ai_review.py apply  <- plan
                        live    : record-review, push to fork branch, GitHub review, labels
                        shadow  : labels + job summary + notification, writes nothing
                        escalate: label gtq:needs-human, notification
@@ -55,14 +55,15 @@ participant: gtq hand-in  ->  PR  fork:pilot/<name> -> upstream main
         participant) -> participant: app "Check for my review" -> verified state and XP
 ```
 
-Trigger: the pre-check dispatches the reviewer when a hand-in is ready. A scheduled sweep, every
-30 minutes, selects any open pilot PR labelled `gtq:ready-for-review` with a submitted attempt
-and no verdict, so a dispatch that was lost is recovered without a server. `workflow_dispatch`
-with a PR number lets the owner re-run one by hand.
+Trigger: a systemd timer on the owner's server (ADR-047) runs `tools/forge_review.py` every ten
+minutes. It selects each open pilot PR labelled `gtq:ready-for-review` with a submitted attempt
+and no verdict, so a missed run is recovered by the next. `forge_review.py --pr N` reviews one by
+hand. The `pilot-ai-review.yml` workflow is a manual fallback with the same three commands, using
+repository secrets; nothing triggers it.
 
 ## 4. Modes
 
-Repository variable `PILOT_AI_REVIEW_MODE`:
+`PILOT_AI_REVIEW_MODE` (the server's `~/.config/gtq-reviewer.env`; a repository variable for the manual workflow):
 
 | Value | Behavior |
 |---|---|
@@ -142,7 +143,7 @@ model key), so a re-run picks the same ones and a participant cannot choose an i
    turns the plan into an escalation.
 3. Clone the participant's fork branch with the bot token, copy only the files the review
    changed, and only paths under `participant/`, commit as the bot (`Review: <quest-id>`), and
-   push. A push that is not a fast-forward is abandoned; the next sweep reviews again.
+   push. A push that is not a fast-forward is abandoned; the next run reviews again.
 4. Post a GitHub review on the pull request: approve, or request changes, with the summary.
 5. The push makes the pre-check run, which sets `gtq:reviewed` and clears the reviewer's own
    labels, so a live decision adds none (shadow mode does, `gtq:ai-approve` / `gtq:ai-changes`).
@@ -162,13 +163,16 @@ by hand; you do not need to do anything"), notification to the owner.
 
 ## 9. Security
 
-- The model-key job has `permissions: {contents: read}` and no bot token. The apply job has the
-  bot token and no model key and reads only `plan.json`, which it validates against the schema
-  again and whose every path and string it constrains.
-- Neither job executes participant files. The apply job's only participant-derived action is
+- On the server (ADR-047) the model runs through `claude -p` with every tool off, no settings, no
+  session and an empty working folder, in a process whose environment holds no GitHub token. The
+  apply process gets the `gh` token, no model access, and reads only `plan.json`, which it
+  validates against the schema again and whose every path and string it constrains. Both run as
+  the owner's operating-system user, so the split is by process, not by credential store.
+- Each run executes a fresh clone of `main`, never a working checkout, and neither process
+  executes participant files. The apply step's only participant-derived action is
   `record-review`, which parses them.
-- The bot is a dedicated machine user with write access to the repository. Its token is used only
-  to push to a pilot branch and to post a review.
+- Commits are made under the owner's GitHub account (the recorded reviewer name stays "Claude
+  (automated reviewer)"). The manual workflow fallback uses a bot token instead.
 - Model-authored text is never placed in a shell command. It reaches files through the
   application's own record-review and the comment through `--body-file`.
 - A participant can make the reviewer escalate (by instructing it) and cannot make it approve:
@@ -179,17 +183,20 @@ by hand; you do not need to do anything"), notification to the owner.
 
 ## 10. Configuration the owner provides
 
-| Item | Where | Purpose |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | Repository secret | The model call |
-| `PILOT_BOT_TOKEN` | Repository secret | The bot's personal access token (repo write) |
-| `PILOT_NTFY_URL` | Repository secret, optional | Pings for escalations and shadow verdicts |
-| `PILOT_AI_REVIEW_MODE` | Repository variable | `off`, `shadow` (default) or `live` |
-| `PILOT_AI_SAMPLE_EVERY` | Repository variable, optional | Sampling rate, default 5 |
-| `PILOT_AI_SAMPLE_SALT` | Repository secret, optional | Salt for the sample; defaults to the model key |
-| `PILOT_AI_MODEL` | Repository variable, optional | Model id, default `claude-opus-5-5` |
+On the server, `~/.config/gtq-reviewer.env` (template `deploy/forge/gtq-reviewer.env.example`):
 
-With the key or token missing the workflow escalates instead of failing silently.
+| Item | Purpose |
+|---|---|
+| `PILOT_AI_REVIEW_MODE` | `off`, `shadow` (default) or `live` |
+| `PILOT_AI_SAMPLE_EVERY` | Sampling rate, default 5 |
+| `PILOT_AI_SAMPLE_SALT` | Salt for the sample (optional but recommended) |
+| `PILOT_AI_MODEL` | Model id, default `claude-opus-5-5` |
+| `NTFY_URL` | Pings for escalations and shadow verdicts (optional) |
+
+The server's `claude` and `gh` logins supply the model and the push access. The manual workflow
+fallback instead reads the repository secrets `ANTHROPIC_API_KEY` and `PILOT_BOT_TOKEN`.
+
+With the model unavailable the reviewer escalates instead of failing silently.
 
 ## 11. Acceptance criteria
 
@@ -201,6 +208,7 @@ With the key or token missing the workflow escalates instead of failing silently
 4. Every gate in section 7 is covered by a test, including a forged quote, an injection attempt,
    an external-write quest, participant code in the proof, truncation and a model failure.
 5. In shadow mode nothing is written to a participant's branch.
-6. A decision is applied once per submission, and a lost dispatch is recovered by the sweep.
-7. No workflow job holds both the model key and the bot token, and none runs participant files.
+6. A decision is applied once per submission, and a missed run is recovered by the next one.
+7. The process that reaches the model holds no GitHub token (and in the manual workflow no job
+   holds both the model key and the bot token), and none runs participant files.
 8. The setup guide lets the owner configure it and switch modes without reading code.

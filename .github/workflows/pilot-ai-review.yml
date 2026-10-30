@@ -9,9 +9,11 @@ name: Pilot AI review
 # Neither executes anything from the pull request: its files are fetched as data and parsed.
 # Do not add a step that builds, runs or imports them, and do not give one job both secrets.
 #
-# Triggers: the pre-check dispatches this for a hand-in that is ready; a sweep every 30
-# minutes finds any labelled `gtq:ready-for-review` that was missed; the Actions tab runs one
-# by hand (enter its number).
+# This is the MANUAL fallback (ADR-047). The reviewer normally runs on the owner's own machine
+# from a timer (tools/forge_review.py, deploy/forge/), with that machine's logins and no
+# repository secret. Nothing here runs on a schedule or is dispatched by the pre-check any more.
+# To use it, add the secrets below and run it from the Actions tab (enter a number, or leave
+# blank to sweep).
 #
 # Mode is the repository variable PILOT_AI_REVIEW_MODE: off, shadow (the default) or live.
 on:
@@ -20,8 +22,6 @@ on:
       pr:
         description: "Pull request number (leave blank to sweep every ready hand-in)"
         required: false
-  schedule:
-    - cron: "*/30 * * * *"
 
 permissions:
   contents: read

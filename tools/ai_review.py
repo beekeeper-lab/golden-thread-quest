@@ -6,6 +6,8 @@ Specification: docs/design/08-ai-reviewer-specification.md. Three commands:
     review   read one hand-in as data, ask the model, run the gate, write a plan (no write access)
     apply    carry a plan out: record the review, push it, post a GitHub review (no model key)
 
+The model is reached by the Anthropic API (`--backend api`, a key) or by the `claude` command on
+the machine's own login (`--backend cli`, used by the Forge runner, tools/forge_review.py).
 The two halves never run in the same job, so nothing that holds the model key can write and
 nothing that can write is told anything by the model except through the validated plan. The
 participant's files are read as data and never executed. The model returns one structured
@@ -415,6 +417,60 @@ def call_model(system: str, user: str, model: str) -> dict[str, Any]:
     raise ModelError("the model returned no verdict")
 
 
+def call_model_cli(system: str, user: str, model: str) -> dict[str, Any]:
+    """The same call through the `claude` command, on the machine's own login (no API key).
+
+    Run in an empty folder with every tool off and no settings, hooks or session, so the
+    evidence is read as text by a model that can do nothing but answer. The environment is cut
+    down to what the command needs to sign in: no GitHub token reaches it.
+    """
+    keep = ("PATH", "HOME", "LANG", "USER", "XDG_CONFIG_HOME")
+    env = {k: v for k, v in os.environ.items() if k in keep}
+    prompt = system.replace("calling submit_review", "the structured output")
+    try:
+        with tempfile.TemporaryDirectory(prefix="gtq-model-") as empty:
+            result = subprocess.run(  # noqa: S603
+                [  # noqa: S607
+                    "claude",
+                    "-p",
+                    "--output-format",
+                    "json",
+                    "--no-session-persistence",
+                    "--tools",
+                    "",
+                    "--setting-sources",
+                    "",
+                    "--strict-mcp-config",
+                    "--model",
+                    model,
+                    "--system-prompt",
+                    prompt,
+                    "--json-schema",
+                    json.dumps(VERDICT_SCHEMA),
+                ],
+                input=user,
+                capture_output=True,
+                text=True,
+                cwd=empty,
+                env=env,
+                check=False,
+                timeout=900,
+            )
+        reply = json.loads(result.stdout)
+    except Exception as exc:  # missing command, timeout, bad output: all "could not review"
+        raise ModelError(f"the model could not be called ({type(exc).__name__})") from exc
+    verdict = reply.get("structured_output") if isinstance(reply, dict) else None
+    if result.returncode != 0 or reply.get("is_error") or not isinstance(verdict, dict):
+        raise ModelError("the model returned no verdict")
+    return dict(verdict)
+
+
+BACKENDS: dict[str, Callable[[str, str, str], dict[str, Any]]] = {
+    "api": call_model,
+    "cli": call_model_cli,
+}
+
+
 # --- the gate ----------------------------------------------------------------------------------
 
 
@@ -610,6 +666,7 @@ def review_hand_in(
     mode: str = "shadow",
     sample_every: int = DEFAULT_SAMPLE_EVERY,
     model: str = DEFAULT_MODEL,
+    backend: str = "api",
     caller: Callable[[str, str], dict[str, Any]] | None = None,
 ) -> Plan:
     if mode == "off":
@@ -647,7 +704,7 @@ def review_hand_in(
     if pre.escalations and not pre.reason.startswith("The automatic review could not run"):
         return pre
     try:
-        raw = (caller or (lambda s, u: call_model(s, u, model)))(
+        raw = (caller or (lambda s, u: BACKENDS[backend](s, u, model)))(
             SYSTEM_PROMPT, build_user_message(bundle, note)
         )
         jsonschema.validate(raw, VERDICT_SCHEMA)
@@ -905,6 +962,7 @@ def command_review(args: argparse.Namespace) -> int:
         mode=args.mode,
         sample_every=args.sample_every,
         model=args.model,
+        backend=args.backend,
     )
     args.out.write_text(json.dumps(plan.to_json(), indent=2), encoding="utf-8")
     print(f"{plan.action}: {plan.reason}")
@@ -1041,7 +1099,7 @@ def command_apply(args: argparse.Namespace) -> int:
     if not live:
         _notify(f"{head} (shadow): the reviewer would {shown} {plan.title}. {reason}")
         return 0
-    body = (
+    body = "Automated review by Claude. " + (
         plan.verification
         if action == APPROVE
         else ("Changes are needed: " + "; ".join(f["summary"] for f in plan.findings[:5]))
@@ -1071,6 +1129,7 @@ def main(argv: list[str]) -> int:
     review.add_argument("--mode", default="shadow", choices=["off", "shadow", "live"])
     review.add_argument("--sample-every", type=int, default=DEFAULT_SAMPLE_EVERY)
     review.add_argument("--model", default=DEFAULT_MODEL)
+    review.add_argument("--backend", default="api", choices=sorted(BACKENDS))
     review.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parent.parent)
     review.add_argument("--out", type=Path, required=True)
     review.set_defaults(func=command_review)

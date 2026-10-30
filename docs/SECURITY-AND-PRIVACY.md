@@ -370,6 +370,11 @@ rules, plus:
   `PILOT_BOT_TOKEN` has no model key and acts only on that plan, which it validates again
   (`tools/ai_review.py::validate_plan`) and whose every path, identifier and length it constrains.
   `tests/unit/test_pilot_workflows.py` fails if one job ever holds both.
+- Normally (ADR-047) the same commands run from a timer on the owner's server
+  (`tools/forge_review.py`): the model process (`claude -p`, no tools, no settings, an empty folder)
+  has no GitHub token, the apply process has no model access, each run executes a fresh clone of
+  `main`, and `tests/integration/test_forge_review.py` checks the two environments. Both run as the
+  owner's user, so the split is by process, and commits are made under the owner's account.
 - The model sees the evidence as data between unguessable markers, has one function to return a
   verdict through, and cannot act. Approval is decided in code from quotes that must appear verbatim
   in the participant's files; instruction-like text in the evidence sends the hand-in to a person

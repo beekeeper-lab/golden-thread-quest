@@ -17,7 +17,6 @@ permissions:
   contents: read
   pull-requests: write
   issues: write
-  actions: write
 
 concurrency:
   group: pilot-precheck-${{ github.event.pull_request.number }}
@@ -131,11 +130,3 @@ jobs:
           if [ -n "$NTFY_URL" ]; then
             curl -fsS -H "Title: Pilot hand-in ready" -d "PR #${NUMBER} passed the automatic check: https://github.com/${REPO}/pull/${NUMBER}" "$NTFY_URL" >/dev/null || true
           fi
-
-      # Hand a ready hand-in to the automatic reviewer (pilot-ai-review.yml). A dispatch is
-      # allowed with the workflow token. If it is lost, the reviewer's 30-minute sweep finds the
-      # pull request by its ready-for-review label.
-      - name: Hand to the reviewer
-        if: steps.labels.outputs.label == 'gtq:ready-for-review'
-        run: |
-          gh workflow run pilot-ai-review.yml --repo "$REPO" -f pr="$NUMBER" || true

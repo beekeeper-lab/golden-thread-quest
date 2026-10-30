@@ -54,11 +54,11 @@ def test_the_precheck_runs_from_the_base_repository_and_only_for_pilot_branches(
     assert "startsWith(github.event.pull_request.head.ref, 'pilot/')" in condition
 
 
-def test_the_reviewer_is_triggered_by_dispatch_and_swept_on_a_schedule() -> None:
+def test_the_workflow_reviewer_is_a_manual_fallback_the_forge_timer_does_the_sweep() -> None:
     triggers = _on(REVIEW)
-    assert set(triggers) == {"workflow_dispatch", "schedule"}
-    assert "pull_request" not in triggers and "pull_request_target" not in triggers
-    assert "pilot-ai-review.yml" in json.dumps(PRECHECK)
+    assert set(triggers) == {"workflow_dispatch"}
+    assert "pilot-ai-review" not in json.dumps(PRECHECK)
+    assert "actions" not in PRECHECK["permissions"]
 
 
 def test_the_mode_defaults_to_shadow_and_can_be_turned_off() -> None:
