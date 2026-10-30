@@ -24,4 +24,13 @@ attempts:
   evidence_path: participant/evidence/jira-read-assigned-stories/jira-attempt-001
   submission_id: submission-20261022204218-2fac7a
   review_id: review-20261022212509-203cbb
-updated_at: '2026-10-22T21:25:09Z'
+- attempt_id: ba-attempt-001
+  quest_id: ba-ingest-transcript
+  quest_version: 4
+  content_hash: sha256:237610e383705248804a8bcc80cf44ba44ab1b14e560816f01fb38623147976e
+  state: submitted
+  started_at: '2026-10-28T00:23:26Z'
+  updated_at: '2026-10-30T19:04:16Z'
+  evidence_path: participant/evidence/ba-ingest-transcript/ba-attempt-001
+  submission_id: submission-20261030190416-114346
+updated_at: '2026-10-30T19:04:16Z'

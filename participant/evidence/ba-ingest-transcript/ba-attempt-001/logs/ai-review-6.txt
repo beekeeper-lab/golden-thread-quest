@@ -1,0 +1,1635 @@
+# Sixth and last AI review, run 2026-10-28 (UTC): two independent Claude reviewers, each started fresh, each with its own
+# angle (the claims in the text changed since the fifth review; evidence integrity and privacy); every finding then checked
+# by two independent verifiers (does it reproduce; is it real, and how much does it matter), except reviewer A's finding 8,
+# which is the same as reviewer B's finding 2; and a separate synthesizer that read all of it. 27 agents in all.
+# The reviewers were given the quest, the files, a list of what changed since the fifth review, and the builder's claims to
+# falsify. They were not given the builder's verdict. Beau decided before it ran that its confirmed findings would be fixed
+# in the wording or listed as limitations, with no further AI review.
+# Below the first blank line are five parts, in this order: reviewer A's report, reviewer B's report, the verifiers' verdicts
+# on B's findings, the verifiers' verdicts on A's findings, and the synthesis. Each report and verdict is exactly as
+# returned, with these changes: lines that start with "#####", "=====" or "-----" are labels added when the parts were put
+# together; each part ends with a newline; and in the verdicts on finding A2, two example phone numbers that might belong to
+# real people were replaced, keeping each one's digit count and grouping: a French-format number became +44 2 07 94 60 12
+# (the start of a number in Ofcom's drama range, too short to dial), and a 15-digit +44 string became +44 2079 4609 5812 3
+# (the drama-range number 020 7946 0958 followed by 123). Each replacement gives the same redaction result as the number it
+# replaces. The other phone numbers in it are in reserved ranges, are reserved numbers with other digits after them, or are
+# too short to dial. Its non-ASCII characters are kept as returned: 8 middle dots, 6 ellipses and 1 right arrow.
+# Line numbers in it refer to the files as they were before the changes it led to. What changed after this review is listed
+# in PROOF.md.
+
+##### Reviewer A (the claims in the text changed since the fifth review): report as returned
+
+EXERCISED:
+- Read in full: the quest (content/quests/ba-ruins/ingest-transcript.md), SKILL.md, PROOF.md, ingest.py, tests/test_ingest.py, tests/planted_bugs.py, tests/check_claims.py, logs/tests.txt, planted-bugs.txt, claims-check.txt, second-run.txt, unparseable.txt, ai-review-5.txt. Also the headers of ai-review-1 to 4 and the fourth review's F5 finding. Confirmed "no registered validator": this quest's front matter has no validators key, while three other quests have one.
+- Everything ran from a mktemp -d folder with the application's .venv Python, using -I -B (-I ignores PYTHON* variables, so -B keeps the no-bytecode rule). I used a byte-identical copy of ingest.py (sha256 d7d8ed6a..., the skill_sha256 in the provenance).
+  1. The real suite: 32 passed, 0 failed.
+  2. The real check_claims.py: "41 line(s) claiming a test, 185 planted-bug reference(s), 85 planted bugs caught in the log, 32 of 32 tests made to fail by at least one planted bug, 0 problem(s)". This is identical to the log.
+  3. All 85 planted bugs, not just 15. Each was applied to its own temp copy and the suite was run through INGEST_UNDER_TEST, keeping every FAIL message. Results:
+     - 85 of 85 turned the suite red, and the failing-test set matched logs/planted-bugs.txt for all 85.
+     - Each "old" text occurs exactly once. The 85 names are distinct, and every one is named somewhere in SKILL.md or PROOF.md.
+     - I read the failure message behind every citation in the changed text.
+     - Under the backtracking bug, the other 31 tests pass in 0.3 s and hostile_text_cannot_stall_the_tool alone was still running at 20 s.
+  4. Behavior probes through parse_vtt/attribute/redact, plus full ingest() runs:
+     - Section 2: a bad meeting file with a non-UTF-8 transcript (the meeting problems are reported first).
+     - Section 4: a line of spaces inside a cue.
+     - Section 5: the four refusal ways in both forms, and the three not-caught bullets at their limits (200/201-character names, 21 classes, 20 classes of 50 characters, one 51-character class, 400 spaces).
+     - Section 7: the three exceptions, inline tags, and 15 Markdown-sensitive inputs rendered with markdown-it CommonMark. All showed the same words; only leading spaces on a continuation line collapse.
+     - Section 8: every listed separator and extension form, (0) and (20), 7/8/15/16 digits, the six-group limit, every Known-misses item, a split across cues, and the record file name.
+     - Section 9: whole, cut-short and damaged timing lines in five places, mistyped arrows in five places, the WEBVTT-line, NOTE-line and STYLE/REGION-line cases, 15 speech-like lines, ten merge combinations, speaker tags broken at three points, and cues with no words.
+  5. check_claims.py on a temp copy of the docs, tests and log: seven mutations, plus one weakened test (finding 10).
+  6. Repository untouched: git status and file times were the same before and after. The temp folder is deleted.
+
+CLAIMS:
+- K1 FALSIFIED (OBSERVED). Findings 1 to 9 each reproduce a changed sentence that says more than the code or tests show.
+- K2 count and kills CONFIRMED; citations partly FALSIFIED (OBSERVED).
+  - 85 entries, 85 of 85 caught in my independent run.
+  - The six new bugs fail the named behavior:
+    - reordered: utterances_keep_source_order "order changed"
+    - not zero-padded: ids_are_stable "IDs wrong"
+    - anchors: "no anchor to cite U-0002 by"
+    - any 'Name:': zoom_style "a sentence was taken for a speaker"
+    - reader: verbatim test gets "\# not a heading" etc.
+    - no-break space: U-0006 becomes Unattributed with "Ben Example:\xa0A no-break space..."
+  - All other citations in the changed text are caught by a named or obviously matching test, except those in finding 9.
+- K3 CONFIRMED (OBSERVED), with undisclosed limits (finding 10).
+  - The rerun matches the log exactly.
+  - Flagged as expected: an unbacked "checked by" line, an unbacked "Tests:" row, an unknown bug name, a cited bug marked SURVIVED, a cited bug missing from the log, and a test no bug fails.
+  - Missed, as SKILL.md admits: "The rendering test also checks the headings." and "Every refusal is verified by the suite."
+- K6 FALSIFIED (OBSERVED): findings 1, 2, 4, 5, 6 and 7, and finding 3 for section 8's first paragraph.
+
+VETOES:
+- V3 FIRED. Basis: OBSERVED false statements in changed text (findings 1 to 9). Each can be fixed by wording or a limitation line, and none needs a code change. Individually they are Medium or Low, as rated below. Submission should wait for the wording fixes.
+
+FINDINGS:
+
+1. A speaker tag broken right after "<v" is not refused. Inside another speaker's cue, its words go to that speaker as certain.
+- Severity: Medium.
+- Location: SKILL.md section 9: "a cue with no words, ... or with a speaker tag broken across two lines". Related: the PROOF.md AC 2 row's planted bug, and the unchanged first-review row "Fixed with a test".
+- Reproduction (OBSERVED, ingest() end to end, roster Ada Example and Ben Example):
+  - Cue "Ada Example: I will take the story.\n<v\nBen Example>No, I will.</v>" -> written, uncertain [], U-0001 "Ada Example" certain, words "I will take the story.\n<v\nBen Example>No, I will.</v>".
+  - "<v Ada Example>I will take it.\n<v\nBen Example>No, I will.</v>" -> Ada Example, certain.
+  - "<v\nAda Example>split</v>" alone -> Unattributed, with the tag kept as words. A trailing space after "<v" and a break after a class behave the same way.
+  - Only a break inside the name is refused: "<v Ada\nExample>split</v>" -> "a speaker tag runs across two lines".
+  - Misattribution needs a Zoom-form cue or an unclosed voice tag.
+- Expected source: SKILL.md section 9; quest AC 2.
+- Fix:
+  - Section 9: "with a speaker tag whose name is broken across two lines".
+  - Add to section 5's not-caught list and to PROOF.md's limitations: "A voice tag broken right after `<v` or after a class is not read as a tag: its text stays in the words, a cue with no other label is marked unattributed, and inside another speaker's Zoom-form cue or unclosed voice tag the words are credited to that speaker."
+
+2. An international number in a listed form stays fully visible when more digits follow it closely.
+- Severity: Medium.
+- Location: SKILL.md section 8, first paragraph ("in the forms listed below are redacted wherever they appear") and the international bullet ("with 8 to 15 digits in all"); PROOF.md redaction paragraph. It is not in the Known misses or the limitations.
+- Reproduction (OBSERVED):
+  - ingest() of "<v Ada Example>Call me on +44 20 7946 0958.\n2026 is when we launch.</v>" -> the record keeps "> Call me on +44 20 7946 0958.".
+  - "Or my mobile, +44 7700 900123. 2026 is busy." -> kept.
+  - "Or +44 20 7946 0958 on its own." -> redacted. The provenance says phone: 1.
+  - redact("Call +44 20 7946 0958 1234 now") and "Ring +44 20 7946 0958 (2026 budget line)." -> unchanged.
+  - With a comma ("Call +44 20 7946 0958, 2026 is busy.") -> redacted.
+  - With 15 or fewer digits, the following digits are swallowed: "Call +44 20 7946 0958 123 now" -> "Call [REDACTED:PHONE] now"; "... 0958 - 2 lines are free." -> "Call [REDACTED:PHONE] lines are free."
+  - Cause (INFERRED, ingest.py line 89): the lookahead counts digits through up to four spaces, dots, hyphens, dashes, parentheses or line breaks.
+  - No leak in this attempt: the record contains no "+" (OBSERVED).
+- Expected source: SKILL.md section 8; AC 9; the safety constraint on contact details.
+- Fix:
+  - Add to the Known misses and to PROOF.md: "an international number followed, within four spaces, dots, hyphens, dashes, parentheses or line breaks, by more digits: at 16 or more digits in all the whole number stays visible (`+44 20 7946 0958.` then a line starting `2026`); at 15 or fewer the following digits are redacted with it."
+  - Add to the bullet: "The count includes digits that follow within four separator characters."
+
+3. The record's file name is copied unredacted.
+- Severity: Low.
+- Location: SKILL.md section 8: "in every value copied into the provenance file. The transcript ID is the one value that is not redacted"; PROOF.md line 46 "every value copied into the provenance file".
+- Reproduction (OBSERVED): --out .../call-317-555-0100.md -> written. The provenance has "record_file: call-317-555-0100.md" and the record has "provenance: call-317-555-0100.provenance.yaml".
+- Fix: "The transcript ID and the record's file name are not redacted; the meeting-file check refuses contact details in the ID, and nothing checks the file name."
+
+4. The voice-tag limits are misdescribed.
+- Severity: Low.
+- Location: SKILL.md section 5: "A voice tag longer than 200 characters, or with more than 20 classes, is not read as a tag"; the same sentence in PROOF.md's limitations; the fifth-review row 8.
+- Reproduction (OBSERVED):
+  - These tags ARE read: a 1,035-character tag ("<v" + 20 classes of 50 "c" + " Ben Example>") -> Ben Example, certain; a 414-character tag ("<v" + 400 spaces + "Ben Example>") -> Ben Example; a 204-character tag with a 200-character name.
+  - This tag is NOT read: a 67-character tag with one 51-character class. Alone -> Unattributed. Inside "<v Ada Example>Hi. ...No.</v>" -> Ada Example, certain.
+- Fix: "A voice tag whose name is longer than 200 characters, or that has more than 20 classes or a class longer than 50 characters, is not read as a tag."
+
+5. An unlisted guest's line also stays with the listed speaker in the Teams form.
+- Severity: Low.
+- Location: SKILL.md section 5, first not-caught bullet ("Zoom-form cue"); PROOF.md limitations ("In the Zoom form").
+- Reproduction (OBSERVED): "<v Ada Example>I will take it.\nCarol Guest: I do not.</v>" -> Ada Example, certain, both lines.
+- Fix: "inside a listed speaker's cue, in either form"; drop "In the Zoom form," from PROOF.md.
+
+6. Section 9 understates when a damaged cue is merged, and misses one kind of damage.
+- Severity: Low.
+- Location: SKILL.md section 9: "merged into that cue when both have the same `Name:` label or none"; section 4 and PROOF.md line 42: "Section 9 lists ... the kinds that are not caught".
+- Reproduction (OBSERVED, ingest()):
+  - "Ada Example: Agreed.\n00:00:05.000 -.> 00:00:06.000\nWho said this?" -> one utterance, Ada Example, certain. A labeled cue followed by an unlabeled one is merged, against the stated condition.
+  - The same merge happens with an unlisted label ("Carol Guest: Second.") and with unclosed voice tags.
+  - "00:00:03.O00 -> 00:00:04.000" (a letter O for a zero plus a short arrow) inside a cue's words -> merged. It is in neither list.
+- Fix:
+  - "merged into that cue, under its speaker, unless Section 5's rules find a different listed or generic speaker, when the file is refused".
+  - Add "a timing line with both a damaged time and a damaged arrow" to the not-caught list.
+  - Section 4 and PROOF.md: "the kinds known not to be caught".
+
+7. Two refusal statements are broader than the code (the safe direction).
+- Severity: Low.
+- Location: SKILL.md section 9 and PROOF.md's limitations: "A line made only of times, arrow pieces or setting-like words ... is refused". The second review's row 1 has the same wording. SKILL.md section 5: "`<v Ben&#32;Example>` is read as Ben Example".
+- Reproduction (OBSERVED):
+  - Inside a cue, "->", "--", "re:budget", "-> 10:30" and "note:x 10:30" are kept as speech.
+  - "<v Ben Example>Hi</v>\n<v Ben&#32;Example>more</v>" -> refused: "more than one speaker tag".
+- Fix:
+  - Add "starting with a time" in all three places.
+  - Add to section 5: "A cue that names one speaker both plainly and with character references is refused as two speakers."
+
+8. The F1 row says the test tries "each cut-short form".
+- Severity: Low.
+- Location: PROOF.md F1 row.
+- Reproduction (OBSERVED): of 48 cut-short or one-character-removed forms, the test skips "0" and "00" because they have no colon.
+- Fix: add "that still holds a colon", as the AC 11 row and the test docstring already say.
+
+9. Three planted-bug citations are not backed the way the text says.
+- Severity: Low.
+- (a) The AC 2 row cites "a speaker tag across two lines accepted", but none of its four tests fails under it.
+  - Reproduction (OBSERVED): only unparseable_transcripts_are_reported_and_nothing_is_written fails, on its reason check: "reason 'line 3: the cue contains a control character...' does not mention 'across two lines'". The tag is still refused, not accepted.
+- (b) The paragraph after the table: "The three tests that check SKILL.md rules have planted bugs too (...)". None of the six listed bugs fails command_line_exit_codes.
+  - Reproduction (OBSERVED): only "a different record overwritten" fails it, with "exit codes were [0, 0, 2, 0]".
+- (c) The AC 11 row cites "character references beyond the last character, surrogates and NUL accepted", but none of the three is accepted under it.
+  - Reproduction (OBSERVED): "&#1114112;" raises ValueError, "&#xD800;" raises UnicodeEncodeError at write, and "a&#0;b" is refused as a control character. The test catches the crash.
+- Fix: (a) name the unparseable test in the AC 2 row and say the bug only changes the reason. (b) Add "a different record overwritten". (c) Optionally reword the bug name to "crash or are refused for another reason".
+
+10. The claims check can pass while a named test no longer catches its named planted bug. This is not disclosed.
+- Severity: Low.
+- Location: SKILL.md section 11 claims-check paragraph; PROOF.md line 19 and its limitations line.
+- Reproduction (OBSERVED):
+  - In a temp copy, utterances_keep_source_order was weakened to check only `len(back) == 12`. "utterances reordered" no longer fails it, but is still killed by seven other tests. "IDs not zero-padded" still fails it, through read_record.
+  - The temp check printed "... 32 of 32 tests made to fail ... 0 problem(s)", while the AC 1 row still cites that test.
+  - In changed text, PROOF.md line 215 ("checks only the quoted words and the number of headings") names no planted bug, and no planted bug makes the heading-count assertion fire.
+  - Outside the listed changes: SKILL.md line 141 ("Every test that expects a refusal also checks ...") is an unrecognized claim with no planted bug. That makes the unchanged F2 row ("every claim of a test ... now names a planted bug") false.
+- Fix:
+  - Add to the limitation: "It does not check that a named planted bug is caught by a test on the same line, a line passes if it names a bug for any one of its claims, and a test counts as made to fail even through a shared helper such as the record reader."
+  - F2: "every claim of a test that check_claims.py recognizes".
+
+11. The review count will be out of date once this review is saved.
+- Severity: Low.
+- Location: PROOF.md "Five AI reviews ran before submission", and the artifacts row "ai-review-1.txt to ai-review-5.txt".
+- Basis: INFERRED (this sixth review runs before submission).
+- Fix: update to six and to ai-review-6.txt.
+
+NOT ASSESSED:
+- History in the changed text: Beau's earlier choices (PROOF.md line 7), "changed the redaction rules four times" (line 64), and "seven times" with its causes (line 70). These cannot be rebuilt from the files. They could change the decision only if false, and I have no evidence either way. INFERRED: the provenance's skill_sha256 equals the current ingest.py, so "the script did not change after the fifth review" is consistent.
+- GitHub (GFM) rendering. "so the page shows the words exactly" was shown only under CommonMark; emoji shortcodes and bare-URL links were not checked (no network). This would change wording at most.
+- V1, V2, V4 and V5 are outside my lens. Incidental, OBSERVED:
+  - no tracked changes outside participant/;
+  - the raw transcript path is git-ignored (.gitignore:9);
+  - the record sha 7b8b2607... matches the provenance;
+  - ai-review-5.txt holds only the documented fictional phone numbers, and its only email domain is example.com.
+- Timing: the email-slow planted bug took 94.9 s against the 120 s cap in my parallel run. Even past the cap it still counts as caught, so this cannot change the decision.
+- Unchanged sentences, except those cited above as related.
+
+##### Reviewer B (evidence integrity and privacy): report as returned
+
+Two wording findings, Medium and Low, both in the "digits with no colon" area. K4, K5, K7 and K8 hold, and V1, V2, V4 and V5 did not fire.
+
+**Side effect I caused (please remove).** My scripts loaded `planted_bugs.py` (17:17:45Z) and `check_claims.py` (17:20:51Z) with importlib under `python -I`. `-I` ignores PYTHONDONTWRITEBYTECODE, so Python wrote:
+- `participant/skills/ba-ingest-transcript/tests/__pycache__/planted_bugs.cpython-311.pyc`
+- `participant/skills/ba-ingest-transcript/tests/__pycache__/check_claims.cpython-311.pyc`
+
+The folder's creation time and my transcript timestamps match (OBSERVED).
+- It is git-ignored (`.gitignore:11`), and `git status` still shows the same 23 files.
+- The tests did not create it, so it says nothing about SKILL.md's "leave no `__pycache__`" claim.
+- Nothing else in the repository or `.venv` changed after 13:08 local (OBSERVED).
+- I did not delete it because the rules forbid deletes. To remove it: `rm -r participant/skills/ba-ingest-transcript/tests/__pycache__`
+
+EXERCISED:
+- **Read in full:** the quest file, the raw .vtt and .meeting.json, the record, the provenance file, redaction-notes, PROOF.md, manifest, SKILL.md, ingest.py, test_ingest.py, planted_bugs.py, check_claims.py, the three re-recorded logs, the ai-review-5 header, and quest_app/handin.py (hand-in runs `git add -- participant`, with no force flag).
+- **Session transcripts (read-only):** the main session and its subagents, to recover every post-review edit to the test files, how the logs were recorded, and Beau's recorded choices.
+- **Raw transcript cue 16:** it addresses "whatever AI assistant processes this transcript". It is the quest's planted test text; I treated it as data.
+- **K4:** loaded the fifth review's output, rendered `result` as instructed, and diffed it against the log body (line by line, and as parsed JSON). Ran each replaced and replacement number through `redact()`, alone and inside "call ... today". Compared the output file with the result in the session's completion notice.
+- **K5, V1, V2:**
+  - Listed the 23 hand-in files.
+  - Searched them for the three contact details in raw, NFKC, HTML-unescaped, Markdown-unescaped and digits-only forms, with separators, and as local parts, "at" spellings, 7-digit and last-four forms. A positive control on the raw files found 72 hits with the same scanner.
+  - Searched all 23 files plus the 35 tracked participant files for bare digit substrings.
+  - Listed every email address and phone-like string; searched for street addresses, ID-number words, absolute paths and user identifiers.
+  - Computed the SHA-256 values.
+- **K7:** ran test_ingest.py and check_claims.py from a temp dir. Applied 9 planted bugs to byte-identical temp copies (all six new ones, plus "a colon with no space after it not read as a label (the round-3 code)", "damaged timing lines recognized only in full form (the round-3 code)" and "header check limited to exact arrows (the round-2 code)"). Checked the log's structure and the builder's record.sh, timestamps and run history.
+- **K8:** reconstructed every post-review change to the test files from the transcript, counted docstring sources and UNPARSEABLE entries, and confirmed the no-break-space planted bug flips exactly the new case.
+- **V4:** wrote my own WebVTT and record parsers (not ingest.py) and compared all 24 cues.
+- **V5:** git status, `git diff`, `--cached`, and diffs against upstream/main and origin/main.
+- **Extra:** ran a temp copy of ingest.py on a timing line cut down to digits only, in all five places where the skill checks for a missing blank line.
+- **Temp dir:** deleted.
+
+CLAIMS:
+- **K4: CONFIRMED** (OBSERVED).
+  - The header is 15 lines, then a blank line. The body and my rendering are both 350 lines. Exactly three lines differ (log lines 103, 159, 192); as parsed JSON, only `claims[9].basis`, `findings[2].reproduction` and `findings[4].reproduction` differ.
+  - Line 103: the phone number's bare last four digits became "[last four digits]".
+  - Line 159: three numbers in German, French and Irish formats became "(+44) 20 7946 0123", "(+44) 20 79 46 01 23" and "+(44) 7700 900 123". All are in Ofcom drama ranges, and the parenthesis position is kept.
+  - Line 192: [transcript phone number], written one digit per group, became "+1 3 1 7 5 5 5 0 1 9 8", and its quoted result became "[REDACTED:PHONE] 0 1 9 8". That is exactly what `redact()` returns for the replacement.
+  - Same redaction result: all three original and replacement numbers come back unchanged. The one-digit-per-group original and replacement both give the marker followed by the last four digits, one per group.
+  - U+2212 and U+00A0 appear once each, in both.
+  - agentCount is 43, there are 12 claims and 11 findings. This matches the header and PROOF.md.
+  - The output file matches the session's completion notice, after unescaping, for all 7,970 characters before its truncation marker (INFERRED: unaltered).
+- **K5: CONFIRMED** (OBSERVED).
+  - 0 hits for the three contact details in any searched form.
+  - The last four digits appear as a substring only inside an existing review_id timestamp. That is in progress.yaml (a pre-existing line) and the already committed base-camp review.yaml; it is not contact data.
+  - All emails are at example.com, example.org, example.net or a .example domain. All phone numbers are in 555-0100 to 0199 or the Ofcom drama ranges, or are 123-456-7890 or test numbers of impossible length.
+  - Record SHA-256 is 7b8b2607…f4f4.
+  - `skill_sha256` (d7d8ed6a…959c) equals the current ingest.py; `source_sha256` equals the raw .vtt, which has no CR or BOM.
+  - The record and provenance nanosecond modification times equal those in second-run.txt, so neither was rewritten.
+- **K7: CONFIRMED** (planted bugs by sample, OBSERVED).
+  - Tests: 32 passed, 0 failed, exit 0. The 34 output lines are byte-identical to tests.txt lines 6 to 39.
+  - check_claims.py: identical summary line and exit 0.
+  - All 9 planted bugs give exactly the failing tests in their KILLED lines.
+  - planted-bugs.txt has one header and 85 KILLED lines. They are PLANTED's names in order, each naming only real tests, and none uses the old test name.
+  - Headers come from record.sh, which changes to the repository root and writes the UTC time and branch before running. Command start times and file times agree with the "Recorded" lines.
+  - The earlier planted-bug run (16:55:08Z) was stopped at 16:58:48Z, and pgrep showed nothing left before the recorded run began.
+- **K8: CONFIRMED** (OBSERVED).
+  - Only two post-review edits touched test_ingest.py. One (15:57:45Z) added one cue and one expected tuple. The other (16:58:52Z) replaced two docstrings and the test name, with each replacement asserted to match exactly once.
+  - Nothing was removed and nothing is skipped. There are still 32 tests, 28/1/3 docstring sources and 30 UNPARSEABLE entries, the same as the fifth review recorded.
+  - The new case passes on the real script. Under the planted bug, U-0006 becomes Unattributed and the test fails. So it checks what the F8 row and the fifth-review row 4 say it checks.
+  - SKILL.md section 5 lists four ways a cue can hold two speakers, and the seven refused cases cover all four. The renamed test's docstring matches its code.
+  - Each of the six new planted bugs breaks the behavior its name describes.
+  - One PROOF.md sentence about this test overstates it (Finding 2).
+- **Beau's choices:** PROOF.md's first-person statements match his recorded answers ("Remove it, start fixes", option 1 after review 4, option A after review 5). Nothing claims he read the work or ran the tests.
+
+VETOES:
+- **V1: NOT FIRED.** No possibly real contact data, addresses or identifiers in the 23 files (OBSERVED). The people are fictional according to the raw NOTE line, meeting.json and the transcript (INFERRED; this cannot be checked offline).
+- **V2: NOT FIRED.** The raw files and the four damaged copies are under local-data/, which `.gitignore:9` ignores, and they are untracked. Hand-in stages participant/ only, and no contact detail appears in any form (OBSERVED).
+- **V4: NOT FIRED.** My independent parse gives 24 cues and 24 utterances, U-0001 to U-0024 in source order (OBSERVED).
+  - Times are equal, with the hours prefix added.
+  - Speakers are equal: cue 11 is Unattributed and cue 13 is Speaker 4.
+  - Words are equal after Markdown unescaping, except the three stated redactions in U-0005, U-0015 and U-0022.
+  - Only U-0011 and U-0013 are marked uncertain.
+- **V5: NOT FIRED.** Working-tree changes are under participant/ only: ACTIVITY.md +1 line, progress.yaml +8 lines, and 21 new files for this quest (OBSERVED).
+  - Nothing is staged.
+  - Against upstream/main, the branch changes no path outside participant/.
+  - The two earlier quests' evidence folders have no working-tree changes.
+  - INFERRED: the upstream/main ref may be stale, since I did no fetch.
+
+FINDINGS:
+1. **A timing line cut down to digits with no colon is called "read as speech", but in four of the five places it makes the skill drop a cue without warning.**
+   - Severity: Medium on impact. As written, the sentence is false, which falls under V3 (not one of my vetoes). The fix is wording only.
+   - Location:
+     - SKILL.md line 113, section 9, the clause "and a line of digits with no colon is read as speech".
+     - PROOF.md line 210, second sentence: "A timing line cut down to digits with no colon, such as `00`, is read as speech."
+     - Related: PROOF.md line 131 calls this case "still not caught; see the limitations", but the limitations (lines 210 and 211) never say a cue is lost.
+   - Reproduction (OBSERVED), using a byte-identical copy of ingest.py (SHA-256 d7d8ed6a…) with the raw file outside the copy's repository:
+     - Raw file: `WEBVTT\n00\nAda Example: Dropped?\n\n00:00:05.000 --> 00:00:06.000\nAda Example: Kept.\n`
+     - Command: `.venv/bin/python -I <tmp>/repo/participant/skills/x/ingest.py <tmp>/w2/hdr.vtt --meeting <tmp>/w2/hdr-x.json --out <tmp>/repo/participant/context/transcripts/hdr-x.md`
+     - Output: "Transcript tr-2026-01-05-hdr-x: written", "utterances 1", exit 0, with no NOTICE or warning. The record holds only U-0001 "Kept."; "Dropped?" is gone.
+     - With `00` as a later line of a `NOTE a note`, `STYLE` or `REGION` block: each run exits 0, writes 1 utterance, and the words are lost. `0` behaves the same.
+     - Inside a cue's words, the line is kept and the next line merged in: U-0001 becomes 'First.\n00\nAda Example: Merged?'.
+     - `00:` is refused in all three places tested (after the header, inside a NOTE, inside a cue's words) with the documented reasons.
+   - Expected source: AC 11 ("no partial record is written that appears complete"), and the documents' own words (SKILL.md section 9 "Not caught … no warning: the cue … is dropped"; PROOF.md line 131 "still not caught").
+   - Smallest fix:
+     - PROOF.md line 210, replace the second sentence with: "A timing line cut down to digits with no colon, such as `00`, is not caught: inside a cue's words it is kept as speech and the next cue's words are merged into that utterance; right after the `WEBVTT` line or inside a `NOTE`, `STYLE` or `REGION` block, the cue it starts is dropped without a warning."
+     - SKILL.md line 113, replace "and a line of digits with no colon is read as speech" with: "and a line of digits with no colon is not recognized as a timing line: inside a cue's words it is kept as speech, and right after the `WEBVTT` line or inside a `NOTE`, `STYLE` or `REGION` block the cue it starts is dropped without a warning".
+2. **The F1 row says the test tries "each cut-short form" of a timing line; it skips exactly the two forms with no colon, which are the ones Finding 1 shows are not refused.**
+   - Severity: Low.
+   - Location: PROOF.md line 171 (F1 row): "A test tries each cut-short form of a timing line and each form with one character removed, in each place".
+   - Reproduction (OBSERVED): test_ingest.py line 612 is `variants = sorted(v for v in variants if ":" in v)`. Generating the variants as the test does, the filter drops exactly '0' and '00', and 46 forms are tried.
+   - Expected source: the test's own code. The AC 11 row (line 106) and the renamed test's docstring already say "if it still holds a colon".
+   - Smallest fix: "A test tries, in each place, each cut-short form of a timing line and each form with one character removed, if it still holds a colon (planted bug: …)".
+
+NOT ASSESSED:
+- **76 of the 85 planted bugs were not rerun**, as instructed. This could matter only if those log lines were wrong. That is unlikely: all 9 sampled matched exactly, and the log comes from one clean run.
+- **Whether the names are fictional** cannot be verified offline. This could change V1 only if the synthetic-meeting statements are false.
+- **Other sentences in SKILL.md and PROOF.md** belong to the other reviewer's lens. I read both files in full but checked in depth only the sentences about tests, logs and privacy.
+- **Remote state** (PR #26, GitHub) was not checked; no network.
+- **The application's own pre-hand-in checks** were not run, as instructed.
+- **The two timing-sensitive planted bugs** (the 120-second hang and "email search slow on long text") were not rerun.
+
+##### The verifiers' verdicts on reviewer B's findings, each as returned
+
+===== B1: A timing line cut down to digits with no colon is called read as speech, but in four of five places the cue is dropped without warning
+----- verifier 1 (does it reproduce?)
+REPRODUCED: yes
+
+The finding holds as stated (OBSERVED). It also reaches further than reported: any timing-line remnant whose first piece has no colon goes uncaught, not only bare digits.
+
+COMMANDS AND OUTPUTS
+
+Setup (OBSERVED):
+- Temp dir from `mktemp -d`: /var/folders/v8/l38z3wd93mv38rtms6v1110c0000gq/T/tmp.o8i5pqRMpL. It has been deleted.
+- ingest.py was copied to `<tmp>/repo/participant/skills/x/ingest.py`. The SHA-256 of the copy and the original is the same: `d7d8ed6af740a888e49ce1c6718a0fa8aea1768be85f9ff91a91cfbeb183959c`.
+- The raw .vtt files were kept in `<tmp>/raw`, outside the fake repo. My first try put them inside it, and the script refused them with "INVALID INPUT: the raw transcript is inside the repository and git does not ignore it". That is the path guard working, not part of the finding.
+- Meeting file: transcript_id `tr-2026-01-05-probe`, one participant, "Ada Example".
+- Every run used: `PYTHONDONTWRITEBYTECODE=1 /Users/beaubrown/golden-thread-quest/.venv/bin/python -B participant/skills/x/ingest.py <raw> --meeting meeting.json --out participant/context/transcripts/<name>.md`
+
+1. The exact repro. Raw bytes (checked with `od -c`): `WEBVTT\n00\nAda Example: Dropped?\n\n00:00:05.000 --> 00:00:06.000\nAda Example: Kept.\n`
+   Output:
+   ```
+   Transcript tr-2026-01-05-probe: written
+     utterances  1
+     redacted    0 email address(es), 0 phone number(s)
+   exit=0
+   U-0001 '> Kept.'
+   ```
+   - No NOTICE line and no "uncertain" line.
+   - `grep -c Dropped` gives 0 in both the record and the provenance file.
+   - The provenance file shows `uncertain_speakers: []`.
+
+2. `00` as the second line of `NOTE a note`, `STYLE` or `REGION`, followed by `Ada Example: Dropped?`: each run exits 0 with `utterances 1` and `U-0001 '> Kept.'`. The words are lost with no warning.
+
+3. `00` inside a cue's words, with raw `...00:00:01.000 --> 00:00:02.000\nAda Example: First.\n00\nAda Example: Merged?\n\n<cue Kept>`: exit 0, `utterances 2`, `U-0001 '> First.\n> 00\n> Ada Example: Merged?'`. The line is kept and the next cue's words are merged into U-0001.
+
+4. `0` in place of `00`: the same result in all five places (header, NOTE, STYLE, REGION, inside a cue).
+
+5. `00:` is refused in all three places:
+   - After the header: exit 2, "UNPARSEABLE ... line 2: a cue starts right after the WEBVTT header with no blank line before it".
+   - Inside a NOTE: exit 2, "line 4: a timing line sits inside a NOTE block".
+   - Inside a cue: exit 2, "line 5: a timing line appears inside a cue's text".
+
+Cause (OBSERVED in the code): `TIME_PIECE = re.compile(r"^\d+(?::\d*)+(?:[.,]\d*)?$")` (ingest.py line 54) needs at least one colon. `is_timing_line` (line 192) requires the first piece of a line to match `TIME_PIECE`. So a line whose first piece has no colon is never treated as a timing line.
+
+NARROWER OR BROADER
+
+Broader than stated (OBSERVED). Each of these behaves exactly like `00`: the cue is dropped silently after the header and inside a NOTE, and inside a cue the line is kept and the next cue merged in.
+- `05.000`
+- `00.000 -> 00:00:06.000`
+- `05.000 -> 06.000`
+- `0000`
+- `00 00`
+- `00.`
+- `00,000`
+- `.000`
+- `1`
+- `00 align:start`
+
+So the gap is "a timing line whose first piece has no colon", not only "digits with no colon". It covers a timing line that lost its hours and minutes but keeps seconds and milliseconds, and also one with a `->` arrow. SKILL.md section 9 says a line with an arrow like `->`, starting with a time, is refused. A reader could take that to cover `05.000 -> 06.000`, but it is not refused. STYLE and REGION were tested only with `00` and `0`. INFERRED from the code: they behave like NOTE for the other forms too, because all three go through the same code path.
+
+Narrower in one detail (OBSERVED). Of the five places, the cue is dropped in four (header, NOTE, STYLE, REGION). Inside a cue's words the line is kept and the next cue is merged, as the finding says. So "read as speech" is true only for the inside-a-cue case, and even there it leaves out the merge.
+
+Controls (OBSERVED):
+- `00` used as a cue identifier just before a real timing line: parsed correctly (1 utterance, "Kept.").
+- `WEBVTT` followed directly by `Ada Example: Dropped?` with no remnant at all: also exits 0 and drops the words. INFERRED: that case is ordinary header text and is outside what the skill claims to detect. It shows the header-position loss does not depend on the `00` line being there, but the documents only promise to catch timing lines.
+
+The finding's proposed wording fix is accurate. It would be more complete if it said "a timing line whose first piece has no colon, such as `00` or `05.000 -> 06.000`" rather than only "digits with no colon".
+
+NOT ASSESSED:
+- The test suite was not run.
+- A merged line where the two cues have different speaker labels was not tried.
+
+Repository state: nothing was written under /Users/beaubrown/golden-thread-quest. `git status` shows only the changes that were there before this check.
+----- verifier 2 (is it real, and how much does it matter?)
+VERDICT: REAL
+
+CATEGORY: false claim. The behavior is in the same family as limitations the documents already disclose, but the wording here gets the consequence wrong.
+
+CASE FOR
+- OBSERVED: `TIME_PIECE` in ingest.py (line 54) is `^\d+(?::\d*)+(?:[.,]\d*)?$`. It needs at least one colon, so `is_timing_line("00")` is False and the line is never refused.
+- OBSERVED: I copied ingest.py byte for byte (confirmed with cmp) to `<tmp>/participant/skills/x/ingest.py` and ran it through the CLI with a raw file and output path that passed its path checks. The input `WEBVTT\n00\nAda Example: Dropped?\n\n00:00:05.000 --> 00:00:06.000\nAda Example: Kept.\n` exited 0. It printed "written" and "utterances 1", gave no NOTICE and wrote nothing to stderr. The record held only U-0001 "Kept." and the word "Dropped?" was gone.
+- OBSERVED: I called `ingest()` directly on the same copy. With `00` as a later line of a `NOTE a note`, a `STYLE` or a `REGION` block, each run wrote a record that did not contain "Dropped?". `0` right after the header behaved the same way.
+- OBSERVED: `parse_vtt` on a cue's words containing `00` gave U-0001 text `'First.\n00\nAda Example: Merged?'`. The next cue was merged in.
+- OBSERVED: `00:` right after the header is refused with "a cue starts right after the WEBVTT header with no blank line". A cue identifier followed by `00` is refused with "expected a timing line".
+- So the clause "a line of digits with no colon is read as speech" (SKILL.md section 9) is true in only one of the five places, inside a cue's words. In the other four the line is never read as speech, because the whole header, NOTE, STYLE or REGION block is skipped and the cue's words go with it, silently. PROOF.md's limitation repeats the same wrong wording. The second-review table row 1 says "still not caught; see the limitations", but the limitations never say a cue is lost. A reviewer reading them would conclude no words go missing. A record with a cue silently dropped looks complete, which is exactly what AC 11 rules out.
+
+CASE AGAINST
+- The input is contrived. A timing line cut down to bare digits, with its blank line also missing, is unlikely in a real Teams or Zoom export.
+- The documents already disclose, in the same section 9 sentence and the next PROOF limitation, that some damaged timing lines (a mistyped arrow, one on the WEBVTT line, one on a NOTE line) cause a silent drop or merge. A careful reviewer knows this class of problem exists.
+- Inside a cue's words, "read as speech" is literally accurate.
+- None of this makes the behavior acceptable. The specific sentence is still false in four places, and it describes this case as harmless while the sibling cases are described as data loss. "Already disclosed" does not apply.
+
+EXPECTED SOURCE
+- content/quests/ba-ruins/ingest-transcript.md, acceptance criterion 11: "A transcript the skill cannot parse is reported with the reason, and no partial record is written that appears complete."
+- The documents' own standard for "Not caught": SKILL.md section 9, "In those cases there is no warning: the cue whose timing line is damaged is dropped, or ... merged". Also PROOF.md "Remaining limitations", the bullet that begins "Not caught: a timing line whose arrow is mistyped". This case should be described the same way and is not.
+
+SEVERITY: Medium. A High rating would fit if the documents gave no warning about silent drops at all. Here the class is disclosed nearby and the input is unlikely, so this is a misdescribed limitation rather than a hidden one. Still, the sentence as written is false and hides a silent data loss from the human reviewer.
+
+SMALLEST FIX (wording only, no code change):
+- SKILL.md section 9: replace "and a line of digits with no colon is read as speech." with:
+  "A line of digits with no colon, such as `00` or `0`, is not read as a timing line and is not caught: inside a cue's words it is kept as speech, and the next cue's words are merged into that cue; right after the `WEBVTT` line or inside a `NOTE`, `STYLE` or `REGION` block, the cue it starts is dropped with no warning."
+- PROOF.md "Remaining limitations": replace "A timing line cut down to digits with no colon, such as `00`, is read as speech." with:
+  "A timing line cut down to digits with no colon, such as `00`, is not caught: inside a cue's words it is kept as speech and the next cue's words are merged into that utterance; right after the `WEBVTT` line or inside a `NOTE`, `STYLE` or `REGION` block, the cue it starts is dropped with no warning."
+- PROOF.md second-review table row 1 needs no change once the limitation says this.
+- Optional, INFERRED and not run: in Zoom form, if the merged cue carries a different listed `Name:` label, it may be refused as two speakers in one cue instead of merged. That is suggested by the test `a_cue_with_two_named_speakers_is_refused`. If Beau wants exact wording, add "when both have the same `Name:` label or none" after "merged", matching the existing "Not caught" sentence. I did not run that case.
+
+Cleanup: both temp directories were deleted. I made no changes under /Users/beaubrown/golden-thread-quest. The `git status` entries there (participant/ACTIVITY.md, participant/progress.yaml and the untracked participant/ folders) were already present, not from my runs.
+
+===== B2: The PROOF.md F1 row says the test tries each cut-short form of a timing line, but it skips the forms with no colon
+----- verifier 1 (does it reproduce?)
+REPRODUCED: yes
+
+The F1 row in PROOF.md (line 171) says the test tries "each cut-short form of a timing line and each form with one character removed, in each place". The test drops the two cut-short forms with no colon, '0' and '00', so it tries 46 of the 48 forms. Those two forms are accepted by the script, which is the gap finding B1 describes. The claimed severity of Low and the proposed fix both fit.
+
+COMMANDS AND OUTPUTS:
+I worked in a temp dir from `mktemp -d` (/var/folders/v8/l38z3wd93mv38rtms6v1110c0000gq/T/tmp.6NoA9c9gCo), with PYTHONDONTWRITEBYTECODE=1 and -B, using /Users/beaubrown/golden-thread-quest/.venv/bin/python. The branch is pilot/beau. I deleted the temp dir afterwards and confirmed no __pycache__ appeared under participant/skills/ba-ingest-transcript.
+
+1. Read the test. OBSERVED: tests/test_ingest.py lines 611 and 612:
+   `variants = {timing[:i] for i in range(1, len(timing) + 1)} | {timing[:i] + timing[i + 1:] for i in range(len(timing))}`
+   `variants = sorted(v for v in variants if ":" in v)`
+   The timing line is "00:00:03.000 --> 00:00:04.000". The docstring says "is refused if it still holds a colon".
+2. Regenerated the variants in the temp dir (gen.py). OBSERVED output: `total 48 kept 46 dropped ['0', '00']`
+3. Split the two sets. OBSERVED output:
+   `one-removed 20 without colon 0`
+   `cut-short 29 without colon ['0', '00']`
+   `overlap 1`
+4. Ran the suite on copies of ingest.py and tests/*.py at <tmp>/participant/skills/x/ with INGEST_UNDER_TEST pointing to the copy. OBSERVED: `PASS  cut_short_timing_lines_and_ones_missing_a_character_are_refused`, and `32 passed, 0 failed`.
+5. Probed the copied script with the test's own Workspace and the three place templates (probe.py). OBSERVED:
+   - '0' and '00', after the header and inside a NOTE: ACCEPTED, and the "Dropped?" cue is not in the record.
+   - '0' and '00', inside a cue's text: ACCEPTED, and "Merged?" is in the record (INFERRED: merged into the first cue, as B1 says).
+   - '00:' and '0:': REFUSED in all three places, with the expected reasons ("line 2: a cue starts right after the WEBVTT header...", "line 4: a timing line sits inside a NOTE block...", "line 5: a timing line appears inside a cue's text...").
+6. grep of PROOF.md. OBSERVED:
+   - Line 171 (F1) has no colon qualifier.
+   - Line 106 (AC 11) already says "if it still holds a colon".
+
+NARROWER OR BROADER:
+- Narrower than the wording suggests:
+  - OBSERVED: the colon filter only removes cut-short forms. None of the 20 one-character-removed forms lacks a colon, because the line has four colons.
+  - INFERRED: the F1 claim about one-character-removed forms is already accurate. Only "each cut-short form" overstates, by exactly 2 of 29.
+  - The proposed fix puts the qualifier on both halves. That is still true, just slightly broader than needed.
+- No other attempt document repeats the overstatement:
+  - OBSERVED: SKILL.md section 4 (line 113) already says "a line of digits with no colon is read as speech". So SKILL.md discloses that '0' and '00' are accepted.
+  - OBSERVED: the only other match is logs/ai-review-5.txt line 124, a reviewer's suggested wording ("every cut-short form..."). That is a review log, not an attempt claim, and should stay as it is.
+- Effect:
+  - INFERRED: the cost is wording only. The test does what its docstring and the AC 11 row say, and F1 is the only claim that drops the qualifier.
+  - INFERRED: a reviewer who reads F1 alone could think '0' and '00' were tested and refused. Low fits.
+----- verifier 2 (is it real, and how much does it matter?)
+VERDICT: REAL
+
+CATEGORY: false claim. It is a small overstatement in one row. The same gap is stated accurately in three other places.
+
+CASE FOR
+- OBSERVED: Row F1 of PROOF.md's fourth-review table says: "A test tries each cut-short form of a timing line and each form with one character removed, in each place". It adds no qualifier.
+- OBSERVED: In `participant/skills/ba-ingest-transcript/tests/test_ingest.py`, line 611 builds the variants from `00:00:03.000 --> 00:00:04.000`, and line 612 filters them with `variants = sorted(v for v in variants if ":" in v)`.
+- OBSERVED: I rebuilt the same set in a separate Python process without importing repo code. It has 48 distinct variants. The filter drops exactly `'0'` and `'00'`, which are cut-short forms, and leaves 46. "Each cut-short form" is therefore literally false.
+- OBSERVED: The dropped forms are the case the documents elsewhere say is not refused. PROOF.md line 210 says "A timing line cut down to digits with no colon, such as `00`, is read as speech", and SKILL.md line 113 says "a line of digits with no colon is read as speech". Row F1 is the only row that reads as if the test covers the case the skill does not handle.
+- OBSERVED: The test's docstring (line 609) says "if it still holds a colon", and the AC 11 row (PROOF.md line 106) uses the same qualifier. Row F1 is the outlier.
+
+CASE AGAINST
+- OBSERVED: The gap is disclosed accurately in three places: PROOF.md line 131 (fix-history row 1, "a timing line cut down to digits with no colon, are still not caught"), the PROOF.md limitations at line 210, and SKILL.md line 113. A reviewer who reads the whole package will not be misled about behavior.
+- INFERRED: You could argue that `0` and `00` are not really "forms of a timing line", since they are indistinguishable from speech made of digits. That argument does not remove the literal mismatch with the test's own filter.
+- The row's main claim is accurate: the test exists, covers three places and runs 46 forms. Line 630 asserts more than 40, and line 629 fails if any form is accepted.
+
+EXPECTED SOURCE
+- The test's own code: `participant/skills/ba-ingest-transcript/tests/test_ingest.py`, lines 609 to 612 (docstring and colon filter).
+- The consistent wording elsewhere: PROOF.md AC 11 row (line 106), PROOF.md fix-history row 1 (line 131), PROOF.md limitations (line 210), and SKILL.md section 9 (line 113).
+
+SEVERITY: Low. Only the wording of one row is wrong. The tested behavior and the disclosed limitation are both accurate elsewhere in the same document, so a reviewer is unlikely to end up confused.
+
+SMALLEST FIX: In PROOF.md, row F1, replace "A test tries each cut-short form of a timing line and each form with one character removed, in each place (planted bug:" with "A test tries, in each place, each cut-short form of a timing line and each form with one character removed, if it still holds a colon (planted bug:". Leave the rest of the row unchanged. If you want, add "A timing line cut down to digits with no colon, such as `00`, is still read as speech." before "The fifth review found".
+
+Read-only: no files changed, nothing from the repository imported or run, and no temp directory created.
+
+##### The verifiers' verdicts on reviewer A's findings, each as returned (A8 is the same as B2 and was not verified again)
+
+===== A1
+----- verifier 1 (does it reproduce?)
+REPRODUCED: yes, on every part.
+- Part 1 (a cue in Zoom form followed by a voice tag broken right after "<v"): yes. The record is written, "Ada Example" is marked certain, and Ben's words go to Ada. OBSERVED.
+- Part 2 (an unclosed voice tag followed by a broken "<v"): yes. "Ada Example" is marked certain. OBSERVED.
+- Part 3 (a broken "<v" alone): yes. The cue is marked Unattributed and the tag stays in the words. OBSERVED.
+- Part 4 (a trailing space after "<v", or a break after a class): yes. Both behave like part 3. OBSERVED.
+- Part 5 (only a break inside the name is refused): yes. OBSERVED.
+- Part 6 (misattribution needs a Zoom-form cue or an unclosed voice tag): yes. A closed tag beside it is refused. OBSERVED.
+- The documentation gap is real. OBSERVED: SKILL.md line 115 says "or with a speaker tag broken across two lines" with no narrower wording. PROOF.md line 121 says "Fixed with a test". The planted bug (planted_bugs.py lines 82-84) and the test case (test_ingest.py line 572, "<v Ada\nExample>split</v>") cover only a break inside the name. Neither section 5's not-caught list (SKILL.md lines 57-58) nor PROOF.md's limitations (line 209) mentions a break right after "<v".
+
+COMMANDS AND OUTPUTS:
+Setup:
+- `T=$(mktemp -d)` (/var/folders/v8/l38z3wd93mv38rtms6v1110c0000gq/T/tmp.mytVyMjImC) and `R=$(mktemp -d)` (.../tmp.r9q0FVCrCb). ingest.py was copied to $T/participant/skills/x/ingest.py and loaded with importlib.
+- The raw .vtt and meeting JSON were in $R, outside $T. My first try put them inside $T and got InvalidInput from check_paths, which was expected and is not a finding.
+- Each case: `ingest(raw, meeting, out/"rec.md", output_dir=out)`, roster Ada Example (label "Ada E.") and Ben Example, raw file "WEBVTT\n\n1\n00:00:01.000 --> 00:00:03.000\n<body>\n".
+- Run with `PYTHONDONTWRITEBYTECODE=1 /Users/beaubrown/golden-thread-quest/.venv/bin/python -B run.py $T $R`.
+
+Outputs (the record line shown is the U-0001 block, which the record escapes as Markdown):
+- A, body "Ada Example: I will take the story.\n<v\nBen Example>No, I will.</v>": `written, uncertain []`. Record: `### U-0001 · ... · Ada Example` / `> I will take the story.` / `> \<v` / `> Ben Example\>No, I will.\</v\>`
+- B, body "<v Ada Example>I will take it.\n<v\nBen Example>No, I will.</v>": `written, uncertain []`. Record: `· Ada Example` / `> I will take it.` / `> \<v` / `> Ben Example\>No, I will.` (the closing `</v>` is removed).
+- C, body "<v\nAda Example>split</v>": `written, uncertain [('U-0001', 'Unattributed', 'no speaker label in the transcript')]`. Words: `\<v` / `Ada Example\>split\</v\>`
+- D, body "<v \nAda Example>split</v>": same result as C.
+- E, body "<v.loud\nAda Example>split</v>": same result as C. Words: `\<v.loud` / `Ada Example\>split\</v\>`
+- F, body "<v Ada\nExample>split</v>": `Unparseable: line 4: a speaker tag runs across two lines`
+
+Variations (body, then result):
+- G, "<v Ada Example>I will take it.</v>\n<v\nBen Example>No, I will.</v>": `Unparseable: line 4: cue has words outside its speaker tag, and the skill will not guess who said them`
+- H, "Ada Example: I will take the story.\n<v.loud\nBen Example>No, I will.</v>": `written, uncertain []`, Ada Example.
+- I, "Ada Example: I will take the story.\n<v \nBen Example>No, I will.</v>": `written, uncertain []`, Ada Example.
+- J, "Ada Example: I will.\n<v\nBen Example: No, I will.": `Unparseable: line 4: cue has more than one speaker, ...`
+- K, "Ada Example: I will.\n<v\tBen Example>No, I will.</v>": `Unparseable: line 4: cue has words outside its speaker tag, ...`
+- L, "Ada Example: I will.\n<v Ben Example>No, I will.</v>": same as K.
+- M, "Ada Example: I will.\n<v\nCarl Stranger>No, I will.</v>": `written, uncertain []`, Ada Example.
+- N, "Speaker 1: I will.\n<v\nBen Example>No, I will.</v>": `written, uncertain [('U-0001', 'Speaker 1', "label is not in the meeting's participant list")]`
+- CRLF line endings, case A: `written [] ... · Ada Example` (same as LF).
+- "Ada Example: I will.\n<v\n.loud Ben Example>No.</v>": `written [] ... · Ada Example`
+
+Cleanup: both temp dirs were removed, and `ls` confirms they are gone. `git status --short` in the repository matches its state before the run (M ACTIVITY.md, M progress.yaml, three untracked participant folders). Nothing in the repository was written.
+
+NARROWER OR BROADER:
+- Cause, INFERRED from the code: VOICE_TAG (ingest.py line 59) is `<v(?:\.[^\s>.<]{1,50}){0,20}[ \t]+`, which needs a space or tab before the name. A newline right after "<v", after "<v ", or after a class does not match, so the cue is never seen as having a voice tag. The check at line 298 then only catches a newline inside a matched name.
+- Broader than stated:
+  - Case M: the broken tag can name someone not on the roster. The cue still goes to the first speaker as certain, with no "not listed" warning.
+  - The "<v\n.loud ..." form (break before the class) also goes to the first speaker.
+  - CRLF files behave the same.
+- Narrower than it might sound:
+  - A closed voice tag next to it (G) is refused.
+  - A second line that also starts "Ben Example:" (J) is refused.
+  - A tab instead of a newline (K) is refused.
+  - If the first label is a generic or unlisted one (N), the cue is already marked uncertain, so nothing extra is certified.
+  - In every misattributed case, the broken tag text stays visible in the record's words (for example `\<v` / `Ben Example\>`). A careful reader can see it, but the speaker heading and the summary's uncertain list do not flag it. OBSERVED.
+- The finding's "Misattribution needs a Zoom-form cue or an unclosed voice tag" held in every variation I ran (A, B, H, I, M misattribute; G refused).
+- Severity Medium looks right to me. INFERRED: it is a silent certain attribution of a second person's words, but it needs an unusual malformed tag, and the words stay visible.
+- Fix: the wording fix proposed in the finding matches what I observed. It should also cover the break before a class, and an unlisted name inside the broken tag (case M).
+----- verifier 2 (is it real, and how much does it matter?)
+VERDICT
+- Part 1 (SKILL.md section 9 says a speaker tag broken across two lines is refused): REAL. The claim is broader than the code.
+- Part 2 (inside another speaker's cue, the broken tag's words are credited to that speaker as certain): REAL. It reproduces and is not disclosed anywhere.
+- Part 3 (the PROOF.md first-review row "Fixed with a test" and the AC 2 row): NOT REAL as a false claim. The first-review finding was about a break inside the name, and that case is fixed and tested. The row's label is only loosely worded.
+
+CATEGORY
+Part 1 is a false claim (overbroad). Part 2 is a defect that is neither disclosed nor tested, of the same kind as the over-200-character tag limitation, which is disclosed. Part 3 is a misreading.
+
+CASE FOR
+- OBSERVED (code): ingest.py line 59 is `VOICE_TAG = r"<v(?:\.[^\s>.<]{1,50}){0,20}[ \t]+"`. After `<v` or a class, only a space or tab can start the name, so a line break there means the tag never matches. The check at lines 298-299 only sees breaks inside a tag that did match, which means breaks inside the name.
+- OBSERVED (I ran ingest() end to end on a temp copy, roster Ada Example and Ben Example):
+  - `Ada Example: I will take the story.\n<v\nBen Example>No, I will.</v>`: written, uncertain [], U-0001 "Ada Example" certain. The broken tag stays in the words.
+  - `<v Ada Example>I will take it.\n<v\nBen Example>No, I will.</v>`: Ada Example, certain. The `</v>` is removed from the words.
+  - `<v\nAda Example>split</v>` on its own: Unattributed and uncertain, with the tag kept as words. A trailing space after `<v` and a break after `.loud` give the same result.
+  - A break after a class inside Ada's Zoom-form cue: Ada Example, certain.
+  - `<v Ada\nExample>split</v>`: UNPARSEABLE, "a speaker tag runs across two lines".
+  - A closed Ada voice tag followed by the broken Ben tag: UNPARSEABLE, "cue has words outside its speaker tag".
+  - Every part of the reviewer's reproduction matches.
+- OBSERVED (documents): SKILL.md line 115 says it refuses a cue "with a speaker tag broken across two lines". `<v\nBen Example>` is such a tag, and it is not refused.
+  - The section 5 not-caught list (lines 55-58) and the PROOF.md limitations (lines 205-209) cover over-long tags and `Name:` labels written with character references. They do not cover this case.
+  - The tests cover only the break-inside-name form (test_ingest.py line 572).
+- INFERRED (from memory of the W3C WebVTT cue-text tokenizer; not checked against the spec in this run): a line feed after the tag name starts the annotation. If that is right, `<v\nBen Example>` is a valid voice tag for Ben Example, and the skill's reading is wrong, not merely strict.
+- This goes against quest AC 2 ("speakers whose identity is uncertain are marked as uncertain rather than guessed"). Ben's words are recorded as Ada's, marked certain.
+
+CASE AGAINST
+- INFERRED: Teams and Zoom exports are unlikely to put a line break right after `<v`, so a damaged or hand-edited file would be needed. SKILL.md line 72 says no real export was tried.
+- OBSERVED: no words are lost or hidden. The literal `<v` and `Ben Example>` text stays in the record, so a careful reader would notice it.
+- OBSERVED: the same kind of failure (a tag the skill does not read, so its words go to the cue's first speaker) is already accepted and disclosed for tags over 200 characters. This is a gap in the disclosure, not a new class of risk.
+- OBSERVED: ai-review-1.txt line 52 shows the first-review finding was `<v Ann\nLee>`, a break inside the name. The PROOF.md row 121 "Fixed with a test" is accurate for that finding.
+- OBSERVED: the PROOF.md AC 2 row says section 5 "lists cases". It does not claim the list is complete.
+
+EXPECTED SOURCE
+- Quest content/quests/ba-ruins/ingest-transcript.md, Acceptance criteria 2.
+- SKILL.md section 9, line 115 (the refusal claim).
+- SKILL.md section 5, lines 54-58 (what is refused and what is not caught).
+
+SEVERITY
+Medium. A false certain attribution needs a damaged tag, and the evidence of it stays visible in the words. It is not High because the record can still be checked by reading it.
+
+SMALLEST FIX (checked against the current files; none of the new wording matches check_claims.py's CLAIM pattern, so the claims check will not ask for a planted bug)
+1. SKILL.md line 115.
+   - Old: `- a cue with no words, with more than one speaker in the ways Section 5 lists, or with a speaker tag broken across two lines;`
+   - New: `- a cue with no words, with more than one speaker in the ways Section 5 lists, or with a speaker tag whose name is broken across two lines;`
+2. SKILL.md section 5. Add a bullet after line 57:
+   - `  - A voice tag broken right after \`<v\` or after a class, such as \`<v\` on one line and \`Ben Example>\` on the next, is not read as a tag, and its text stays in the words. In a cue with no other label, the utterance is marked unattributed. Inside another speaker's open voice tag, or after a \`Name:\` label, those words are credited to that speaker as certain.`
+3. PROOF.md "Remaining limitations". Add after line 209:
+   - `- A voice tag broken right after \`<v\` or after a class is not read as a tag. Its text stays in the words, and inside another speaker's Zoom-form cue or open voice tag those words are credited to that speaker as certain. SKILL.md section 5 has the details.`
+4. Optional, for clarity. PROOF.md line 121:
+   - Old: `| Low: a speaker tag broken across lines | Fixed with a test (planted bug: a speaker tag across two lines accepted). |`
+   - New: `| Low: a speaker tag broken across lines | A break inside the name is fixed with a test (planted bug: a speaker tag across two lines accepted). A break right after \`<v\` is not caught; see the limitations. |`
+
+The rewording keeps the planted-bug reference, so the claims check still passes.
+
+No files under the repository or ~/.claude were changed. The temp dir I used is deleted. `git status` shows the same uncommitted participant files that were there before I started.
+
+===== A2
+----- verifier 1 (does it reproduce?)
+REPRODUCED: yes, on every part.
+- Part 1 (ingest of the two-line cue keeps the number visible): yes.
+- Part 2 ("+44 7700 900123. 2026 is busy." stays visible): yes.
+- Part 3 (the number on its own is redacted, with phone: 1 in the provenance): yes.
+- Part 4 (redact() leaves "... 0958 1234 now" and "... 0958 (2026 budget line)." unchanged): yes.
+- Part 5 (a comma before the 2026 gives a redaction): yes.
+- Part 6 (at 15 or fewer digits, the following digits are swallowed into the marker): yes.
+- Part 7 (the record has no "+"): yes.
+- Part 8 (this case is missing from the Known misses and the limitations): yes.
+- Part 9 (the cause is the lookahead at line 89): yes, INFERRED from the code and supported by the gap tests below.
+
+COMMANDS AND OUTPUTS:
+Setup: `T=$(mktemp -d)` (/var/folders/.../tmp.zn99HapLTm). I copied ingest.py to $T/participant/skills/x/ingest.py. Raw .vtt files went in a second `mktemp -d` (tmp.MpRC7PLudy), because check_paths refuses a raw file inside the copy's repository root. The meeting JSON had one participant, "Ada Example". Every run used `PYTHONDONTWRITEBYTECODE=1 /Users/beaubrown/golden-thread-quest/.venv/bin/python -B <script> ...`. The scripts load ingest.py with importlib and call `m.ingest(raw, meeting, od/"rec.md", output_dir=od)` and `m.redact(s, {})`.
+
+OBSERVED, ingest():
+- Input `'Call me on +44 20 7946 0958.\n2026 is when we launch.'` gave redactions {'email': 0, 'phone': 0}. Record lines: `> Call me on +44 20 7946 0958.` and `> 2026 is when we launch.` The provenance says `phone: 0`.
+- Input `'Or my mobile, +44 7700 900123. 2026 is busy.'` gave {'email': 0, 'phone': 0}. Record line: `> Or my mobile, +44 7700 900123. 2026 is busy.` The provenance says `phone: 0`.
+- Input `'Or +44 20 7946 0958 on its own.'` gave {'email': 0, 'phone': 1}. Record line: `> Or \[REDACTED:PHONE\] on its own.` The provenance says `phone: 1`.
+
+OBSERVED, redact():
+- 'Call +44 20 7946 0958 1234 now' -> unchanged
+- 'Ring +44 20 7946 0958 (2026 budget line).' -> unchanged
+- 'Call +44 20 7946 0958, 2026 is busy.' -> 'Call [REDACTED:PHONE], 2026 is busy.'
+- 'Call +44 20 7946 0958 123 now' -> 'Call [REDACTED:PHONE] now'
+- 'Call +44 20 7946 0958 - 2 lines are free.' -> 'Call [REDACTED:PHONE] lines are free.'
+
+OBSERVED, the record and the documents:
+- `grep -c "+"` on sample-meeting.md, sample-meeting.provenance.yaml and redaction-notes.md gives 0, 0 and 0.
+- SKILL.md section 8, the international bullet (line 86): "...with 8 to 15 digits in all. A `+` followed by fewer than 8 or more than 15 digits is not read as an international number."
+- Neither the Known misses (SKILL.md section 8) nor the limitations (PROOF.md line 206) mention digits that follow the number. The nearest listed miss is "more than six groups after the country code", which is a different case.
+- The phrase "in the forms SKILL.md section 8 lists, wherever they appear" is at PROOF.md line 46 and SKILL.md line 80.
+
+INFERRED, the cause:
+- ingest.py line 89 has the lookahead `(?=(?:PHONE_GAP\d){8,})(?!(?:PHONE_GAP\d){16})`.
+- PHONE_GAP is `[ .\-\n()` plus the no-break spaces, dashes and middle dot, repeated `{0,4}`.
+- The negative lookahead therefore counts digits beyond the end of the number. It crosses up to four of those characters at a time, including "(" and line breaks.
+
+NARROWER OR BROADER (all OBSERVED with redact() unless noted):
+
+Gap characters. The 12-digit number is followed by 2026:
+- The gap limit is exactly four characters. "0958....2026" (4 dots) is kept visible. "0958.....2026" (5 dots) is redacted.
+- A spaced open parenthesis "0958 ( 2026" is kept.
+- A semicolon, colon, tab or word between them gives a redaction: "0958; 2026", "0958: 2026", "0958\t2026" and "0958 and 2026" are all redacted.
+- So the trigger is only the PHONE_GAP characters, as the finding states.
+
+The 16-digit threshold:
+- 12+3 digits is swallowed; 12+4 is kept.
+- A maximum-length number followed by a single digit is kept: 'Call +44 2079 4609 5812 3. 1 now' is unchanged, while 'Call +44 2079 4609 5812 3 now' is redacted. The finding is slightly broader than its examples suggest: one stray digit is enough when the number itself is long (15 digits). A short trailing number such as a year is the natural case for the more common 11 to 12 digit numbers.
+
+Swallowing:
+- 'Call +44 7946 0958 (2026) now' -> 'Call [REDACTED:PHONE] now' (a group in parentheses is swallowed).
+- 'Call +44 7946 0958 (2026 budget) now' -> 'Call [REDACTED:PHONE] (2026 budget) now' (an open parenthesis alone is not swallowed, though the lookahead counted it).
+- 'Call +44 7946 0958. 2026 budget' -> 'Call [REDACTED:PHONE] budget'.
+- So the swallowing case is narrower than "within four separator characters": swallowing needs the main pattern's separators (at most 3 PHONE_SEP characters, with no "(" except as a closed group) and at most six groups after the country code. Over-redaction is a quality issue, not a leak.
+
+Digits before the number do not matter:
+- 'In 2026 call +44 20 7946 0958 now' -> redacted.
+- '2026: +44 20 7946 0958 now' -> redacted.
+
+The North American shape is not affected:
+- 'Call +1 317 555 0100. 2026 is busy.' -> redacted.
+- 'Call +1 (317) 555-0100 2026 now' -> redacted.
+- 'Call 317-555-0100. 2026 is busy.' -> redacted.
+- The finding is limited to the international pattern, as stated.
+
+The line-break case is limited to one cue:
+- Through ingest(), "+44 20 7946 0958." at the end of cue 1, with cue 2 starting "2026 is when we launch.", was redacted: {'phone': 1}, record line `> Call me on \[REDACTED:PHONE\].`
+- So the leak needs the following digits in the same cue.
+
+Severity: I consider the finding's Medium fair. This is my judgment, not observed. It is a documentation gap against "wherever they appear" with no leak in this attempt's record, and the realistic trigger (a number at the end of a sentence followed by a year or count in the same cue) is plausible in speech-to-text output.
+
+Cleanup: I deleted both temp dirs and verified they are gone. I made no writes under the repository. A `__pycache__` inside participant/ holds rerun_check and sync .pyc files dated Oct 22. It predates this run and is not mine.
+----- verifier 2 (is it real, and how much does it matter?)
+VERDICT
+- Part 1 (an international number stays fully visible when more digits follow it closely): REAL.
+- Part 2 (with 15 or fewer digits in all, the digits that follow are redacted with the number): REAL as an accuracy gap, but minor. The documented shape rule arguably already covers it.
+
+CATEGORY
+- Part 1: false claim, plus an undisclosed redaction miss. It is not a leak in this attempt.
+- Part 2: other. It over-redacts, which is the safe direction, and it costs a few verbatim words.
+
+CASE FOR
+- OBSERVED: I ran redact() from a copy of ingest.py in a temp dir and reproduced every case in the finding:
+  - "Call +44 20 7946 0958.\n2026 is when we launch." is unchanged.
+  - "Or my mobile, +44 7700 900123. 2026 is busy." is unchanged.
+  - "Call +44 20 7946 0958 1234 now" is unchanged.
+  - "Ring +44 20 7946 0958 (2026 budget line)." is unchanged.
+  - "Or +44 20 7946 0958 on its own." is redacted.
+  - "Call +44 20 7946 0958, 2026 is busy." is redacted.
+- OBSERVED: ingest.py line 412 redacts the whole cue text, line breaks included. So a two-line cue whose second line starts with a year leaves the number visible.
+- OBSERVED: SKILL.md section 8, first paragraph, says numbers "in the forms listed below are redacted wherever they appear". "+44 20 7946 0958" has 12 digits, so it is in the listed international form (8 to 15 digits). Neither the Known misses nor PROOF.md "Remaining limitations" (line 206) mentions this case.
+- INFERRED, cause: at ingest.py line 117 the negative lookahead `(?!(?:PHONE_GAP\d){16})` counts digits through up to four characters from PHONE_GAP (line 79), which includes parentheses. Those digits do not have to belong to the number. A year or count after a 12-digit number pushes the total past 15, and the whole number is then skipped. A comma breaks the chain, which matches the comma case being redacted.
+- OBSERVED, part 2: the following digits are swallowed:
+  - "Call +44 20 7946 0958 - 2 lines are free." becomes "Call [REDACTED:PHONE] lines are free."
+  - "Call +44 20 7946 0958. 12 people" becomes "Call [REDACTED:PHONE] people".
+  - "Call +44 2 07 94 60 12. 2026" becomes "Call [REDACTED:PHONE]", so the year is lost.
+- These are the same kind of undisclosed miss as fifth-review findings 3, 5 and 7, which PROOF.md resolved by listing them in SKILL.md section 8.
+
+CASE AGAINST
+- SKILL.md section 8 says "A `+` followed by fewer than 8 or more than 15 digits is not read as an international number" and "Known misses (there may be others)". A literal reader could say the trailing digits count as "followed by more than 15 digits". INFERRED: a normal reader takes "digits in all" to mean the number's own digits, not a year in the next sentence. So the hedge does not make the first paragraph accurate.
+- OBSERVED: no leak in this attempt. No file under participant/context/transcripts/ contains "+" followed by a digit. The meeting's one phone number (U-0015) is redacted.
+- Part 2: "+44 20 7946 0958 123" fits the documented shape exactly (two to six groups of 1 to 4 digits, up to three separators between groups). Section 8 also says ordinary numbers written in a phone number's shape are redacted. So the over-redaction follows from the stated rule. It loses words rather than exposing contact details.
+
+EXPECTED SOURCE
+- content/quests/ba-ruins/ingest-transcript.md line 85, AC 9: the skill states which personal details are redacted.
+- Same file, line 100: never commit a participant's personal contact details.
+- SKILL.md section 8, first paragraph and the international bullet (lines 80 and 86).
+- PROOF.md "What was redacted" (line 46) and "Remaining limitations" (line 206).
+
+SEVERITY
+- Part 1: Medium. It is an unlisted way for a listed-form number to stay fully visible, and the trigger is ordinary speech (a sentence or line starting with a year or count right after the number). It is not Blocking because nothing leaks in this attempt and the section already says other misses may exist.
+- Part 2: Low.
+
+SMALLEST FIX (wording only; I checked each old text against the current files)
+
+1. SKILL.md line 86. Append at the end of the bullet.
+   - Old: "A `+` followed by fewer than 8 or more than 15 digits is not read as an international number."
+   - New: "A `+` followed by fewer than 8 or more than 15 digits is not read as an international number. The count includes any digits that follow the number with no more than four spaces, dots, hyphens, dashes, parentheses or line breaks between them."
+
+2. SKILL.md Known misses. Insert after line 95 (the bullet ending "(the digits after the sixth group stay visible);").
+   - New bullet: "- an international number followed closely by other digits, such as a year at the start of the next sentence or line (`+44 20 7946 0958.` then `2026`): when the count reaches 16 or more, the whole number stays visible; when it stays at 15 or fewer, the following digits are redacted with the number;"
+
+3. PROOF.md line 206.
+   - Old: "international numbers written without a `+` or in more than six groups after the country code,"
+   - New: "international numbers written without a `+` or in more than six groups after the country code, an international number followed closely by other digits such as a year (the whole number stays visible when the count reaches 16 or more, and the following digits are redacted with it otherwise),"
+
+4. Optional, for consistency with how earlier findings were handled: add a row to PROOF.md's review tables saying the case was not fixed in the script and is now listed in SKILL.md section 8 and the limitations.
+
+I worked in a temp dir from `mktemp -d`, under /var/folders/v8/l38z3wd93mv38rtms6v1110c0000gq/T/, and deleted it afterwards. I modified nothing in the repository.
+
+===== A3
+----- verifier 1 (does it reproduce?)
+REPRODUCED: yes, for both parts. (a) The run is written and both files carry the phone-shaped file name, which the redaction rule does not touch. (b) The cited wording in SKILL.md section 8 and PROOF.md line 46 claims more than this. The finding is narrower than its wording suggests, though: only hyphen-separated North American phone shapes can get through. An email address can never get into a file name.
+
+COMMANDS AND OUTPUTS:
+
+1. Finding file read unchanged (`cat .../review6-findings/A3.txt`). The repo is on branch pilot/beau. Its git status was the same before and after my work: two modified files (ACTIVITY.md, progress.yaml) and three untracked participant/ folders.
+
+2. Cited wording (OBSERVED):
+   - SKILL.md line 80: "in every value copied into the provenance file. The transcript ID is the one value that is not redacted, which is why the meeting-file check refuses an ID that contains contact details (Section 2)."
+   - PROOF.md line 46: "in every value copied into the provenance file."
+   - Code (OBSERVED): ingest.py line 537 writes `f"record_file: {record_name}"` with no `clean()` call, while title, names, roles and locations go through `clean()` (line 512). Line 450 writes `f"provenance: {provenance_name}"` unredacted into the record.
+
+3. Reproduction. `T=$(mktemp -d)`. ingest.py copied to `$T/repo/participant/skills/x/ingest.py`. The raw file and meeting file were placed in `$T/raw/`. They are synthetic: one cue with a 555-0100 number, and transcript_id `tr-2026-10-28-a3-check`.
+   ```
+   cd $T/raw; PYTHONDONTWRITEBYTECODE=1 /Users/beaubrown/golden-thread-quest/.venv/bin/python -B $T/repo/participant/skills/x/ingest.py $T/raw/m.vtt --meeting $T/raw/m.json --out $T/repo/participant/context/transcripts/call-317-555-0100.md
+   ```
+   Output (OBSERVED):
+   ```
+   Transcript tr-2026-10-28-a3-check: written
+     record      participant/context/transcripts/call-317-555-0100.md
+     provenance  participant/context/transcripts/call-317-555-0100.provenance.yaml
+     ...
+     redacted    0 email address(es), 1 phone number(s)
+   exit=0
+   ```
+   `grep -n "record_file\|^provenance:"` found:
+   - `call-317-555-0100.provenance.yaml:20:record_file: call-317-555-0100.md`
+   - `call-317-555-0100.md:13:provenance: call-317-555-0100.provenance.yaml`
+
+   The phone number in the utterance was redacted (count 1). `grep -c 317` finds exactly 1 hit per file, so the only leak is the file name.
+
+4. Variations, run against the temp copy's `redact()` and `RECORD_NAME`:
+   ```
+   'call-317-555-0100'     -> 'call-[REDACTED:PHONE]'
+   'call-3175550100'       -> 'call-3175550100'
+   'call-317-555-0100-x12' -> 'call-[REDACTED:PHONE]-x12'
+   'tr-call-317-555-0100'  -> 'tr-call-[REDACTED:PHONE]'
+   'a-317-555-0100-b'      -> 'a-[REDACTED:PHONE]-b'
+   Call-317.md False
+   a@example.com.md False
+   call-(317)-555-0100.md False
+   call+1-317-555-0100.md False
+   call-317-555-0100.md True
+   ```
+
+5. The same phone shape in the transcript ID is refused:
+   ```
+   INVALID INPUT: meeting file is not valid: transcript_id must not contain a phone number or email address, because it is copied unredacted into every citation. Nothing was written.
+   exit=2
+   ```
+
+6. Real record (OBSERVED): `record_file: sample-meeting.md`. It holds no contact details, so the committed evidence is not affected.
+
+7. Temp dir deleted (`ls` confirms it is gone). The scratch pointer file was removed. Nothing was written to the repository or to ~/.claude.
+
+NARROWER OR BROADER:
+- **Narrower (OBSERVED):** RECORD_NAME (`^[a-z0-9]+(?:-[a-z0-9]+)*\.md$`) allows no `@`, extra `.`, `+`, parentheses or spaces. That means:
+  - No email address can ever be in a record file name.
+  - The only phone forms that fit are hyphen-separated ones, such as 317-555-0100 or 317-555-0100-x12.
+  - A bare 10-digit run fits the name rule, but `redact()` does not treat it as a phone, so it is out of scope for the redaction promise anyway.
+- **Broader (INFERRED):** Two points.
+  - Redacting the `record_file` value alone would not fix the leak. The contact detail is in the committed path itself (the file name and the provenance file name), and it shows in the console report. So the accurate fix is the doc wording the finding proposes, or refusing such names in check_paths, as the transcript-ID check does.
+  - SKILL.md line 76 tells users that a corrected transcript needs "its own record name". Nothing in SKILL.md warns that the name must not contain contact details.
+- **Test coverage (OBSERVED):** the tests check record names only for case and extension (test_ingest.py lines 723 and 724). No test or planted bug covers contact details in the file name. This matches the finding's "nothing checks the file name".
+- **Severity (INFERRED):** Low agrees with my reproduction. It needs the operator to choose such a name, and the real record is unaffected.
+----- verifier 2 (is it real, and how much does it matter?)
+VERDICT: REAL. The finding has two parts, and both are real.
+- Part 1, the SKILL.md section 8 sentence "The transcript ID is the one value that is not redacted": REAL.
+- Part 2, the PROOF.md line 46 claim "in every value copied into the provenance file": REAL, but weaker. The claim is literally true only if "copied" means copied from the transcript or the meeting file.
+
+CATEGORY: false claim (overstated). It is not a privacy problem for the submitted record.
+
+CASE FOR
+- OBSERVED: I copied ingest.py into a temp dir as `participant/skills/x/ingest.py`, built a synthetic one-cue VTT and meeting file outside that tree, and ran it with `--out participant/context/transcripts/call-317-555-0100.md`. It exited with code 0 and reported "written". The provenance file contained `record_file: call-317-555-0100.md` and the record contained `provenance: call-317-555-0100.provenance.yaml`. Both are unredacted. A second run with `call-317-555-0100x.md` was also accepted.
+- OBSERVED: `redact()` would catch these names. `redact("call-317-555-0100.md")` returns `call-[REDACTED:PHONE].md`. But nothing applies it to the file name.
+  - `render_provenance` (ingest.py line 537) writes `f"record_file: {record_name}"` with no `clean()`.
+  - `render_record` (line 450) writes `f"provenance: {provenance_name}"` the same way.
+  - `check_paths` (lines 554-555) only checks the name against `RECORD_NAME = ^[a-z0-9]+(?:-[a-z0-9]+)*\.md$` (line 42). That pattern allows a hyphen-separated North American phone shape.
+- OBSERVED: SKILL.md section 8 (line 80) says the transcript ID is "the one value that is not redacted". `record_file` is a second value in the provenance file that is not redacted. So the "one value" sentence is false as written.
+
+CASE AGAINST
+- The record name is not copied from untrusted input (the transcript or the meeting file). The operator types it at the command line. So "every value copied into the provenance file" can fairly be read as "values copied from the meeting data", and in that reading it is true. I checked the other values (INFERRED from the code): `meeting_date` must match a date pattern, uncertain speakers are redacted before they are stored, and the hashes and skill path hold no contact details.
+- `RECORD_NAME` allows only lower-case letters, digits and hyphens, so an email address can never appear. Only a hyphenated phone shape can.
+- Redacting the value inside the file would not help much. The file name itself is committed and visible in the tree.
+- The submitted evidence is clean. OBSERVED: `sample-meeting.provenance.yaml` line 26 is `record_file: sample-meeting.md`. The leak needs an operator who deliberately puts a phone number in `--out`.
+- The quest requirement (content/quests/ba-ruins/ingest-transcript.md, AC 9 and the Safety constraint "Never commit ... a participant's personal contact details") is met for this attempt. The problem is the documents' wording, not the record.
+
+EXPECTED SOURCE
+- The documents' own claims set the expected behavior: SKILL.md section 8, line 80 ("in every value copied into the provenance file. The transcript ID is the one value that is not redacted") and PROOF.md line 46 (the same wording).
+- The quest's AC 9 ("The skill states which personal details are redacted") makes what the skill states the yardstick.
+- No quest text requires the operator-chosen file name to be redacted. The defect is that the claim is inaccurate, not that the code is missing a requirement.
+
+SEVERITY: Low. It is a wording overstatement. The trigger is operator-controlled and does not touch the submitted record. It could mislead a reviewer only about an edge case.
+
+SMALLEST FIX (both lines checked against the current files)
+- SKILL.md line 80
+  - Old: `The transcript ID is the one value that is not redacted, which is why the meeting-file check refuses an ID that contains contact details (Section 2).`
+  - New: `Two values are not redacted: the transcript ID, which is why the meeting-file check refuses an ID that contains contact details (Section 2), and the record's file name, chosen with --out, which is copied into the provenance file as record_file and into the record as its provenance file name. Nothing checks the file name for contact details, so do not put any in it.`
+- PROOF.md line 46
+  - Old: `and in every value copied into the provenance file.`
+  - New: `and in every value copied from the meeting file into the provenance file. The transcript ID and the record's file name are not redacted (SKILL.md section 8).`
+- Optional line under PROOF.md "Remaining limitations": `- The record's file name, chosen with --out, is not checked for contact details; a phone number in a hyphenated name such as call-317-555-0100.md is copied unredacted into the provenance file and the record.`
+
+I created nothing in the repository. My temp dirs (made with mktemp, outside the repo) are deleted.
+
+===== A4
+----- verifier 1 (does it reproduce?)
+REPRODUCED: yes, for both parts. Part 1 (tags longer than 200 characters are still read as tags): yes. Part 2 (a 67-character tag with one 51-character class is not read): yes, both when the tag stands alone and when it sits inside Ada's tag. The doc locations are confirmed with one caveat: PROOF.md row 8 says only "overlong voice tag" and does not repeat the 200-character / 20-class sentence.
+
+COMMANDS AND OUTPUTS
+
+1. Code under test (OBSERVED), ingest.py lines 59 to 60:
+```
+VOICE_TAG = r"<v(?:\.[^\s>.<]{1,50}){0,20}[ \t]+"
+VOICE_OPEN = re.compile(VOICE_TAG + r"([^<>]{0,200})>")
+```
+The limits apply to parts of the tag, not to the whole tag. Each class is 1 to 50 characters, with at most 20 classes. The run of spaces or tabs after `<v` has no limit. The name part, from after that whitespace up to `>`, is at most 200 characters.
+
+2. Doc text (OBSERVED, via grep):
+- SKILL.md:57 says: "A voice tag longer than 200 characters, or with more than 20 classes, is not read as a tag".
+- PROOF.md:209 repeats the same sentence.
+- PROOF.md:198 (row 8) says only "overlong voice tag". It does not state the limits.
+
+3. Harness. I copied ingest.py to /var/folders/v8/l38z3wd93mv38rtms6v1110c0000gq/T/tmp.JS3IouZidd/participant/skills/x/ingest.py and imported it from a run.py in the same temp dir. For each cue, run.py called `ingest.parse_vtt(vtt, names)` and then `ingest.attribute(cue.label, names)`. `names` was the test fixture roster (Ada Example, alias Ada E., Ben Example). Each cue sat under `WEBVTT\n\n1\n00:00:01.000 --> 00:00:03.000\n`. The command was:
+```
+cd $T && PYTHONDONTWRITEBYTECODE=1 /Users/beaubrown/golden-thread-quest/.venv/bin/python -B run.py $T/participant/skills/x
+```
+Outputs (OBSERVED; "tag" length means `<v` through `>`):
+- A1: 20 classes of 50 "c", then " Ben Example" (tag 1,035 characters) gave `('Ben Example', True)`, 'Hi.'
+- A2: 400 spaces, then "Ben Example" (tag 414 characters) gave `('Ben Example', True)`, 'Hi.'
+- A3: `<v ` + 200 "B" + `>` (tag 204 characters) gave `('BBBB...200 chars', False)`, 'Hi.' It was read as a tag. It is uncertain only because that name is not on the roster.
+- B1: one 51-character class, then " Ben Example" (tag 67 characters), alone, gave `('Unattributed', False)`, with the text starting '<v.cccc...'
+- B2: `<v Ada Example>Hi. <v.`+51 c+` Ben Example>No.</v>` gave `('Ada Example', True)`, with the text 'Hi. <v.cccc...'
+
+4. Cleanup: I deleted the temp dir with `rm -rf`. `git status --short` showed only the participant changes that were already there before I started.
+
+NARROWER OR BROADER (all OBSERVED, same harness)
+- **21 classes:** The 20-class limit is described correctly. With 21 one-character classes the tag is not read: alone it gives Unattributed, and inside Ada's tag it gives Ada Example, certain. With 20 one-character classes it gives Ben Example, certain.
+- **201-character name:** A name of 201 characters is not read: alone it gives Unattributed, and inside Ada's tag it gives Ada Example, certain. So a 200-character limit on the name part is real. It is just not a limit on the whole tag.
+- **Class length:** A 50-character class is read (Ben Example, certain). A 51-character class is not. The class-length limit the finding adds is accurate.
+- **Leading whitespace has no limit:** 200 spaces plus a 200-character name (tag 403 characters) is read.
+- **Trailing spaces count toward the name limit:** "Ben Example" plus 189 trailing spaces (name part 200) is read as Ben Example, certain. With 190 trailing spaces (name part 201) it is Unattributed. So the finding's suggested wording, "whose name is longer than 200 characters", is slightly loose. The limit covers everything after the separating whitespace up to `>`, including trailing spaces.
+- **Empty class:** `<v. Ben Example>` (an empty class) is not read and gives Unattributed. This is another unstated case of "not read as a tag", and the suggested fix does not cover it either. INFERRED from the regex: a separator other than space or tab after `<v`, such as `<vBen>`, is also not read. I did not run that case.
+- **Long tag inside another speaker's cue:** A 1,035-character Ben tag inside Ada's cue is refused ("cue has more than one speaker tag"). This is the correct behavior, and it shows the doc's "longer than 200 characters" sentence predicts the wrong result in the case the sentence exists to warn about.
+- **Scope of the evidence:** INFERRED: the CLI gives the same attribution, because build_utterances calls the same attribute(cue.label, names). I did not run the end-to-end CLI.
+
+Severity: Low, as the reviewer stated. The docs warn about the wrong trigger, but every case I tried in the doc's own scenarios behaves as the doc describes.
+----- verifier 2 (is it real, and how much does it matter?)
+VERDICT: REAL. Both parts are real.
+- Part 1 (the stated limits are wrong): REAL. Tags longer than 200 characters are still read.
+- Part 2 (a limit is missing): REAL. A tag with a class longer than 50 characters is not read, and neither document says so.
+
+CATEGORY: false claim. A disclosed limitation is described inaccurately: it overstates in one direction and leaves out a case in the other.
+
+CASE FOR
+- OBSERVED: ingest.py lines 59 and 60 set the limits:
+  `VOICE_TAG = r"<v(?:\.[^\s>.<]{1,50}){0,20}[ \t]+"` and `VOICE_OPEN = re.compile(VOICE_TAG + r"([^<>]{0,200})>")`.
+  - The 200-character limit applies only to the name part after the whitespace, not to the whole tag.
+  - The whitespace run (`[ \t]+`) has no upper limit.
+  - Each class may be at most 50 characters.
+- OBSERVED: I ran `split_speaker` from a temp copy of ingest.py with the project venv, using `-B` and PYTHONDONTWRITEBYTECODE=1, then deleted the temp dir. Results:
+  - A 1,035-character tag with 20 classes of 50 characters each: read as Ben Example.
+  - A 414-character tag with 400 spaces before the name: read as Ben Example.
+  - A 204-character tag with a 200-character name: read.
+  - A 205-character tag with a 201-character name: not read, so the speaker is None.
+  - A 57-character tag with 21 one-character classes: not read. The "more than 20 classes" part of the claim is correct.
+  - A 67-character tag with one 51-character class: not read, so the speaker is None, which means Unattributed. The same tag with a 50-character class is read.
+  - The same 51-character-class tag inside `<v Ada Example>Hi. ... No.</v>`: the words are credited to Ada Example. That is exactly the misattribution SKILL.md section 5 warns about, but triggered by a case the section does not list.
+- So the sentence is wrong both ways. It says some tags are not read when they are (harmless). It also leaves out a case that is not read and can credit a second person's words to the first speaker (the part that matters).
+
+CASE AGAINST
+- Every misread input is extreme or deliberately crafted. INFERRED: real Teams or Zoom exports are unlikely to contain classes of 51 or more characters or names over 200 characters. SKILL.md line 72 already says no real export was tried.
+- The overstated half only makes the script look stricter than it is. Nothing it describes leaks data or loses words.
+- PROOF.md row 8 (line 198) says only "overlong voice tag". It names no numbers, so the row itself is not false. The reviewer's citation of row 8 is weak; that part of the location is a misreading.
+- The behavior around these tags (credited to an open tag's speaker, unattributed when alone, refused beside a closed tag) is accurately stated. Only the trigger conditions are wrong.
+
+EXPECTED SOURCE
+- The claim being checked is participant/skills/ba-ingest-transcript/SKILL.md section 5, "These cases are not caught", line 57. It is repeated in participant/evidence/ba-ingest-transcript/ba-attempt-001/PROOF.md under "Remaining limitations", line 209.
+- The truth is set by ingest.py lines 59 and 60.
+- Accurate limitation wording is required by content/quests/ba-ruins/ingest-transcript.md, requirement 2 (line 78): uncertain speakers are marked, not guessed. A misattribution the documents do not disclose is exactly what that requirement is meant to prevent.
+
+SEVERITY: Low. It is wording only, it is reached only with crafted input, and it does not affect the submitted record (OBSERVED: no other file states these limits).
+
+SMALLEST FIX (old text checked against the current files)
+1. SKILL.md line 57.
+   - Old: "A voice tag longer than 200 characters, or with more than 20 classes, is not read as a tag, and its text stays in the words."
+   - New: "A voice tag whose name is longer than 200 characters, or that has more than 20 classes or a class longer than 50 characters, is not read as a tag, and its text stays in the words."
+2. PROOF.md line 209.
+   - Old: "A voice tag longer than 200 characters, or with more than 20 classes, is not read as a tag,"
+   - New: "A voice tag whose name is longer than 200 characters, or that has more than 20 classes or a class longer than 50 characters, is not read as a tag,"
+
+Optional for precision: the name count includes any trailing spaces before `>`, but leading spaces are not counted. No code change is needed.
+
+===== A5
+----- verifier 1 (does it reproduce?)
+REPRODUCED: yes. The finding has two parts, and both reproduce.
+- Behaviour: yes (OBSERVED). In the Teams form, `<v Ada Example>I will take it.\nCarol Guest: I do not.</v>` becomes one utterance credited to Ada Example, marked certain, and it holds both lines. A Zoom-form cue with the same lines gives the same result.
+- Wording: yes (OBSERVED). SKILL.md line 56 says this happens only in a "listed speaker's Zoom-form cue". PROOF.md line 208 begins "In the Zoom form,". Both say the gap is narrower than the code shows. The listed limitation is real; it is just written too narrowly. Low severity is fair.
+
+COMMANDS AND OUTPUTS:
+Setup (temp dir from `mktemp -d`, repository untouched):
+- I copied ingest.py to `<tmp>/repo/participant/skills/x/ingest.py`.
+- The raw files went in `<tmp>/raw/`, each written as `WEBVTT\n\n00:00:01.000 --> 00:00:04.000\n<body>\n`.
+- The meeting file lists only "Ada Example" (BA) and "Ben Example" (Dev).
+- A small runner loaded the copied module with importlib and called `load_meeting`, `parse_vtt(text, roster(meeting))` and `build_utterances`. It ran with `PYTHONDONTWRITEBYTECODE=1 /Users/beaubrown/golden-thread-quest/.venv/bin/python -B run.py ...`.
+
+Output:
+```
+teams: U-0001 speaker='Ada Example' certain=True reason=None text='I will take it.\nCarol Guest: I do not.'
+zoom: U-0001 speaker='Ada Example' certain=True reason=None text='I will take it.\nCarol Guest: I do not.'
+teams_noclose: U-0001 speaker='Ada Example' certain=True reason=None text='I will take it.\nCarol Guest: I do not.'
+teams_listed: Unparseable: line 3: cue has more than one speaker, and the skill will not guess which words belong to whom
+teams_generic: Unparseable: line 3: cue has more than one speaker, and the skill will not guess which words belong to whom
+teams_cguest_v: Unparseable: line 3: cue has more than one speaker tag, and the skill will not guess which words belong to whom
+teams_unlisted_first: U-0001 speaker='Carol Guest' certain=False reason="label is not in the meeting's participant list" text='I will take it.\nDan Other: I do not.'
+zoom_unlisted_first: U-0001 speaker='Unattributed' certain=False reason='no speaker label in the transcript' text='Carol Guest: I will take it.\nDan Other: I do not.'
+```
+
+Full command line on the Teams case:
+`python -B <tmp>/repo/participant/skills/x/ingest.py <tmp>/raw/teams.vtt --meeting <tmp>/raw/meeting.json --out <tmp>/repo/participant/context/transcripts/a5-teams.md`
+- It exited 0 with "written" and "utterances 1".
+- The record shows `### U-0001 · 00:00:01.000 to 00:00:04.000 · Ada Example`, followed by `> I will take it.` and `> Carol Guest: I do not.`.
+- The heading has no uncertain marker.
+
+The temp dir was deleted afterwards. `git status` shows only the untracked and modified participant files that were already there.
+
+Code cause (OBSERVED, ingest.py `split_speaker`, about lines 292-328): in the voice-tag branch, the text inside the tag is split into lines. Every line then goes through the same `PREFIX_LABEL` + `is_speaker_label` check used for the Zoom form. An unlisted, non-generic `Name:` is not a speaker label, so the line passes as words in both forms.
+
+NARROWER OR BROADER:
+- As broad as stated, and a little broader. It also happens when the voice tag is never closed (teams_noclose).
+- Not broader to listed or generic names. A second line with a listed name (`Ben Example:`) or a generic label (`Guest:`) inside a Teams cue is refused, as SKILL.md section 5 says. A second unlisted speaker in its own voice tag is also refused.
+- A related case gets a different result (OBSERVED). If the cue's first speaker is itself unlisted, the second unlisted line also stays in the same utterance, but the utterance is marked uncertain:
+  - Teams form: credited to "Carol Guest", uncertain.
+  - Zoom form: credited to "Unattributed", uncertain, because the unlisted first prefix is read as words.
+  
+  So "certain but wrong speaker" happens only when the cue's first speaker is listed. The fix wording "inside a listed speaker's cue, in either form" is accurate.
+- Test coverage (INFERRED from grep): I found no "Carol Guest" in tests/test_ingest.py, so neither form of this limitation appears to have a test. That does not change the finding.
+----- verifier 2 (is it real, and how much does it matter?)
+VERDICT: REAL. The behavior is already disclosed, but the disclosure covers only the Zoom form, and the same thing happens in the Teams form.
+
+CATEGORY: disclosed limitation, scoped too narrowly (an incomplete claim, not a code defect the documents hide)
+
+CASE FOR:
+- OBSERVED: I copied ingest.py into a temp directory and called `parse_vtt` with Ada Example and Ben Example listed. The cue `<v Ada Example>I will take it.\nCarol Guest: I do not.</v>` came back as label `Ada Example`, text `I will take it.\nCarol Guest: I do not.`. `attribute()` returned `('Ada Example', True, None)`, so Carol's line is credited to Ada and marked certain. The Zoom-form version of the same cue gave the same result. Putting a listed speaker in Carol's place (`Ben Example: I do not.`) inside the voice tag was refused as "more than one speaker". The temp directory is deleted.
+- OBSERVED (ingest.py, `split_speaker`, about lines 291 to 327): when a voice tag is present, `others = text.split("\n")`, and each later line is checked with `PREFIX_LABEL` plus `is_speaker_label`. That is the same rule the Zoom path uses. An unlisted `Name:` is not a label in either form, so the mechanism is the same in both forms.
+- OBSERVED: SKILL.md line 56 ("inside a listed speaker's Zoom-form cue") and PROOF.md line 208 ("In the Zoom form, a line from an unlisted guest...") both limit the case to Zoom. A reader would reasonably conclude the Teams (voice-tag) form is safe, and it is not.
+- The case runs against quest requirement 2. A guest's words are put under a listed speaker and marked certain.
+
+CASE AGAINST:
+- The underlying behavior is disclosed. SKILL.md line 53 says a `Name:` prefix counts as a speaker only when the name is listed or generic. Line 54 says a refusal happens for "a line inside the cue that starts with a different listed or generic `Name:`" (not form-specific). PROOF.md line 178 (F8) records the limitation with no form qualifier. A careful reader could work out the Teams case from these.
+- INFERRED, not verified (no real export was tried, PROOF.md line 220): a real Teams export probably puts one speaker per `<v>` cue, so a `Name:` line inside a voice tag is unlikely in practice.
+- The suggested workaround ("Listing every participant, guests included, avoids this") works in both forms. The Ben Example test shows that a listed name inside a voice tag is refused.
+- Even so, the explicit "Zoom" qualifier is narrower than the code's behavior, so the two limitation lines are inaccurate as written.
+
+EXPECTED SOURCE:
+- content/quests/ba-ruins/ingest-transcript.md, line 78 (acceptance item 2: "speakers whose identity is uncertain are marked as uncertain rather than guessed").
+- The accuracy of the disclosure is measured against ingest.py `split_speaker` and SKILL.md section 5, line 54 (the refusal rule applies to "a line inside the cue" in either form).
+
+SEVERITY: Low. This is a wording correction to a limitation that is already disclosed. No code change is needed, and the real-world likelihood is probably low (inferred).
+
+SMALLEST FIX (both lines checked against the current files; tests/check_claims.py does not reference this wording):
+- SKILL.md line 56
+  - Old: `  - Because an unlisted name is read as words, a line from an unlisted guest inside a listed speaker's Zoom-form cue (for example `Carol Guest: I do not.`) stays in that speaker's utterance. Listing every participant, guests included, avoids this.`
+  - New: `  - Because an unlisted name is read as words, a line from an unlisted guest inside a listed speaker's cue, in either form (for example `Carol Guest: I do not.`), stays in that speaker's utterance and is marked certain. Listing every participant, guests included, avoids this.`
+- PROOF.md line 208
+  - Old: `- In the Zoom form, a line from an unlisted guest inside a listed speaker's cue stays in that speaker's utterance, because an unlisted name is read as words. Listing every participant avoids it.`
+  - New: `- In either form (voice tag or `Name:` prefix), a line from an unlisted guest inside a listed speaker's cue stays in that speaker's utterance, marked certain, because an unlisted name is read as words. Listing every participant avoids it.`
+- The words "marked certain" go beyond the reviewer's fix but match the `attribute()` result above. Leave them out if you want the smallest possible change.
+
+Files:
+- /Users/beaubrown/golden-thread-quest/participant/skills/ba-ingest-transcript/SKILL.md
+- /Users/beaubrown/golden-thread-quest/participant/evidence/ba-ingest-transcript/ba-attempt-001/PROOF.md
+- /Users/beaubrown/golden-thread-quest/participant/skills/ba-ingest-transcript/ingest.py
+
+===== A6
+----- verifier 1 (does it reproduce?)
+REPRODUCED: yes, on all three parts.
+- Part 1 (a labeled cue followed by an unlabeled one is merged, though Section 9 says the merge happens only "when both have the same `Name:` label or none"): yes, OBSERVED.
+- Part 2 (the same merge happens with an unlisted label, and with unclosed voice tags): yes, OBSERVED. For voice tags it is narrower than written. Unclosed tags for the same speaker, or an unclosed tag followed by an unlabeled line, are merged. A different speaker's tag is refused, and so is a closed tag followed by an unlabeled line.
+- Part 3 (a timing line with a letter O for a zero plus a short `->` arrow inside a cue's words is merged, and it is in neither list): yes, OBSERVED. I read SKILL.md section 9 (lines 107 to 113). The damaged-timing definition covers times that are "whole or cut short". The not-caught list covers only mistyped arrows, a timing line on the `WEBVTT` line, and a damaged timing line on a `NOTE` line. Neither covers a time with a wrong character in it.
+- Section 4 (SKILL.md line 45) and PROOF.md line 42 both say section 9 lists "the kinds that are not caught": OBSERVED by reading the files. Given part 3, that wording claims a complete list, and section 9 does not have one.
+
+COMMANDS AND OUTPUTS:
+Setup (temp dir, read-only on the repo):
+```
+T=$(mktemp -d)    # /var/folders/v8/l38z3wd93mv38rtms6v1110c0000gq/T/tmp.pSp4d2GxkS
+mkdir -p $T/repo/participant/skills/x $T/raw
+cp /Users/beaubrown/golden-thread-quest/participant/skills/ba-ingest-transcript/ingest.py $T/repo/participant/skills/x/ingest.py
+cd $T/raw && PYTHONDONTWRITEBYTECODE=1 /Users/beaubrown/golden-thread-quest/.venv/bin/python -B $T/raw/run.py $T
+```
+- `run.py` loads the copied ingest.py with importlib.
+- It uses the same meeting as test_ingest.py: Ada Example (label "Ada E.") and Ben Example are listed.
+- It calls `ingest(raw, meeting, out/s.md, output_dir=out, now=fixed)` and reads the record back with `read_record`.
+- Every case starts with `WEBVTT\n\n00:00:01.000 --> 00:00:04.000\n` and then the body shown. Newlines are written as `\n`.
+
+The finding's exact cases:
+- `Ada Example: Agreed.\n00:00:05.000 -.> 00:00:06.000\nWho said this?` gives `WRITTEN 1 utterance(s): U-0001 speaker='Ada Example' certain=True text='Agreed.\n00:00:05.000 -.> 00:00:06.000\nWho said this?'`
+- `Ada Example: Agreed.\n00:00:05.000 -.> 00:00:06.000\nCarol Guest: Second.` gives `WRITTEN 1 ... speaker='Ada Example' certain=True text='Agreed.\n00:00:05.000 -.> 00:00:06.000\nCarol Guest: Second.'`
+- `<v Ada Example>Agreed.\n00:00:05.000 -.> 00:00:06.000\n<v Ada Example>Second.` gives `WRITTEN 1 ... speaker='Ada Example' certain=True text='Agreed.\n00:00:05.000 -.> 00:00:06.000\nSecond.'`
+- `<v Ada Example>Agreed.\n00:00:05.000 -.> 00:00:06.000\nWho said this?` gives `WRITTEN 1 ... speaker='Ada Example' certain=True`
+- `Ada Example: Agreed.\n00:00:03.O00 -> 00:00:04.000\nAda Example: More.` gives `WRITTEN 1 ... speaker='Ada Example' certain=True text='Agreed.\n00:00:03.O00 -> 00:00:04.000\nAda Example: More.'`
+
+Variations:
+- Speaker combinations around a `-.>` line:
+
+| First cue | Second cue | Result |
+|---|---|---|
+| Ada Example: | Ada Example: | WRITTEN 1, Ada, certain |
+| Ada Example: | Ada E.: (her alias) | WRITTEN 1, Ada, certain |
+| unlabeled | unlabeled | WRITTEN 1, Unattributed, uncertain |
+| unlabeled | Carol Guest: (unlisted) | WRITTEN 1, Unattributed, uncertain |
+| unlabeled | Ada Example: | Unparseable line 3: "cue has more than one speaker" |
+| Ada Example: | Ben Example: | Unparseable line 3: "cue has more than one speaker" |
+| Ada Example: | Speaker 2: | Unparseable line 3: "cue has more than one speaker" |
+| unclosed `<v Ada Example>` | `<v Ben Example>` | Unparseable line 3: "cue has more than one speaker tag" |
+| `<v Ada Example>...</v>` (closed) | unlabeled | Unparseable line 3: "cue has words outside its speaker tag" |
+
+- Damaged timing lines inside a cue's words:
+
+| Timing line | Result |
+|---|---|
+| `00:00:03.O00 --> 00:00:04.000` | Unparseable line 5: "a timing line appears inside a cue's text" |
+| `00:00:03.000 -> 00:00:04.000` | Unparseable line 5 (same) |
+| `00:00:03.000 -> 00:00:04.O00` | WRITTEN 1, merged |
+| `00:00:03.O00 00:00:04.000` (no arrow) | WRITTEN 1, merged |
+| `00:00:03.O00 → 00:00:04.000` (Unicode arrow) | WRITTEN 1, merged |
+| `00:00:0l.000 -> 00:00:04.000` (letter l for a 1) | WRITTEN 1, merged |
+
+- The same O-for-zero line in other places:
+
+| Where | Result |
+|---|---|
+| Right after the `WEBVTT` line | WRITTEN 1 utterance, 'Kept.'; the damaged cue is dropped with no warning |
+| On the line after `NOTE hi` | WRITTEN 1 utterance, 'Kept.'; the cue is dropped with no warning |
+| As a cue's own timing line after a blank line | Unparseable line 3: "expected a timing line ..." |
+
+Cleanup: `rm -rf $T`, and `ls` then reports "No such file or directory". `find $T -name __pycache__` printed nothing. `git status --porcelain` in the repository showed only the participant changes that were already there before I started. I wrote nothing to the repository.
+
+NARROWER OR BROADER:
+- Part 1 is broader than stated (OBSERVED).
+  - The real rule is that the merge happens unless Section 5's speaker checks refuse the combined cue.
+  - Cases that merge: two of the same listed `Name:` label, a name and its alias, two unlabeled cues, unlabeled followed by unlisted, and listed followed by unlabeled or unlisted.
+  - Cases that are refused: unlabeled followed by a listed or generic label, and two different listed or generic labels.
+  - "Same label or none" therefore leaves out listed followed by unlabeled, listed followed by unlisted, and unlabeled followed by unlisted.
+- Part 2 is narrower for voice tags (OBSERVED).
+  - Merged: unclosed same-speaker tags, and an unclosed tag followed by an unlabeled line.
+  - Refused: a different speaker's tag, and a closed tag followed by an unlabeled line ("words outside its speaker tag").
+  - The reviewer's suggested wording, "unless Section 5's rules find a different listed or generic speaker", does not describe the closed-tag refusal. That one comes from the words-outside-a-tag rule, not from finding a different speaker. INFERRED: "unless Section 5's speaker rules refuse the cue" would be accurate.
+- Part 3 is broader than stated (OBSERVED).
+  - The gap is any time that holds a non-digit character, in either position (start or end), when the line has no `-->`. The arrow can be `->`, a Unicode arrow, or missing entirely.
+  - A damaged time with a correct `-->` is caught, and so is a whole time with `->`.
+  - The same line right after the `WEBVTT` line or inside a `NOTE` block makes the next cue disappear silently. That is a silent loss, not only a merge, and it fits the same not-caught entry.
+  - So "a timing line with both a damaged time and a damaged arrow" is too narrow. INFERRED wording: "a timing line with a mistyped character in a time and no `-->`".
+- The finding's Low severity fits (INFERRED). The behavior shows up only in already-damaged files, and the problem is in the wording, not in a safety control. It does not leak data, and the clean record the quest hands in is not affected.
+----- verifier 2 (is it real, and how much does it matter?)
+VERDICT: REAL on both parts. Part 1 (the merge condition is stated too narrowly) and Part 2 (one kind of damage is missing from the not-caught list, while Section 4 and PROOF.md present that list as complete) both reproduced.
+
+CATEGORY: false claim. This is documentation that says less than the code does, about a limitation that is already disclosed. It is not a code defect, because the quest does not require these cases to be caught as long as they are disclosed.
+
+CASE FOR
+- Part 1, OBSERVED (I ran parse_vtt on a temp copy of ingest.py with Ada Example and Ben Example listed as participants):
+  - A labeled cue, then a timing line with `-.>`, then an unlabeled line came back as one cue labeled Ada Example. Its text includes the damaged timing line and "Who said this?".
+  - A labeled cue followed by `Carol Guest: Second.` was merged the same way.
+  - An unclosed `<v Ada Example>` followed by an unlabeled line was merged the same way.
+  - A different listed speaker after the damaged line (Ben Example, as a `Name:` prefix or as a voice tag) was refused. An unlabeled cue followed by a labeled one was also refused.
+  - So the actual rule is: the words are merged into the first cue's speaker unless Section 5's more-than-one-speaker rules fire. The text "merged into that cue when both have the same `Name:` label or none" (SKILL.md line 113) leaves out the labeled-then-unlabeled case, the unlisted-label case and the voice-tag case. In the labeled-then-unlabeled case, words from an unknown speaker are recorded under a listed participant as "certain".
+  - INFERRED: build_utterances marks a listed label as certain (attribute(), line 396), so the full ingest gives the same result the reviewer saw.
+- Part 2, OBSERVED:
+  - `00:00:03.O00 -> 00:00:04.000` inside a cue's words was merged.
+  - `00:00:03.000 -> 00:00:04.O00` (damaged end time) was merged too.
+  - `00:00:03.O00 00:00:04.000` (no arrow) was merged too.
+  - `00:00:03.O00 --> 00:00:04.000` was refused, because the line holds `-->`.
+  - The cause is that is_timing_line (ingest.py lines 192 to 199) needs every piece to be a time, arrow or setting, and TIME_PIECE rejects a letter. None of the three listed not-caught kinds covers this.
+  - SKILL.md line 45 says "Section 9 lists the kinds of damage that are refused, and the kinds that are not caught". PROOF.md line 42 says the same. Neither carries the "(there may be others)" hedge that Section 8's redaction list has (line 90). So the list reads as complete, and it is not.
+
+CASE AGAINST
+- The limitation is disclosed in substance: Section 9 already says a damaged timing line can be merged with no warning.
+- PROOF.md line 211 already states it more broadly: "merged into the cue before it", with no label condition.
+- Section 9's definition of a damaged timing line ("made only of times (whole or cut short ...)") implies that a time containing a letter is not a time. A very careful reader could work out Part 2 from that.
+- "when both have the same label or none" can be read loosely, not as an exhaustive condition.
+- Against that, the stated condition is still literally contradicted by observed behavior, and the not-caught list is presented as complete. So the claims are inaccurate, even though the limitation itself is not hidden.
+
+EXPECTED SOURCE
+- Quest: content/quests/ba-ruins/ingest-transcript.md line 87 (AC 11: input that cannot be parsed is reported, and no partial record is written that appears complete).
+- The expected accuracy comes from the documents' own claims: SKILL.md Section 4 (line 45), SKILL.md Section 9 (line 113), PROOF.md line 42. It does not rest on the reviewer's opinion.
+
+SEVERITY: Low. The limitation itself is disclosed. Only the exact condition and how complete the list is are overstated. The effect is that a reader may think a wrong-speaker merge is less likely than it is.
+
+SMALLEST FIX (checked against the current files; none of the new wording matches check_claims.py's CLAIM pattern):
+1. SKILL.md line 113.
+   - Old: "Not caught: a timing line whose arrow is mistyped with other characters, such as `-.>`, `<--` or `--)`, in any of those places; a timing line written on the `WEBVTT` line itself;"
+   - New: "Not caught: a timing line whose arrow is mistyped with other characters, such as `-.>`, `<--` or `--)`, in any of those places; a timing line without `-->` in which a time has a letter or other character in it, such as `00:00:03.O00 -> 00:00:04.000`, in any of those places; a timing line written on the `WEBVTT` line itself;"
+2. SKILL.md line 113, end of the sentence.
+   - Old: "merged into that cue when both have the same `Name:` label or none;"
+   - New: "merged into that cue under its speaker, even when the merged words have no label or an unlisted one, unless Section 5's rules find more than one speaker, when the file is refused;"
+3. SKILL.md line 45.
+   - Old: "and the kinds that are not caught."
+   - New: "and the kinds known not to be caught."
+4. PROOF.md line 42.
+   - Old: "and the kinds that are not caught (AC 11)"
+   - New: "and the kinds known not to be caught (AC 11)"
+5. Optional, for consistency (my addition; the reviewer did not raise it):
+   - PROOF.md line 106. Old: "Not caught: a mistyped arrow such as `-.>`," New: "Not caught: a mistyped arrow such as `-.>`, a time with a letter in it on a line without `-->`,"
+   - PROOF.md line 211. Old: "such as `-.>` or `<--`;" New: "such as `-.>` or `<--`; a timing line without `-->` in which a time has a letter in it;"
+
+Nothing in the repository was changed. The temp directory is deleted.
+
+===== A7
+----- verifier 1 (does it reproduce?)
+REPRODUCED: yes for both parts.
+- Part 1 (refusal wording is broader than the code): yes. A line made only of arrow pieces or setting-like words, with no time at the start, is kept as speech. The code also requires the first piece to be a time, which the sentence leaves out.
+- Part 2 (`<v Ben&#32;Example>` "is read as Ben Example"): yes. The tag is read as Ben Example only when it is the cue's only form of the name. When the same cue also names the speaker plainly, the cue is refused.
+
+Severity Low fits. Every case errs toward keeping speech or refusing, never toward silent loss.
+
+COMMANDS AND OUTPUTS:
+Setup: `T=$(mktemp -d)`, then I copied ingest.py to `$T/participant/skills/x/ingest.py`. Each probe was run as `cd $T && PYTHONDONTWRITEBYTECODE=1 /Users/beaubrown/golden-thread-quest/.venv/bin/python -B probe.py $T/participant/skills/x`. The probes import that copy and call `ingest.parse_vtt("WEBVTT\n\n00:00:01.000 --> 00:00:02.000\n" + body + "\n", names)`. Afterwards I ran `rm -rf $T`, and `git status` was the same as before (only Beau's existing changes).
+
+OBSERVED wording:
+- SKILL.md line 113 contains both versions. Its definition says "made only of times ..., arrows ..., and cue settings, starting with a time". Its later sentence says "A line made only of times, arrow pieces or setting-like words ... is refused even if it was speech", with no time condition.
+- PROOF.md line 210 (limitations) has the broad wording.
+- PROOF.md line 131 (second-review table, row 1) says "refusing a line made only of times, arrow pieces and cue settings", with no time condition.
+- PROOF.md line 171 already includes "starting with a time".
+- SKILL.md line 58 says "The voice-tag form, `<v Ben&#32;Example>`, is read as Ben Example."
+
+OBSERVED code: `is_timing_line` (ingest.py lines 192 to 199) requires `TIME_PIECE.match(pieces[0])`. `split_speaker` (line 295) compares the raw voice names with `same_speaker` before `decode_entities` runs (line 321).
+
+Part 1, each line placed inside a cue after "hello":
+- '->': KEPT
+- '--': KEPT
+- 're:budget': KEPT
+- '-> 10:30': KEPT
+- 'note:x 10:30': KEPT
+- '10:30.': REFUSED ("a timing line appears inside a cue's text, so a blank line is missing and two cues would be merged")
+- '3:2': REFUSED (same message)
+- '9:00 - 10:00': REFUSED (same message)
+- '10:30 re:budget': REFUSED (same message)
+
+Part 2:
+- `<v Ben Example>Hi</v>\n<v Ben&#32;Example>more</v>`: REFUSED ("line 3: cue has more than one speaker tag, and the skill will not guess which words belong to whom")
+- `<v Ben&#32;Example>Hi</v>` alone: KEPT, label 'Ben Example'
+- The same reference tag twice: KEPT, label 'Ben Example'
+
+NARROWER OR BROADER:
+Part 1 is a little broader than stated, and the same in every place the check runs:
+- More lines are kept that the broad sentence would call refused: '=', '~', '> 10:30', 're:budget 10:30', 'a:b c:d', '-- 10:30 --', 're:budget ->'.
+- The same holds on a cue's first text line: '->', 're:budget', '-> 10:30' and 'note:x 10:30' are kept, while '10:30 re:budget' is refused.
+- After the WEBVTT line: '->' and 're:budget' are accepted, '10:30' is refused.
+- Inside a NOTE block: '-> 10:30' is accepted, '3:2' is refused.
+- So the gap is in all three places the sentence covers.
+- Proposed fix (INFERRED): add "starting with a time" to SKILL.md line 113, PROOF.md line 210 and PROOF.md line 131. It is already in the definition sentence earlier on line 113 and in PROOF.md line 171, which softens the confusion but does not remove it.
+
+Part 2 is broader than stated. Any cue where the same name is spelled two ways is refused:
+- `<v Ben Example>` and `<v Ben&#32;Example>` in either order: REFUSED (more than one speaker tag).
+- `<v Ben&#32;Example>` with `<v Ben&#x20;Example>`: REFUSED.
+- `<v A & B>` with `<v A &amp; B>`: REFUSED.
+- With names={"ben example": "Ben Example"}, `<v Ben&#32;Example>Hi` followed by the line `Ben Example: more`: REFUSED ("cue has more than one speaker"). The plain `<v Ben Example>` with the same line is KEPT.
+- Not affected: letter case differences between plain tags (`<v Ben Example>` with `<v ben example>`) are KEPT as one speaker.
+- Proposed fix (INFERRED): word the section 5 addition more broadly than the reviewer's text, for example: "A cue that writes one speaker's name in two ways, plainly and with character references or with different references, in tags or in a `Name:` label, is refused as two speakers."
+
+Nothing seen here leaks data or drops words silently, so Low stands (INFERRED).
+----- verifier 2 (is it real, and how much does it matter?)
+VERDICT: Part 1 (the refusal wording on lines made only of times, arrow pieces or setting-like words) is REAL. Part 2 (the `<v Ben&#32;Example>` wording in section 5) is REAL. Both are Low.
+
+CATEGORY: Part 1 is a false claim: the wording says more is refused than the code refuses. Part 2 is a false claim: a case that is refused is not disclosed, and it contradicts section 5's "one speaker named two ways" sentence.
+
+CASE FOR
+- Part 1 (OBSERVED, read in code): `is_timing_line` in ingest.py (lines 192 to 199) returns True only when the line holds `-->`, or when its first piece matches TIME_PIECE and every piece is a time, an arrow piece or a setting.
+- Part 1 (OBSERVED, run on a temp copy): `->`, `--`, `re:budget`, `-> 10:30` and `note:x 10:30` all return False. Inside a cue, each was kept as speech. `10:30.`, `3:2`, `9:00 - 10:00` and `10:30 re:budget` return True and are refused.
+- Part 1, where the wording is too broad (each string checked, occurs once):
+  - SKILL.md section 9, line 113: "A line made only of times, arrow pieces or setting-like words, such as ... is refused".
+  - PROOF.md limitations, line 210: the same wording.
+  - PROOF.md second-review row 1, line 131: "began refusing a line made only of times, arrow pieces and cue settings in those places".
+- Part 1, the "safe direction" is not completely safe (OBSERVED): the finding calls the overstatement the safe direction, but it also overstates detection. A cue holding "Ana: hello", then "2", then "-> 00:00:04.000", then "Ana: second cue" was merged into one utterance with no warning. That is a timing line that lost its start time and whose arrow is cut short. The wording says such a line is refused. Section 9's "Not caught" list does not name this case, and neither does PROOF.md line 211.
+- Part 2 (OBSERVED): a single `<v Ben&#32;Example>Hi</v>` gives the label "Ben Example". But `<v Ben Example>Hi</v>` followed by `<v Ben&#32;Example>more</v>` is refused with "cue has more than one speaker tag", with or without the name in the participant list. The cause is that `same_speaker` (line 287) compares the tag text before character references are decoded.
+- Part 2: section 5 (line 54) says "One speaker named two ways ... is one speaker in either form". Line 58 says the character-reference voice tag "is read as Ben Example". Read together, they imply this cue would be accepted.
+
+CASE AGAINST
+- Part 1: section 9 line 113 defines a damaged timing line in the sentence just before, ending "starting with a time". All four examples given start with a time. So a careful reader could get it right. PROOF.md row F1 (line 171) already says "starting with a time".
+- Part 1: the case that slips through needs two kinds of damage at once (a lost start time and a shortened arrow). An exact `-->` is always caught.
+- Part 2: the line 58 statement is true for the case it describes, a cue with one tag. The refusal stops the whole file with a reason, nothing is written, and no words are lost or credited to the wrong person.
+- Both parts: this is incomplete or loose wording about edge cases, not a defect in a core flow.
+
+EXPECTED SOURCE
+- The documents' own promise is SKILL.md section 9 (lines 108 to 117) and section 5 (lines 54 and 58), and PROOF.md's limitations section, which says what is refused and what is not caught.
+- The quest's need for this is AC 11, cited in PROOF.md line 106: unparseable input is reported, with no partial record. The quest text in content/quests/ba-ruins/ingest-transcript.md was not reread for this finding (NOT ASSESSED).
+- AC 2 (uncertain attribution is marked) covers Part 2.
+
+SEVERITY: Low for both parts. Part 1 is at the top of Low because the overstatement also hides a merge with no warning.
+
+SMALLEST FIX (each old string confirmed present once in the current file)
+1. SKILL.md line 113
+   - Old: "A line made only of times, arrow pieces or setting-like words, such as"
+   - New: "A line starting with a time and made only of times, arrow pieces or setting-like words, such as"
+   - In the same paragraph, old: "a timing line written on the `WEBVTT` line itself;"
+   - New: "a timing line that has lost its start time and whose arrow is cut short, such as `-> 00:00:04.000`; a timing line written on the `WEBVTT` line itself;"
+2. PROOF.md line 210
+   - Old: "- A line made only of times, arrow pieces or setting-like words, such as"
+   - New: "- A line starting with a time and made only of times, arrow pieces or setting-like words, such as"
+   - Add at the end of that bullet: "A line that does not start with a time, such as `->` or `re:budget`, is read as speech."
+3. PROOF.md line 211
+   - Old: "such as `-.>` or `<--`;"
+   - New: "such as `-.>` or `<--`; a timing line that has lost its start time and whose arrow is cut short, such as `-> 00:00:04.000`;"
+4. PROOF.md line 131
+   - Old: "began refusing a line made only of times, arrow pieces and cue settings in those places"
+   - New: "began refusing a line made only of times, arrow pieces and cue settings, starting with a time, in those places"
+5. SKILL.md line 58
+   - Old: "The voice-tag form, `<v Ben&#32;Example>`, is read as Ben Example."
+   - New: "The voice-tag form, `<v Ben&#32;Example>`, is read as Ben Example, but a cue that names one speaker both plainly and with character references, such as `<v Ben Example>` and `<v Ben&#32;Example>`, is refused as two speakers."
+
+I ran everything on a copy of ingest.py in a temp directory, which I have deleted. Nothing in the repository was changed. `git status` shows changes to participant/ACTIVITY.md and progress.yaml and the untracked participant folders; they were there before this review and are not mine.
+
+===== A9
+----- verifier 1 (does it reproduce?)
+REPRODUCED: yes, on all three parts.
+- (a) yes. Under "a speaker tag across two lines accepted", none of the four AC 2 tests fails. Only `unparseable_transcripts_are_reported_and_nothing_is_written` fails, and only on its reason check. The tag is still refused.
+- (b) yes. None of the six bugs listed in the PROOF.md line 109 paragraph fails `command_line_exit_codes`. Across all 85 planted bugs, only "a different record overwritten" fails it.
+- (c) yes. Under "character references beyond the last character, surrogates and NUL accepted", none of the three inputs is accepted. One small correction: the surrogate case fails while the record text is being hashed for provenance, before anything is written, not "at write". Either way, no files are left behind.
+
+COMMANDS AND OUTPUTS:
+Setup (OBSERVED): I created a temp dir with `mktemp -d` and copied `tests/test_ingest.py`, `tests/planted_bugs.py` and `ingest.py` into it from `/Users/beaubrown/golden-thread-quest/participant/skills/ba-ingest-transcript/`. A driver script read `PLANTED` from the copied `planted_bugs.py` and applied one bug at a time with `src.replace(old,new)`. It wrote the result to `<tmp>/m/participant/skills/x/ingest.py` and ran:
+`env INGEST_UNDER_TEST=<that path> PYTHONDONTWRITEBYTECODE=1 /Users/beaubrown/golden-thread-quest/.venv/bin/python -B <tmp>/tests/test_ingest.py`
+It printed only the FAIL lines and the totals.
+
+Part (a) (OBSERVED):
+```
+=== a speaker tag across two lines accepted (rc=1)
+    FAIL  unparseable_transcripts_are_reported_and_nothing_is_written: AssertionError: speaker tag across two lines: reason 'line 3: the cue contains a control character, which would break the record' does not mention 'across two lines'
+    31 passed, 1 failed
+```
+Calling `ingest()` directly with the bug applied, the cue `<v Ada\nExample>split</v>` gives `Unparseable: line 3: the cue contains a control character...` and files=[]. The unmodified code gives `Unparseable: line 3: a speaker tag runs across two lines`.
+
+Part (b) (OBSERVED, six cited bugs plus the one the finding names):
+```
+=== impossible meeting dates accepted (rc=1)
+    FAIL  invalid_meeting_file_is_named_and_nothing_is_written: AssertionError: 'real calendar date' not reported: ...
+=== transcript_id with a phone number accepted (the round-2 code) (rc=1)
+    FAIL  invalid_meeting_file_is_named_and_nothing_is_written: ...
+=== one label used for two participants accepted (the round-2 code) (rc=1)
+    FAIL  invalid_meeting_file_is_named_and_nothing_is_written: ...
+=== labels that are not a list accepted (the round-2 code) (rc=1)
+    FAIL  invalid_meeting_file_is_named_and_nothing_is_written: ...
+=== output outside the transcripts folder accepted (rc=1)
+    FAIL  output_outside_the_transcripts_folder_is_refused: AssertionError: <tmp>/elsewhere.md was accepted
+=== a missing raw transcript not reported (rc=1)
+    FAIL  output_outside_the_transcripts_folder_is_refused: FileNotFoundError: ...missing.vtt
+=== a different record overwritten (rc=1)
+    FAIL  a_changed_transcript_never_overwrites_the_record: AssertionError: a different transcript replaced the record
+    FAIL  command_line_exit_codes: AssertionError: exit codes were [0, 0, 2, 0]
+```
+Full run of all 85 planted bugs (OBSERVED): all 85 turned the suite red (two hostile-text bugs did so by hanging and were stopped after 60 s). The only bug with `FAIL  command_line_exit_codes` was "a different record overwritten". This matches line 71 of `logs/planted-bugs.txt`. The three tests are the ones under the "rules SKILL.md states" heading in `test_ingest.py`, and SKILL.md line 141 names the same three.
+
+Part (c) (OBSERVED, test run with the bug applied):
+```
+    FAIL  unparseable_transcripts_are_reported_and_nothing_is_written: ValueError: chr() arg not in range(0x110000)
+    31 passed, 1 failed
+```
+Calling `ingest()` directly with the bug applied:
+```
+'<v Ada Example>&#1114112;</v>': ValueError: chr() arg not in range(0x110000); files=[]
+'<v Ada Example>&#xD800;</v>': UnicodeEncodeError: 'utf-8' codec can't encode character '\ud800' ... surrogates not allowed; files=[]
+'<v Ada Example>a&#0;b</v>': Unparseable: line 3: the cue contains a control character, which would break the record; files=[]
+```
+The surrogate traceback ends at `ingest.py` line 663, `"record_sha256": hashlib.sha256(record_text.encode("utf-8")).hexdigest()`. That is a hash while building provenance, not a file write.
+
+The unmodified code refuses all three with `character reference '...' is not a character`. The test still fails under the bug because the uncaught ValueError leaves its loop, and `main()` records it as a FAIL. So the AC 11 citation is real, but the bug's name says "accepted" and nothing is accepted.
+
+NARROWER OR BROADER:
+- (a) Same as stated. I tried three more variants with the bug applied: `<v Ada\nExample>split` (no closing tag), `<v.loud Ada\nExample>split</v>`, and `<v Ada Example>one</v> <v Ada\nExample>two</v>`. All were refused, the first two as a control character and the third as more than one speaker tag. No variant was accepted (INFERRED: the label still holds `\n` and fails `has_control`).
+  - Side observation, outside A9 and present in the unmodified code too: `<v Ada\n>split</v>` and `<v \nAda Example>split</v>` are accepted and written. The newline sits at the edge of the tag and `strip()` removes it, so the tag never actually spans two lines (INFERRED). I do not count this as a defect.
+- (b) Same as stated. Across all 85 bugs, exactly one fails `command_line_exit_codes`. The finding's proposed fix (add "a different record overwritten" to that list) matches this.
+- (c) Same as stated. `&#x110000;`, `&#xDFFF;` and `&#x0;` behave like their counterparts (ValueError, UnicodeEncodeError, control-character refusal), with no files left. The one wording correction is "at write": the failure is at hashing, before any write.
+- None of the three parts is mis-cited. In each case the named planted bug does make a cited test fail. The problem is that the bug's name, or the test it is cited against, describes what happens wrongly. Low severity seems right (INFERRED).
+
+Cleanup (OBSERVED): the temp dir is deleted. `git status --short` matches the starting state, and no `__pycache__` is in `ba-ingest-transcript`. There is a `__pycache__` in `participant/skills/jira-read-assigned/`, dated Oct 22 2026, which is before this run. I did not create it.
+----- verifier 2 (is it real, and how much does it matter?)
+VERDICT: (a) REAL. (b) REAL. (c) REAL, but only as a wrong planted-bug name. The test still catches the break.
+
+CATEGORY: false claim. All three parts are citations that do not match what the planted-bug log shows. (a) and (c) also use bug names that describe the check that was removed, not what the script then does.
+
+CASE FOR:
+- (a) OBSERVED. In PROOF.md the AC 2 row (line 97) names four tests and lists "a speaker tag across two lines accepted" among its planted bugs. The saved log (logs/planted-bugs.txt line 23) and my own rerun in a temp copy show that this bug fails only `unparseable_transcripts_are_reported_and_nothing_is_written`, which is an AC 11 test. It fails on the reason check: the reason given is "line 3: the cue contains a control character, which would break the record", and the test expects "across two lines". None of the four AC 2 tests fails. The tag is still refused, because the control-character check catches the newline in the label. The bug name says "accepted", and that is not what happens.
+- (b) OBSERVED. PROOF.md line 109 says "The three tests that check SKILL.md rules have planted bugs too" and lists six. The three tests are `invalid_meeting_file_is_named_and_nothing_is_written`, `output_outside_the_transcripts_folder_is_refused` and `command_line_exit_codes` (test_ingest.py lines 694-759). My rerun matches the log (lines 77-84):
+  - Four of the six fail only the meeting-file test.
+  - Two fail only the out-folder test.
+  - None fails `command_line_exit_codes`.
+  - Only "a different record overwritten" fails it, with "exit codes were [0, 0, 2, 0]" (log line 71). That bug is cited in the AC 1 row but not in this sentence.
+- (c) OBSERVED in the mutant copy:
+  - "&#1114112;" raises ValueError (chr() is out of range).
+  - "&#xD800;" decodes to a lone surrogate, which then fails to encode as UTF-8 (UnicodeEncodeError). That this happens during the write is INFERRED.
+  - "a&#0;b" decodes to text that `has_control` flags, so it is refused as a control character.
+
+  None of the three is accepted. The suite goes red because the first case crashes instead of raising Unparseable. Because of that, the surrogate and NUL cases are never reached under this mutant. The same name is cited in the AC 11 row (line 106) and the Medium 1 row (line 119).
+
+CASE AGAINST:
+- (a) The bug is caught, and SKILL.md section 9 (line 115) correctly lists a two-line speaker tag as refused. The real gap is that the citation sits on the wrong row and the bug name overstates the effect. Removing the check changes only the message, and the tag is still refused.
+- (b) "have planted bugs too" could be read as a statement about the group of tests. Even so, `command_line_exit_codes` does have a planted bug, and the claims check (claims-check.txt) shows every test fails under at least one planted bug. The sentence is incomplete, not wrong about coverage.
+- (c) The test does detect the removed check, so the protection is real. Only the bug's label is inaccurate. The limitation at line 216 already says the claims check "cannot judge whether a named planted bug is the right one". That covers wrong citations generally but does not describe this case.
+
+EXPECTED SOURCE: PROOF.md itself. Line 109 says each claim of a test names a planted bug that turns those tests red, and logs/planted-bugs.txt is the evidence it points to. Beau's own decision (line 7, "to tie every claim of a test to a planted bug") sets the standard that the citations must match the tests. The test docstrings in test_ingest.py set which tests count as AC 2 and which as "SKILL.md rules" (lines 691-741).
+
+SEVERITY: Low for all three parts. Each behavior is tested and every test can fail. The problem is only that the citations do not match the evidence. A reviewer who checks them against the log would find these mismatches, but the cost is confusion, not a missing guard.
+
+SMALLEST FIX (wording only, checked against the current PROOF.md; renaming bugs would require rerunning planted_bugs.py and the claims check):
+- (a) AC 2 row, line 97. Old: "any 'Name:' prefix read as a speaker; a speaker tag across two lines accepted). |". New: "any 'Name:' prefix read as a speaker). A speaker tag broken across two lines is tested under AC 11. |"
+- (a) AC 11 row, line 106. Old: "control characters allowed; character references beyond". New: "control characters allowed; a speaker tag across two lines accepted; character references beyond"
+- (b) Line 109. Old: "output outside the transcripts folder accepted; a missing raw transcript not reported), and so does the test of hostile text". New: "output outside the transcripts folder accepted; a missing raw transcript not reported; a different record overwritten), and so does the test of hostile text". Each old string appears exactly once; I checked the line 109 one with grep.
+- (a) and (c) names. Add one line to "Remaining limitations" (after line 216): "Two planted-bug names describe the check removed, not the result: with the two-line speaker-tag check removed, the tag is still refused as a control character and only the reason changes; with the character-reference check removed, a reference past the last character crashes the script and NUL is refused as a control character. The tests fail in both cases."
+
+Adjacent, not part of A9 (INFERRED from the wording, OBSERVED in the log): on line 17, the parenthetical with the three "refusal gives another reason" bugs comes right after "except `command_line_exit_codes`, which checks the exit codes". It reads as if those bugs back that test. The log (lines 85-87) shows they fail only the different-record and out-folder tests. Possible fix: move the parenthetical to sit after "also checks the reason the script gives".
+
+I made no changes under /Users/beaubrown/golden-thread-quest. The temp directory has been deleted.
+
+===== A10
+----- verifier 1 (does it reproduce?)
+REPRODUCED: yes for all four parts. The headline "This is not disclosed" holds only in part (see NARROWER OR BROADER).
+
+- Part 1 (with utterances_keep_source_order weakened, "utterances reordered" no longer fails it but seven other tests still catch it, and "IDs not zero-padded" still fails it through read_record): yes, OBSERVED.
+- Part 2 (the claims check passes with "32 of 32 ... 0 problem(s)" while the AC 1 row still cites the test): yes, OBSERVED.
+- Part 3 (PROOF.md line 215 names no planted bug, and no planted bug makes the heading-count assertion fire): yes, OBSERVED.
+- Part 4 (SKILL.md line 141 is a claim the checker does not recognize and names no planted bug, so the F2 row's "every claim of a test ... now names a planted bug" is false): yes, OBSERVED.
+
+COMMANDS AND OUTPUTS:
+Setup: I made a temp dir with `mktemp -d` (/var/folders/v8/l38z3wd93mv38rtms6v1110c0000gq/T/tmp.RPrG7AVXmU) and copied into it, under the same relative layout: SKILL.md, ingest.py, tests/*.py, PROOF.md and logs/planted-bugs.txt. Every run used PYTHONDONTWRITEBYTECODE=1 and `/Users/beaubrown/golden-thread-quest/.venv/bin/python -B`. I deleted the temp dir afterwards. `git status --short` is unchanged from the start. No new __pycache__ appeared: the only one in participant/ is participant/skills/jira-read-assigned/__pycache__, dated Oct 22, so it was already there.
+
+1. Baseline in the temp copy: `check_claims.py` printed
+   `41 line(s) claiming a test, 185 planted-bug reference(s), 85 planted bugs caught in the log, 32 of 32 tests made to fail by at least one planted bug, 0 problem(s)`, exit 0. This is identical to the saved logs/claims-check.txt.
+
+2. Weakening, in the temp test_ingest.py only, line 166:
+   `expect([u.text for u in back] == [f"line {i}" for i in range(12)], "order changed")` became `expect(len(back) == 12, "order changed")`.
+   Suite against the unmodified ingest.py: `32 passed, 0 failed`, exit 0.
+
+3. The two named planted bugs, run through a small runner using INGEST_UNDER_TEST=<tmp>/<name>/participant/skills/x/ingest.py:
+   - `utterances reordered`: exit 1, 7 failing. The failing tests were verbatim_text_survives_the_round_trip, a_markdown_renderer_shows_the_words_exactly, every_utterance_has_a_speaker_and_uncertain_ones_say_so, zoom_style_prefix_labels_are_read_only_when_they_name_someone, a_cue_with_two_named_speakers_is_refused, timestamps_use_one_stated_format and instruction_text_is_recorded_and_not_followed. utterances_keep_source_order was not among them.
+   - `utterance IDs not zero-padded`: exit 1, 14 failing, including `FAIL utterances_keep_source_order: AssertionError: order changed`. The record reader's heading pattern (ingest.py line 483) is `^### (U-\d{4}) · ...`, so with unpadded IDs read_record returns [] and the length check fails. That is the "through read_record" route the finding describes.
+
+4. Full `planted_bugs.py` run in the temp copy with the weakened test: `85 of 85 planted bugs caught`, exit 0. In the new log:
+   - `KILLED utterances reordered:` lists 7 tests, not including utterances_keep_source_order.
+   - utterances_keep_source_order appears on only one KILLED line, `utterance IDs not zero-padded`.
+   With that log in place, `check_claims.py` printed `41 line(s) claiming a test, 185 planted-bug reference(s), 85 planted bugs caught in the log, 32 of 32 tests made to fail by at least one planted bug, 0 problem(s)`, exit 0. PROOF.md line 96 (the AC 1 row) still cites `utterances_keep_source_order` beside `(planted bugs: ...; utterances reordered; ...)`.
+
+5. Rendering-test messages, using the unmodified suite and the five planted bugs that the saved log shows failing a_markdown_renderer_shows_the_words_exactly:
+   - Markdown escaping removed: `expected 11 quoted utterances, found 6`
+   - line-start escaping removed: `expected 11 quoted utterances, found 7`
+   - utterances reordered: `a reader sees '# not a heading', not '*stars* and ...'`
+   - any 'Name:' prefix read as a speaker: `Unparseable: line 15: cue has more than one speaker ...`
+   - entity decoding skipped: `a reader sees 'Tom &amp; Jerry &amp;amp; friends', not ...`
+   None of them reaches "utterance text created headings", the heading-count message. Every other planted bug leaves that test passing, according to the saved log.
+
+6. Applying check_claims.py's own CLAIM pattern and references() function to the lines the finding cites:
+   - SKILL.md:141: recognized-as-claim=False, planted-bug refs=0. The line contains "Every test that expects a refusal also checks that the message gives the expected reason ...".
+   - PROOF.md:17: recognized-as-claim=False, refs=3. Same claim; it names the three "... refusal gives another reason" bugs.
+   - PROOF.md:172 (the F2 row): recognized=True, refs=4. It says "every claim of a test in these documents now names a planted bug".
+   - PROOF.md:215: recognized=False, refs=0.
+   - PROOF.md:216: recognized=False, refs=0.
+
+NARROWER OR BROADER:
+- Narrower (OBSERVED): the gap needs the weakened test to keep failing under at least one planted bug. I simulated a test that never fails by removing utterances_keep_source_order from every KILLED line in a copy of the saved log. check_claims then printed `PROBLEM test_ingest.py: utterances_keep_source_order is never made to fail ...`, `31 of 32`, `1 problem(s)`, exit 1. So check 2 does catch a fully dead test. It does not catch a test that dies only through a shared helper such as read_record, which is what the finding describes.
+- Broader (OBSERVED from check_claims.py source): the checker never reads test names from a document line. It only checks that a recognized line names some planted bug that the log marks KILLED, and separately that each test fails under some bug. So any cited test can be paired with any killed bug on the same line, not only in the AC 1 row.
+- Part 3, narrower (OBSERVED): the heading-count assertion can fire. When I moved it ahead of the other assertions in a temp variant, `Markdown escaping removed` produced `utterance text created headings`. In the real order, the earlier quote-count assertion always fires first, so no planted bug shows the heading check working. That matches the finding.
+- On "not disclosed" (INFERRED): it is only partly true. PROOF.md line 19, line 216 and the SKILL.md section 11 paragraph already say the check "cannot judge whether a named planted bug is the right one" and finds claims "only in the wordings it recognizes". That covers the gap in general terms. It does not say the check never ties a named test to a named bug, or that a test counts as failing even when it fails only through a shared helper. Line 216's general wording also softens the F2 row's absolute "every claim", but it does not make that sentence literally true.
+- Severity: I saw nothing that argues for more than the reported Low. The real ingest.py's order behavior is still tested by seven other tests, and the weakening exists only in my temp copy (OBSERVED).
+----- verifier 2 (is it real, and how much does it matter?)
+VERDICT (per part)
+- Part 1 (the claims check can pass while a named test no longer catches its named planted bug, and this is not disclosed): NOT REAL as a false claim. It is a disclosed limitation, though the wording is broad, and that disclosure leaves one small clarity gap.
+- Part 2 (PROOF.md line 215 claims a heading-count check that no planted bug shows can fire): NOT REAL as a false claim. The sentence describes the code accurately. It does feed Part 3.
+- Part 3 (SKILL.md line 141 is a claim of a test that the checker does not recognize and that names no planted bug, which makes the F2 row false): REAL.
+
+CATEGORY
+- Part 1: disclosed limitation, with a clarity gap.
+- Part 2: misreading if it is read as a false claim. As an observation it is accurate: the assertion has never been shown to fire.
+- Part 3: false claim, an overbroad universal statement.
+
+CASE FOR
+- Part 1, OBSERVED: I copied ingest.py and the tests to a mktemp dir and weakened `utterances_keep_source_order` to `expect(len(back) == 12, ...)`.
+  - With "utterances reordered" planted, 7 other tests failed and the weakened test passed.
+  - With "utterance IDs not zero-padded" planted, the weakened test still failed, because read_record returned [] and the length check failed.
+- Part 1, INFERRED from check_claims.py lines 62 to 85: in that state check_claims would still report 0 problems. It only checks that a named bug is KILLED by some test, and that each test is failed by some KILLED bug. It never links the test named on a line to the bug named on that line. I did not rerun all 85 planted bugs plus check_claims myself.
+- Part 1: the PROOF.md AC 1 row (line 96) would still list that test.
+- Part 2, OBSERVED: in test_ingest.py lines 155 to 156, the heading assertion runs after the quote-count and per-quote checks. In the current log, the bugs that kill `a_markdown_renderer_shows_the_words_exactly` ("Markdown escaping removed", "line-start escaping removed") fail it at the quote checks first. INFERRED: no current planted bug makes the heading assertion itself fire.
+- Part 3, OBSERVED:
+  - SKILL.md line 141 says "Every test that expects a refusal also checks that the message gives the expected reason, except `command_line_exit_codes`...". That line names no planted bug.
+  - The checker's pattern (check_claims.py line 33) does not match it, because "test that expects a refusal also checks" is not the adjacent "test checks".
+  - PROOF.md line 183 (F13 row) and line 215 also describe what a test checks without naming a planted bug.
+  - PROOF.md line 172 (F2 row) says "every claim of a test in these documents now names a planted bug, checked by `check_claims.py`". Taken literally, that is false.
+
+CASE AGAINST
+- Part 1:
+  - Nothing in the documents claims a one-to-one link between tests and bugs on a line. PROOF.md line 19 and SKILL.md section 11 describe exactly the three checks check_claims performs, and each description is accurate ("shown as caught", "made to fail by at least one planted bug").
+  - Both files already say the check cannot judge "whether a named planted bug is the right one" (PROOF.md lines 19 and 216, SKILL.md section 11, and the check_claims.py docstring lines 12 to 14). A test-to-bug mismatch on one line is a case of exactly that.
+  - The scenario is hypothetical. The current log shows `utterances_keep_source_order` among the tests that kill "utterances reordered", so no current claim is false.
+- Part 2: Line 215 sits in the limitations section and accurately states what the test asserts. No document claims that every assertion has been shown to fire.
+- Part 3:
+  - PROOF.md lines 19 and 216 and the fifth-review row 2 (line 192) all say the check sees only the wordings it recognizes.
+  - PROOF.md line 17 repeats the refusal-reason claim and does name the three "gives another reason" planted bugs.
+  - So a careful reader is warned. The F2 sentence itself is still unqualified.
+
+EXPECTED SOURCE
+- Part 1 and Part 2: no document promises per-line test-to-bug linkage or per-assertion mutation proof. Only the reviewer's opinion supports that expectation. The relevant statements are check_claims.py docstring lines 1 to 14, PROOF.md lines 19 and 216, and SKILL.md section 11.
+- Part 3: PROOF.md line 172 (F2 row) and line 7 ("to tie every claim of a test to a planted bug") set the universal expectation. SKILL.md line 141, PROOF.md lines 183 and 215, and the CLAIM regex in check_claims.py line 33 contradict it.
+
+SEVERITY
+- Part 3: Low. It is a wording overclaim, and accurate disclosures sit nearby.
+- Parts 1 and 2: not real as defects. If Beau chooses to clarify, the clarity gap is Low.
+
+SMALLEST FIX
+- Part 3 (needed). PROOF.md line 172:
+  - Old: "and every claim of a test in these documents now names a planted bug, checked by `check_claims.py`"
+  - New: "and every claim of a test in these documents that `check_claims.py` recognizes now names a planted bug, checked by `check_claims.py`"
+  - The line keeps its "checked by" wording and its planted-bug list, so check_claims still passes it.
+- Part 1 (optional clarity). PROOF.md line 216:
+  - Old: "and it cannot judge whether a named planted bug is the right one."
+  - New: "and it cannot judge whether a named planted bug is the right one. It does not check that a test named on a line is one that catches the planted bug named there, and a test counts as made to fail even when it fails only through a shared helper such as the record reader."
+  - SKILL.md section 11's last sentence could get the same addition.
+- Part 2 (optional). PROOF.md line 215:
+  - Old: "but checks only the quoted words and the number of headings,"
+  - New: "but checks only the quoted words and the number of headings (no planted bug has been shown to trip the heading count),"
+
+Temp dir was created with mktemp -d and deleted. Nothing in the repository was changed.
+
+===== A11
+----- verifier 1 (does it reproduce?)
+REPRODUCED: yes, both parts. The finding is conditional ("once this review is saved"), so what I could observe is that both locations are fixed at five and that nothing in the package yet accounts for a sixth review.
+
+COMMANDS AND OUTPUTS:
+All commands were read-only and run from /Users/beaubrown/golden-thread-quest. No temp directory was needed.
+
+1. `git branch --show-current` returned `pilot/beau`. (OBSERVED)
+
+2. `grep -n -i -E "review|five|six|ai-review" participant/evidence/ba-ingest-transcript/ba-attempt-001/PROOF.md` returned, among other lines:
+   - Line 35: `| AI reviews | \`participant/evidence/ba-ingest-transcript/ba-attempt-001/logs/ai-review-1.txt\` to \`ai-review-5.txt\` |` (OBSERVED, part 2: the artifacts row)
+   - Line 113: `Five AI reviews ran before submission, each by Claude agents started fresh, without the builder's reasoning. Their reports are saved in \`logs/ai-review-1.txt\` to \`ai-review-5.txt\`; ...` (OBSERVED, part 1)
+   - Line 7: `... After the fifth, I chose to leave the script as it was, ... and to end with one last small AI review of the changed sentences, whose findings would be fixed in the wording or listed as limitations.` (OBSERVED)
+
+3. `ls -la .../ba-attempt-001/logs` lists ai-review-1.txt through ai-review-5.txt and no ai-review-6.txt. `ls logs | grep -c ai-review` returned `5`. (OBSERVED)
+
+4. `grep -n -E "^\*\*(First|Second|Third|Fourth|Fifth|Sixth)" PROOF.md` returned headings for First (115), Second (127), Third (138), Fourth (167) and Fifth (187). There is no Sixth heading. (OBSERVED)
+
+5. `cat .../manifest.yaml` shows `artifacts: []`, so the manifest lists no review logs and needs no count change. `grep -n -i review tests/check_claims.py` found only one docstring mention of "reviewer's job", so the claims check does not depend on the review count. (OBSERVED)
+
+6. `sed -n 225,228p PROOF.md` shows the privacy paragraph listing what each log replaced: "The first three review logs ... the fourth ... and the fifth ...". (OBSERVED)
+
+NARROWER OR BROADER:
+- Broader than stated: the finding names two locations, but a saved sixth review would make at least two more spots incomplete. (INFERRED)
+  - The "Independent reviews" section ends with the Fifth heading at line 187. A reader would expect a matching Sixth entry listing that review's findings and outcomes.
+  - The privacy paragraph near line 227 accounts for the redactions in logs one through five only. A saved sixth log that quotes or redacts anything would need its own clause there. That matters more than a stale count, because the paragraph is the package's statement that no handed-in file contains the transcript's contact details.
+- Narrower than stated: line 7 already says Beau chose to end with one last small AI review. A reader is told a sixth review was planned, which softens possible reviewer confusion. Line 113's "Five AI reviews ran before submission" is still a definite count that becomes wrong once this review exists. (OBSERVED for the line 7 text; INFERRED for the effect on a reader)
+- Already partly true now: this sixth review is running before submission, so "Five AI reviews ran before submission" is already incomplete in a strict reading, even before the log is saved. (INFERRED)
+- No other file needs a count update: manifest.yaml has no artifacts, check_claims.py does not count reviews, and SKILL.md and the quest file mention no review count. (OBSERVED by grep)
+- Severity: I agree with Low. It is a wording and completeness fix with no effect on the code or tests. If the sixth log is saved without a privacy-paragraph clause, the reviewer may need to check its redactions themselves. That is still Low to Medium.
+----- verifier 2 (is it real, and how much does it matter?)
+VERDICT: REAL, but only once the sixth review's log is saved. The finding has one part. The two places it names, plus a third it missed, will be stale or incomplete at submission unless they are updated. Right now the sentences are accurate.
+
+CATEGORY: other (a statement that goes out of date because of how the process runs). It becomes a false claim if submitted unchanged after ai-review-6.txt is saved.
+
+CASE FOR:
+- OBSERVED: PROOF.md line 113 says "Five AI reviews ran before submission ... Their reports are saved in `logs/ai-review-1.txt` to `ai-review-5.txt`". Line 35, the artifacts row, says "`ai-review-1.txt` to `ai-review-5.txt`".
+- OBSERVED: PROOF.md line 7 already says Beau chose "to end with one last small AI review of the changed sentences". So the document admits a sixth review exists, and line 113's "Five ... before submission" contradicts its own line 7.
+- OBSERVED: the task text for this review says "Your verdict will be saved as evidence". INFERRED: that means an ai-review-6.txt (or something like it) will land in logs/. Lines 35 and 113 would then leave out a file in the package and undercount the reviews.
+- OBSERVED, a part the finding missed: line 227 (privacy section) lists how each review log handles contact details: "The first three ... the fourth ... and the fifth ...". If a sixth log is saved, that line will not cover it. This verdict file follows the placeholder rule, but line 227 should still mention the sixth log.
+
+CASE AGAINST:
+- OBSERVED: logs/ holds only ai-review-1.txt to ai-review-5.txt, so both lines are true today. The sixth review is still running and its log does not exist yet.
+- OBSERVED: line 7 already says a final AI review is planned, so a reader is not misled about whether more AI review happened. Only the count and the file range are off.
+- The quest text (content/quests/ba-ruins/ingest-transcript.md, "Required evidence", line 92) does not require AI reviews or a count. The only thing that makes the count matter is the document's own consistency and the artifacts table. A human reviewer is unlikely to be confused in any material way.
+
+EXPECTED SOURCE: no quest requirement covers this. The standard is PROOF.md itself: line 7, which announces the sixth review, against lines 35, 113 and 227, which enumerate the reviews and logs. A further standard is the program rule that evidence states only what is true (CLAUDE.md, "Do not mark an item complete merely because code exists", and the evidence-honesty stance). Beyond that, the expected behavior rests on internal consistency, not on the reviewer's opinion.
+
+SEVERITY: Low.
+
+SMALLEST FIX (apply only after ai-review-6.txt is actually saved; checked against the current file):
+- Line 35. Old: "`participant/evidence/ba-ingest-transcript/ba-attempt-001/logs/ai-review-1.txt` to `ai-review-5.txt`". New: "`participant/evidence/ba-ingest-transcript/ba-attempt-001/logs/ai-review-1.txt` to `ai-review-6.txt`"
+- Line 113. Old: "Five AI reviews ran before submission, each by Claude agents started fresh, without the builder's reasoning. Their reports are saved in `logs/ai-review-1.txt` to `ai-review-5.txt`;". New: "Six AI reviews ran before submission, each by Claude agents started fresh, without the builder's reasoning. Their reports are saved in `logs/ai-review-1.txt` to `ai-review-6.txt`;" If the sixth log's header lists changes, extend the parenthetical to match it.
+- Line 227. Old: "and the fifth replaces the number, written one digit per group, with the same form of 317-555-0198 and its last four digits with a marker, as their headers say." New: "the fifth replaces the number, written one digit per group, with the same form of 317-555-0198 and its last four digits with a marker, and the sixth [state what its header says, for example: uses markers and quotes no contact detail], as their headers say."
+- Optional, for consistency: add a short "Sixth review" paragraph or table after the fifth's, saying what it found and how each finding was handled.
+- If no sixth log is saved, no change is needed, though line 113 would then sit oddly next to line 7.
+
+
+##### The synthesis, as returned
+
+DECISION: READY ONCE THE WORDING FIXES BELOW ARE MADE. No script, test or planted-bug change is needed, and no test, planted bug or check needs renaming. Two mechanical steps go with the wording, and neither changes what is claimed:
+- Re-record `logs/claims-check.txt`, because the edits add one planted-bug reference (185 becomes 186).
+- Save the sixth review's log with its privacy clause.
+
+All 13 findings were confirmed, at least in part. Two are Medium (A1 and A2, with B1 also Medium). None needs ingest.py changed.
+
+How the fixes were checked: I applied every edit below to temp copies of SKILL.md and PROOF.md. Each old string occurs exactly once. `check_claims.py` then printed "41 line(s) claiming a test, 186 planted-bug reference(s), 85 planted bugs caught in the log, 32 of 32 tests made to fail by at least one planted bug, 0 problem(s)", exit 0 (OBSERVED). I also ran ten edge-case probes against a copy of ingest.py to check the combined wording (OBSERVED). The temp dirs are deleted, and the repo is unchanged. The script that applies the edits is /private/tmp/claude-503/-Users-beaubrown-golden-thread-quest--claude-worktrees-next-logical-quest-56353f/d87483a2-fe76-4e26-af21-46cc047a5a61/scratchpad/apply_fixes.py (usage: `python apply_fixes.py <root>`). It also applies P1 and P2, which should go in only after ai-review-6.txt is saved.
+
+VETOES:
+- V1 NOT FIRED (reviewer B, OBSERVED). None of the 23 hand-in files holds the transcript's contact details in any searched form. Every email is on an example domain, and every phone number is in a reserved range or impossible. That the people are fictional is INFERRED.
+- V2 NOT FIRED (B, OBSERVED). The raw files are under local-data/, which `.gitignore:9` ignores, and hand-in stages only participant/.
+- V3 FIRED (reviewer A, OBSERVED). Changed sentences say more than the code or tests show (findings 1 to 9; B1 is also in this class). Every one can be fixed in the wording or listed as a limitation. That is why the decision is "once the wording fixes are made".
+- V4 NOT FIRED (B, OBSERVED). B parsed the transcript independently: 24 cues and 24 utterances, with times, speakers and words equal apart from the three stated redactions. Only U-0011 and U-0013 are marked uncertain.
+- V5 NOT FIRED (B, OBSERVED). All changes are under participant/ and nothing is staged. INFERRED: B did not fetch, so the upstream ref may be stale.
+
+CLAIMS:
+- K1 (changed sentences say only what the code and tests show): FALSIFIED (A1 to A9, B1).
+- K2 (85 planted bugs, each turning the suite red, with correct citations): the count and the kills are CONFIRMED; reviewer A ran all 85 and every failing-test set matched the log. Citations are partly FALSIFIED (A9).
+- K3 (the claims check catches unbacked claims): CONFIRMED. It has limits; the verifiers split on whether those are disclosed (A10).
+- K4 (ai-review-5.txt is word for word apart from its stated replacements): CONFIRMED.
+- K5 (no contact detail in any handed-in file): CONFIRMED.
+- K6 (the limitations and not-caught lists are accurate): FALSIFIED (A1, A2, A4 to A7, and A3 for section 8's first paragraph).
+- K7 (the logs are real and reproduce): CONFIRMED. The suite gives 32 of 32 and the claims check matches; B sampled 9 planted bugs and A ran all 85.
+- K8 (the test edits after the fifth review only added cases and renamed, and the new case checks what the F8 row says): CONFIRMED.
+
+CONFIRMED FINDINGS (S = SKILL.md, P = PROOF.md; quote old and new exactly):
+
+- A1. A voice tag broken right after `<v` or after a class is not refused, and inside another speaker's cue its words are credited to that speaker as certain. Medium. Both verifiers agree on parts 1 and 2. On part 3 (the first-review row), verifier 2 says the row is accurate for the finding it answered. Fixed by S3, S9, P10 (optional), P18.
+- A2. An international number stays visible when other digits follow it closely. Medium; the over-redaction part is Low. Both agree. Fixed by S6, S7, P14.
+- A3. The record's file name is copied unredacted. Low. Both agree; verifier 2 calls the PROOF.md wording an overstatement, true only under a narrow reading. Fixed by S5, P5, P15.
+- A4. The voice-tag limits are described wrongly. Low. Both agree; verifier 2 says citing the fifth-review row 8 was a misreading. Fixed by S3, P18.
+- A5. The unlisted-guest case also happens in the Teams form. Low. Both agree. Fixed by S2, P16.
+- A6. Section 9 understates when a damaged cue is merged, and its not-caught list is incomplete. Low. Both agree. Fixed by S1, S8, P4, P8, P19.
+- A7. The refusal wording is broader than the code, and the character-reference voice-tag case is not disclosed. Low. Both agree. Fixed by S4, S8, P11, P17, P18, P19.
+- A8 = B2. The F1 row says "each cut-short form", but the test skips `0` and `00`. Low. Both B2 verifiers agree. Fixed by P12.
+- A9. Three planted-bug citations do not match the log. Low. Both agree; verifier 1 corrects "at write" to "at hashing", so the fix says "before anything is written". Fixed by P3 (optional), P6, P7, P9, P21.
+- A10, part 3. The F2 row's "every claim of a test" is false. Low. Both agree. Fixed by P13.
+- A10, part 1. The claims check never links a named test to the planted bug named on the same line. Low. Verifier 1 reproduced it; verifier 2 says it is disclosed in general terms. Clarified by P21.
+- A11. The review count and log range go stale once the sixth log is saved. Low and conditional. Both agree. Fixed by P1, P2 and the steps in item 4 under "Steps after the edits".
+- B1. A timing line cut down to digits with no colon is called "read as speech", but in four of five places the cue is dropped without a warning. Medium. Both agree, and verifier 1 found it is broader: any remnant whose first piece has no colon. Fixed by S8, P17, P19.
+
+EXACT EDITS:
+S1 (A6). Old: `Section 9 lists the kinds of damage that are refused, and the kinds that are not caught.` New: `Section 9 lists the kinds of damage that are refused, and the kinds known not to be caught.`
+
+S2 (A5). Old: `  - Because an unlisted name is read as words, a line from an unlisted guest inside a listed speaker's Zoom-form cue (for example `Carol Guest: I do not.`) stays in that speaker's utterance. Listing every participant, guests included, avoids this.` New: `  - Because an unlisted name is read as words, a line from an unlisted guest inside a listed speaker's cue, in either form (for example `Carol Guest: I do not.`), stays in that speaker's utterance and is marked certain. Listing every participant, guests included, avoids this.`
+
+S3 (A4 + A1, line 57; the rest of the bullet is unchanged). Old: `  - A voice tag longer than 200 characters, or with more than 20 classes, is not read as a tag, and its text stays in the words. Inside another speaker's open voice tag, or after a `Name:` label, those words are credited to that speaker.` New: `  - A voice tag is read only when `<v`, and any classes after it (at most 20, each of 1 to 50 characters), are followed on the same line by a space or tab and a name part of at most 200 characters, counting any spaces before the `>`. Any other voice tag is not read as a tag, and its text stays in the words: for example one with a 201-character name part, 21 classes, an empty class or a 51-character class, or one broken by a line break right after `<v` or after a class (`<v` on one line and `Ben Example>` on the next). Inside another speaker's open voice tag, or after a `Name:` label, those words are credited to that speaker, marked certain when that speaker is listed, even when the name in the unread tag is not listed.`
+
+S4 (A7 part 2). Old: `The voice-tag form, `<v Ben&#32;Example>`, is read as Ben Example.` New: `The voice-tag form, `<v Ben&#32;Example>`, is read as Ben Example when it is the only way the cue names its speaker. A cue that writes one speaker's name in two ways, plainly and with character references or with different references, in voice tags or in a `Name:` label, is refused as two speakers.`
+
+S5 (A3). Old: `and in every value copied into the provenance file. The transcript ID is the one value that is not redacted, which is why the meeting-file check refuses an ID that contains contact details (Section 2).` New: `and in every value copied into the provenance file, with two exceptions. The transcript ID is not redacted, which is why the meeting-file check refuses an ID that contains contact details (Section 2). The record's file name, chosen with `--out`, is not redacted either: it is copied into the provenance file as `record_file` and into the record as part of the provenance file's name. Nothing checks it for contact details, so do not put any in it.`
+
+S6 (A2). Old: `A `+` followed by fewer than 8 or more than 15 digits is not read as an international number.` New: `A `+` followed by fewer than 8 or more than 15 digits is not read as an international number. The count includes any digits that follow the number with no more than four spaces, dots, hyphens, dashes, middle dots, parentheses or line breaks before each of them, even when they are not part of the number.`
+
+S7 (A2). Insert a new Known-misses bullet directly after the line ending `(the digits after the sixth group stay visible);`: `- an international number followed closely by other digits in the same cue, such as a year at the start of the next sentence or line (`+44 20 7946 0958.` then `2026`): when the count reaches 16 or more, the whole number stays visible; when it stays at 15 or fewer, the following digits may be redacted with the number;`
+
+S8 (A6 + A7 + B1, section 9 timing-line bullet, from "A line that starts with a time" to the end of the bullet). Old: `A line that starts with a time and goes on in words, such as `10:30 works for me`, is speech and is kept. A line made only of times, arrow pieces or setting-like words, such as `10:30.`, `3:2`, `9:00 - 10:00` or `10:30 re:budget` on its own line, is refused even if it was speech, and a line of digits with no colon is read as speech. Not caught: a timing line whose arrow is mistyped with other characters, such as `-.>`, `<--` or `--)`, in any of those places; a timing line written on the `WEBVTT` line itself; and a damaged timing line on a `NOTE` line itself, such as `NOTE 00:00:01.000 -> 00:00:02.000`. In those cases there is no warning: the cue whose timing line is damaged is dropped, or, inside another cue's words, merged into that cue when both have the same `Name:` label or none;` New: `Here a time always holds a colon. A line that starts with a time and goes on in words, such as `10:30 works for me`, is speech and is kept. A line starting with a time and made only of times, arrow pieces or setting-like words, such as `10:30.`, `3:2`, `9:00 - 10:00` or `10:30 re:budget` on its own line, is refused even if it was speech. A line that does not start with a time, such as `->` or `re:budget`, is not refused. Not caught, in any of those places: a damaged timing line without `-->` that is not in that form, such as one whose arrow is mistyped with other characters (`-.>`, `<--` or `--)`), one with a letter or other character in a time (`00:00:03.O00 -> 00:00:04.000`), one whose first piece has no colon (`00`, `0` or `05.000 -> 06.000`), or one that has lost its start time (`-> 00:00:04.000`); also a timing line written on the `WEBVTT` line itself, and a damaged timing line on a `NOTE` line itself, such as `NOTE 00:00:01.000 -> 00:00:02.000`. In those cases there is no warning. Outside a cue's words, the cue that the damaged line starts is dropped. Inside a cue's words, the line is kept as words and the next cue's words are merged into that cue under its speaker, marked certain when that speaker is listed, even when the merged words have no label or an unlisted one, unless Section 5's rules find more than one speaker, when the file is refused;`
+
+S9 (A1). Old: `- a cue with no words, with more than one speaker in the ways Section 5 lists, or with a speaker tag broken across two lines;` New: `- a cue with no words, with more than one speaker in the ways Section 5 lists, or with a voice tag whose name part is broken across two lines, such as `<v Ada` on one line and `Example>` on the next (a break right after `<v` or after a class is not caught; see Section 5);`
+
+P1 (A11, only after ai-review-6.txt is saved). Old: `` `participant/evidence/ba-ingest-transcript/ba-attempt-001/logs/ai-review-1.txt` to `ai-review-5.txt` `` New: same text with `ai-review-6.txt`.
+
+P2 (A11, same condition). Old: `Five AI reviews ran before submission, each by Claude agents started fresh, without the builder's reasoning. Their reports are saved in `logs/ai-review-1.txt` to `ai-review-5.txt`;` New: `Six AI reviews ran before submission, each by Claude agents started fresh, without the builder's reasoning. Their reports are saved in `logs/ai-review-1.txt` to `ai-review-6.txt`;` If the sixth log's header lists replaced example numbers, change "in the third and fifth" in the same sentence to "in the third, fifth and sixth".
+
+P3 (A9, optional; verifier 2's "adjacent" point). Old: `Every test that expects a refusal also checks the reason the script gives, except `command_line_exit_codes`, which checks the exit codes (planted bugs: the different-record refusal gives another reason; the out-folder refusal gives another reason; the record-name refusal gives another reason).` New: `Every test that expects a refusal also checks the reason the script gives (planted bugs: the different-record refusal gives another reason; the out-folder refusal gives another reason; the record-name refusal gives another reason), except `command_line_exit_codes`, which checks the exit codes.`
+
+P4 (A6). Old: `SKILL.md section 9 lists the kinds of damage that are refused and the kinds that are not caught (AC 11).` New: `SKILL.md section 9 lists the kinds of damage that are refused and the kinds known not to be caught (AC 11).`
+
+P5 (A3). Old: `and in every value copied into the provenance file. In this meeting` New: `and in every value copied into the provenance file except the transcript ID and the record's file name, which are not redacted (SKILL.md section 8). In this meeting`
+
+P6 (A9a, AC 2 row). Old: `any 'Name:' prefix read as a speaker; a speaker tag across two lines accepted). |` New: `any 'Name:' prefix read as a speaker). |`
+
+P7 (A9a, AC 11 row). Old: `control characters allowed; character references beyond` New: `control characters allowed; a speaker tag across two lines accepted; character references beyond`
+
+P8 (A6 + B1, end of the AC 11 row). Old: `Not caught: a mistyped arrow such as `-.>`, a timing line on the `WEBVTT` line itself, and a damaged timing line on a `NOTE` line itself; see SKILL.md section 9. |` New: `Not caught: a damaged timing line without `-->` that is not made only of times, arrows and cue settings starting with a time, such as a mistyped arrow (`-.>`), a letter in a time, or a line cut down to digits with no colon (`00`); a timing line on the `WEBVTT` line itself; and a damaged timing line on a `NOTE` line itself; see SKILL.md section 9. |`
+
+P9 (A9b). Old: `a missing raw transcript not reported), and so does the test of hostile text` New: `a missing raw transcript not reported; a different record overwritten), and so does the test of hostile text`
+
+P10 (A1, optional). Old: `| Low: a speaker tag broken across lines | Fixed with a test (planted bug: a speaker tag across two lines accepted). |` New: `| Low: a speaker tag broken across lines | A break inside the name is refused, with a test (planted bug: a speaker tag across two lines accepted). A break right after `<v` or after a class is not caught; see the limitations. |`
+
+P11 (A7). Old: `began refusing a line made only of times, arrow pieces and cue settings in those places` New: `began refusing a line made only of times, arrow pieces and cue settings, starting with a time, in those places`
+
+P12 (A8/B2). Old: `A test tries each cut-short form of a timing line and each form with one character removed, in each place (planted bug:` New: `A test tries, in each place, each cut-short form of a timing line and each form with one character removed, if it still holds a colon (planted bug:`
+
+P13 (A10 part 3). Old: `and every claim of a test in these documents now names a planted bug, checked by `check_claims.py`` New: `and every claim of a test in these documents that `check_claims.py` recognizes now names a planted bug, checked by that script`
+
+P14 (A2). Old: `international numbers written without a `+` or in more than six groups after the country code,` New: `international numbers written without a `+` or in more than six groups after the country code, an international number followed closely by other digits such as a year (the whole number stays visible when the count reaches 16 or more, and the following digits may be redacted with it otherwise),`
+
+P15 (A3, new limitation). Old: `and the record cannot tell them apart.\n- In the Zoom form` New: `and the record cannot tell them apart.\n- The record's file name, chosen with `--out`, is not checked for contact details; a phone number in a hyphenated name such as `call-317-555-0100.md` is copied unredacted into the provenance file and the record.\n- In the Zoom form`
+
+P16 (A5). Old: `- In the Zoom form, a line from an unlisted guest inside a listed speaker's cue stays in that speaker's utterance, because an unlisted name is read as words. Listing every participant avoids it.` New: `- In either form (voice tag or `Name:` prefix), a line from an unlisted guest inside a listed speaker's cue stays in that speaker's utterance, marked certain, because an unlisted name is read as words. Listing every participant avoids it.`
+
+P17 (A7 + B1). Old: `- A line made only of times, arrow pieces or setting-like words, such as `10:30.`, `3:2` or `9:00 - 10:00` on its own line inside a cue, is refused as a damaged timing line, even if it was speech. A timing line cut down to digits with no colon, such as `00`, is read as speech.` New: `- A line starting with a time and made only of times, arrow pieces or setting-like words, such as `10:30.`, `3:2` or `9:00 - 10:00` on its own line inside a cue, is refused as a damaged timing line, even if it was speech. A line that does not start with a time, such as `->` or `re:budget`, is not refused.`
+
+P18 (A4 + A1 + A7 part 2). Old: `- A voice tag longer than 200 characters, or with more than 20 classes, is not read as a tag, and a `Name:` label written with character references is not read as a label. In both cases a second person's words can stay under the cue's first speaker. SKILL.md section 5 has the details.` New: `- A voice tag whose name part is longer than 200 characters, that has more than 20 classes, an empty class or a class longer than 50 characters, or that is broken by a line break right after `<v` or after a class, is not read as a tag, and a `Name:` label written with character references is not read as a label. In each case a second person's words can stay under the cue's first speaker, marked certain when that speaker is listed. A cue that names one speaker both plainly and with character references is refused as two speakers. SKILL.md section 5 has the details.`
+
+P19 (A6 + A7 + B1). Old: `- Not caught: a timing line whose arrow is mistyped with other characters, such as `-.>` or `<--`; a timing line written on the `WEBVTT` line itself; and a damaged timing line on a `NOTE` line itself. Without a warning, the damaged cue is dropped, or merged into the cue before it.` New: `- Not caught: a damaged timing line without `-->` that is not made only of times, arrows and cue settings starting with a time (a time here always holds a colon), such as one whose arrow is mistyped (`-.>` or `<--`), one with a letter in a time (`00:00:03.O00 -> 00:00:04.000`), one cut down to digits with no colon (`00`) or to `05.000 -> 06.000`, or one that has lost its start time (`-> 00:00:04.000`); a timing line written on the `WEBVTT` line itself; and a damaged timing line on a `NOTE` line itself. There is no warning. Right after the `WEBVTT` line or inside a `NOTE`, `STYLE` or `REGION` block, the cue that the damaged line starts is dropped. Inside a cue's words, the line is kept as words and the next cue's words are merged into that utterance under its speaker, marked certain when that speaker is listed, unless the merged cue has more than one speaker in the ways SKILL.md section 5 lists, when the file is refused.`
+
+P20 (A10 part 2, optional). Old: `but checks only the quoted words and the number of headings,` New: `but checks only the quoted words and the number of headings (no planted bug has been shown to trip the heading count),`
+
+P21 (A9 a and c, plus A10 part 1). Old: `and it cannot judge whether a named planted bug is the right one.\n- The instruction notice` New: `and it cannot judge whether a named planted bug is the right one: it does not check that a test named on a line is one that fails under the planted bug named there, and a test counts as made to fail even when it fails only through a shared helper such as the record reader. Two planted-bug names describe the check removed, not the result: with the two-line speaker-tag check removed, the tag is still refused, as a control character, and only the reason changes; with the character-reference check removed, a reference past the last character crashes the script before anything is written. The tests fail in both cases.\n- The instruction notice`
+
+Steps after the edits (beyond wording, and why):
+1. Rerun `check_claims.py` and re-record `logs/claims-check.txt` with record.sh. P9 adds a reference, so the saved line (185) no longer matches a rerun (186). Expected: 41 lines, 186 references, 0 problems, exit 0.
+2. tests.txt and planted-bugs.txt need no rerun, because neither run reads the documents (INFERRED from the code).
+3. Before saving ai-review-6.txt, give it a header like the earlier logs. The verifier texts quote two example numbers that are not in reserved ranges:
+   - in A2 verifier 2, the French-format number in the "year swallowed" example;
+   - in A2 verifier 1, the 15-digit +44 string in the "maximum-length" example. It is not a valid number as written, but it starts with a real UK number shape.
+   Replace both with markers, or with same-shape numbers from reserved ranges, and say so in the header.
+4. Then apply P1 and P2, and extend line 227. Old: `with the same form of 317-555-0198 and its last four digits with a marker, as their headers say.` New: `with the same form of 317-555-0198 and its last four digits with a marker, and the sixth [what its header says it replaced], as their headers say.`
+5. Optionally add a "**Sixth review: wording only.**" table, one row per finding, saying each was fixed in the wording or listed as a limitation. Avoid the checker's claim words ("with a test", "Tests:", "checked by", "is tested", "now checked"), or name a planted bug on the same row. Then rerun the claims check again.
+6. Delete reviewer B's side effect, `participant/skills/ba-ingest-transcript/tests/__pycache__/`. Git ignores it and it is not handed in.
+
+NOT CONFIRMED:
+- A10 part 2 (PROOF.md line 215 as a false claim). Verifier 2 says the sentence describes the code accurately, and verifier 1 observed only that no planted bug makes the heading assertion fire. P20 is optional.
+- A1 part 3 (first-review row 121 "Fixed with a test"). Verifier 2 says that finding was about a break inside the name (ai-review-1.txt line 52), which is fixed. P10 is optional clarity.
+- A4's citation of the fifth-review row 8. That row gives no numbers, so it is not false.
+- A3, PROOF.md half. It is true if "copied" means copied from the meeting data. It is fixed anyway (P5) because the SKILL.md half is false.
+
+DISAGREEMENTS:
+- A10 part 1. Verifier 1 reproduced it; verifier 2 says it is disclosed generally ("cannot judge whether a named planted bug is the right one"). This is a reading question, not missing evidence. P21 settles it in the text at no cost.
+- A1, whether the skill's reading is merely strict or actually wrong. Verifier 2 INFERRED from memory that the W3C WebVTT tokenizer treats a line feed after `<v` as the start of the annotation. Reading the spec's cue-text tokenizer would settle it. That would not change the decision, because the case is now disclosed either way.
+- A9(c). Reviewer A says the surrogate case fails "at write"; verifier 1 observed it fails while hashing, at ingest.py line 663. P21 uses "before anything is written", which is true under both.
+- A2 part 2 severity: Low (verifier 2) against folding it into the Medium. P14 and S7 cover both parts, so the rating does not matter.
+- B1. Verifier 2 suggested reusing "when both have the same `Name:` label or none". A6's evidence shows that condition is itself too narrow, so S8 and P19 use the A6 rule: merged unless section 5 refuses.
+
+NOT ASSESSED:
+- No independent reviewer has checked the combined wording in S3, S8, P18 and P19, by Beau's no-further-review rule. I checked it against the verifiers' evidence and 10 probes of my own. Not probed: a lost-start line inside STYLE or REGION, and an empty class on its own. Both are INFERRED from the shared code path. This could change the decision only if some sentence overstates, which would be another wording fix.
+- Reviewer B reran 9 of the 85 planted bugs, and reviewer A ran all 85; the two do not conflict.
+- Not checked by either reviewer:
+  - GitHub (GFM) rendering;
+  - real Teams or Zoom exports, and Windows;
+  - that the names are fictional (offline);
+  - PR #26 and the remote state;
+  - the history claims on PROOF.md lines 7, 64 and 70.
+  None is likely to change the decision, except a real contact detail (V1), for which there is no evidence.
+- The sixth log does not exist yet, so its privacy is unchecked.
+
+WHY CONFIDENCE IS NOT HIGHER:
+- Every round so far has found more limitations that were not disclosed, so the not-caught lists are probably still incomplete. That is why S1, P4 and P8 say "known not to be caught", and section 8 keeps "there may be others".
+- The final wording was written here and checked mechanically. It was not checked by a separate review.
+- Two Medium behaviors (A1 and A2) stay in the script and are only disclosed: a malformed tag can credit a second speaker's words as certain, and a listed-form international number can stay visible. Nothing in this attempt's record is affected (OBSERVED), but a real meeting could be.
+- The next evidence most likely to change the decision is a human reading of S8 and P19 against the probe results above, and the redacted sixth log's header.

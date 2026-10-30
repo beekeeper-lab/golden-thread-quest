@@ -1,0 +1,59 @@
+# Ingesting the same transcript a second time (AC 7)
+# Recorded 2026-10-30T15:27:41Z from the repository root on branch pilot/beau.
+# Raw transcripts are in local-data/transcripts/, which git ignores. Paths are repository-relative.
+
+# Fingerprints and modification times (in nanoseconds) of both files before the second run:
+$ shasum -a 256 participant/context/transcripts/sample-meeting.md participant/context/transcripts/sample-meeting.provenance.yaml
+449ff64385bd96358693d9492b6c270e37d45c4235fdce1c9863e709c8ea9882  participant/context/transcripts/sample-meeting.md
+4cc05e464ffff6d22f21e01801a1178aef0b90aaa08f7b13dcfa99882cbeba5e  participant/context/transcripts/sample-meeting.provenance.yaml
+[exit code: 0]
+
+$ python3 -c "import os, sys; [print(os.stat(p).st_mtime_ns, p) for p in sys.argv[1:]]" participant/context/transcripts/sample-meeting.md participant/context/transcripts/sample-meeting.provenance.yaml
+1793374061946115170 participant/context/transcripts/sample-meeting.md
+1793374061946219088 participant/context/transcripts/sample-meeting.provenance.yaml
+[exit code: 0]
+
+$ .venv/bin/python participant/skills/ba-ingest-transcript/ingest.py local-data/transcripts/2026-10-21-checkout-refinement.vtt --meeting local-data/transcripts/2026-10-21-checkout-refinement.meeting.json --out participant/context/transcripts/sample-meeting.md
+Transcript tr-2026-10-21-checkout-refinement: unchanged
+  record      participant/context/transcripts/sample-meeting.md
+  provenance  participant/context/transcripts/sample-meeting.provenance.yaml
+  record sha256 449ff64385bd96358693d9492b6c270e37d45c4235fdce1c9863e709c8ea9882
+  utterances  24
+  redacted    2 email address(es), 1 phone number(s)
+  uncertain   U-0011 Unattributed: no listed or generic speaker label
+  uncertain   U-0013 Speaker 4: label is not in the meeting's participant list
+  NOTICE      U-0016 reads like an instruction to an agent. It was recorded as what was said and was not followed; parsing, redaction and writing ran as they do for any transcript.
+  The existing record holds what this run would write (line endings aside), so nothing was written.
+[exit code: 0]
+
+# After: the same fingerprints and the same nanosecond modification times, so neither file was rewritten.
+$ shasum -a 256 participant/context/transcripts/sample-meeting.md participant/context/transcripts/sample-meeting.provenance.yaml
+449ff64385bd96358693d9492b6c270e37d45c4235fdce1c9863e709c8ea9882  participant/context/transcripts/sample-meeting.md
+4cc05e464ffff6d22f21e01801a1178aef0b90aaa08f7b13dcfa99882cbeba5e  participant/context/transcripts/sample-meeting.provenance.yaml
+[exit code: 0]
+
+$ python3 -c "import os, sys; [print(os.stat(p).st_mtime_ns, p) for p in sys.argv[1:]]" participant/context/transcripts/sample-meeting.md participant/context/transcripts/sample-meeting.provenance.yaml
+1793374061946115170 participant/context/transcripts/sample-meeting.md
+1793374061946219088 participant/context/transcripts/sample-meeting.provenance.yaml
+[exit code: 0]
+
+# No utterance is duplicated: 24 headings, 24 distinct IDs, U-0001 to U-0024.
+$ grep -c '^### U-' participant/context/transcripts/sample-meeting.md
+24
+[exit code: 0]
+
+$ grep -o '^### U-[0-9]*' participant/context/transcripts/sample-meeting.md | sort -u | wc -l | tr -d ' '
+24
+[exit code: 0]
+
+$ grep -o '^### U-[0-9]*' participant/context/transcripts/sample-meeting.md | sed -n '1p;$p'
+### U-0001
+### U-0024
+[exit code: 0]
+
+# Reading the record back gives exactly the (redacted) words the parser read from the raw file, in order. The
+# words are redacted together, as the skill does, so a detail split across cues would be hidden here too.
+$ .venv/bin/python -B -c "import importlib.util as u; s=u.spec_from_file_location('i','participant/skills/ba-ingest-transcript/ingest.py'); m=u.module_from_spec(s); s.loader.exec_module(m); meet=m.load_meeting('local-data/transcripts/2026-10-21-checkout-refinement.meeting.json'); c=m.parse_vtt(open('local-data/transcripts/2026-10-21-checkout-refinement.vtt').read(), m.roster(meet)); want=m.redact_all([x.text for x in c],{}); got=[x.text for x in m.read_record(open('participant/context/transcripts/sample-meeting.md').read())]; print('identical:', want==got, len(got), 'utterances')"
+identical: True 24 utterances
+[exit code: 0]
+
