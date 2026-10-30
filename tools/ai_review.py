@@ -431,13 +431,31 @@ def call_model_cli(system: str, user: str, model: str) -> dict[str, Any]:
         with tempfile.TemporaryDirectory(prefix="gtq-model-") as empty:
             result = subprocess.run(  # noqa: S603
                 [  # noqa: S607
-                    "claude", "-p", "--output-format", "json", "--no-session-persistence",
-                    "--tools", "", "--setting-sources", "", "--model", model,
-                    "--system-prompt", prompt, "--json-schema", json.dumps(VERDICT_SCHEMA),
-                ],  # fmt: skip
-                input=user, capture_output=True, text=True, cwd=empty, env=env,
-                check=False, timeout=900,
-            )  # fmt: skip
+                    "claude",
+                    "-p",
+                    "--output-format",
+                    "json",
+                    "--no-session-persistence",
+                    "--tools",
+                    "",
+                    "--setting-sources",
+                    "",
+                    "--strict-mcp-config",
+                    "--model",
+                    model,
+                    "--system-prompt",
+                    prompt,
+                    "--json-schema",
+                    json.dumps(VERDICT_SCHEMA),
+                ],
+                input=user,
+                capture_output=True,
+                text=True,
+                cwd=empty,
+                env=env,
+                check=False,
+                timeout=900,
+            )
         reply = json.loads(result.stdout)
     except Exception as exc:  # missing command, timeout, bad output: all "could not review"
         raise ModelError(f"the model could not be called ({type(exc).__name__})") from exc
@@ -1081,7 +1099,7 @@ def command_apply(args: argparse.Namespace) -> int:
     if not live:
         _notify(f"{head} (shadow): the reviewer would {shown} {plan.title}. {reason}")
         return 0
-    body = (
+    body = "Automated review by Claude. " + (
         plan.verification
         if action == APPROVE
         else ("Changes are needed: " + "; ".join(f["summary"] for f in plan.findings[:5]))

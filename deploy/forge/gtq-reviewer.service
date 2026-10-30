@@ -10,6 +10,7 @@ ExecStart=/usr/bin/python3 %h/.local/share/gtq-reviewer/forge_review.py
 EnvironmentFile=-%h/.config/gtq-reviewer.env
 Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
 NoNewPrivileges=true
+PrivateTmp=true
 TimeoutStartSec=3600
 StandardOutput=journal
 StandardError=journal

@@ -844,3 +844,25 @@ a person. Commit authorship is unsigned (ADR-045). The reviewer is as good as th
 acceptance criteria are checkable from text.
 
 **Specification:** `docs/design/08-ai-reviewer-specification.md`.
+
+## ADR-047 — The reviewer runs from a timer on the owner's server, not from GitHub Actions
+
+**Decision:** `tools/forge_review.py` runs `select`, `review` and `apply` (ADR-046) every ten
+minutes from a systemd user timer on Forge, the owner's always-on server. The model is the
+`claude` command on the server's own login (`--backend cli`: no tools, no settings, an empty
+working folder, no GitHub token in its environment); the push and the GitHub review use the
+server's `gh` login. Each run clones `main` fresh and runs that code, never a working checkout.
+`pilot-ai-review.yml` stays as a manual fallback (Actions tab) and no longer runs on a schedule;
+the pre-check no longer dispatches it.
+
+**Reason:** It needs no API key and no bot account to create, it uses the owner's existing
+logins, and a poll every ten minutes is faster than the 30-minute sweep. Forge already runs the
+owner's other timers and has been reliably up.
+
+**What changes in the security model:** The two halves are still separate processes with separate
+environments (the model process gets no GitHub token; the apply process gets no model access and
+reads only the validated plan), but both run as one operating-system user, so the split is by
+process, not by credential store. Commits are made as the owner, not a bot, so a decision looks
+like the owner's on GitHub; the "reviewed by" name recorded in the review stays "Claude (automated
+reviewer)". If Forge is off, hand-ins wait and are reviewed when it is back.
+

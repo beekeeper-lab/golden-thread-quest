@@ -24,7 +24,9 @@ import argparse
 import fcntl
 import json
 import os
+import secrets
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -40,6 +42,18 @@ GIT_AUTH = {
 }
 
 
+def _salt(state: Path) -> str:
+    """The sample salt: the owner's, else one made once and kept (so a re-run samples the same)."""
+    if os.environ.get("PILOT_AI_SAMPLE_SALT"):
+        return os.environ["PILOT_AI_SAMPLE_SALT"]
+    path = state / "sample-salt"
+    if not path.is_file():
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "w") as handle:
+            handle.write(secrets.token_hex(32))
+    return path.read_text(encoding="utf-8").strip()
+
+
 def _env(*extra: str, add: dict[str, str] | None = None) -> dict[str, str]:
     env = {k: v for k, v in os.environ.items() if k in (*PLAIN, *extra)}
     return {**env, **(add or {})}
@@ -48,9 +62,18 @@ def _env(*extra: str, add: dict[str, str] | None = None) -> dict[str, str]:
 def _run(
     cmd: list[str], *, cwd: Path, env: dict[str, str], timeout: int
 ) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(  # noqa: S603
-        cmd, cwd=cwd, env=env, capture_output=True, text=True, check=False, timeout=timeout
-    )
+    """Run to completion; on a timeout kill the whole process group, not just the first child."""
+    proc = subprocess.Popen(  # noqa: S603
+        cmd, cwd=cwd, env=env, text=True, start_new_session=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+    )  # fmt: skip
+    try:
+        out, err = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        os.killpg(proc.pid, signal.SIGKILL)
+        proc.communicate()
+        raise
+    return subprocess.CompletedProcess(cmd, proc.returncode, out, err)
 
 
 def _show(result: subprocess.CompletedProcess[str]) -> None:
@@ -62,7 +85,7 @@ def _python(base: Path, script: str, *args: str) -> list[str]:
     return ["uv", "run", "--quiet", "--project", str(base), "python", str(base / script), *args]
 
 
-def review_one(number: int, base: Path, work: Path, mode: str, repo: str) -> bool:
+def review_one(number: int, base: Path, work: Path, mode: str, repo: str, salt: str = "") -> bool:
     """One pull request through fetch, review and apply. True if every step ran."""
     out = work / f"pr-{number}"
     outputs = work / f"fetch-{number}.out"
@@ -87,36 +110,85 @@ def review_one(number: int, base: Path, work: Path, mode: str, repo: str) -> boo
 
     reviewed = _run(
         _python(
-            base, "tools/ai_review.py", "review",
-            "--participant-root", str(out / "participant"),
-            "--files-json", str(out / "files.json"),
-            "--labels-json", str(out / "labels.json"),
-            "--head-sha", sha, "--mode", mode, "--backend", "cli",
-            "--sample-every", os.environ.get("PILOT_AI_SAMPLE_EVERY", "5"),
-            "--model", os.environ.get("PILOT_AI_MODEL", "claude-opus-5-5"),
-            "--out", str(plan),
-        ),  # fmt: skip
+            base,
+            "tools/ai_review.py",
+            "review",
+            "--participant-root",
+            str(out / "participant"),
+            "--files-json",
+            str(out / "files.json"),
+            "--labels-json",
+            str(out / "labels.json"),
+            "--head-sha",
+            sha,
+            "--mode",
+            mode,
+            "--backend",
+            "cli",
+            "--sample-every",
+            os.environ.get("PILOT_AI_SAMPLE_EVERY", "5"),
+            "--model",
+            os.environ.get("PILOT_AI_MODEL", "claude-opus-5-5"),
+            "--out",
+            str(plan),
+        ),
         cwd=base,
-        env=_env("PILOT_AI_SAMPLE_SALT"),
+        env=_env(add={"PILOT_AI_SAMPLE_SALT": salt} if salt else {}),
         timeout=1200,
     )
     _show(reviewed)
     if reviewed.returncode != 0 or not plan.is_file():
         return False
 
-    token = _run(["gh", "auth", "token"], cwd=base, env=_env(), timeout=30).stdout.strip()
+    token = os.environ.get("PILOT_BOT_TOKEN", "")
+    if not token:  # the machine's own login: broader than a token scoped to the one repository
+        got = _run(["gh", "auth", "token"], cwd=base, env=_env(), timeout=30)
+        token = got.stdout.strip() if got.returncode == 0 else ""
+    if not token:
+        print("    no GitHub token for the apply step")
+        return False
     applied = _run(
         _python(
-            base, "tools/ai_review.py", "apply",
-            "--plan", str(plan), "--pr", str(number), "--repo", repo, "--mode", mode,
-            "--fetched-sha", sha, "--data-root", str(out),
-        ),  # fmt: skip
+            base,
+            "tools/ai_review.py",
+            "apply",
+            "--plan",
+            str(plan),
+            "--pr",
+            str(number),
+            "--repo",
+            repo,
+            "--mode",
+            mode,
+            "--fetched-sha",
+            sha,
+            "--data-root",
+            str(out),
+        ),
         cwd=base,
         env=_env("NTFY_URL", add={"PILOT_BOT_TOKEN": token}),
         timeout=900,
     )
     _show(applied)
     return applied.returncode == 0
+
+
+def _alert_once(state: Path, failed: list[int]) -> None:
+    """Ping once per pull request that a run could not complete, not every ten minutes."""
+    path = state / "alerted.json"
+    try:
+        seen = set(json.loads(path.read_text(encoding="utf-8")))
+    except (OSError, ValueError):
+        seen = set()
+    new = [n for n in failed if n not in seen]
+    url = os.environ.get("NTFY_URL")
+    if new and url:
+        _run(
+            ["curl", "-fsS", "-H", "Title: Pilot review", "-d",
+             f"The reviewer could not complete {new}; see journalctl --user -u gtq-reviewer", url],
+            cwd=state, env=_env(), timeout=30,
+        )  # fmt: skip
+    path.write_text(json.dumps(sorted(seen | set(failed))), encoding="utf-8")
 
 
 def main(argv: list[str]) -> int:
@@ -141,15 +213,28 @@ def main(argv: list[str]) -> int:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             print("another run is in progress; nothing done")
-            return 0
+            return 75
+        signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))  # so `finally` cleans up
+        salt = _salt(state)
         work = Path(tempfile.mkdtemp(prefix="run-", dir=state))
         try:
             base = work / "base"
             cloned = _run(
-                ["gh", "repo", "clone", args.repo, str(base), "--", "--depth", "1",
-                 *(["--branch", args.ref] if args.ref else [])],
-                cwd=work, env=_env(), timeout=300,
-            )  # fmt: skip
+                [
+                    "gh",
+                    "repo",
+                    "clone",
+                    args.repo,
+                    str(base),
+                    "--",
+                    "--depth",
+                    "1",
+                    *(["--branch", args.ref] if args.ref else []),
+                ],
+                cwd=work,
+                env=_env(),
+                timeout=300,
+            )
             if cloned.returncode != 0:
                 _show(cloned)
                 return 1
@@ -158,8 +243,10 @@ def main(argv: list[str]) -> int:
             else:
                 chosen = _run(
                     _python(base, "tools/ai_review.py", "select", "--repo", args.repo),
-                    cwd=base, env=_env(), timeout=300,
-                )  # fmt: skip
+                    cwd=base,
+                    env=_env(),
+                    timeout=300,
+                )
                 if chosen.returncode != 0:
                     _show(chosen)
                     return 1
@@ -169,7 +256,7 @@ def main(argv: list[str]) -> int:
             for number in numbers:
                 print(f"  #{number}")
                 try:
-                    ok = review_one(number, base, work, mode, args.repo)
+                    ok = review_one(number, base, work, mode, args.repo, salt)
                 except Exception as exc:  # one bad pull request must not stop the others
                     print(f"    {type(exc).__name__}: {exc}")
                     ok = False
@@ -177,6 +264,7 @@ def main(argv: list[str]) -> int:
                     failed.append(number)
             if failed:
                 print(f"did not complete: {failed}")
+                _alert_once(state, failed)
             return 1 if failed else 0
         finally:
             shutil.rmtree(work, ignore_errors=True)
