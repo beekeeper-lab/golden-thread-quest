@@ -126,7 +126,7 @@ def review_one(number: int, base: Path, work: Path, mode: str, repo: str, salt: 
             "--backend",
             "cli",
             "--sample-every",
-            os.environ.get("PILOT_AI_SAMPLE_EVERY", "5"),
+            os.environ.get("PILOT_AI_SAMPLE_EVERY", "0"),
             "--model",
             os.environ.get("PILOT_AI_MODEL", "claude-opus-5-5"),
             "--out",

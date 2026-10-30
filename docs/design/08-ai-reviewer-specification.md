@@ -13,7 +13,7 @@ program learns of it, reviews it, and answers with no person in the loop:
 - If not, the reviewer records **needs changes**: no XP, with findings the participant can act on.
 - The participant receives the feedback in **the pull request** (a comment and a GitHub review)
   and **in the app** (the evidence page's findings, after "Check for my review").
-- Anything the reviewer should not decide alone goes to a person, with a notification.
+- Only a reviewer that cannot run (model failure, no submission record, no criteria) goes to a person, with a notification.
 
 Out of scope: merging a pilot pull request (never; ADR-045), changing the XP rules (ADR-011:
 verified XP exists only from an approved review), and any participant-side change beyond what
@@ -28,8 +28,10 @@ ADR-045 already added.
 3. **Approval must be earned in checkable terms.** The model must quote the evidence that
    satisfies each acceptance criterion, and each quote must appear verbatim in a participant
    file. A model that is fooled, lazy or wrong cannot produce quotes that do not exist.
-4. **Doubt goes to a person.** `needs changes` is safe and automatic. Approval is automatic only
-   when every gate passes; everything else escalates.
+4. **The reviewer decides.** `needs changes` and approval are both automatic. Approval needs
+   grounded quotes for every criterion. Only a reviewer that cannot run (a model failure, no
+   submission record, no criteria) goes to a person. The cost of a wrong approval is unearned
+   credit, nothing worse (owner, 2026-10-30), so doubt becomes a request for better evidence.
 5. **Credentials are split.** The job that holds the model key cannot write. The job that can
    write holds no model key and reads only a validated plan.
 6. **Never run what a participant wrote.** The reviewer reads files. Quests whose proof depends
@@ -83,7 +85,7 @@ files, read as data:
   description, location), risk notes, and its safety-constraints text.
 - The pre-check result for the attempt.
 - Every file in the attempt's evidence package plus every declared proof path outside it, as
-  text, each bounded (30,000 characters; 300,000 in total). Binary files are listed by name
+  text, each bounded (150,000 characters; 1,000,000 in total; a longer file is shown start and end, verbatim, with a marker). Binary files are listed by name
   and size only. Truncation is recorded.
 - The participant's code files in those locations, listed.
 
@@ -112,22 +114,22 @@ decides.
 | G1 | Appeal label `gtq:ask-human` present, or mode `off` | skip |
 | G2 | No submitted attempt without a review | skip |
 | G3 | Pre-check status is not `ready-for-review` | skip (the participant fixes it first) |
-| G4 | Quest risk is `external_write` | escalate |
-| G5 | Required proof of type `screenshot`, `demonstration` or `review`, or any proof file that is an image or PDF | escalate |
-| G6 | The attempt's proof depends on participant code (a code file in the evidence package or in a declared proof path) | escalate |
-| G7 | Any file was truncated or unreadable, or the quest lists no acceptance criteria | escalate |
-| G8 | Evidence contains instruction-like text aimed at a reviewer, or the model says `injection_suspected` | escalate |
+| G4 | Quest risk is `external_write` | judged like any other (the model reads the preview, refusal and confirmation records) |
+| G5 | Image or PDF proof, or a screenshot, demonstration or review proof type | judged from the text evidence and the participant's written description; the model cannot see images and is told so |
+| G6 | Participant code in the proof | judged from the logs and outputs it produced; nothing is run |
+| G7 | The submission has no record, or the quest lists no acceptance criteria | escalate (a long or unreadable file is not a reason: it is shown start and end, or listed) |
+| G8 | The model says `injection_suspected` (phrases alone are only a hint: quests about injection quote them as sample data) | no approval; `needs_changes` with a finding asking the participant to remove it |
 | G9 | Model call failed, or its output does not match the schema | escalate |
-| G10 | Model said `uncertain` | escalate |
+| G10 | Model said `uncertain` | `needs_changes`: findings say what evidence would settle it, and the participant may add `gtq:ask-human` |
 | G11 | Model said `approved`, but a criterion is not `met`, has no quote, or has a quote not found verbatim in the named file | `needs_changes` with a finding per failing criterion (an approval that cannot be grounded is not an approval) |
-| G12 | Model said `approved`, all criteria grounded | if the sampling rule picks it: escalate, else **approve** |
+| G12 | Model said `approved`, all criteria grounded | **approve** (if the owner opted into sampling and the rule picks it: escalate) |
 | G13 | Model said `needs_changes` | `needs_changes` with its findings (at least one; a model finding is required to cite evidence) |
 
 Grounding rules for a quote (G11): at least 20 characters, found word for word (whitespace
 aside) in the file it names, not merely the criterion's own words, and no single line may be
 offered as the proof of more than three criteria.
 
-Sampling rule: one in `PILOT_AI_SAMPLE_EVERY` approvals (default 5), chosen by a hash of the
+Sampling rule (off by default; the owner opts in): one in `PILOT_AI_SAMPLE_EVERY` approvals, chosen by a hash of the
 submission id salted with a secret the participant does not have (`PILOT_AI_SAMPLE_SALT`, else the
 model key), so a re-run picks the same ones and a participant cannot choose an id that dodges it.
 
@@ -188,7 +190,7 @@ On the server, `~/.config/gtq-reviewer.env` (template `deploy/forge/gtq-reviewer
 | Item | Purpose |
 |---|---|
 | `PILOT_AI_REVIEW_MODE` | `off`, `shadow` (default) or `live` |
-| `PILOT_AI_SAMPLE_EVERY` | Sampling rate, default 5 |
+| `PILOT_AI_SAMPLE_EVERY` | Sampling: one approval in N goes to a person. Default 0 (off) |
 | `PILOT_AI_SAMPLE_SALT` | Salt for the sample (optional but recommended) |
 | `PILOT_AI_MODEL` | Model id, default `claude-opus-5-5` |
 | `NTFY_URL` | Pings for escalations and shadow verdicts (optional) |
