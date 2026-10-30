@@ -1,0 +1,84 @@
+# Eleventh AI review, run 2026-10-29 (UTC): one Claude reviewer, started fresh, quickly checked the changes made for the
+# tenth review, after the script was meant to be frozen, under a rule set before it ran: only a blocking or high finding
+# would reopen the script. It was given the changes, the script, its tests and SKILL.md, and the builder's description of
+# what the changes were meant to do, to verify rather than trust; not the builder's verdict.
+# Below the first blank line is its report exactly as returned, with a final newline.
+# The sample transcript's phone number, which the record redacts, was replaced with 317-555-0198 wherever this
+# report quotes it, whole or in parts, as in the earlier logs.
+
+**Round 3 review of ingest.py: one BLOCKING finding (a regression from round 2), three MEDIUM, a few LOW. The full suite passes.**
+
+**Scope and setup.** I reviewed the round-3 changes (round3-ingest.diff and round3-tests.diff). For comparison I used ingest-before-round3.py from the scratchpad folder as the round-2 code ("old").
+- ingest.py (sha1 f136c6c6…) and test_ingest.py (sha1 7d646af5…) did not change while I worked.
+- **SKILL.md did change.** Its modified time is 16:25, after the diffs were written at 16:22. The new text now describes changes 1 to 5, including the reading that leaves out "the `Name:` at the start of each line". I judged against that new text.
+- Inputs were run through copies in a temp folder outside any git checkout. That folder is deleted. The repository and the scratchpad files were not edited.
+
+**Suite:** 133 passed, 0 failed, exit 0, about 55 s wall time (OBSERVED).
+
+---
+
+## BLOCKING (a privacy leak and a regression from round 2)
+
+**1. An address or number split across Zoom-form cues stays visible when the second cue's next line holds any colon.**
+
+- **Input:** ingest() with the usual test meeting (Ada Example and Ben Example listed, Carol Guest not listed) and two cues:
+  - cue 1: `Ada Example: Write to ada dot lee`
+  - cue 2: `Carol Guest: at example` + newline + `dot com before 10:30 please.`
+- **OBSERVED, new code:** both utterances unredacted (`Write to ada dot lee` and `Carol Guest: at example\ndot com before 10:30 please.`), email count 0.
+- **OBSERVED, old code:** `Write to [REDACTED:EMAIL]` and `Carol Guest: [REDACTED:EMAIL] before 10:30 please.`, email count 1.
+- **Same leak with other tails (OBSERVED):**
+  - A tail line of `dot com or see https://example.org` leaks the whole address.
+  - Phone variant, cue 1 `Ada Example: My cell is 317` and cue 2 `Carol Guest: 555` + newline + `0100 after 10:30 works.`: `317` stays visible in the new code. The old code hid it.
+- **What should happen:** SKILL.md 8 says a detail "that runs from one cue into the next … is replaced by its marker in each utterance it touches." No Known miss covers this. The nearest one is a `Name:` whose name holds a colon (`Carol Guest (Team: Ops):`), which is a different case.
+- **Severity caveat.** Read literally, the new mechanism text ("whatever comes before a colon within the first 200 characters of a line") also leaves out `dot com before 10`. So you could call this HIGH (the documented promise is not kept) rather than BLOCKING. I rated it BLOCKING because an address round 2 hid is now fully visible.
+- **Likelihood:** low. It needs a multi-line Zoom-form cue.
+- **Cause (INFERRED from the code):** LINE_START_NAME counts any text before the first colon of a line as a Name:, so times, `https:` and `re:` all count. Round 3 also replaced round 2's reading (only each cue's leading Name: left out) instead of adding to it.
+- **Suggested fix:** keep the round-2 reading as a third reading, counted unless an earlier reading found part of the detail. Also, do not treat text as a Name: when a digit follows its colon, which is the rule Section 5 already uses for `10:30`.
+- **Fuzz evidence:** in 30,000 random multi-cue inputs, new showed more digits or address words than old in 9 cases. Every one I inspected had a non-name colon on a later line.
+
+## MEDIUM
+
+**2. Change 2 misses its own one-cue target when the number resumes on a line that holds a colon.**
+- Input: `<v Ada Example>Call me on 317 555\nCarol Guest:\n0198 after 10:30.</v>`
+- OBSERVED: the whole number stays visible, in both old and new code. This is not a regression, and it is not listed as a Known miss. Same cause and same fix as finding 1.
+
+**3. The line break after a Name: that stands alone on its line is lost.**
+- Input: `<v Ada Example>Call me on 317 555\nCarol Guest:\n0198 after lunch.</v>`
+- OBSERVED: `Call me on [REDACTED:PHONE]\nCarol Guest:[REDACTED:PHONE] after lunch.`
+- Expected: the line break is kept. Sources: the builder's claim, SKILL.md 8 ("with the line break between them kept"), and SKILL.md 8 ("only the address or number … is replaced", the words around it stay).
+- INFERRED cause: kept_parts starts the part after the name at the newline that follows it, so the marker swallows that newline.
+
+**4. Ordinary numbers are newly hidden across text before a colon that is not a name.** None of these is documented; round 2 left all of them visible (OBSERVED).
+- `<v Ada Example>We counted 3, 5, 5, 3, 8\nMeet at 10:30 tomorrow.</v>` becomes `We counted [REDACTED:PHONE]\nMeet at 10:[REDACTED:PHONE] tomorrow.` That splits a time, and SKILL.md 8 says times such as 10:30 stay visible.
+- `Budget:\nTravel: 500\nHotel: 1200` has both amounts hidden.
+- Seven lines of the form `Cal: 3` (story-point votes) have every vote hidden as one phone number.
+- Same fix as finding 1 would cover most of these. Otherwise document them in SKILL.md 8.
+
+## LOW
+
+- A NOTE-block line `Ada Example&#13;: check the audio` is now refused; round 2 kept it as a comment. This matches SKILL.md 9 and the new test.
+- In Ada Example's voice cue, the line `Ben Example&#10;: more` is still refused, but the reason changed from "control character" to "more than one speaker".
+- Change 5 refuses U+2028 in meeting values, but a transcript label `<v Carol&#x2028;Guest>` is accepted. OBSERVED: the YAML reads it back unchanged and the heading stays on one line. This is an inconsistency only.
+- Two timing lines are still refused that WebVTT probably accepts (INFERRED, not checked against the spec here): `…02.000` + no-break space + `align:start`, and a form feed before `-->`. Both were refused before round 3 too.
+- Two numbers can be counted as one when the first reading took part of the second as a different number: `Call 317 555\nCarol Guest: 0198 555 0100` gives phone=1. This follows the documented "counts unless the first reading found part of it".
+
+## No finding
+
+**Change 2, other checks**
+- **Edge cases:** no crash. I tried empty texts, a text that is only a Name:, several texts that are only names, consecutive Name: lines (the line breaks are kept), a Name: on the first line of the first text, a text starting with a newline, and the 30,000 fuzz inputs.
+- **Counts:** correct in every case I checked (1, 1, 2, 2, 1), including details found by both readings.
+- **Timing (OBSERVED), time doubles as input doubles:**
+  - 10k, 20k and 40k cues each starting with a Name:: 0.69, 0.83 and 1.9 s.
+  - One cue of 100k or 200k `X: 5` lines: 2.4 and 4.5 s.
+  - 3k, 6k and 12k lines of 199 characters with no colon: 0.66, 1.04 and 1.86 s.
+  - 5k, 10k and 20k two-line cues: 2.0, 4.0 and 7.8 s.
+  - A 300k-character line: 0.2 s.
+
+**Change 1:** no valid input refused, and no control character let into a label. Tried:
+- Now accepted: `Hi.&#10;Carol Guest: No.`, `Carol&#10;Guest:` and `Speaker&#10;2:` (both read as words), and a tab at a label's end.
+- Still refused: a CR, line feed or NEL (U+0085) at a listed or generic label's end, `Speaker&#9;2:`, `<v Ada&#13;>`, `<v Ben&#9;Example>`, a C1 reference inside a listed label, `<v Carol Guest&#x85;>`, and a CR on a later line.
+
+**Changes 3 to 5:**
+- I checked dates, years, versions and amounts written with each new separator (full-width slash, ideographic, full-width and small full stops, two dot leader, bullet, LRM, RLM, Hangul filler, Braille blank, CGJ, ALM). None were hidden. A number wrapped in RLM marks and groups split by bidi isolates are hidden.
+- A no-break space, form feed, U+2028 or U+001C after the end time is accepted.
+- Change 5 refuses U+2028 and U+2029 in a meeting field only.

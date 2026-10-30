@@ -1,0 +1,19 @@
+schema_version: 1
+submission_id: submission-20261014175155-58f16c
+quest_id: base-camp-repository-safety
+quest_version: 2
+attempt_id: base-attempt-001
+content_hash: sha256:961a703db315b6da63e2a0e8f9cd3bc8db210f269a6451505236a78d84d250b3
+evidence_hash: sha256:f718427d1c0cf8168d9a8cc66c0a57acc75b5c4b31599de3235ff6bf71685e0d
+submitted_at: '2026-10-14T17:51:55Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+validation_result_ids:
+- validate-repository-foundation-20261014172156037086-c84175
+- validate-repository-foundation-20261014174820451682-4cfc2b
+- validate-repository-foundation-20261014175143974982-c5c422
+proof_files:
+- path: participant/context/audit-log.md
+  digest: sha256:3e55456f9ffa9f81d4b679d9bab384533e7a774a0ae5d803cb0e80ff0d7ba808
+- path: participant/context/repository-ownership.md
+  digest: sha256:8bbd4b9977f406cecffe9aff944a6b8b5c1534b331e393f00294b0fd4873052a

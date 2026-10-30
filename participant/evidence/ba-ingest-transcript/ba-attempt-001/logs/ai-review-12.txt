@@ -1,0 +1,96 @@
+# Twelfth AI review, run 2026-10-29 (UTC): one Claude reviewer, started fresh, quickly checked the fix for the eleventh
+# review's blocking finding, under the same rule: only a blocking or high finding would reopen the script. It was given
+# the fix, the script before and after it, the tests and SKILL.md, and the builder's description of what the fix was
+# meant to do, to verify rather than trust; not the builder's verdict. A first run of it stopped on a network error
+# before it reported; this is the second run.
+# Below the first blank line is its report exactly as returned, with a final newline.
+# The sample transcript's phone number, which the record redacts, was replaced with 317-555-0198 wherever this
+# report quotes it, whole or in parts, as in the earlier logs.
+
+## Round 4 check of ingest.py
+
+**Verdict:** The fix does what it claims for the reported bug, and I found no input where the candidate hides less or counts fewer than ingest-before-round3.py. The full suite passes. Two findings still meet your bar for changing code. Both need rare inputs, and neither is a regression against round 3:
+- **Blocking under your definition:** the third reading ignores a `Name:` that holds a redaction marker, although Section 8 says it follows Section 5's count.
+- **High under your definition:** a regression against ingest-before-round4.py. A detail split across a one-word or parenthesised cue label and a name-shaped inner line now shows in full.
+
+**Suite (OBSERVED, run once):** `133 passed, 0 failed`, exit 0, 37.8 s wall.
+
+**The claimed fix (OBSERVED):**
+- Input: `["Ada Example: Write to ada dot lee", "Carol Guest: at example\ndot com before 10:30 please."]`
+- Candidate gives `Write to [REDACTED:EMAIL]` and `Carol Guest: [REDACTED:EMAIL] before 10:30 please.`, with email 1.
+- before-round4 left the whole address visible. before-round3 matches the candidate.
+
+### Finding 1. Blocking by your definition. Rare input, not a regression.
+A `Name:` holding a redaction marker is not left out by the passes that run after that marker is written.
+- **Inputs:**
+  - H: `<v Ada Example>Call me on 317 555\nCarol ada@example.com: 0198 please.</v>`
+  - G: `<v Ada Example>Write to ada dot lee\nCaller 317 555 0100: at example dot com please.</v>`
+- **OBSERVED, candidate:**
+  - H gives `Call me on 317 555\nCarol [REDACTED:EMAIL]: 0198 please.` The whole phone number is visible, phone count 0.
+  - G gives `Write to ada dot lee\nCaller [REDACTED:PHONE]: at example dot com please.` The whole spoken address is visible, email count 0.
+  - The record's own reason quotes `Carol [REDACTED:EMAIL]:` and `Caller [REDACTED:PHONE]:` as possible speakers, so Section 5 counts those lines.
+  - With `Carol Guest:` in place of those names, both details are hidden.
+  - before-round3 and before-round4 give the same output, so this is not a regression.
+- **What should happen and its source:** the detail should be hidden.
+  - SKILL.md section 8 says the third reading leaves out a `Name:` "shaped like a name, as Section 5 counts one", and that the same two lines inside one cue are redacted.
+  - Section 5 says a marker in a name "stands for what it hid: its colon does not end the name, and it counts as digits".
+  - Round 4's new section 8 text creates this promise. The older text did not make it.
+- **Cause (OBSERVED in code):** `LINE_START_NAME`, `^([^:\n]{1,60}):`, stops at the marker's own colon. So `name_shaped("Carol [REDACTED")` is False.
+- **Suggested correction:** build `LINE_START_NAME` the way `LINE_NAME` is built, `((?:<markers>|[^:\n]){1,60})`, so a marker counts as one character. I tried this on a patched copy and it hid G and H, with counts of 1 each. I did not run the suite on that patch. Add a test for G and H.
+- **Likelihood (INFERRED): low.** It needs a line inside a cue whose name holds a phone number or email address next to a name word, with a detail split around that line.
+
+### Finding 2. High by your definition (regression against ingest-before-round4.py). Rare input, not a regression against round 3.
+The second and third readings are separate, so a detail split across both kinds of `Name:` is found by neither. Inputs are Zoom-form VTT with Ada Example listed, run through parse_vtt and build_utterances:
+- A': cue 1 `Ada Example: Call me on three one seven five`, cue 2 `Carol: five five\nDan Guest: oh one nine eight please.`
+- B': cue 1 `Ada Example: Call me on three one seven five\nDan Guest: five five`, cue 2 `Carol: oh one nine eight please.`
+- C': B' with cue 2's label `Dana Guest (Example Corp):`
+
+**OBSERVED:**
+- Candidate: all digit words visible in all three inputs, phone count 0.
+- before-round4: all of them hidden, phone count 1.
+- before-round3: all visible, the same as the candidate.
+
+**Should happen:** this is a regression against the previous version, which is your High criterion. Section 8 as written promises only three separate readings, so this is not a breach of a written rule. Known misses do not list this case, though they say "there may be others".
+
+**Suggested correction:** let the third reading also leave out each cue's leading `Name:` of any shape, as the second reading does. I tried this on a patched copy:
+- It hid A', B' and C'.
+- It still fixed the original bug input, because `dot com before 10:` on a later line is still not left out.
+- I did not run the suite on it.
+
+The other option is to list this case as a known miss.
+
+**Likelihood (INFERRED): low.** It needs an unlisted cue label that is not name-shaped, plus a `Name:` line inside a cue, with one detail split across both.
+
+### Medium and low findings, one line each (all OBSERVED)
+- **Low, an empty line next to a name line is swallowed by the marker.** `Call me on 317 555\nCarol Guest:\n\n0198 after.` gives `...[REDACTED:PHONE]\nCarol Guest:\n[REDACTED:PHONE] after.`, and an empty line before the name is lost the same way. The `kept_parts` docstring says a line break is never hidden. Section 5's "a marker that spans a line break joins the two lines" covers the behaviour. It only arises from `&#10;&#10;` or a line of only spaces.
+- **Low, new over-redaction of labelled lists with two to four word labels.**
+  - `Budget:\nTravel Costs: 500\nHotel Costs: 1200` hides 500 and 1200, counted as 1 phone.
+  - Seven lines like `Story Points: 3` hide every value.
+  - This follows from Section 8's rule, but the "such numbers are redacted as well" list has no such example. Round 4's test uses only one-word labels (`Travel: 500`).
+- **Low, a word on the line above a name line is now hidden with `at`.** `I looked\nCarol Guest: at example.com today` gives `I [REDACTED:EMAIL]\nCarol Guest: [REDACTED:EMAIL] today`. This is consistent with the section 8 rule for `at`.
+- **Low, the candidate trades one partial detail for another against round 3.**
+  - `Call 317 555\nCarol Guest: 0100 at example dot com`: the candidate hides the number and shows `at example dot com`.
+  - Round 3 hid the address and showed `317 555`.
+  - Section 8's own one-cue example behaves the same way as the candidate.
+- **Low, performance has a narrower margin.** Time is linear (doubling the input doubles the time for every shape I tried).
+  - The candidate is 1.5 to 3.5 times slower than round 3 on labelled inputs.
+  - 60,000 cues with unlisted two-word labels, each holding half a number, took 5.16 s against round 3's 2.88 s, with load average about 9 to 10.
+  - The suite's 10-second test uses unlabelled cues (2.36 s here), so it never times the extra readings.
+
+### What I tried
+- **Hand cases:** every case above, plus empty list, `""`, `["", "Carol Guest:"]`, a text that is only a name, consecutive name lines, a name alone at the end, `Monday 10:30`, `Call +1 317 555 0100.\nCarol Guest: 2026 works.` (the year is hidden, as section 8 says), and a 20,000 to 40,000 line timing sweep.
+- **Differential fuzz, about 50,000 random multi-cue inputs over three generators:**
+  - **Inputs:** Zoom-form cues with listed, unlisted, one-word, parenthesised, small-letter, colon-holding, over-60-character and digit-after-colon labels; name lines inside cues; numbers, digit words, spoken and written addresses split across lines and cues; times, URLs, lists, `Travel: 500`.
+  - **Against round 3:** 0 inputs where the candidate shows more digits or address words, 0 with fewer counts, 0 crashes, 0 changes to words outside markers, 0 name-shaped names hidden. About 25% of the inputs gave different output, so the third reading was exercised.
+  - **Counts above the marker total:** 3 cases, all identical in round 3, so not new.
+  - **Line breaks hidden only in the candidate:** all were ordinary line breaks inside a newly found detail.
+  - **Against round 4:** every difference that was not Finding 2 came from a label that is not name-shaped or has a digit after its colon, which SKILL.md line 170 documents. One count difference is the documented case where overlapping finds count as one.
+
+### NOT ASSESSED
+- The planted-bug run for round 4. SKILL.md says 1,111 planted bugs, up from 1,107.
+- The SKILL.md round 4 diff also changes the timing-line paragraph (no-break space and form feed shapes), which is not in round4-ingest.diff.
+- `ingest()`'s file-writing path. I used parse_vtt and build_utterances.
+- U+2028 and U+2029 line separators.
+- Both suggested patches against the suite.
+
+All my work was in a temporary folder under the scratchpad, now deleted. Nothing under the scratchpad's `testaudit/next` folder or the repository was changed, and no `__pycache__` was left behind.

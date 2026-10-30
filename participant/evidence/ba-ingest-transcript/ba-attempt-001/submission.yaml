@@ -1,0 +1,19 @@
+schema_version: 1
+submission_id: submission-20261030190416-114346
+quest_id: ba-ingest-transcript
+quest_version: 4
+attempt_id: ba-attempt-001
+content_hash: sha256:237610e383705248804a8bcc80cf44ba44ab1b14e560816f01fb38623147976e
+evidence_hash: sha256:9065cf850de5e413936df5056e752b78610a1d4cfe2ece807ec1e645fc9c77da
+submitted_at: '2026-10-30T19:04:16Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/transcripts/redaction-notes.md
+  digest: sha256:deb9c08da9c31e5e862d0be0d2d34f14b211722582144928ef0d2bd7d15a21ea
+- path: participant/context/transcripts/sample-meeting.md
+  digest: sha256:55555df05da00cbff2d5c71680644c01a3b6d5f82d994b39b41cec079a6e1243
+- path: participant/context/transcripts/sample-meeting.provenance.yaml
+  digest: sha256:bc08f274c2480e4c928d000fc9b2d3ed460d6d0ebaf3c3aa58ec13177ad61304
+- path: participant/skills/ba-ingest-transcript/SKILL.md
+  digest: sha256:28cf4ffeb4d6b7f4b2b50cb953474af5a3a325518442efc3cd0bb5a0c1354783
