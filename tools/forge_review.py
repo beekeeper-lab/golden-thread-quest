@@ -37,7 +37,7 @@ PLAIN = ("PATH", "HOME", "LANG", "USER", "XDG_CONFIG_HOME", "XDG_STATE_HOME")
 # Lets `git fetch` in the clone use the machine's GitHub login, so a private repository works.
 GIT_AUTH = {
     "GIT_CONFIG_COUNT": "1",
-    "GIT_CONFIG_KEY_0": "credential.helper",
+    "GIT_CONFIG_KEY_0": "credential.helper",  # secret-scan: allow
     "GIT_CONFIG_VALUE_0": "!gh auth git-credential",
 }
 
