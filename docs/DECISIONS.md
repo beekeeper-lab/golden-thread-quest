@@ -866,3 +866,20 @@ process, not by credential store. Commits are made as the owner, not a bot, so a
 like the owner's on GitHub; the "reviewed by" name recorded in the review stays "Claude (automated
 reviewer)". If Forge is off, hand-ins wait and are reviewed when it is back.
 
+
+**Amendment, 2026-10-30 (ADR-046/047):** The first real hand-in sent to a person for three reasons
+that contradicted the goal that the reviewer decides: long logs (the reviewer cut files at 30,000
+characters and sent anything cut off to a person), a quest about prompt injection whose evidence
+quotes such phrases as sample data (a phrase scan sent it to a person), and the one-in-five approval
+sample. Now: long files are shown start and end and the model counts only what it sees; phrases are a
+hint to the model, which flags only text aimed at it; the sample is off by default. A person still
+gets external-write quests, proof that is images or a demonstration, participant code in the proof,
+a model that is unsure, and a model that flags an attack.
+
+**Second amendment, 2026-10-30:** The owner decided the reviewer is the judge: a wrong approval means
+unearned credit, not harm. External-write quests, image or demonstration proof and participant code are
+no longer sent to a person; the model judges them from the text evidence, told what it cannot see or
+run. "Unsure" and a flagged injection become `needs_changes` with findings (a participant can add
+`gtq:ask-human`). A person gets only a reviewer that cannot run: a model failure, no submission
+record, or a quest with no criteria.
+

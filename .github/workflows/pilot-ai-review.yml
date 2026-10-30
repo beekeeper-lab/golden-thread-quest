@@ -85,7 +85,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      SAMPLE_EVERY: ${{ vars.PILOT_AI_SAMPLE_EVERY || '5' }}
+      SAMPLE_EVERY: ${{ vars.PILOT_AI_SAMPLE_EVERY || '0' }}
       MODEL: ${{ vars.PILOT_AI_MODEL || 'claude-opus-5-5' }}
     steps:
       - uses: actions/checkout@v4

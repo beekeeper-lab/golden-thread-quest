@@ -59,10 +59,11 @@ participant by a new comment, which GitHub emails.
 ## The automatic reviewer
 
 Most pilot hand-ins are reviewed before you see them (ADR-046, `docs/guides/AI-REVIEWER-SETUP.md`).
-It records its decisions as "Claude (automated reviewer)". You are the reviewer for what it sends
-you: the pull requests labelled `gtq:needs-human`, which are the external-write quests, proof that
-is images or participant code, anything it was unsure of or could not read, evidence that tried to
-instruct it, and a sample of its approvals. The run summary and the participant's comment say why.
+It records its decisions as "Claude (automated reviewer)". It judges every hand-in itself
+(external-write quests, images and participant code included, from the text evidence). You see only
+the pull requests labelled `gtq:needs-human`: a model failure, a hand-in with no submission record,
+or a quest with no acceptance criteria, plus any a participant asked you to look at with
+`gtq:ask-human`. The journal and the participant's comment say why.
 Review them exactly as below. To overrule one of its decisions, record your own; it supersedes the
 earlier one, which is archived beside it.
 

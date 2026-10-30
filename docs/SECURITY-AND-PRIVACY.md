@@ -377,8 +377,7 @@ rules, plus:
   owner's user, so the split is by process, and commits are made under the owner's account.
 - The model sees the evidence as data between unguessable markers, has one function to return a
   verdict through, and cannot act. Approval is decided in code from quotes that must appear verbatim
-  in the participant's files; instruction-like text in the evidence sends the hand-in to a person
-  without a model call.
+  in the participant's files; text the model says is aimed at it blocks approval (a finding asks the participant to remove it).
 - A review is pushed only when the branch is still at the commit it was read at, only files under
   `participant/` are written, and the push is never forced.
 - Only numbers and commit hashes are interpolated into shell steps (tested).

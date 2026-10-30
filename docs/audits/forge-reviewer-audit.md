@@ -62,3 +62,11 @@ less closed than the docs and test claim.
   name was already "Claude (automated reviewer)".
 - **M1, M6, L1, L3, L4 accepted/noted:** the runner is the one file copied to the server (documented);
   `--repo`/`--ref` are owner-only flags. L2: a manual run blocked by the lock now exits 75.
+
+## Follow-up review: the reviewer decides (2026-10-30)
+
+After the first real hand-in (PR 26) was sent to a person for avoidable reasons, the gate was
+relaxed (ADR-047 amendments) and reviewed in a fresh context. No must-fix findings. Fixed: a very
+large file now shows its real end (the earlier read took the tail from the middle); the
+"characters not shown" marker cannot be quoted as evidence, nor can a quote span it; the reason
+text for a blocked approval no longer claims all criteria were shown. Tested.

@@ -41,7 +41,7 @@ Set `PILOT_AI_REVIEW_MODE` in `~/.config/gtq-reviewer.env` (the next run picks i
 | `live` | Records the review (the pull request then shows `gtq:reviewed`; the reviewer's own labels are shadow-mode only), pushes it to the participant's branch, posts a GitHub review (approve or request changes), and the participant is emailed. Approved quests count their XP when the participant picks the review up. |
 
 Start in `shadow`. When the reviewer's label agrees with your own decision on ten hand-ins in a
-row, set `live`. Optional settings in the same file: `PILOT_AI_SAMPLE_EVERY` (default 5: one approval in five
+row, set `live`. Optional settings in the same file: `PILOT_AI_SAMPLE_EVERY` (default 0, off; N sends one approval in N
 goes to you anyway), `PILOT_AI_SAMPLE_SALT` and `PILOT_AI_MODEL` (default `claude-opus-5-5`).
 
 ## What you will see
