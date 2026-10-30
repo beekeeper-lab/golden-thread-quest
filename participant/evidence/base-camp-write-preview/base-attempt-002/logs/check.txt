@@ -1,0 +1,23 @@
+$ .venv/bin/python participant/tools/check-write-preview.py --stories participant/context/write-preview/follow-up-stories.yaml
+# check-write-preview.py 1.5.1
+Stories: participant/context/write-preview/follow-up-stories.yaml
+Clock:   fixed at 10-29-2026 09:00:00 AM EDT, in a temporary folder
+
+PASS  1. Preview lists target, action and every field                                   26 of 26 labeled values shown in the right place
+PASS  2. No confirmation, no change, and it says so                                     tracker state 4F53-CDA1-8C2B before and after the preview, a wrong fingerprint and a blank answer
+PASS     (the check's edit really changes the file)                                     one word of story 1's title
+PASS  3. Confirmation names the exact preview                                           typing 89D0-49C0-FE5E wrote 3 stories, each recording that fingerprint
+PASS  4. Changed after preview: refused, nothing written                                Refused: The stories file no longer holds the change that was previewed: story 1: title changed.
+PASS  5. Preview older than 15 minutes: refused, nothing written                        Refused: The preview expired at 10-29-2026 09:00:00 AM EDT (made 10-29-2026 08:45:00 AM EDT; the limit is 15 minutes).
+PASS     (at exactly 15 minutes the preview is still valid, until the tracker changes)  refused only because the stories were already written
+PASS     (a clock set back can't stretch the limit)                                     a confirmation with the clock 2 hours behind the preview is refused
+PASS  6. Result records what was written and who confirmed it                           TIX-1, TIX-2, TIX-3 hold every previewed field unchanged, plus who, when and the fingerprint; the same preview can't be confirmed twice, and the same stories can't be previewed again
+PASS     Two confirmations at the same moment: one write                                one written, one refused; the tracker holds 3 stories, not 6
+PASS     No typed confirmation from a pipe                                              an answer piped in is refused
+PASS     No token, no write                                                             FAKE_STORY_TRACKER_TOKEN unset is refused, and the tracker is unchanged
+PASS     The real commands work end to end                                              preview, confirm with the fingerprint typed at a keyboard, then list shows 3 stories
+PASS     A tracker folder that is a link is refused                                     nothing is read or written through it, and the folder it points to is untouched
+PASS     The token is never stored or shown                                             not in any saved file, nor in anything the tracker printed or returned
+      7. A person can read the preview and say what will happen: judged by a person, from logs/preview.txt.
+
+result: PASSED (exit status 0)

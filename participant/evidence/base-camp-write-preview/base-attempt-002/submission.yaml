@@ -1,0 +1,13 @@
+schema_version: 1
+submission_id: submission-20261029163858-c502f2
+quest_id: base-camp-write-preview
+quest_version: 1
+attempt_id: base-attempt-002
+content_hash: sha256:51f72dadd6f81f8b3d9e413252f242ec0288afa0bbdd4d6c2dbe52def501e952
+evidence_hash: sha256:d55c046313a817e13404eb707b452548da403f52ea82b6400dd9c85b3e93a470
+submitted_at: '2026-10-29T16:38:58Z'
+submitted_by: thomascarter
+secret_scan_clean: true
+proof_files:
+- path: participant/context/write-preview-rules.md
+  digest: sha256:7984f082ee0860b4c37061d1dedd026e6d28f54f8e3da7504fd33c652c3343c2

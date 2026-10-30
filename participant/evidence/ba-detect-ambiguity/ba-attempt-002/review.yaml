@@ -1,0 +1,20 @@
+schema_version: 1
+review_id: review-20261027204641-898109
+quest_id: ba-detect-ambiguity
+quest_version: 1
+attempt_id: ba-attempt-002
+evidence_hash: sha256:991e595f6fe92a8dd68b1f16534d12d48c246e51694e62985d83fe4f9bfb697b
+reviewer:
+  display_name: Gregg Reed
+reviewed_at: '2026-10-27T20:46:41Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/ambiguity/findings.md
+  digest: sha256:b3aab5141d430bcc27397b2552c03f579dfa3405627b7cb888a9da7d76556cea
+- path: participant/context/ambiguity/requirements.md
+  digest: sha256:f1797bc1477aaf2a1413b8e196f0ae5f789b0e2f0f6fa26ee69efbfad3e98177
+verification_statement: 'Hashed answer-key.md (matches c55da7a9...1780) and checked
+  it against the 12 findings: same 7 requirements flagged, 5 left sound. Re-ran check-findings.py:
+  PASSED, output matches the log. CHK-06 and CHK-09 dropped, F-04 and F-09 split to
+  one gap each.'

@@ -1,0 +1,39 @@
+$ .venv/bin/python participant/tools/check-findings.py --requirements participant/context/ambiguity/requirements.md --findings participant/context/ambiguity/findings.md
+# check-findings.py 1.8.0
+Requirements: participant/context/ambiguity/requirements.md
+Findings:     participant/context/ambiguity/findings.md
+
+12 requirements, 12 findings, 5 unflagged.
+
+By requirement:
+  CHK-01  unflagged
+  CHK-02  flagged: F-01 Vague, F-02 Incomplete
+  CHK-03  unflagged
+  CHK-04  flagged: F-03 Incomplete
+  CHK-05  flagged: F-04 Incomplete, F-12 Incomplete, F-13 Incomplete, F-07 Contradictory (with CHK-08)
+  CHK-06  unflagged
+  CHK-07  flagged: F-06 Untestable
+  CHK-08  flagged: F-07 Contradictory (with CHK-05)
+  CHK-09  unflagged
+  CHK-10  flagged: F-09 Incomplete, F-14 Incomplete
+  CHK-11  unflagged
+  CHK-12  flagged: F-10 Vague, F-11 Untestable
+
+By type:
+  Vague          2  F-01, F-10
+  Incomplete     7  F-02, F-03, F-04, F-12, F-13, F-09, F-14
+  Contradictory  1  F-07
+  Untestable     2  F-06, F-11
+
+Unflagged requirements, and why each is sound:
+  CHK-01: States the limit (8 seats), the exact message for a 9th seat, and that the 9th seat isn't held, so a tester knows what to try and what to expect.
+  CHK-03: States the trigger (payment not completed), the timing (10 minutes after the hold starts) and the visible result (the seats show as available on the seat map).
+  CHK-06: States the trigger (payment succeeds), the time limit (5 minutes) and every item the email contains. Removed after review: I had asked what happens when the buyer has no email address, but whether checkout requires an email belongs to a buyer-details requirement, not this one. It's the same reasoning that removed CHK-11.
+  CHK-09: States the amount ($2.50 per ticket), where it appears (its own line on the payment page) and when (before the buyer pays). Removed after review: whether the fee is taxed is a tax rule that belongs in its own requirement, and CHK-09 is precise about the fee line it describes. It's the same reasoning that removed CHK-11.
+  CHK-11: States a precise rule (the total shown equals the amount charged, to the cent) that a tester can check directly. Removed on a second look: I first asked what happens when the two don't match, but a mismatch is simply the test failing and a bug being logged; asking Tixly to detect it and stop the charge would be a new feature, not a gap in this requirement.
+
+Checks: every quote appears word for word in the requirement it cites; every finding has one
+of the four types, what a tester couldn't decide, and a question; the contradiction cites
+both requirements; every requirement is flagged or unflagged with a reason, never both.
+
+result: PASSED (exit status 0)

@@ -1,0 +1,34 @@
+# The same Tixly notes, plus one note saved WITHOUT a retrieval time (BUG-33), for the
+# missing-date test. Policy section 3: a note with no retrieval time is treated as too old.
+# Everything here is invented.
+
+question: What is blocking release 3.0?
+
+notes:
+  - id: BRD-21
+    source: sprint-board
+    retrieved_at: "2026-10-20T09:00:00-04:00"
+    title: Checkout redesign
+    status: In Progress
+  - id: BUG-31
+    source: bug-list
+    retrieved_at: "2026-10-20T09:00:00-04:00"
+    title: Payment fails on Safari
+    status: Open
+    severity: High
+  - id: BUG-33
+    source: bug-list
+    title: Seat picker freezes on large venues
+    status: Open
+    severity: High
+  - id: RUN-41
+    source: test-runs
+    retrieved_at: "2026-10-20T09:00:00-04:00"
+    build: "512"
+    failed: 3
+    total: 120
+  - id: REL-51
+    source: release-plan
+    retrieved_at: "2026-10-17T09:00:00-04:00"
+    release: "3.0"
+    target_date: "2026-10-24"

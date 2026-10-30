@@ -1,0 +1,19 @@
+schema_version: 1
+review_id: review-20261023174053-1c90a6
+quest_id: context-staleness
+quest_version: 1
+attempt_id: context-attempt-001
+evidence_hash: sha256:400150d3242e13c84d9022cc74b6db538977da8bfb4dc3da9aadb33a4c0e22fd
+reviewer:
+  display_name: Gregg Reed
+reviewed_at: '2026-10-23T17:40:53Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/freshness/policy.md
+  digest: sha256:94e73802afb067df634e24e044c9e389d2f389b533b42e29504c076bd9d5b227
+verification_statement: 'Read all participant code first (no network, no writes outside
+  participant/). Re-ran the four recorded answer-blockers commands with the fixed
+  clock: output matched the logs exactly (answered, warned, refused, undated BUG-33
+  refused). Checked the policy against the seven criteria, the worked example against
+  the runs, the validator result and the clean secret scan.'

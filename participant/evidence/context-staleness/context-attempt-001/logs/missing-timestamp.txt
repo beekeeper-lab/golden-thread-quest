@@ -1,0 +1,18 @@
+$ .venv/bin/python participant/tools/answer-blockers.py --context participant/context/freshness/tixly-context-missing-date.yaml --now 2026-10-20T17:00:00-04:00
+# answer-blockers.py 1.11.0
+Clock set to: 10-20-2026 5:00 PM (UTC-0400) (from --now, not the computer's clock)
+Question: What is blocking release 3.0?
+
+Notes used:
+  BRD-21   sprint-board  retrieved 2026-10-20T09:00:00-04:00  age 8 hours           limit 1 day   FRESH
+  BUG-31   bug-list      retrieved 2026-10-20T09:00:00-04:00  age 8 hours           limit 1 day   FRESH
+  BUG-33   bug-list      retrieved NOT RECORDED               age unknown           limit 1 day   TOO OLD -- no usable retrieval time: missing, unreadable, or without a time zone
+  RUN-41   test-runs     retrieved 2026-10-20T09:00:00-04:00  age 8 hours           limit 1 day   FRESH
+  REL-51   release-plan  retrieved 2026-10-17T09:00:00-04:00  age 3 days 8 hours    limit 7 days  FRESH
+
+Notes with no usable age: BUG-33 (no usable retrieval time: missing, unreadable, or without a time zone)
+Oldest dated note used: REL-51 (release-plan), 3 days 8 hours old
+Answer: REFUSED. These notes can't be relied on:
+  BUG-33: no usable retrieval time: missing, unreadable, or without a time zone
+Your options: refresh these notes first, then ask again: BUG-33. Fresh notes don't need refreshing.
+result: REFUSED (notes too old) (exit status 2)

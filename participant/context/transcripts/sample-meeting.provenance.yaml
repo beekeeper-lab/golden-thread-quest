@@ -1,0 +1,29 @@
+schema: ba-ingest-transcript/provenance/v1
+transcript_id: "sample-meeting"
+meeting: "Seating Chart Refinement — Sprint 14"
+meeting_date: "2026-10-12"
+participants_listed: "Dana Ruiz (Product Owner), Marcus Lee (Developer), Priya Shah (QA), Sam Okafor (Venue Liaison)"
+speakers_attributed:
+  - "Dana Ruiz"
+  - "Marcus Lee"
+  - "Priya Shah"
+  - "Sam Okafor"
+uncertain_speaker_utterances: [U021]
+capture_source: "Synthetic transcript written for this exercise; no recording exists"
+transcription_tool: "None; typed by hand"
+original_location: "local-data/transcripts/raw/sample-meeting.raw.txt"
+original_tracked_by_git: false
+original_sha256: "996cb3d41dc8982bc26d0a1ac28c07f2237fa5274d49f6ea8e00578341688763"
+timestamp_format: "HH:MM:SS, elapsed time from the start of the recording"
+utterance_count: 41
+redaction:
+  rules: [email addresses, phone numbers]
+  applied_to: [header values, speaker labels, utterances]
+  replacements: 2
+  placeholder: "[REDACTED]"
+instruction_like_utterances: [U027]
+ingestion:
+  tool: "ba-ingest-transcript/ingest.py"
+  tool_version: "1.1.0"
+  ingested_at: "2026-10-19T15:07:38Z"
+  record_sha256: "a1c1b09d64a04669eeb217838cd46a390b030b2b31a75c030302070357db0d3e"
