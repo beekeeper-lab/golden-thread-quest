@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from quest_app.validator_runner import ValidatorOutput, Workspace
 
-from quest_app.validator_runner import Check
+from quest_app.validator_runner import Check, in_dependency_dir
 
 # Selectors coupled to markup. A test built on these fails when someone renames a class.
 #
@@ -49,7 +49,9 @@ def run(workspace: Workspace, output: ValidatorOutput) -> None:
     tests = [
         path
         for path in workspace.iter_files("participant/tests")
-        if path.suffix in {".py", ".ts", ".js"} and "test" in path.name.lower()
+        if path.suffix in {".py", ".ts", ".js"}
+        and "test" in path.name.lower()
+        and not in_dependency_dir(Path(workspace.relative(path)).parts)
     ]
     if not tests:
         output.add(

@@ -26,6 +26,8 @@ from pathlib import Path
 
 import yaml
 
+from quest_app.validator_runner import in_dependency_dir
+
 TIMEOUT_SECONDS = 120
 PARTICIPANT_DIR = "participant"
 UPSTREAM_REMOTE = "upstream"
@@ -355,6 +357,7 @@ def _is_housekeeping(path: str) -> bool:
         parts[-1] in _HOUSEKEEPING_NAMES
         or parts[-1].endswith(_HOUSEKEEPING_SUFFIXES)
         or "__pycache__" in parts
+        or in_dependency_dir(parts)
     )
 
 
