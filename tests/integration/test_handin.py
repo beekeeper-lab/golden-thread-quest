@@ -365,3 +365,19 @@ def test_a_branch_carrying_changes_outside_participant_is_not_brought_in(
     with pytest.raises(HandInError, match="outside your participant folder"):
         check_for_review(world["participant"], runner=gh)
     assert git(world["participant"], "rev-parse", "HEAD") == head
+
+
+def test_installed_dependencies_are_not_named_as_left_out(world: dict[str, Path]) -> None:
+    """2026-10-31: `npm install` under `participant/` put 190 Playwright files in the
+    "named like passwords or keys" list, burying the `api.token` that belonged there."""
+    participant = world["participant"]
+    (participant / ".gitignore").write_text("node_modules/\n.venv/\n*.token\n")
+    for folder in ("participant/node_modules/x", "participant/tests/.venv/lib"):
+        (participant / folder).mkdir(parents=True)
+    (participant / "participant" / "node_modules" / "x" / "package.json").write_text("{}\n")
+    (participant / "participant" / "tests" / ".venv" / "lib" / "site.py").write_text("\n")
+    (participant / EVIDENCE / "api.token").write_text("redacted\n")
+    text = hand_in(participant, runner=FakeGh()).to_text()
+    assert f"{EVIDENCE}/api.token" in text
+    assert "node_modules" not in text
+    assert ".venv" not in text
