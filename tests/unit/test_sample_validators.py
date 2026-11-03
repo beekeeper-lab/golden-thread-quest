@@ -14,6 +14,7 @@ from quest_app.safe_io import MAX_EVIDENCE_FILE_BYTES
 from quest_app.validator_runner import ValidatorOutput, Workspace
 from validators.jira_read_assigned import _check_disappearances_reported
 from validators.playwright_quality import BRITTLE_SELECTORS
+from validators.playwright_quality import run as run_playwright_quality
 from validators.repository_foundation import _check_ignore_rules, _check_no_secrets_in_evidence
 
 STALE_FIXTURE = json.loads(Path("validators/fixtures/jira/stale-item.json").read_text())
@@ -112,6 +113,34 @@ class TestBrittleSelectors:
             "page.get_by_role('button', name='Save')",
         ):
             assert not BRITTLE_SELECTORS.search(source), source
+
+
+class TestPlaywrightDependenciesAreNotParticipantTests:
+    """2026-10-31: a participant installed `@playwright/test` with npm beside their spec, and
+    the validator failed them on Playwright's own `node_modules/.../testActions.js`."""
+
+    def test_a_dependency_folder_is_not_searched_for_tests(self, tmp_path: Path) -> None:
+        tests = tmp_path / "participant" / "tests" / "playwright"
+        tests.mkdir(parents=True)
+        (tests / "login.test.ts").write_text(
+            "test('signs in', async ({ page }) => {\n"
+            "  await page.getByRole('button', { name: 'Sign in' }).click();\n"
+            "  await expect(page.getByText('Welcome')).toBeVisible();\n"
+            "});\n"
+        )
+        for folder in ("node_modules/pkg", ".venv/lib/site-packages/pkg"):
+            (tests / folder).mkdir(parents=True)
+        (tests / "node_modules" / "pkg" / "test-thing.js").write_text(
+            "page.locator('.btn'); waitForTimeout(500);\n"
+        )
+        (tests / ".venv" / "lib" / "site-packages" / "pkg" / "test_thing.py").write_text(
+            "time.sleep(1)\n"
+        )
+        output = ValidatorOutput()
+        run_playwright_quality(_workspace(tmp_path), output)
+        assert _outcome(output, "test-asserts-something") == "pass"
+        assert _outcome(output, "selectors-target-behavior") == "pass"
+        assert _outcome(output, "no-arbitrary-waits") == "pass"
 
 
 class TestDisappearancesAreReported:

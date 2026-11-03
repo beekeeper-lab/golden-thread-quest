@@ -18,6 +18,7 @@ not `main`.
 
 from __future__ import annotations
 
+import fnmatch
 import re
 import subprocess
 from collections.abc import Callable, Sequence
@@ -25,6 +26,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
+
+from quest_app.validator_runner import DEPENDENCY_DIRS, in_dependency_dir
 
 TIMEOUT_SECONDS = 120
 PARTICIPANT_DIR = "participant"
@@ -63,6 +66,7 @@ _GITHUB_REMOTE = re.compile(r"github\.com[:/](?P<owner>[^/]+)/(?P<name>[^/]+?)(?
 PERMITTED_COMMANDS: frozenset[tuple[str, str]] = frozenset(
     {
         ("git", "add"),
+        ("git", "check-ignore"),
         ("git", "commit"),
         ("git", "config"),
         ("git", "diff"),
@@ -78,6 +82,23 @@ PERMITTED_COMMANDS: frozenset[tuple[str, str]] = frozenset(
 )
 
 Runner = Callable[[Sequence[str], Path], "subprocess.CompletedProcess[str]"]
+
+
+# Paths per `git check-ignore` call, well inside the operating system's argument limit.
+_CHECK_IGNORE_BATCH = 200
+
+
+@dataclass(frozen=True, slots=True)
+class LeftOut:
+    """Ignored files under `participant/` that a hand-in does not send.
+
+    `secret_named` lists each file an ignore rule matches by its name or folder, wherever
+    it is. `dependency_folders` counts the other files inside installed-dependency folders
+    (`node_modules/`, `.venv/`, `venv/`), which are left out only because of the folder.
+    """
+
+    secret_named: list[str]
+    dependency_folders: dict[str, int]
 
 
 class HandInError(Exception):
@@ -169,7 +190,7 @@ class _Repo:
             raise HandInError(f"Git could not read your folder: {_last_line(result)}")
         return [line[3:] for line in result.stdout.splitlines() if line.strip()]
 
-    def ignored_files(self) -> list[str]:
+    def ignored_files(self) -> LeftOut:
         """Files under `participant/` that `.gitignore` keeps out of every hand-in.
 
         Phase 2A.2: `git add participant/` skips them without a word, so a participant who
@@ -184,12 +205,51 @@ class _Repo:
             "--", PARTICIPANT_DIR,
         )  # fmt: skip
         if result.returncode != 0:
-            return []
-        return sorted(
+            return LeftOut([], {})
+        ignored = [
             entry[3:]
             for entry in result.stdout.split("\0")
             if entry.startswith("!! ") and not _is_housekeeping(entry[3:])
-        )
+        ]
+        ordinary = [path for path in ignored if not in_dependency_dir(path.split("/"))]
+        dependencies = [path for path in ignored if in_dependency_dir(path.split("/"))]
+        secret_named = self._named_like_secrets(dependencies)
+        folders: dict[str, int] = {}
+        for path in dependencies:
+            if path not in secret_named:
+                folder = _dependency_folder(path)
+                folders[folder] = folders.get(folder, 0) + 1
+        return LeftOut(sorted([*ordinary, *secret_named]), dict(sorted(folders.items())))
+
+    def _named_like_secrets(self, paths: list[str]) -> set[str]:
+        """Which files inside a dependency folder would be ignored anyway.
+
+        A file under `node_modules/` is ignored because of the folder, which says nothing
+        about its name. Asking Git about the same path with the dependency folders taken out
+        tells the two apart by the participant's own ignore rules: `node_modules/x/api.token`
+        becomes `x/api.token`, which `*.token` still ignores. Build and cache folders such as
+        `dist/` are taken out the same way, so `node_modules/x/dist/api.token` is still found
+        and `node_modules/x/dist/index.js` is not. A match counts only when its rule ignores
+        (it does not start with `!`) and is not a build, cache or editor rule such as `*.pyc`,
+        which every package is full of. When Git cannot answer,
+        every file is treated as named like a secret, so a real one is never hidden.
+        """
+        found: set[str] = set()
+        for start in range(0, len(paths), _CHECK_IGNORE_BATCH):
+            batch = paths[start : start + _CHECK_IGNORE_BATCH]
+            stripped = [_without_package_folders(path) for path in batch]
+            # `-v -n` prints one line per path, in order: `source:line:rule<TAB>path`, or
+            # `::<TAB>path` when no rule matches. A line is matched to its path by position, so
+            # Git's quoting of unusual names does not matter.
+            result = self.git("check-ignore", "--no-index", "-v", "-n", "--", *stripped)
+            lines = result.stdout.splitlines()
+            if result.returncode not in (0, 1) or len(lines) != len(batch):
+                found.update(batch)
+                continue
+            found.update(
+                path for path, line in zip(batch, lines, strict=True) if _secret_rule(_rule(line))
+            )
+        return found
 
     def unpushed(self, branch: str) -> bool:
         if self.git("rev-parse", "--verify", "--quiet", f"origin/{branch}").returncode != 0:
@@ -358,17 +418,84 @@ def _is_housekeeping(path: str) -> bool:
     )
 
 
-def _left_out_note(paths: list[str]) -> list[str]:
+# Ignore rules for build output, caches, installed packages and editor files. A package file
+# one of these matches is not named like a secret; any other rule, including one the
+# participant wrote, still counts, so an unfamiliar rule shows the file rather than hides it.
+_NOT_SECRET_RULES = frozenset(
+    {
+        "__pycache__/", "*.py[cod]", "*.pyc", "*.pyo", "*.egg-info/", ".pytest_cache/",
+        ".mypy_cache/", ".ruff_cache/", ".tox/", ".nox/", ".coverage", "coverage.xml",
+        "htmlcov/", "dist/", "build/", "lib/", "out/", ".cache/", "node_modules/", ".venv/",
+        "venv/", ".DS_Store", ".idea/", ".vscode/", "*.swp", "uv.lock", ".progress.lock",
+    }
+)  # fmt: skip
+
+
+# `source:line:rule`. The source is a file path and may hold a colon itself (`C:/x/ignore`), so
+# the line number, the first `:digits:` run, is what divides the source from the rule.
+_CHECK_IGNORE_WHERE = re.compile(r"^.*?:(?P<line>\d+):(?P<rule>.*)$")
+
+
+def _rule(line: str) -> str:
+    """The rule in one line of `git check-ignore -v -n` output; empty when none matched."""
+    found = _CHECK_IGNORE_WHERE.match(line.split("\t", 1)[0])
+    return found["rule"] if found else ""
+
+
+def _secret_rule(rule: str) -> bool:
+    """Whether an ignore rule Git matched makes a file count as named like a secret."""
+    if not rule or rule.startswith("!"):
+        return False
+    normal = rule.removeprefix("/").removeprefix("**/")
+    return normal not in _NOT_SECRET_RULES
+
+
+def _dependency_folder(path: str) -> str:
+    """The outermost dependency folder a path lies in, with a trailing slash."""
+    parts = path.split("/")
+    index = next(i for i, part in enumerate(parts) if part in DEPENDENCY_DIRS)
+    return "/".join(parts[: index + 1]) + "/"
+
+
+# The folder patterns among those rules, taken out of a package file's path before Git is
+# asked, so a secret's own name decides: `node_modules/x/dist/api.token` is checked as
+# `x/api.token`. Every folder rule on the list must be here, wildcards (`*.egg-info`) too:
+# Git names an ignored folder's rule for the files inside it, which would hide a secret.
+_NOT_SECRET_FOLDERS = tuple(
+    sorted(rule.removesuffix("/") for rule in _NOT_SECRET_RULES if rule.endswith("/"))
+)
+
+
+def _is_package_folder(part: str) -> bool:
+    return part in DEPENDENCY_DIRS or any(
+        fnmatch.fnmatchcase(part, pattern) for pattern in _NOT_SECRET_FOLDERS
+    )
+
+
+def _without_package_folders(path: str) -> str:
+    """The path with every dependency, build and cache folder component removed."""
+    parts = path.split("/")
+    keep = [part for part in parts[:-1] if not _is_package_folder(part)]
+    return "/".join([*keep, parts[-1]])
+
+
+def _left_out_note(left_out: LeftOut) -> list[str]:
     """What hand-in tells the participant about files it would not send."""
-    if not paths:
-        return []
-    return [
-        "Not sent: these files are named like passwords or keys, so they are never handed in, "
-        "and your reviewer will not see them:",
-        *(f"  {path}" for path in paths),
-        "If one of them is proof the quest asks for, take any secret out of it, save it under "
-        "the name the quest's evidence page shows, and run `gtq hand-in` again.",
+    lines = []
+    if left_out.secret_named:
+        lines += [
+            "Not sent: these files are named like passwords or keys, so they are never handed "
+            "in, and your reviewer will not see them:",
+            *(f"  {path}" for path in left_out.secret_named),
+            "If one of them is proof the quest asks for, take any secret out of it, save it "
+            "under the name the quest's evidence page shows, and run `gtq hand-in` again.",
+        ]
+    lines += [
+        f"Also not sent: {count} file{'s' if count != 1 else ''} in {folder}, which holds "
+        "installed packages, not your work."
+        for folder, count in left_out.dependency_folders.items()
     ]
+    return lines
 
 
 def _decisions(repo: _Repo, before: str) -> list[str]:

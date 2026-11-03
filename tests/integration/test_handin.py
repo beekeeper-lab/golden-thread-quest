@@ -17,6 +17,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
+from quest_app import handin
 from quest_app.handin import HandInError, check_for_review, get_review, hand_in, run_command
 
 FORK_URL = "https://github.com/alice/golden-thread-quest.git"
@@ -365,3 +366,250 @@ def test_a_branch_carrying_changes_outside_participant_is_not_brought_in(
     with pytest.raises(HandInError, match="outside your participant folder"):
         check_for_review(world["participant"], runner=gh)
     assert git(world["participant"], "rev-parse", "HEAD") == head
+
+
+def test_installed_dependencies_are_counted_not_listed(world: dict[str, Path]) -> None:
+    """2026-10-31: `npm install` under `participant/` put 190 Playwright files in the
+    "named like passwords or keys" list, burying the `api.token` that belonged there."""
+    participant = world["participant"]
+    (participant / ".gitignore").write_text("node_modules/\n.venv/\n*.token\n")
+    for folder in ("participant/node_modules/x", "participant/tests/.venv/lib"):
+        (participant / folder).mkdir(parents=True)
+    (participant / "participant" / "node_modules" / "x" / "package.json").write_text("{}\n")
+    (participant / "participant" / "node_modules" / "x" / "index.js").write_text("\n")
+    (participant / "participant" / "tests" / ".venv" / "lib" / "site.py").write_text("\n")
+    (participant / EVIDENCE / "api.token").write_text("redacted\n")
+    details = hand_in(participant, runner=FakeGh()).details
+    secret_list = details[details.index(f"  {EVIDENCE}/api.token") - 1 :]
+    assert not any("package.json" in line or "site.py" in line for line in details)
+    assert "Also not sent: 2 files in participant/node_modules/" in "\n".join(details)
+    assert "Also not sent: 1 file in participant/tests/.venv/" in "\n".join(details)
+    assert secret_list[0].startswith("Not sent: these files are named like passwords")
+
+
+def test_a_secret_named_file_inside_a_dependency_folder_is_still_listed(
+    world: dict[str, Path],
+) -> None:
+    """Review of PR #50: dropping the whole folder hid `node_modules/x/api.token`."""
+    participant = world["participant"]
+    (participant / ".gitignore").write_text("node_modules/\n.venv/\n*.token\n.env\n")
+    (participant / "participant" / "node_modules" / "x").mkdir(parents=True)
+    (participant / "participant" / ".venv").mkdir(parents=True)
+    (participant / "participant" / "node_modules" / "x" / "api.token").write_text("redacted\n")
+    (participant / "participant" / "node_modules" / "x" / "index.js").write_text("\n")
+    (participant / "participant" / ".venv" / ".env").write_text("redacted\n")
+    text = hand_in(participant, runner=FakeGh()).to_text()
+    assert "participant/node_modules/x/api.token" in text
+    assert "participant/.venv/.env" in text
+    assert "named like passwords or keys" in text
+    assert "index.js" not in text
+    assert "Also not sent: 1 file in participant/node_modules/" in text
+    pushed = git(world["fork"], "ls-tree", "-r", "--name-only", "pilot/alice")
+    assert "node_modules" not in pushed and ".venv" not in pushed
+
+
+def test_dependency_folders_with_no_ignore_rule_are_handed_in_without_a_word(
+    world: dict[str, Path],
+) -> None:
+    """What hand-in does when nothing ignores `node_modules/`: `git add participant/` sends it
+    like any other file, and the note says nothing. This is pinned, not endorsed. The
+    program's own `.gitignore` ignores these folders at any depth (the next test), so it
+    happens only if a participant removes that rule."""
+    participant = world["participant"]
+    (participant / ".gitignore").write_text("*.token\n")
+    (participant / "participant" / "node_modules" / "x").mkdir(parents=True)
+    (participant / "participant" / "node_modules" / "x" / "package.json").write_text("{}\n")
+    text = hand_in(participant, runner=FakeGh()).to_text()
+    pushed = git(world["fork"], "ls-tree", "-r", "--name-only", "pilot/alice")
+    assert "participant/node_modules/x/package.json" in pushed
+    assert "node_modules" not in text
+
+
+PROGRAM_GITIGNORE = Path(__file__).resolve().parents[2] / ".gitignore"
+
+
+def test_the_program_ignores_dependency_folders_wherever_a_participant_installs(
+    tmp_path: Path,
+) -> None:
+    """The guard against the case above is the repository's own `.gitignore`. The rules are
+    copied into a new repository, so the test does not need to run inside a checkout."""
+    git(tmp_path, "init", "--quiet")
+    (tmp_path / ".gitignore").write_text(PROGRAM_GITIGNORE.read_text())
+    paths = [
+        "participant/node_modules/x/package.json",
+        "participant/tests/playwright/node_modules/x/package.json",
+        "participant/.venv/lib/site.py",
+        "participant/tests/venv/lib/site.py",
+    ]
+    result = subprocess.run(
+        ["git", "check-ignore", "--no-index", "-v", "-n", "--", *paths],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    lines = result.stdout.splitlines()
+    assert len(lines) == len(paths), result.stderr
+    # A matching rule that starts with `!` means "do not ignore", so it must not count.
+    patterns = [line.split("\t")[0].split(":", 2)[2] for line in lines if not line.startswith("::")]
+    assert len(patterns) == len(paths), lines
+    assert not [pattern for pattern in patterns if pattern.startswith("!")], lines
+
+
+def test_package_files_under_build_folders_are_not_called_secrets(world: dict[str, Path]) -> None:
+    """Review of PR #50, with the program's real ignore rules: `dist/` and `__pycache__/` are
+    build and cache rules, so a package file they match is not named like a secret."""
+    participant = world["participant"]
+    (participant / ".gitignore").write_text(PROGRAM_GITIGNORE.read_text())
+    base = participant / "participant" / "tests"
+    files = {
+        "node_modules/somepkg/dist/index.js": "\n",
+        "node_modules/playwright/lib/cli/testActions.js": "\n",
+        "node_modules/playwright-core/lib/server/build/out.js": "\n",
+        ".venv/lib/python3.12/site-packages/pkg/__init__.py": "\n",
+        ".venv/lib/python3.12/site-packages/pkg/__pycache__/__init__.cpython-312.pyc": "\n",
+        ".venv/lib/python3.12/site-packages/pkg/dist/data.txt": "\n",
+        "node_modules/somepkg/.npmrc": "redacted\n",
+        ".venv/.env": "redacted\n",
+        "node_modules/somepkg/dist/api.token": "\n",
+        "node_modules/somepkg/build/secrets/key.txt": "redacted\n",
+    }
+    for name, text in files.items():
+        (base / name).parent.mkdir(parents=True, exist_ok=True)
+        (base / name).write_text(text)
+    (participant / EVIDENCE / "api.token").write_text("redacted\n")
+    text = hand_in(participant, runner=FakeGh()).to_text()
+    assert f"{EVIDENCE}/api.token" in text
+    assert "participant/tests/node_modules/somepkg/.npmrc" in text
+    assert "participant/tests/.venv/.env" in text
+    # A secret's name still counts when it sits inside a build or cache folder.
+    assert "participant/tests/node_modules/somepkg/dist/api.token" in text
+    assert "participant/tests/node_modules/somepkg/build/secrets/key.txt" in text
+    for name in ("index.js", "testActions.js", "out.js", "__init__", "data.txt"):
+        assert name not in text, name
+    assert "Also not sent: 3 files in participant/tests/node_modules/" in text
+    assert "Also not sent: 2 files in participant/tests/.venv/" in text
+
+
+def test_a_rule_that_un_ignores_a_name_does_not_make_it_a_secret(world: dict[str, Path]) -> None:
+    """With `-v`, Git also reports a matching `!` rule, which says the name is not ignored."""
+    participant = world["participant"]
+    (participant / ".gitignore").write_text("node_modules/\n*.token\n!sample.token\n")
+    (participant / "participant" / "node_modules" / "x").mkdir(parents=True)
+    (participant / "participant" / "node_modules" / "x" / "sample.token").write_text("demo\n")
+    text = hand_in(participant, runner=FakeGh()).to_text()
+    assert "sample.token" not in text
+    assert "Also not sent: 1 file in participant/node_modules/" in text
+
+
+class GitCannotAnswer(FakeGh):
+    """`git check-ignore` fails, or answers for fewer paths than it was asked about."""
+
+    def __init__(self, how: str) -> None:
+        super().__init__()
+        self.how = how
+
+    def __call__(self, command: Sequence[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+        if list(command[:2]) == ["git", "check-ignore"]:
+            if self.how == "fails":
+                return subprocess.CompletedProcess(list(command), 128, "", "fatal: broken\n")
+            answer = run_command(command, cwd)
+            short = "".join(answer.stdout.splitlines(keepends=True)[:-1])
+            return subprocess.CompletedProcess(list(command), answer.returncode, short, "")
+        return super().__call__(command, cwd)
+
+
+@pytest.mark.parametrize("how", ["fails", "short"])
+def test_when_git_cannot_say_which_rule_matched_every_package_file_is_listed(
+    world: dict[str, Path], how: str
+) -> None:
+    """Review of PR #50: the fallback is what keeps a real secret from being hidden, so when
+    Git cannot answer, every file in the dependency folder is listed and none is counted."""
+    participant = world["participant"]
+    (participant / ".gitignore").write_text(PROGRAM_GITIGNORE.read_text())
+    package = participant / "participant" / "node_modules" / "x"
+    (package / "dist").mkdir(parents=True)
+    for name in ("index.js", "dist/main.js", "api.token"):
+        (package / name).write_text("\n")
+    text = hand_in(participant, runner=GitCannotAnswer(how)).to_text()
+    note = text[text.index("named like passwords or keys") :]
+    for name in ("index.js", "dist/main.js", "api.token"):
+        assert f"participant/node_modules/x/{name}" in note, name
+    assert "Also not sent" not in text
+
+
+def test_package_files_are_matched_to_their_rule_across_batches(
+    world: dict[str, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """With a batch of two, five files take three `check-ignore` calls; each answer must be
+    read against its own path, so the two secrets in the second and third batch are found."""
+    monkeypatch.setattr(handin, "_CHECK_IGNORE_BATCH", 2)
+    participant = world["participant"]
+    (participant / ".gitignore").write_text(PROGRAM_GITIGNORE.read_text())
+    package = participant / "participant" / "node_modules" / "x"
+    package.mkdir(parents=True)
+    for name in ("a.js", "b.js", "c.token", "d.js", "e.token"):
+        (package / name).write_text("\n")
+    runner = CountingRunner()
+    text = hand_in(participant, runner=runner).to_text()
+    assert "participant/node_modules/x/c.token" in text
+    assert "participant/node_modules/x/e.token" in text
+    for name in ("a.js", "b.js", "d.js"):
+        assert name not in text, name
+    assert "Also not sent: 3 files in participant/node_modules/" in text
+    assert runner.check_ignore_calls == 3
+
+
+class CountingRunner(FakeGh):
+    def __init__(self) -> None:
+        super().__init__()
+        self.check_ignore_calls = 0
+
+    def __call__(self, command: Sequence[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+        if list(command[:2]) == ["git", "check-ignore"]:
+            self.check_ignore_calls += 1
+        return super().__call__(command, cwd)
+
+
+@pytest.mark.parametrize(
+    ("line", "rule"),
+    [
+        (".gitignore:44:*.token\tparticipant/x/a.token", "*.token"),
+        ("C:/Users/x/ignore:3:*.token\tparticipant/x/a.token", "*.token"),
+        (".gitignore:3:!sample.token\tparticipant/x/sample.token", "!sample.token"),
+        ("::\tparticipant/x/index.js", ""),
+    ],
+)
+def test_the_matching_rule_is_read_even_when_its_file_path_has_a_colon(
+    line: str, rule: str
+) -> None:
+    """Review of PR #50: a `core.excludesFile` on a Windows drive (`C:/...`) gave `3:*.token`."""
+    assert handin._rule(line) == rule
+
+
+def test_a_secret_inside_any_build_or_cache_folder_is_still_listed(world: dict[str, Path]) -> None:
+    """Review of PR #50: `*.egg-info/` was a not-a-secret rule whose folders were never taken
+    out of the path, so Git named the folder's rule and `pkg.egg-info/api.token` was counted.
+    Every folder rule on that list gets a secret inside a folder it matches."""
+    participant = world["participant"]
+    (participant / ".gitignore").write_text(PROGRAM_GITIGNORE.read_text())
+    site = participant / "participant" / "tests" / ".venv" / "lib" / "site-packages"
+    folders = sorted(
+        rule.removesuffix("/").replace("*", "pkg")
+        for rule in handin._NOT_SECRET_RULES
+        # Hand-in drops everything under `__pycache__/` as housekeeping before this check
+        # (older than PR #50, in the parking lot), so that folder cannot be tested here.
+        if rule.endswith("/") and rule != "__pycache__/"
+    )
+    assert "pkg.egg-info" in folders
+    for folder in folders:
+        (site / folder).mkdir(parents=True, exist_ok=True)
+        (site / folder / "api.token").write_text("\n")
+    text = hand_in(participant, runner=FakeGh()).to_text()
+    note = text[text.index("named like passwords or keys") :]
+    missing = [
+        folder
+        for folder in folders
+        if f"participant/tests/.venv/lib/site-packages/{folder}/api.token" not in note
+    ]
+    assert not missing, missing

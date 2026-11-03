@@ -46,6 +46,19 @@ from quest_app.validator_registry import ValidatorDefinition, ValidatorError
 # this constrains the package, so a future registry edit cannot import something else.
 ALLOWED_ENTRYPOINT_PACKAGE = "validators"
 
+# Folders a package manager fills with someone else's code. A participant who installs
+# Playwright with npm gets `node_modules/`; one who uses Playwright for Python in a virtual
+# environment gets `.venv/` or `venv/`. None of it is participant work, so a check that
+# looks for the participant's own files skips them, and hand-in counts them rather than
+# listing each one (a secret-named file inside one is still listed).
+DEPENDENCY_DIRS: Final = frozenset({"node_modules", ".venv", "venv"})
+
+
+def in_dependency_dir(parts: tuple[str, ...] | list[str]) -> bool:
+    """Whether a path, given as its parts, lies inside an installed-dependency folder."""
+    return any(part in DEPENDENCY_DIRS for part in parts)
+
+
 # A minimal environment. Anything a validator needs beyond this is named in its allowlist.
 BASE_ENVIRONMENT = {"PATH": "/usr/bin:/bin", "LC_ALL": "C.UTF-8", "LANG": "C.UTF-8"}
 
