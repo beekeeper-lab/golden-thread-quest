@@ -1,0 +1,19 @@
+schema_version: 1
+submission_id: submission-20261105220402-a7b862
+quest_id: playwright-project-setup
+quest_version: 1
+attempt_id: playwright-attempt-003
+content_hash: sha256:8c291b6df4a3cc56c115077ddb1a8f8014ac9637dcca056d46aa24d1a70821fc
+evidence_hash: sha256:73d08a59e5111a8576d859fc1a86872b1c3a2d201007adb698c20df2214513c5
+submitted_at: '2026-11-05T22:04:02Z'
+submitted_by: thomascarter
+secret_scan_clean: true
+proof_files:
+- path: participant/tests/playwright/README.md
+  digest: sha256:c19ca9bce25eb9054f816a972588a3634eb4d6b47d64d2da6c465e5c779b9857
+- path: participant/tests/playwright/package.json
+  digest: sha256:b75069fe089c8f4fb415be7a5594e8a9f6723a26ba96071c940785f75679656e
+- path: participant/tests/playwright/playwright.config.ts
+  digest: sha256:f6ad41320cf170a724dd652a3fc23d09cea94c513a8a7baaeebd46633477364e
+- path: participant/tests/playwright/tools/project-setup-check.ts
+  digest: sha256:50005fb97ec2611ccfc2b87ba91821e03887c5375b62f9791e3cf15da9985e18

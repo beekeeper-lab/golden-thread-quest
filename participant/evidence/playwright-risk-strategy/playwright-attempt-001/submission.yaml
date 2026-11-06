@@ -1,0 +1,17 @@
+schema_version: 1
+submission_id: submission-20261030165638-016a55
+quest_id: playwright-risk-strategy
+quest_version: 1
+attempt_id: playwright-attempt-001
+content_hash: sha256:2852c5eb432ca5be45d16b30522d653b23d5d60f5ef765ff705dbfec8ef51996
+evidence_hash: sha256:619e1fff57fc5cd84bd5b3c14af3b3566cccc80890284c4fcf9ba37a7f98c706
+submitted_at: '2026-10-30T16:56:38Z'
+submitted_by: thomascarter
+secret_scan_clean: true
+proof_files:
+- path: participant/context/playwright/requirements.md
+  digest: sha256:67361b2ff4bd3b2c07fba1fa424b301d4882f77ed6fe014692ed19460d70ff40
+- path: participant/context/playwright/strategy.md
+  digest: sha256:f98adf910b3b6ecbd6ad90f8a411788088374b658b570986f337c96cec78a076
+- path: participant/tests/playwright/tools/risk-strategy-check.ts
+  digest: sha256:e62630f690fe94b40ac650ad670f0d19411720f5498079fb2a4327364ab0f414

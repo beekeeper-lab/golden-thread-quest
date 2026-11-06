@@ -1,0 +1,31 @@
+Tagged run of the first independent test
+Recorded: 11-06-2026 01:21:44 PM
+Folder: participant/tests/playwright
+Command: npx playwright test --grep @ticket-total
+Node v22.23.3, Playwright 1.63.0, browser: Chromium
+Exit code: 0
+Redaction: personal home-folder paths shown as ~. No credential is used by this test.
+
+Running 1 test using 1 worker
+
+  ✓  1 [chromium] › first-independent-test.spec.ts:18:1 › a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket @ticket-total @risk-high @read-only @fast (381ms)
+
+  1 passed (1.1s)
+
+Independence check: the whole suite, each test 3 times, spread over 3 browsers running at once, so the two tests interleave.
+Command: npx playwright test --repeat-each=3 --fully-parallel --workers=3
+Exit code: 0
+
+Running 6 tests using 3 workers
+
+  ✓  2 [chromium] › tests/smoke.spec.ts:4:1 › a visitor sees the Spring Concert and its ticket price on the Tixly home page (198ms)
+  ✓  3 [chromium] › first-independent-test.spec.ts:18:1 › a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket @ticket-total @risk-high @read-only @fast (288ms)
+  ✓  1 [chromium] › first-independent-test.spec.ts:18:1 › a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket @ticket-total @risk-high @read-only @fast (288ms)
+  ✓  4 [chromium] › tests/smoke.spec.ts:4:1 › a visitor sees the Spring Concert and its ticket price on the Tixly home page (168ms)
+  ✓  6 [chromium] › tests/smoke.spec.ts:4:1 › a visitor sees the Spring Concert and its ticket price on the Tixly home page (160ms)
+  ✓  5 [chromium] › first-independent-test.spec.ts:18:1 › a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket @ticket-total @risk-high @read-only @fast (239ms)
+
+  6 passed (1.6s)
+
+Success evidence: screenshots/validated-state.png, taken by the test itself right after the
+total was proven to be $55.00.

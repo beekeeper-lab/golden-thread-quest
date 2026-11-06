@@ -1,0 +1,16 @@
+# Installed packages: recreated by "npm ci" from package-lock.json.
+node_modules/
+
+# Everything a test run produces: results, traces, screenshots, downloads and reports.
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Environment files, which could hold credentials. An example file is allowed.
+.env
+.env.*
+.env-*
+.env_*
+*.env
+!.env.example
