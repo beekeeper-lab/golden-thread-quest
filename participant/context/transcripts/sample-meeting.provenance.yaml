@@ -1,0 +1,31 @@
+provenance_format: gtq-transcript-provenance/1
+transcript_id: tr-2026-10-21-checkout-refinement
+meeting: "Checkout refinement, sprint 14"
+meeting_date: 2026-10-21
+participants:
+  - name: "Priya Natarajan"
+    role: "Product owner"
+  - name: "Marcus Oyelaran"
+    role: "Developer"
+  - name: "Dana Whitfield"
+    role: "Tester"
+uncertain_speakers:
+  - "Speaker 4"
+  - "Unattributed"
+capture_source: "None. The meeting is fictional and was never recorded; the transcript was written directly as text for this quest."
+transcription_tool: "None. An AI assistant (Claude) wrote the transcript at the participant's direction, in the WebVTT format that Microsoft Teams exports."
+source_format: WebVTT
+source_sha256: 2fcc0bd21528d41f4e2ec5b8885ea524f560bfde3a160e53c6c9cf0cb0ce351b
+source_text_sha256: 2fcc0bd21528d41f4e2ec5b8885ea524f560bfde3a160e53c6c9cf0cb0ce351b
+original_location: "local-data/transcripts/2026-10-21-checkout-refinement.vtt in the participant's own clone. local-data/ is ignored by git and never handed in."
+ingestion:
+  run_id: ingest-20261030T152741Z
+  ingested_at: 2026-10-30T15:27:41Z
+  skill: participant/skills/ba-ingest-transcript/ingest.py
+  skill_sha256: 97b00c5699378da70f145963787b30937187674c4cbe8badc440c12b5d8a7893
+record_file: sample-meeting.md
+record_sha256: 449ff64385bd96358693d9492b6c270e37d45c4235fdce1c9863e709c8ea9882
+utterance_count: 24
+redactions:
+  email: 2
+  phone: 1

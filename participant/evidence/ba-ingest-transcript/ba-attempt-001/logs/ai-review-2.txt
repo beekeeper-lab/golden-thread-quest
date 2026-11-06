@@ -1,0 +1,72 @@
+# Second, adversarial AI review, run 2026-10-28 (UTC): a separate Claude agent, started fresh.
+# It was asked to falsify ten of the builder's claims and five vetoes, and to plant bugs to test the test suite.
+# It read the files, including PROOF.md, which by then summarized the first review's approval.
+# Everything after the first blank line is its report exactly as it returned it, with two changes: the transcript's
+# phone number, which the record redacts, appeared in it in two formats, and each was replaced with the same format
+# of a different made-up number, 317-555-0198; and a final newline was added. Its other phone numbers were made up by
+# the reviewer. Three of its characters are no-break spaces, kept as returned. What changed after this review is
+# listed in PROOF.md.
+
+**Decision: hold. Veto V3 is triggered.** The committed record is faithful to the raw file and contains no real data. But PROOF.md and SKILL.md make claims that I could break, the PROOF.md text says Beau did things he has not yet done, and the test suite misses one of the mutants I was asked to try.
+
+## Vetoes
+- **V1 not triggered.** OBSERVED: example.com addresses and 555-0198. INFERRED: the names are fictional (they look made up, but I cannot prove no real person has them).
+- **V2 not triggered.** OBSERVED: `git check-ignore` reports all 6 local-data files ignored by `.gitignore:9`. Nothing under participant/ holds a raw email or phone number. The logs do quote raw lines (the srt head lines and cue 16), but those contain nothing that needed redacting.
+- **V3 TRIGGERED.** See findings 1, 3 and 4.
+- **V4 not triggered.** OBSERVED: I wrote my own parser and compared all 24 cues to the record, checking ID, start, end, speaker, uncertain flag and words. 0 mismatches. The only differences are the 3 stated redactions.
+- **V5 not triggered.** OBSERVED: `git diff` shows only progress.yaml and ACTIVITY.md. Everything else new is in the 3 untracked quest folders.
+
+## Claims
+| # | Verdict | Basis |
+|---|---|---|
+| C1 | **FALSIFIED** (second half) | OBSERVED: 22/22 pass under system python3 and the venv. But many expected values are the code's own strings ("only one of", "does not ignore", the exact reason strings). The round-trip tests also grade with the code's own `read_record`/`unescape_md`. |
+| C2 | CONFIRMED | OBSERVED: the record hash is 7b8b2607…; ingest.py hash is 8a363286… and matches skill_sha256. |
+| C3 | CONFIRMED | OBSERVED: independent cue-by-cue diff. Only U-0011 and U-0013 are uncertain. |
+| C4 | CONFIRMED | OBSERVED: `detect_proof` returns all 7 items "detected". `scan_evidence` and `scan_declared_proof` return []. Note: ingest.py and test_ingest.py are not declared proof, so the scan never reads them. |
+| C5 | CONFIRMED | OBSERVED: `git check-ignore` |
+| C6 | CONFIRMED / INFERRED | OBSERVED: the diff is one new attempt entry plus one activity line at 00:23:26Z. INFERRED: the app's own start action wrote them (the format matches the app's). |
+| C7 | CONFIRMED | OBSERVED: re-ingesting in a temp dir at the logged time gives a byte-identical record and provenance file (provenance hash 45ed12… matches the log). Both refusal messages reproduce exactly. File times match `stat`. I cannot prove the logs were captured live rather than assembled. |
+| C8 | **FALSIFIED** | Findings 1, 3 and 4. |
+| C9 | **FALSIFIED** | 4 mutants survived (finding 2). |
+| C10 | CONFIRMED, within scope | OBSERVED: the temp-file and rollback mutants are caught, and attack runs left no stray files. The window if the process is killed between the two moves is disclosed. |
+
+## Findings (all reproduced)
+
+**1. High, high confidence (C8, V3, AC 1 and 11). The skill silently drops cues and merges cues on malformed input, which PROOF.md and SKILL.md say cannot happen.**
+- Input `WEBVTT\n00:00:01.000 --> 00:00:02.000\n<v Ada Example>First words.</v>\n\n00:00:03.000 --> …<v Ben Example>Second.</v>` returns status `written`, 1 utterance (Ben's). Ada's cue disappears with no warning. Cause: `blocks[1:]` throws away the whole header block.
+- The same happens with `WEBVTT Kind: captions\nLanguage: en\n<cue>`.
+- Two unlabeled cues with no blank line between them become one utterance whose text is `'First words.\n00:00:03.000 --> 00:00:04.000\nSecond.'`.
+- This contradicts "Cues are never merged or split", "Each WebVTT cue becomes one utterance" and SKILL §9's "If any part fails, it reports UNPARSEABLE". It also breaks AC 11 (a partial record that looks complete). It does not affect the committed sample record.
+- Fix: raise Unparseable when the header block contains `-->`, or when any body line contains `-->`.
+
+**2. Medium, high confidence (C9, C1). The test suite misses 4 mutants.**
+- Removing all Markdown escaping (`escape_md` returns `text`) keeps all 22 green. markdown-it then renders `> *stars*` as `<em>stars</em>` and `1. not a list` as an `<ol>`. So `verbatim_text_survives_markdown_rendering` never renders anything.
+- Also survived: no title redaction in the record, a provenance `skill_sha256` of `0`, and a partial escape removal.
+- Killed (16): phone redaction off, overwrite allowed, merging same-speaker cues, unlabeled cues given to the previous speaker, writing before parsing finishes, git-ignore check skipped, participant/ check skipped, no rollback, no temp cleanup, entity decoding, instruction flag, label redaction, provenance redaction, order check, unknown label marked certain, ingested_at omitted.
+- Fix: assert the rendered HTML text equals the input, and assert title redaction and skill_sha256.
+
+**3. High, high confidence (C8, V3, process). PROOF.md states things Beau has not yet done.**
+- "I read the work and ran the tests myself before submitting it" was drafted by the AI, in the first person, before any submission. The attempt is still `in_progress`.
+- The "Independent review … It approved" paragraph points to no artifact a reviewer can check.
+- Fix: Beau confirms or rewrites the first sentence himself, and the review claim either links its record or is softened.
+
+**4. Medium, high confidence (C8). Redaction misses forms the limitations list leaves out.**
+- `317-555-0198x12` and `317-555-0143ext` are left in clear. Cause: `(?!\w)` fails when letters follow the number.
+- So are `317 555 0148` and `317&nbsp;555&nbsp;0149`.
+- SKILL §8 says the `nnn nnn nnnn` form is redacted, and neither the limitations list nor SKILL.md mentions extensions or non-breaking spaces.
+- Fix: allow an `x`/`ext` tail and ` ` separators, or list both as limitations.
+
+**5. Low (C9 tooling).** `INGEST_UNDER_TEST` only works if the copy sits at `<root>/participant/skills/x/ingest.py`. Anywhere else, `REPO = parents[2]` falls back to the git check and all 22 tests fail. I worked around it by placing each mutant in that layout. Fix: say so in the docstring.
+
+**6. Low (process).** PILOT.md asks for "a transcript you wrote yourself". The AI wrote it. PROOF.md does disclose this.
+
+## Not assessed
+- Whether Beau actually read the work or ran the tests.
+- Whether the earlier AI review happened.
+- Whether the logs were captured live.
+- Real Teams/Zoom export quirks.
+- Symlinked output directories.
+- Concurrent runs.
+- The kill window during the file moves.
+
+My temp directory is deleted, and `git status` is unchanged.

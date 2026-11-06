@@ -1,0 +1,174 @@
+# Tenth AI review, run 2026-10-29 (UTC): one Claude reviewer, started fresh, re-reviewed the fixes made for the ninth
+# review. It was given the ninth review's findings, the script and the tests before and after the fixes, and the real Zoom
+# transcripts, not the builder's verdict of the fixes. SKILL.md had not been updated for the fixes yet, so it was told
+# to read the rules as they stood before them.
+# Below the first blank line is its report exactly as returned, with a final newline. It quotes the real transcripts only
+# in masked shapes.
+# The sample transcript's phone number, which the record redacts, was replaced with 317-555-0198 wherever this
+# report quotes it, whole or in parts, as in the earlier logs.
+
+## Round-2 re-review of next/ingest.py and next/test_ingest.py
+
+**Verdict: hold.** The 17 fixes mostly work, and the suite and the real Zoom cache both look clean. Three things block a hand-in:
+1. One fix brought in a false refusal of valid input (medium).
+2. Two of the reviewers' cases have no test, so they could regress silently (medium).
+3. Beau's committed `sample-meeting.md` is refused on rerun by the new script. The AC 7 rerun evidence will not reproduce until the record is regenerated (high, for the hand-in).
+
+I reviewed against final/SKILL.md, as the brief says. Note that `next/SKILL.md` was changed by someone else while I worked. `next/ingest.py`, `test_ingest.py` and `extra_planted.json` did not change; I checked their mtime against my start time.
+
+**How I ran things:** copies of each script, placed at `<tmp>/{final,next}/participant/skills/ba-ingest-transcript/ingest.py`. A driver loaded each copy with importlib and called `ingest(raw, meeting, out, output_dir=..., now=...)` or `main([...])` on files I wrote. Always `-B` with `PYTHONDONTWRITEBYTECODE=1`. Temp folders are deleted.
+
+### Findings
+
+**H1. High (hand-in, not a code defect): Beau's committed record is refused on rerun by next.**
+- OBSERVED: I ran both scripts on copies of `local-data/transcripts/2026-10-21-checkout-refinement.{vtt,meeting.json}` and of `participant/context/transcripts/sample-meeting.{md,provenance.yaml}`.
+  - final: `unchanged`
+  - next: `REFUSED: sample-meeting.md already holds a different record`
+- The only difference is line 85: `*Speaker uncertain: no speaker label in the transcript.*` becomes `...no listed or generic speaker label.*`.
+- The same happens for any record final wrote that has an unlabeled cue.
+- Should: AC 7. The rerun evidence must be reproducible with the script that is handed in.
+- Fix: once the script is final, delete both record files, re-ingest, and recapture the evidence logs (`second-run.txt`, `untrusted-input.txt`, and any quotes in PROOF.md). SKILL.md section 7's known miss about earlier records should also name the changed reason text.
+
+**M1. Medium (regression): the label control-character check refuses valid cues that hold `&#10;` before a colon.**
+- `label_text()` now raises on any control character in any text before a colon, whether or not that text is a speaker label.
+- OBSERVED: next refuses each of these with "the cue contains a control character"; final accepted them all:
+  - `Hi.&#10;Carol Guest: No.`
+  - `Hi.&#10;Ben Example: No.` (Ben listed)
+  - `<v Ada Example>Hi.&#10;Carol Guest: No.</v>`
+  - `Ada Example: Hi` / `We said&#10;two things: yes`
+  - `Agenda&#10;Item one: budget`
+- Also OBSERVED: a NOTE block holding `Ada Example&#10;: check` (Ada listed) is now accepted, where final refused it. The cause is that `looks_like_cue_words` catches the new Unparseable and treats the line as a comment.
+- Should: SKILL section 5 says "a line break written `&#10;` starts a line" and lists `Hi.&#10;Ben Example: No.` as marked uncertain, not refused. Section 9 says line breaks inside a cue's words do not count as control characters, and only a reference that is not a real character keeps a block line a comment.
+- Smallest fix: `label_text` only decodes and strips. A new `checked_label` does the control check, and it is called only where the text is a label: voice tags; the first-line `Name:` once `is_speaker_label` is true; and later lines once `is_speaker_label` is true.
+- I applied this to a copy:
+  - All 132 tests pass.
+  - The five cues above are accepted.
+  - `<v Ada Example&#13;>`, `Ada Example&#10;: Hi`, `Speaker 2&#11;: Hi`, `Speaker&#9;2: Hi` and the NOTE case are refused again.
+
+**M2. Medium (test gap): two fixes can be undone without any test failing.**
+- My mutant M3 changes `LEADING_NAME` from `{1,200}` to `{1,60}`. It passes all 132 tests.
+- OBSERVED with that mutant: `Call me on 317 555` followed by `Carolina Guestington-Smythe (Example Organization Holdings International): 0198 after lunch.` stays visible (phone count 0). next redacts it (count 1).
+- Finding 1 named over-60-character labels explicitly. The only over-60 test case uses a listed label, which is stripped from the words before redaction, so it never exercises this path.
+- My mutant M1 removes `"  skill_sha256: "` from `RUN_LINES`. It passes all 132 tests.
+- So "a rerun after the script changed is still `unchanged`" has no test. OBSERVED that the behavior works today: a copy of next with one comment line added reran an existing record as `unchanged`.
+- Fix:
+  - Add an unlisted label of 61 or more characters to `a_detail_split_across_cues_is_redacted_when_a_name_label_sits_between_its_halves`.
+  - Add a rerun case where the provenance file's `skill_sha256` differs, expecting `unchanged`.
+
+**M3. Medium (privacy, not a regression; same class as finding 1): a number split across two lines of one cue by an unlisted `Name:` line stays visible.**
+- OBSERVED in both final and next:
+  - `Ada Example: Call me on 317 555` then, on the next line, `Carol Guest: 0198 after lunch.` keeps `317 555` and `0198` visible.
+  - The voice-tag form and the email form (`...ada dot lee at example` then `Carol Guest: dot com`) behave the same way.
+- INFERRED: real inputs that would do this are the cues merged by a damaged timing line (SKILL section 9) and multi-line Teams cues. Zoom writes one line per cue.
+- Fix: in the second reading, step over a `Name:` at the start of every line, not only at the start of each cue.
+
+**L1. Low: other invisible characters between digit groups still leave a number visible.**
+- OBSERVED for `317<c>555<c>0198` with:
+  - U+200E/U+200F, including WebVTT's own `&lrm;`/`&rlm;`, which the skill decodes
+  - U+034F, U+061C, U+180E, U+202A, U+3164, U+2800
+  - dot-like U+FF0E, U+FE52, U+3002, U+2025, U+2022, and the slash-like U+FF0F
+- Fix: treat every Unicode Cf, Zs, Zl and Zp character as a separator, rather than listing them one at a time.
+
+**L2. Low (finding 11 residual, and over-redaction from the new pattern).**
+- Still visible: `contact ada.lee at gmail` (a written dot in the name), `Write to ada lee at gmail` and `ada underscore lee at gmail`. The test docstring calls the no-dot "Ada at gmail" form a known miss; SKILL.md does not say so.
+- New over-redaction:
+  - `We shipped version three dot two outlook is good.` becomes `We shipped version [REDACTED:EMAIL] is good.`
+  - `The dot com outlook was bad.` becomes `[REDACTED:EMAIL] was bad.`
+- SKILL.md needs both lists.
+
+**L3. Low (regression): a timing line with a trailing no-break space or form feed is now refused.**
+- OBSERVED: `00:00:01.000 --> 00:00:02.000` followed by U+00A0 or by `\x0c` gives `timing line is not 'START --> END'`. Final accepted both.
+- In WebVTT, a form feed is whitespace and trailing text is an ignored setting.
+- Fix: strip `" \t\f"`, or let the TIMING pattern take any white space after the end time.
+
+**L4. Low: redacted refusal messages also hide parts of paths that are not contact details.**
+- OBSERVED: `UNPARSEABLE .../transcript_[REDACTED:PHONE].vtt` for a raw file named `transcript_1234567890.vtt`.
+- INFERRED, not checked: Zoom local-recording folder names that hold a 10-digit meeting ID would be hidden the same way.
+- Beau typed the path himself, so little is lost. SKILL.md needs a sentence.
+
+**L5. Low: the duplicate-utterance refusal says something false in one case.**
+- OBSERVED: a transcript that differs only by a different phone number (`0198` versus `0199`) is refused with "differs only where no utterance does".
+- Refusing is defensible, because the two records would read the same. Fix: reword the message to "whose record would read the same".
+
+**L6. Low: a tab at a label's end is still dropped.**
+- OBSERVED: `<v Ada Example&#9;>Hi</v>` is accepted as Ada Example.
+- SKILL section 5 says a voice-tag or listed label holding a control character once decoded is refused. The test docstring makes tab an exception.
+- Fix: either refuse it, or put the exception in SKILL.md.
+
+**L7. Low: Unicode-form leftovers.**
+- OBSERVED: `<v José Guest>` (composed) and `<v Jose&#769; Guest>`-style decomposed forms of the same unlisted name give two identical-looking `- José Guest, identity uncertain` lines. `number_speakers` uses casefold rather than `folded`.
+- `<v Unattributed>` is still shown as "Unattributed", but with the reason "label is not in the meeting's participant list".
+- A title containing U+2028 is accepted. INFERRED: YAML 1.1 readers treat U+2028 as a line break.
+
+**L8. Low (test quality).**
+- The checkout test shares one `out-refused` folder across all refusal cases. With planted bug #14 (meeting-file location not checked), it reported 9 problems for 2 broken cases, because the accepted cases wrote into that folder.
+- Detection still works, but the failure report is noisy.
+
+**Observed consequence, not a defect:** the real Zoom cache is itself a git clone. next refuses every file in place with "inside the git checkout at ... and git does not ignore it". Copies outside the clone ingest fine. SKILL.md should tell users to copy such files into `local-data/` first.
+
+### A. Status of each earlier finding (my own inputs, final versus next)
+
+| # | Status | Evidence |
+|---|---|---|
+| 1 | FIXED for cross-cue splits | Unlisted `Name:`, `Name (Org):`, a label over 60 characters, three cues, the spoken email form, `Name:0198` with no space: all redacted, counted once. Not fixed: within-cue lines (M3) and a label holding a colon (`Carol Guest (Team: Ops):`) stay visible; the second is low. |
+| 2 | FIXED | Labels of 61 to 200 characters are read. 201 is not; the reason then says "no listed or generic speaker label" for a listed name. |
+| 3 | FIXED | All three message kinds are redacted, and quoted lines are redacted before they are cut. |
+| 4 | FIXED | Meeting file in `participant/`, in the repo root, through a symlink, or in a worktree root: all refused. |
+| 5 | FIXED | Worktree `.git` file, a repo nested in `local-data`, a sibling repo, a symlink, other capital letters, and `/System/Volumes/Data` spelling: all refused. A broken or empty `.git` gives a refusal quoting git. Outside every checkout, git is not needed (empty PATH still writes). |
+| 6 | FIXED | `transcript_id` and date with a line feed, and a date in Arabic-Indic digits: refused. Record name with a line feed: suite only. |
+| 7 | FIXED (with caveats) | Control characters `\x0b`, `\x0c`, `\x1c`, `\x1f`, `\x85`, `&#11;`, `&#133;`, `&#13;` at line ends, label ends and word ends: all refused. A tab at a label's end is still dropped (L6), and the new check causes regression M1. |
+| 8 | FIXED | Cc characters in the title, roles, names and labels are refused. U+2028 is accepted (L7). |
+| 9 | FIXED | `&#X41;` decodes; `&#X0;` and `&#X110000;` are refused. |
+| 10 | FIXED | Unreadable raw file is INVALID INPUT. A non-UTF-8 `.md` is read as far as needed. An unreadable `.md` or provenance file, or a directory named `x.md`, is REFUSED rather than a crash. |
+| 11 | PARTLY | See L2. |
+| 12 | PARTLY | Each listed character is fixed (17 of them, raw and as references). Others remain (L1). |
+| 13 | FIXED | Empty, other text hash, other capture source, BOM or other record hash: refused. Rerun 30 days later, CRLF provenance, raw re-saved with CRLF and BOM, changed script: `unchanged`. Cross-version: H1. |
+| 14 | FIXED in code | SKILL.md needs the new reason text. |
+| 15 | FIXED | NOTE block added, cue IDs removed, trailing spaces: refused. One word changed: written. See L5. |
+| 16 | FIXED | Non-ASCII digits and a leading no-break space are refused. See L3. |
+| 17 | FIXED | Decomposed and composed names match in both directions. `Unattributed` and `UNATTRIBUTED` as a name or label are refused. Duplicates across Unicode forms are refused. See L7. |
+
+### B. Regressions checked
+
+- **Found:** M1 (`label_text` false refusals), L3 (trailing no-break space or form feed), H1 (cross-version rerun).
+- **`redact_all` counting and overlaps:** a 20,000-case random fuzz showed no difference for mutants M2 (final's unsorted span walk) and M5 (touching spans treated as overlapping). INFERRED: both are equivalent mutants. Hand-made overlap cases counted correctly.
+- **Speed:** linear, about 1.5 to 1.7 times final. 60k cues with a 199-character prefix took 21 s against 14 s (12M characters, machine load around 9). `snippet` on a 1.2M-character hostile line took 3.5 s.
+- **Git:** see finding 5 above. No false refusal seen. INFERRED edge: a repo inside an outer checkout that ignores `local-data` only through `.git/info/exclude` would be refused by the outer check. The outer git does read the nested repo's `.gitignore`.
+- **Provenance check:** no false refusal of a legitimate rerun, apart from H1.
+- **`\Z` anchors and `folded()`:** no regression found.
+- **Redacted messages:** L4 is the only loss.
+
+### C. Tests
+
+- **Where expected results come from:** most cite the quest's AC or SKILL sections. Several encode rules SKILL.md does not state yet: the reason text, the 200-character limit, the mail-provider forms and the "ada at gmail" known miss, the provenance refusals, the tab exception, and the meeting-file location check. Until SKILL.md is updated, those expectations come from the builder's intent, not from a written rule.
+- **Planted bugs:** 16 of 16 spot-checked from `extra_planted.json` failed the full suite: #1, 7, 8, 9, 14, 15, 16, 24, 25, 28, 31, 33, 35, 39, 41, 43.
+- **My own 8 mutants:** 4 caught (M4 provider word-end, M6 duplicate check on words only, M7 tab allowed in meeting text, M8 second reading only when every cue has a `Name:`). 4 survived: M1 and M3 are real gaps (M2 above); M2 and M5 look equivalent (fuzz).
+- The test removal of the old `Carol&#9;Guest` case is legitimate: a tab can no longer be in a listed name.
+
+### D. Full new suite on next/ingest.py
+
+132 passed, 0 failed, 43 s, no NOTE lines, no `__pycache__` left behind.
+
+### E. Real Zoom cache (1,665 files)
+
+- **Method:** each file parsed and built in memory with both scripts.
+- **Result:** no refusals and no crashes for either script, in either mode. All mode-"all" meeting files pass `load_meeting`.
+- **No participants listed:**
+  - next adds 4 email and 3 phone redactions across 7 files, plus 1 file with a text-only change. No count went down.
+  - Masked shapes of the new hides:
+    - `Aaaa, 999.` + `(label): 9999.`
+    - `9, 9, 9, 9, 9,` + `(label): 9999,`
+    - `..., aaaaaaaaa at` + `(label): Aaaaaaaaaaaaaaa.org` (INFERRED: probably a web address, hidden by the documented "at <domain>" rule, across a speaker change)
+    - `Aaaaa at gmail.` + `(label): Dot com.`
+    - `Aaaa 99 dot Aaaaa.` + the next cue
+    - `Aaa dot Aaaaa Gmail`
+- **Every label listed:** 779 cues in 22 files are now attributed to listed labels over 60 characters (uncertain 779 to 0). One extra email (`Aaa dot Aaaaa Gmail`). The other text changes are the long labels leaving the words.
+- **End to end:** 40 random files, copied out of the clone and run through `ingest()`, were `written`, then `unchanged` on a rerun 5 hours later, in both modes.
+- **Time:** total CPU 402 s against 239 s with no participants listed. The slowest file took 1.4 s.
+
+### Not assessed
+
+- Teams or other non-Zoom real files; hosts other than macOS/APFS; git versions other than 2.50.1.
+- The full planted-bug list (I ran 16 of 44).
+- Whether next/SKILL.md, which changed during my run, now matches the code.
+- PROOF.md and the evidence logs.

@@ -1,0 +1,39 @@
+{
+  "attempt_id": "base-attempt-001",
+  "checks": [
+    {
+      "evidence": "All 4 categories are represented.",
+      "id": "ignore-rules-cover-categories",
+      "outcome": "pass",
+      "summary": "Ignore rules cover generated output, local data, environment files and credentials."
+    },
+    {
+      "artifact": "participant/evidence/base-camp-repository-safety/base-attempt-001/PROOF.md",
+      "evidence": "All 5 questions are addressed.",
+      "id": "proof-answers-reviewer-questions",
+      "outcome": "pass",
+      "summary": "The proof document answers the questions a reviewer will ask."
+    },
+    {
+      "evidence": "Pattern detection is a safety net, not a guarantee.",
+      "id": "evidence-carries-no-secrets",
+      "outcome": "pass",
+      "summary": "No secret-like value was found in the evidence."
+    }
+  ],
+  "completed_at": "2026-10-14T17:48:20Z",
+  "duration_ms": 75,
+  "environment": {
+    "network": "denied",
+    "validator_version": 2
+  },
+  "outcome": "pass",
+  "quest_id": "base-camp-repository-safety",
+  "redaction_applied": false,
+  "result_path": "participant/evidence/base-camp-repository-safety/base-attempt-001/validation/validate-repository-foundation-20261014174820451682-4cfc2b.json",
+  "run_id": "validate-repository-foundation-20261014174820451682-4cfc2b",
+  "schema_version": 1,
+  "started_at": "2026-10-14T17:48:20Z",
+  "validator_id": "validate-repository-foundation",
+  "validator_version": 2
+}

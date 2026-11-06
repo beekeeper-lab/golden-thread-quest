@@ -1,0 +1,20 @@
+schema_version: 1
+submission_id: submission-20261101132322-3ebd8d
+quest_id: playwright-first-independent-test
+quest_version: 2
+attempt_id: playwright-attempt-001
+content_hash: sha256:85ad4380fda005f46a4ec4101717fca1f14f3dff2754a4d90fcc2accf9695b60
+evidence_hash: sha256:ae82e8ded1148ea59088e81bf2abcb61e2292abd938d890d4ddfea1eef538769
+submitted_at: '2026-11-01T13:23:22Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+validation_result_ids:
+- validate-playwright-quality-20261030200315633523-78c2e1
+- validate-playwright-quality-20261030200644532712-620da0
+- validate-playwright-quality-20261030203151515405-7ddc2d
+- validate-playwright-quality-20261031194458336018-9168fb
+proof_files:
+- path: participant/tests/playwright/first-independent-test.spec.ts
+  digest: sha256:379b2a20e52cd6779bfdd6e7dcd182d24ea21a278b71e679acaf80695ef1a7e8
+- path: participant/tests/playwright/pages/example-page.ts
+  digest: sha256:dd654bfc83481f041aa10843f3e01ed72334d508d3f417f031f33bf8221c684f
