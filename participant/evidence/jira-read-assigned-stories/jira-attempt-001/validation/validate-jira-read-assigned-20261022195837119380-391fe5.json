@@ -1,0 +1,53 @@
+{
+  "attempt_id": "jira-attempt-001",
+  "checks": [
+    {
+      "evidence": "3 story/stories accounted for.",
+      "id": "pagination-handled",
+      "outcome": "pass",
+      "summary": "Every assigned story in the fixture appears in the output."
+    },
+    {
+      "evidence": "incomplete: GTQ-101, GTQ-102, GTQ-103",
+      "id": "records-are-normalized",
+      "outcome": "fail",
+      "severity": "medium",
+      "suggested_action": "Every record needs: key, source_url, status, summary, retrieved_at.",
+      "summary": "Some records are missing normalized fields."
+    },
+    {
+      "evidence": "source_url present and absolute on every record.",
+      "id": "records-trace-to-source",
+      "outcome": "pass",
+      "summary": "Every record links back to its source."
+    },
+    {
+      "evidence": "Re-running should update in place rather than append.",
+      "id": "no-duplicate-records",
+      "outcome": "pass",
+      "summary": "Each story appears exactly once."
+    },
+    {
+      "evidence": "Only normalized records were found.",
+      "id": "raw-responses-not-committed",
+      "outcome": "pass",
+      "summary": "No raw API response is in committed context."
+    }
+  ],
+  "completed_at": "2026-10-22T19:58:37Z",
+  "duration_ms": 40,
+  "environment": {
+    "network": "denied",
+    "parameter_fixture_set": "happy-path",
+    "validator_version": 2
+  },
+  "outcome": "fail",
+  "quest_id": "jira-read-assigned-stories",
+  "redaction_applied": false,
+  "result_path": "participant/evidence/jira-read-assigned-stories/jira-attempt-001/validation/validate-jira-read-assigned-20261022195837119380-391fe5.json",
+  "run_id": "validate-jira-read-assigned-20261022195837119380-391fe5",
+  "schema_version": 1,
+  "started_at": "2026-10-22T19:58:37Z",
+  "validator_id": "validate-jira-read-assigned",
+  "validator_version": 2
+}

@@ -1,0 +1,180 @@
+Live Jira runs, 2026-11-10. Run by Beau in his own terminal, with credentials in environment variables.
+Sections A and B are the files live_check.py saved itself, unedited. This heading text and the two
+section headings were added by hand. Paths are shortened to <throwaway> by the script.
+
+Where: Beau's own free sandbox Jira site, project SCRUM. The tickets SCRUM-17 to SCRUM-22 are test
+tickets made for this proof, with synthetic text. sync.py and live_check.py only read from Jira.
+The test tickets were created and changed by a separate setup script that is not part of the skill
+and is not in the repository; PROOF.md lists what it did.
+
+Code under test: each section prints the sha256 of the sync.py it copied and ran.
+
+Two differences from a normal run, both made by live_check.py: page size 2 instead of 100, and in
+live run 2 the second search request is cut off on purpose before it is sent.
+
+=== A. live_check.py first ===
+live_check.py first: real sandbox Jira, read-only, page size 2, throwaway folder outside the repository
+sync.py copied into the throwaway folder for this step: sha256 9304a90eb6691b6781d18c204cbad2caee59c468e96f3e0d857d3f947a2b2d7c
+local analysis files before any sync (sha256):
+  c4be6aa52e77c819b1feeb5c969680dade9be7a24ea5e578259c7018aecc65fa  notes/analysis/risk-table.md
+  2466d3d8a61b12fe9826f483d6e71837caf9a92312e6998f59890dae9d2293b6  notes/my-analysis.md
+  40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880  notes/scratch.bin
+
+--- live run 1: first delta run, nothing synced before ---
+search requests that reached Jira: 4
+result: ok
+  | mode: delta, no usable cursor yet, so everything was fetched
+  | fetched: 5
+  | new: 5
+  | changed: 0
+  | unchanged: 0
+  | removed: 0
+  | stories held: 5
+  | removed held: 0
+  | cursor before: none
+  | cursor after: 2026-11-10T16:08:13.217-0500
+  | wrote <throwaway>/participant/context/jira/assigned/stories.json, <throwaway>/participant/context/jira/assigned/index.md and <throwaway>/participant/context/jira/sync-state.md
+state file now: - cursor: 2026-11-10T16:08:13.217-0500
+stories held locally (test tickets, synthetic text):
+  SCRUM-17  To Do        updated 2026-11-10T16:02:40.004-0500  Delta final story one
+  SCRUM-18  To Do        updated 2026-11-10T16:02:40.796-0500  Delta final story two
+  SCRUM-19  To Do        updated 2026-11-10T16:02:41.551-0500  Delta final story three
+  SCRUM-20  To Do        updated 2026-11-10T16:02:42.292-0500  Delta final story four
+  SCRUM-21  To Do        updated 2026-11-10T16:08:13.217-0500  Delta final story five
+removed: []
+
+checks on live run 1:
+  [ok] 5 stories came back, and all 5 are counted as new
+  [ok] C2: the cursor is the newest `updated` timestamp Jira sent
+  [ok] the newest story is more than 5 minutes newer than the rest (needed to predict the next run's fetch count)
+  [ok] C6: analysis files have the same sha256 as before
+
+RESULT: every check held
+
+=== B. live_check.py second, after the setup script changed the test tickets ===
+live_check.py second: real sandbox Jira, read-only, page size 2, throwaway folder outside the repository
+sync.py copied into the throwaway folder for this step: sha256 9304a90eb6691b6781d18c204cbad2caee59c468e96f3e0d857d3f947a2b2d7c
+Changes made in Jira since live run 1: story one reworded, story two moved to In Progress,
+story six created, story four unassigned. Stories three and five were not touched.
+
+before the fault run: sync-state.md sha256 5cd355330d0b401fa896740b8af2eb4fff490bde66610369e65dc21c086e7a91
+                      stories.json  sha256 3702a11f77aa9aa037cee174ee7d8e172a5cbba1b13329fe6e51f90825d2f973
+
+--- live run 2: fault injected after one real page of changes came back ---
+search requests that reached Jira: 1
+result: stopped: Jira returned HTTP 503. (fault injected by live_check.py; this request was never sent)
+state file now: - cursor: 2026-11-10T16:08:13.217-0500
+
+after the fault run:  sync-state.md sha256 5cd355330d0b401fa896740b8af2eb4fff490bde66610369e65dc21c086e7a91
+                      stories.json  sha256 3702a11f77aa9aa037cee174ee7d8e172a5cbba1b13329fe6e51f90825d2f973
+
+checks on live run 2:
+  [ok] exactly one search request reached Jira before the fault
+  [ok] the run stopped with an error
+  [ok] C2, C3: sync-state.md is byte-identical, so the cursor did not move
+  [ok] C3: stories.json is byte-identical
+  [ok] C6: analysis files have the same sha256 as before
+
+--- live run 3: the next run, no fault ---
+search requests that reached Jira: 7
+result: ok
+  | mode: delta, asking for stories updated since 2026-11-10T16:08:13.217-0500 minus 5 minutes
+  | fetched: 4
+  | new: 1
+  | changed: 2
+  | unchanged: 2
+  | removed: 1
+  | stories held: 5
+  | removed held: 1
+  | cursor before: 2026-11-10T16:08:13.217-0500
+  | cursor after: 2026-11-10T16:09:14.124-0500
+  | wrote <throwaway>/participant/context/jira/assigned/stories.json, <throwaway>/participant/context/jira/assigned/index.md and <throwaway>/participant/context/jira/sync-state.md
+state file now: - cursor: 2026-11-10T16:09:14.124-0500
+stories held locally (test tickets, synthetic text):
+  SCRUM-17  To Do        updated 2026-11-10T16:09:12.876-0500  Delta final story one, reworded
+  SCRUM-18  In Progress  updated 2026-11-10T16:09:13.466-0500  Delta final story two
+  SCRUM-19  To Do        updated 2026-11-10T16:02:41.551-0500  Delta final story three
+  SCRUM-21  To Do        updated 2026-11-10T16:08:13.217-0500  Delta final story five
+  SCRUM-22  To Do        updated 2026-11-10T16:09:14.124-0500  Delta final story six
+removed: [{"key": "SCRUM-20", "last_known_status": "To Do"}]
+
+checks on live run 3:
+filter on each full-field story search sent to Jira: [1794344593217, 1794344593217, 1794344593217]  (cursor minus 5 minutes is 1794344593217)
+  [ok] C1: every full-field story search sent to Jira carried `updated >=` the cursor minus 5 minutes
+  [ok] C1: 4 stories fetched (one, two, six, and five inside the 5 minute overlap), not all of them
+  [ok] C5: counts are new 1, changed 2, unchanged 2, removed 1
+  [ok] C4: the reworded story one is held
+  [ok] C4: story two is In Progress
+  [ok] C4: story six is held
+  [ok] story four is no longer held and is listed as removed
+  [ok] C2: the cursor value moved forward only now
+  [ok] C6: analysis files have the same sha256 as before
+
+--- live run 4: nothing changed in Jira since run 3 ---
+search requests that reached Jira: 7
+result: ok
+  | mode: delta, asking for stories updated since 2026-11-10T16:09:14.124-0500 minus 5 minutes
+  | fetched: 4
+  | new: 0
+  | changed: 0
+  | unchanged: 5
+  | removed: 0
+  | stories held: 5
+  | removed held: 1
+  | cursor before: 2026-11-10T16:09:14.124-0500
+  | cursor after: 2026-11-10T16:09:14.124-0500
+  | wrote <throwaway>/participant/context/jira/assigned/stories.json, <throwaway>/participant/context/jira/assigned/index.md and <throwaway>/participant/context/jira/sync-state.md
+state file now: - cursor: 2026-11-10T16:09:14.124-0500
+
+checks on live run 4:
+  [ok] C5: counts are new 0, changed 0, unchanged 5, removed 0
+  [ok] the cursor value did not move, because nothing newer arrived
+  [ok] C6: analysis files have the same sha256 as before
+
+--- full resync compared with the accumulated deltas (live) ---
+compared: every stored field of every story, and the removed list. `retrieved_at` is left out,
+because it records when a story was fetched, and a full resync fetches everything again.
+state built by the delta runs:           sha256 ef756dfd9e2008917237c5b8aad0ffa0fe8da072e61f790109adfdfd5f1acfe0
+same folder after a full resync (ok):  sha256 ef756dfd9e2008917237c5b8aad0ffa0fe8da072e61f790109adfdfd5f1acfe0
+  [ok] C7: a full resync over the delta-built state changed nothing
+stories from the delta runs:                   sha256 1795f1419a1ea091b8b1ba26e1142823072f3d06f0dbe605d49400519fed0226
+stories from a full sync into an empty folder: sha256 1795f1419a1ea091b8b1ba26e1142823072f3d06f0dbe605d49400519fed0226
+  [ok] C7: a full sync into an empty folder holds the same stories
+
+--- live run 5, in a copy of the folder: an older stories.json and a cursor set to the year 2099 ---
+The copy gets the stories.json from before live run 2, and its cursor is edited to 2099, so the
+`updated >=` filter can return nothing. The run has to notice stale and missing stories from the list alone.
+
+--- live run 5 ---
+search requests that reached Jira: 7
+result: ok
+  | mode: delta, asking for stories updated since 2099-01-01T00:00:00.000+0000 minus 5 minutes
+  | fetched: 3
+  | new: 1
+  | changed: 2
+  | unchanged: 2
+  | removed: 1
+  | stories held: 5
+  | removed held: 1
+  | cursor before: 2099-01-01T00:00:00.000+0000
+  | cursor after: 2099-01-01T00:00:00.000+0000
+  | warning: 3 assigned stories were missing or out of date locally and were fetched by key: SCRUM-17, SCRUM-18, SCRUM-22.
+  | wrote <throwaway>/participant/context/jira/assigned/stories.json, <throwaway>/participant/context/jira/assigned/index.md and <throwaway>/participant/context/jira/sync-state.md
+state file now: - cursor: 2099-01-01T00:00:00.000+0000
+searches by key sent to Jira: 2
+
+checks on live run 5:
+  [ok] 3 stories were fetched, and the 3 named in the by-key warning are stories one, two and six
+  [ok] counts are new 1, changed 2, unchanged 2, removed 1
+  [ok] the damaged copy ended in the same local state as the healthy delta runs
+  [ok] C6: the damaged copy's analysis files have the same sha256 as before the first sync
+  (the copy's cursor stays at 2099, because the cursor never moves backward; a full sync does not reset it either)
+
+local analysis files in the main throwaway folder after live runs 1 to 4 and the full resync (sha256):
+  c4be6aa52e77c819b1feeb5c969680dade9be7a24ea5e578259c7018aecc65fa  notes/analysis/risk-table.md
+  2466d3d8a61b12fe9826f483d6e71837caf9a92312e6998f59890dae9d2293b6  notes/my-analysis.md
+  40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880  notes/scratch.bin
+  [ok] C6: analysis files have the same sha256 as before the first sync
+  [ok] the full resync left sync-state.md alone
+
+RESULT: every check held

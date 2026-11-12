@@ -1,0 +1,13 @@
+schema_version: 1
+submission_id: submission-20261110211445-d6958a
+quest_id: jira-delta-sync
+quest_version: 1
+attempt_id: jira-attempt-002
+content_hash: sha256:824d9ef3e816736a4a0199090fa5164d2bb5c937863a190f8db846d8075e0254
+evidence_hash: sha256:1e7215e70fcd98e71b4a7de6c9e551b019adbc27a3218d760c96c1520cff8d9b
+submitted_at: '2026-11-10T21:14:45Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/jira/sync-state.md
+  digest: sha256:98ed3abea7989f5a109c24ddb8ef5e053a939e1c88098db0ad86d6df3f617df4

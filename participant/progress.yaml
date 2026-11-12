@@ -1,0 +1,67 @@
+schema_version: 1
+participant:
+  id: participant
+  display_name: beaubrown
+selected_track: golden-thread-foundations
+attempts:
+- attempt_id: base-attempt-001
+  quest_id: base-camp-repository-safety
+  quest_version: 2
+  content_hash: sha256:961a703db315b6da63e2a0e8f9cd3bc8db210f269a6451505236a78d84d250b3
+  state: verified
+  started_at: '2026-10-14T17:19:15Z'
+  updated_at: '2026-10-14T22:26:47Z'
+  evidence_path: participant/evidence/base-camp-repository-safety/base-attempt-001
+  submission_id: submission-20261014175155-58f16c
+  review_id: review-20261014222647-4e1067
+- attempt_id: jira-attempt-001
+  quest_id: jira-read-assigned-stories
+  quest_version: 2
+  content_hash: sha256:983e44712d01f69de6ca4b3dbe7eb180fdf0040ebb722453749e959d0dde5c0b
+  state: verified
+  started_at: '2026-10-22T17:38:17Z'
+  updated_at: '2026-10-22T21:25:09Z'
+  evidence_path: participant/evidence/jira-read-assigned-stories/jira-attempt-001
+  submission_id: submission-20261022204218-2fac7a
+  review_id: review-20261022212509-203cbb
+- attempt_id: ba-attempt-001
+  quest_id: ba-ingest-transcript
+  quest_version: 4
+  content_hash: sha256:237610e383705248804a8bcc80cf44ba44ab1b14e560816f01fb38623147976e
+  state: verified
+  started_at: '2026-10-28T00:23:26Z'
+  updated_at: '2026-11-01T06:40:57Z'
+  evidence_path: participant/evidence/ba-ingest-transcript/ba-attempt-001
+  submission_id: submission-20261030190416-114346
+  review_id: review-20261101064057-c57c3a
+- attempt_id: playwright-attempt-001
+  quest_id: playwright-first-independent-test
+  quest_version: 2
+  content_hash: sha256:85ad4380fda005f46a4ec4101717fca1f14f3dff2754a4d90fcc2accf9695b60
+  state: verified
+  started_at: '2026-10-30T19:58:32Z'
+  updated_at: '2026-11-01T13:28:02Z'
+  evidence_path: participant/evidence/playwright-first-independent-test/playwright-attempt-001
+  submission_id: submission-20261101132322-3ebd8d
+  review_id: review-20261101132801-cec4f5
+- attempt_id: jira-attempt-002
+  quest_id: jira-delta-sync
+  quest_version: 1
+  content_hash: sha256:824d9ef3e816736a4a0199090fa5164d2bb5c937863a190f8db846d8075e0254
+  state: verified
+  started_at: '2026-11-10T17:10:46Z'
+  updated_at: '2026-11-10T21:27:27Z'
+  evidence_path: participant/evidence/jira-delta-sync/jira-attempt-002
+  submission_id: submission-20261110211445-d6958a
+  review_id: review-20261110212727-4ffded
+- attempt_id: base-attempt-002
+  quest_id: base-camp-audit-log
+  quest_version: 1
+  content_hash: sha256:cf8119038bb8765cf210eb30185d64cded0708b04f74534eda9c50a5e8e29b25
+  state: verified
+  started_at: '2026-11-10T23:17:06Z'
+  updated_at: '2026-11-11T17:47:39Z'
+  evidence_path: participant/evidence/base-camp-audit-log/base-attempt-002
+  submission_id: submission-20261111173648-ad8ba4
+  review_id: review-20261111174739-115dea
+updated_at: '2026-11-11T17:47:39Z'

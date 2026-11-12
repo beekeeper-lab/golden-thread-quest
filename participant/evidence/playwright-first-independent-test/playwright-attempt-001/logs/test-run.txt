@@ -1,0 +1,24 @@
+# Tagged run: npx playwright test --grep @feature-passport, run twice in a row
+# Fingerprint of fixtures/participant and participant/progress.yaml before: 5bfd095891dee538
+
+## Run 1
+[WebServer] built 407 page(s) into generated
+[WebServer] validated 128 quest(s), 9 region(s), 4 badge(s), 2 track(s) — 0 warning(s)
+
+Running 1 test using 1 worker
+
+  ✓  1 first-independent-test.spec.ts:20:5 › passport counts only reviewer-approved work as verified XP and keeps unreviewed work as claimed @feature-passport @risk-high @read-only @duration-fast (442ms)
+
+  1 passed (10.9s)
+
+## Run 2
+[WebServer] built 407 page(s) into generated
+[WebServer] validated 128 quest(s), 9 region(s), 4 badge(s), 2 track(s) — 0 warning(s)
+
+Running 1 test using 1 worker
+
+  ✓  1 first-independent-test.spec.ts:20:5 › passport counts only reviewer-approved work as verified XP and keeps unreviewed work as claimed @feature-passport @risk-high @read-only @duration-fast (276ms)
+
+  1 passed (10.6s)
+
+# Fingerprint after both runs: 5bfd095891dee538 (unchanged)

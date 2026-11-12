@@ -1,0 +1,46 @@
+{
+  "attempt_id": "playwright-attempt-001",
+  "checks": [
+    {
+      "evidence": "1 file(s) checked.",
+      "id": "test-asserts-something",
+      "outcome": "pass",
+      "summary": "Every test file asserts something."
+    },
+    {
+      "evidence": "The test may still be sound; this is a hint, not a verdict.",
+      "id": "selectors-target-behavior",
+      "outcome": "warning",
+      "severity": "low",
+      "suggested_action": "Prefer queries a user could describe.",
+      "summary": "No role, label or text query was found."
+    },
+    {
+      "evidence": "The test waits on conditions.",
+      "id": "no-arbitrary-waits",
+      "outcome": "pass",
+      "summary": "No arbitrary wait was found."
+    },
+    {
+      "evidence": "participant/evidence/playwright-first-independent-test/playwright-attempt-001/logs/failure-run.txt, participant/evidence/playwright-first-independent-test/playwright-attempt-001/logs/failure-trace.zip, participant/evidence/playwright-first-independent-test/playwright-attempt-001/screenshots/failure-state.png",
+      "id": "failure-is-diagnosable",
+      "outcome": "pass",
+      "summary": "The evidence includes a record of the test failing."
+    }
+  ],
+  "completed_at": "2026-11-02T14:06:39Z",
+  "duration_ms": 107,
+  "environment": {
+    "network": "denied",
+    "validator_version": 2
+  },
+  "outcome": "warning",
+  "quest_id": "playwright-first-independent-test",
+  "redaction_applied": false,
+  "result_path": "participant/evidence/playwright-first-independent-test/playwright-attempt-001/validation/validate-playwright-quality-20261102140639654579-41e64f.json",
+  "run_id": "validate-playwright-quality-20261102140639654579-41e64f",
+  "schema_version": 1,
+  "started_at": "2026-11-02T14:06:39Z",
+  "validator_id": "validate-playwright-quality",
+  "validator_version": 2
+}

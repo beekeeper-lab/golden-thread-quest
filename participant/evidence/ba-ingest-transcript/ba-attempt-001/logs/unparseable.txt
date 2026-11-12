@@ -1,0 +1,60 @@
+# Ingesting transcripts the skill cannot parse (AC 11)
+# Recorded 2026-10-30T15:27:42Z from the repository root on branch pilot/beau.
+# Raw transcripts are in local-data/transcripts/, which git ignores. Paths are repository-relative.
+
+# Case 1: an SRT export saved with a .vtt name.
+$ head -3 local-data/transcripts/srt-export.vtt
+1
+00:00:02,140 --> 00:00:06,900
+Priya Natarajan: Okay, I think everyone is here.
+[exit code: 0]
+
+$ .venv/bin/python participant/skills/ba-ingest-transcript/ingest.py local-data/transcripts/srt-export.vtt --meeting local-data/transcripts/srt-export.meeting.json --out participant/context/transcripts/srt-export.md
+UNPARSEABLE local-data/transcripts/srt-export.vtt: line 1: the file does not start with the WEBVTT header; it looks like an SRT file, which this skill does not read yet. Nothing was written.
+[exit code: 2]
+
+# Case 2: a WebVTT file whose cue 9 has a broken timing line ("->" for "-->"). Cues 1 to 8 parse;
+# a record of those eight would look complete, so none may be written.
+$ grep -n -- '00:00:57.800 ->' local-data/transcripts/damaged-export.vtt
+39:00:00:57.800 -> 00:01:04.100
+[exit code: 0]
+
+$ .venv/bin/python participant/skills/ba-ingest-transcript/ingest.py local-data/transcripts/damaged-export.vtt --meeting local-data/transcripts/damaged-export.meeting.json --out participant/context/transcripts/damaged-export.md
+UNPARSEABLE local-data/transcripts/damaged-export.vtt: line 39: timing line is not 'START --> END': '00:00:57.800 -> 00:01:04.100'. Nothing was written.
+[exit code: 2]
+
+# Case 3: the sample transcript with one blank line removed, the one after its two-line NOTE. Before the round-3 fix
+# this was written as a 23-utterance record that silently lost Priya's opening line (finding 4 of the third AI review).
+$ sed -n '1,7p' local-data/transcripts/note-glued-export.vtt
+WEBVTT
+
+NOTE Synthetic transcript written for the Golden Thread Quest. Every person, company,
+email address and phone number in it is fictional.
+1
+00:00:02.140 --> 00:00:06.900
+<v Priya Natarajan>Okay, I think everyone's here. This is refinement for sprint fourteen, checkout.</v>
+[exit code: 0]
+
+$ .venv/bin/python participant/skills/ba-ingest-transcript/ingest.py local-data/transcripts/note-glued-export.vtt --meeting local-data/transcripts/note-glued-export.meeting.json --out participant/context/transcripts/note-glued-export.md
+UNPARSEABLE local-data/transcripts/note-glued-export.vtt: line 6: a timing line sits inside a NOTE block, so a blank line is missing and the cue after it would be skipped with the block. Nothing was written.
+[exit code: 2]
+
+# Case 4: the sample transcript with cue 9's identifier and blank line removed and its timing line cut short to
+# "00:00:57". Before the round-4 fix this was merged into cue 8 without a warning (finding F1 of the fourth AI review).
+$ grep -n -B1 -A1 '^00:00:57$' local-data/transcripts/truncated-export.vtt
+36-<v Priya Natarajan>No. We let them check out, and then we offer to link the order after.</v>
+37:00:00:57
+38-<v Dana Whitfield>So the order is attached to the account, or it isn't until they say yes?</v>
+[exit code: 0]
+
+$ .venv/bin/python participant/skills/ba-ingest-transcript/ingest.py local-data/transcripts/truncated-export.vtt --meeting local-data/transcripts/truncated-export.meeting.json --out participant/context/transcripts/truncated-export.md
+UNPARSEABLE local-data/transcripts/truncated-export.vtt: line 37: a timing line appears inside a cue's text, so a blank line is missing and two cues would be merged. Nothing was written.
+[exit code: 2]
+
+# After all four: only the sample meeting's two files and the redaction notes. No partial record, no temporary file.
+$ ls -A participant/context/transcripts
+redaction-notes.md
+sample-meeting.md
+sample-meeting.provenance.yaml
+[exit code: 0]
+

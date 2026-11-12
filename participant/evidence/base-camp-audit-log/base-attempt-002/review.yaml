@@ -1,0 +1,30 @@
+schema_version: 1
+review_id: review-20261111174739-115dea
+quest_id: base-camp-audit-log
+quest_version: 1
+attempt_id: base-attempt-002
+evidence_hash: sha256:80ab6c0c316e16bd1c19515058e1faf1e0e26f6d210472d2478fa5ef9b560bef
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-11T17:47:39Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/audit-log-all-events.md
+  digest: sha256:3b064fb32b9f32f63406d097c1cbcf094904d7cd7b308b7700255bcbbf1c3f8f
+- path: participant/context/audit-log-format.md
+  digest: sha256:1fed15bbe8576f47f7428e0ace33414010331d9b27642c1f2cba63989d7c8f4f
+verification_statement: 'Automated review. I read the sample log, the format document,
+  append-only.txt, the test and planted-bug outputs, the workflow transcript, the
+  scripts and both AI review reports. All six rows of the sample log fill every required
+  field. The log includes all five event kinds. The failure row gives a coded reason
+  and no private text. The tamper demo shows edits, deletions, swaps, truncation,
+  rechaining and changes to the text around the rows all being detected on copies
+  of the log, with the real log''s SHA-256 the same before and after. A correction
+  as a new entry is defined in the format document and exercised by a passing test.
+  I found no credential or private record body. The order of events can be rebuilt
+  from Seq, Time and Ref. I found no text aimed at the reviewer. Note: the required
+  path is attempt-001/logs/append-only.txt, but the file is under base-attempt-002/.
+  The automatic pre-check marked the required files as present, so I treat this as
+  advisory. Each of the 6 acceptance criteria was matched to text quoted word for
+  word from the evidence.'
