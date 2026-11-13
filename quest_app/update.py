@@ -214,6 +214,9 @@ def update_instructions(backup: str, branch: str) -> str:
         "make validate-content                   # confirm your state still loads\n"
         "make migrate      # only if validate-content says your progress schema is old\n"
         "\n"
+        "# If `gtq start` is running, stop it (Ctrl+C in its window) and start it again. A\n"
+        "# running copy keeps the old program and breaks on the new pages.\n"
+        "\n"
         f"# If the merge goes wrong: git merge --abort, or git reset --hard {backup}"
     )
 

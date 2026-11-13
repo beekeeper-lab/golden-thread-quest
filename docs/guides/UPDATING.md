@@ -54,6 +54,10 @@ make validate-content
 make migrate      # only if validate-content says your progress schema is old
 ```
 
+If `gtq start` is running, stop it (Ctrl+C in its window) and start it again afterwards. A running
+copy keeps the old program in memory and fails with "Something unexpected went wrong" on the new
+pages.
+
 If it goes wrong: `git merge --abort`, or `git reset --hard backup/pre-update-<timestamp>`.
 
 ## What does not change
