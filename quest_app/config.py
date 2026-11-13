@@ -19,7 +19,10 @@ from quest_app.compat import Self
 # rather than partially interpreted.
 SUPPORTED_SCHEMA_VERSION: Final = 1
 
-APPLICATION_VERSION: Final = "0.2.4"
+# Kept equal to `version` in pyproject.toml; `tests/unit/test_application_version.py` fails when
+# they differ. It was left at 0.2.4 through 0.3.0 and 0.3.1, so the page footer, `--version` and the
+# service header all said so (pilot feedback, PR #27, quest 17).
+APPLICATION_VERSION: Final = "0.3.1"
 
 DEFAULT_SERVICE_HOST: Final = "127.0.0.1"
 DEFAULT_SERVICE_PORT: Final = 8765

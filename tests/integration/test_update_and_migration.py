@@ -700,3 +700,11 @@ def test_a_failed_migration_restores_original_bytes_including_crlf(config: AppCo
     assert restored == original_bytes
     assert b"\r\n" in restored
     assert b"a participant's own comment" in restored
+
+
+def test_the_instructions_remind_a_participant_to_restart_a_running_gtq_start() -> None:
+    """Pilot feedback, PR #27 quest 17: a `gtq start` left running across an update kept the old
+    code and failed on the new templates with an UndefinedError."""
+    text = update_instructions("backup/x", "main")
+    assert "gtq start" in text and "start it again" in text
+    assert text.index("make migrate") < text.index("start it again")
