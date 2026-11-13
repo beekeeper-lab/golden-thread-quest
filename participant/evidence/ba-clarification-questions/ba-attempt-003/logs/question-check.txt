@@ -1,0 +1,47 @@
+$ .venv/bin/python participant/tools/check-questions.py --findings participant/context/ambiguity/findings.md --questions participant/context/clarification/questions.md --dropped participant/context/clarification/dropped.md
+# check-questions.py 2.2.0
+Findings:  participant/context/ambiguity/findings.md
+Questions: participant/context/clarification/questions.md
+Dropped:   participant/context/clarification/dropped.md
+
+12 findings, 13 questions, 1 dropped.
+
+Questions, in the order asked:
+  Q-01  F-10  2 answers  What is the most buyers that must be able to check out at the same time?
+  Q-02  F-11  3 answers  What counts as handling that many buyers: no errors, a response time, or never selling a seat twice?
+  Q-03  F-07  2 answers  Which refund deadline applies: 48 hours before the event starts, or until the venue doors open?
+  Q-04  F-04  2 answers  Is a refund paid back to the original payment, or given as Tixly credit?
+  Q-05  F-03  2 answers  When a gift card is worth more than the order, does the leftover balance stay on the card?
+  Q-06  F-13  2 answers  Can a refund requested in time ever be denied?
+  Q-07  F-14  2 answers  After a declined payment, can the buyer try again, or are they sent back to the cart?
+  Q-08  F-03  2 answers  Can a buyer choose to use only part of a gift card's balance on an order?
+  Q-09  F-01  2 answers  How many seconds may pass from opening an event to its seat map being usable?
+  Q-10  F-02  2 answers  On what device, connection and venue size must the seat map be usable within its load time?
+  Q-11  F-09  2 answers  Should the decline message say why the payment was declined, or just that it was?
+  Q-12  F-06  2 answers  What should a first-time buyer see at checkout that makes it feel trustworthy?
+  Q-13  F-12  2 answers  Does the buyer have to give a reason for a refund?
+
+Dropped:
+  D-01  F-09  What exact words should the message say when a payment is declined?
+
+By finding:
+  F-01  asked Q-09
+  F-02  asked Q-10
+  F-03  asked Q-05, Q-08
+  F-04  asked Q-04
+  F-12  asked Q-13
+  F-13  asked Q-06
+  F-06  asked Q-12
+  F-07  asked Q-03
+  F-09  asked Q-11; dropped D-01
+  F-14  asked Q-07
+  F-10  asked Q-01
+  F-11  asked Q-02
+
+Checks: every question and dropped question cites a finding in findings.md; every question
+has at least 2 answers, each with different work text; every question reads as one
+sentence of at most 25 words ending in '?'; questions are numbered in order with a
+reason for each position; every dropped question says why it changes nothing; every finding
+is asked or dropped; every field is plain text.
+
+result: PASSED (exit status 0)

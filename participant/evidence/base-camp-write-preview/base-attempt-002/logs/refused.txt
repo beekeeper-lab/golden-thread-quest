@@ -1,0 +1,26 @@
+== 1. The stories file is changed after the preview (one word in story 1's title)
+
+$ .venv/bin/python participant/tools/fake-story-tracker.py confirm --stories participant/context/write-preview/follow-up-stories.yaml
+# fake-story-tracker.py 1.11.0 confirm
+Type the fingerprint of the preview you approve: You typed: 22E3-E1CD-4D07
+Refused: The stories file no longer holds the change that was previewed: story 1: title changed. Nothing was written; preview again to see the change as it is now.
+
+== The word is changed back
+
+== 2. A preview made 20 minutes ago
+$ .venv/bin/python participant/tools/fake-story-tracker.py preview --stories participant/context/write-preview/follow-up-stories.yaml --made-at 2026-10-29T11:46:30-0400
+
+Preview fingerprint: D23B-F212-B023
+Made 10-29-2026 11:46:30 AM EDT; it can be confirmed until 10-29-2026 12:01:30 PM EDT (15 minutes).
+To approve exactly this change, run confirm and type this fingerprint.
+
+Nothing was written. The tracker still has 0 stories.
+
+$ .venv/bin/python participant/tools/fake-story-tracker.py confirm --stories participant/context/write-preview/follow-up-stories.yaml
+# fake-story-tracker.py 1.11.0 confirm
+Type the fingerprint of the preview you approve: You typed: D23B-F212-B023
+Refused: The preview expired at 10-29-2026 12:01:30 PM EDT (made 10-29-2026 11:46:30 AM EDT; the limit is 15 minutes). Nothing was written; preview again to see the change as it is now.
+
+$ .venv/bin/python participant/tools/fake-story-tracker.py list
+# fake-story-tracker.py 1.11.0 list
+Tracker: 0 stories (tracker state 4F53-CDA1-8C2B)

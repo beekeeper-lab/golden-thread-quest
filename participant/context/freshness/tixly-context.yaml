@@ -1,0 +1,44 @@
+# Saved notes about Tixly, a made-up event-ticket app. Everything here is invented.
+# Each note records when it was retrieved (retrieved_at, with its time zone).
+# The freshness limits come only from policy.md (the program has the same table built in).
+
+question: What is blocking release 3.0?
+
+notes:
+  - id: BRD-21
+    source: sprint-board
+    retrieved_at: "2026-10-20T09:00:00-04:00"
+    title: Checkout redesign
+    status: In Progress
+  - id: BRD-22
+    source: sprint-board
+    retrieved_at: "2026-10-20T09:00:00-04:00"
+    title: Refund flow
+    status: Done
+  - id: BUG-31
+    source: bug-list
+    retrieved_at: "2026-10-20T09:00:00-04:00"
+    title: Payment fails on Safari
+    status: Open
+    severity: High
+  - id: BUG-32
+    source: bug-list
+    retrieved_at: "2026-10-20T09:00:00-04:00"
+    title: Typo on the receipt email
+    status: Open
+    severity: Low
+  - id: RUN-41
+    source: test-runs
+    retrieved_at: "2026-10-20T09:00:00-04:00"
+    build: "512"
+    failed: 3
+    total: 120
+  - id: REL-51
+    source: release-plan
+    retrieved_at: "2026-10-17T09:00:00-04:00"
+    release: "3.0"
+    target_date: "2026-10-24"
+  - id: TEAM-61
+    source: team-roster
+    retrieved_at: "2026-10-01T09:00:00-04:00"
+    qa: [Avery, Jordan]

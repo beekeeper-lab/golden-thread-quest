@@ -1,0 +1,17 @@
+{
+  "name": "tixly-playwright-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright tests for the invented Tixly demo app, run against a local copy only.",
+  "type": "module",
+  "engines": {
+    "node": "^22.18.0 || >=23.6.0"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "check-setup": "node tools/project-setup-check.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

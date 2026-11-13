@@ -1,0 +1,7 @@
+$ .venv/bin/python participant/tools/fake-bug-tracker.py file --key BUG-101 --severity High --title "Firefox warns about a typed password nobody typed (Account page)"
+# run at 2026-10-21T15:06:47Z by participant/tools/fake-bug-tracker.py 1.2.0
+preview: this defect would be filed in the fake bug tracker:
+  {"key": "BUG-101", "severity": "High", "title": "Firefox warns about a typed password nobody typed (Account page)"}
+Type "yes" to file it, anything else to cancel: answer: 'yes'
+filed BUG-101
+exit status 0

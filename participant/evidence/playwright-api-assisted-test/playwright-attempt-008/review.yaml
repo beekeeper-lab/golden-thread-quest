@@ -1,0 +1,29 @@
+schema_version: 1
+review_id: review-20261112162942-e162b0
+quest_id: playwright-api-assisted-test
+quest_version: 1
+attempt_id: playwright-attempt-008
+evidence_hash: sha256:7e69bbacf51ac87b692209498deb141eb3759fa5a3ceb03ecd00cca80fcee3ea
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-12T16:29:42Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/playwright/api-boundary.md
+  digest: sha256:4b3b2e6e2a349177902be2560cca8e582ac2d962394569ec9e22f044e7bcf1d6
+- path: participant/tests/playwright/api-assisted.spec.ts
+  digest: sha256:416c2ece51e0d91358ea6c819d2143eb084983172ee30849ce2b592b752a90c6
+- path: participant/tests/playwright/ui-only.spec.ts
+  digest: sha256:2a2ef6f9d967d5d46e83d9a31e5eb8eb95df9f228cd8de25f9e2b1b65c639b17
+verification_statement: Automated review. I read both spec files, the timing-run log,
+  the boundary note and PROOF.md. The API-assisted spec arranges one order through
+  the API, cancels it on screen, then checks through the API that it is gone and that
+  the earlier orders are unchanged. The log shows timings for both versions. With
+  the broken copy, the API-assisted test fails at its API check while the UI-only
+  test passes. The full suite passes, the orders file is restored byte for byte, and
+  the credential searches and secret scan find 0. The API-assisted time is 50% of
+  the UI-only time, not under half, and PROOF.md explains why. Evidence sits under
+  playwright-attempt-008, not attempt-001, but the pre-check reported the required
+  files present. I found no text addressed to the reviewer. Each of the 7 acceptance
+  criteria was matched to text quoted word for word from the evidence.

@@ -1,0 +1,17 @@
+schema_version: 1
+submission_id: submission-20261112195048-6f8626
+quest_id: playwright-tagging
+quest_version: 1
+attempt_id: playwright-attempt-009
+content_hash: sha256:d9d8f00513c170a99b3a9c73e9871933da7065888cefa83868a6b4cc4c1a6dbb
+evidence_hash: sha256:b668dea76e6e593fcc574631f88c05169493d75e3df751c45d1e91d9df891b3f
+submitted_at: '2026-11-12T19:50:48Z'
+submitted_by: thomascarter
+secret_scan_clean: true
+proof_files:
+- path: participant/context/playwright/tag-scheme.md
+  digest: sha256:285e7adeda70d9ddb5f56d4f54d90f97d5840c12c28df3ae0aa6f86fc44e7d82
+- path: participant/tests/playwright/tagged.spec.ts
+  digest: sha256:90b8837f3c77932af7f977a4c00c967b457d72860cdb968daa1c601b3f1bb22c
+- path: participant/tests/playwright/tools/tagging-check.ts
+  digest: sha256:ed1e5c8c57061d88e1806749273429e934d4556b353bdd98a1caa43cc9d17b6c

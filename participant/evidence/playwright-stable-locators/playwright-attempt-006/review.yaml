@@ -1,0 +1,30 @@
+schema_version: 1
+review_id: review-20261110190012-6b9ed5
+quest_id: playwright-stable-locators
+quest_version: 1
+attempt_id: playwright-attempt-006
+evidence_hash: sha256:e7cea8fdb724d7fe6ade67dbda62830b8553ebee9b21ab0f535d1b4d588e468b
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-10T19:00:12Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/tests/playwright/brittle.spec.ts
+  digest: sha256:fd654de6e981a3270095243b313a3760873601ee95e1b71217f9a206f94dd355
+- path: participant/tests/playwright/stable.spec.ts
+  digest: sha256:408cdc5598dcf58e338652a38955c2a7b67a99190451ca75d82bef694ac13d01
+verification_statement: 'Automated review. Read all four evidence files. brittle.spec.ts
+  has five brittle locators, each labeled by kind in a comment. stable.spec.ts replaces
+  each one with a role, label or visible-text locator and has a ''Was/Now'' note giving
+  the reason. The seven check lines are the same in both files. The diff in section
+  2 of layout-change.txt matches the failure in section 3: the new first card means
+  nth-child(1) finds Summer Jazz Night, and $40.00 is received. Section 1 shows both
+  tests passing before the change. Section 3 shows the brittle test failing and the
+  stable test passing after it. In section 4, the search of the stable test''s code
+  finds 0 matches, and the 2 whole-file matches are in comments. PROOF.md cites the
+  criteria by number and names the replacement trusted least. The evidence folder
+  is attempt-006, not the attempt-001 named in the quest; the pre-check found the
+  required files, so this is minor. No text in the evidence addresses the reviewer.
+  Each of the 7 acceptance criteria was matched to text quoted word for word from
+  the evidence.'

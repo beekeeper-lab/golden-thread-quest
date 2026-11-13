@@ -1,0 +1,15 @@
+schema_version: 1
+submission_id: submission-20261028160753-c52ce5
+quest_id: ba-clarification-questions
+quest_version: 1
+attempt_id: ba-attempt-003
+content_hash: sha256:541fa97473fa6f1591b1ee3572151855ee8feca81284dc085fbcd738dfee605e
+evidence_hash: sha256:5386bbd98250f8d22ce40ee2d440734f2d951464234abce12dd4451cee1ed39a
+submitted_at: '2026-10-28T16:07:53Z'
+submitted_by: thomascarter
+secret_scan_clean: true
+proof_files:
+- path: participant/context/clarification/dropped.md
+  digest: sha256:1f72f31fee5621f019edfe299f670d238192ab80790c726f53f0ff3e0e74a759
+- path: participant/context/clarification/questions.md
+  digest: sha256:88fa3ada050bd3c13afa85224296fee4aad795296e2824f904278628233be0a0

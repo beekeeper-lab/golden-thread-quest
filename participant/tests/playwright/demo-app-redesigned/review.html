@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tixly: review your order</title>
+  </head>
+  <body>
+    <!-- Tixly is an invented ticket app. This page is a local demo for the tests, with made-up data.
+         It only shows the order described in its address (event and quantity); nothing is saved. -->
+    <header>
+      <h1>Tixly</h1>
+    </header>
+    <main>
+      <h2>Review your order</h2>
+      <table aria-label="Order summary">
+        <tr><th scope="row">Event</th><td id="order-event"></td></tr>
+        <tr><th scope="row">Tickets</th><td id="order-quantity"></td></tr>
+        <tr><th scope="row">Total</th><td id="order-total"></td></tr>
+      </table>
+      <p role="alert" id="order-problem" hidden></p>
+      <p><a href="/">Back to events</a></p>
+    </main>
+    <script>
+      // The same made-up event as the events page, with its price and fee in whole cents. A real
+      // app would get these from its server; this demo keeps one copy per page.
+      const EVENTS = {
+        "spring-concert": { name: "Spring Concert", ticketCents: 2500, feeCents: 250 },
+        "summer-jazz": { name: "Summer Jazz Night", ticketCents: 4000, feeCents: 300 },
+      };
+      const params = new URLSearchParams(location.search);
+      // Only the events listed above: a name like "constructor" or "toString" is part of every
+      // JavaScript object, so it would otherwise be taken for an event.
+      const eventId = params.get("event") ?? "";
+      const event = Object.hasOwn(EVENTS, eventId) ? EVENTS[eventId] : undefined;
+      const quantityText = params.get("quantity") ?? "";
+      const quantity = /^[1-6]$/.test(quantityText) ? Number(quantityText) : null;
+      const problem = document.getElementById("order-problem");
+      if (!event) {
+        problem.textContent = "That event isn't on sale. Go back to events to choose one.";
+        problem.hidden = false;
+      } else if (quantity === null) {
+        problem.textContent = "Choose from 1 to 6 tickets.";
+        problem.hidden = false;
+      } else {
+        const cents = quantity * (event.ticketCents + event.feeCents);
+        document.getElementById("order-event").textContent = event.name;
+        document.getElementById("order-quantity").textContent = String(quantity);
+        document.getElementById("order-total").textContent = `$${(cents / 100).toFixed(2)}`;
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+$ .venv/bin/python participant/tools/verify-github-connection.py
+verify-github-connection 1.0.0, run 11-06-2026 09:00 AM
+Identity (read from the connection): Hoosiertom50
+
+Scopes reported by GitHub: gist, read:org, repo, workflow
+  gist       create and change gists  [allows changes]
+  read:org   read organization membership and teams
+  repo       read and write every repository the account can reach, private ones included  [allows changes]
+  workflow   change GitHub Actions workflow files  [allows changes]
+
+Repositories this connection can reach: 97
+  Owned by Hoosiertom50 (3), by full name:
+    Hoosiertom50/clean-house
+    Hoosiertom50/golden-thread-quest
+    Hoosiertom50/seatwise
+  Owned by 1 organization (counted only; names withheld because some are private):
+    organization 1: 94 repositories (77 private, 17 public)
+
+Safe read: repos/Hoosiertom50/golden-thread-quest answered 200
+  full name Hoosiertom50/golden-thread-quest; visibility public; default branch main
+  this connection's rights here: admin, maintain, push, triage, pull (the check uses none of them to change anything)
+
+Requests made (3), every one a read:
+  GET user
+  GET user/repos?per_page=100&affiliation=owner,collaborator,organization_member
+  GET repos/Hoosiertom50/golden-thread-quest
+Only read operations were issued: yes; no write was attempted.
+
+PASS  the connection acts as Hoosiertom50
+PASS  the scopes are the expected ones
+PASS  every expected repository is reachable
+PASS  the safe read of Hoosiertom50/golden-thread-quest succeeded
+PASS  only read operations were issued
+PASS  no credential in this output (scanned 32 lines, 0 finding(s))
+RESULT: PASSED
+exit code: 0

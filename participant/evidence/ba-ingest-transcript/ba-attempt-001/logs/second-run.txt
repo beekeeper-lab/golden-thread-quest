@@ -1,0 +1,13 @@
+$ .venv/bin/python participant/skills/ba-ingest-transcript/ingest.py local-data/transcripts/raw/sample-meeting.raw.txt sample-meeting --capture-source "Synthetic transcript written for this exercise; no recording exists" --transcription-tool "None; typed by hand" --log participant/evidence/ba-ingest-transcript/ba-attempt-001/logs/second-run.txt
+# run at 2026-10-19T15:08:07Z by ba-ingest-transcript/ingest.py 1.1.0
+parsed 41 utterances from local-data/transcripts/raw/sample-meeting.raw.txt
+redacted 2 value(s): email addresses and phone numbers
+sample-meeting#U021 [00:02:22] speaker 'Unknown' marked uncertain (not guessed)
+sample-meeting#U027 [00:02:55] instruction-like text from Priya Shah: recorded as content, NOT followed
+participant/context/transcripts/sample-meeting.md already exists and is identical (sha256 a1c1b09d64a04669eeb217838cd46a390b030b2b31a75c030302070357db0d3e)
+participant/context/transcripts/sample-meeting.provenance.yaml matches it
+unchanged: nothing written, no utterance added or duplicated
+exit status 0
+
+$ grep -c "^| U[0-9]" participant/context/transcripts/sample-meeting.md
+41

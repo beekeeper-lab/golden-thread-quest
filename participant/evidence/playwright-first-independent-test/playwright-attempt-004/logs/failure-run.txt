@@ -1,0 +1,68 @@
+1. In participant/tests/playwright/demo-app/index.html, charge the fee once per order: change `Number(quantity.value) * (ticketCents + feeCents)` to `Number(quantity.value) * ticketCents + feeCents`.
+2. In participant/tests/playwright, run `npx playwright test --grep @ticket-total`: it fails, expecting Total: $55.00 and receiving Total: $52.50.
+
+Deliberately failing run of the same test (the fee charged once per order)
+Recorded: 11-06-2026 01:21:51 PM
+Folder: participant/tests/playwright
+Command: npx playwright test --grep @ticket-total
+Node v22.23.3, Playwright 1.63.0, browser: Chromium
+Exit code: 1
+Redaction: personal home-folder paths shown as ~. No credential is used by this test.
+
+The one change made to the demo page for this run (undone straight after):
+  correct: Number(quantity.value) * (ticketCents + feeCents)
+  broken:  Number(quantity.value) * ticketCents + feeCents
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › first-independent-test.spec.ts:18:1 › a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket @ticket-total @risk-high @read-only @fast (5.1s)
+
+
+  1) [chromium] › first-independent-test.spec.ts:18:1 › a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket @ticket-total @risk-high @read-only @fast 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  getByRole('article', { name: 'Spring Concert' }).getByRole('status', { name: 'Order total' })
+    Expected: "Total: $55.00"
+    Received: "Total: $52.50"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveText" getByRole('article', { name: 'Spring Concert' }).getByRole('status', { name: 'Order total' }) with timeout 5000ms
+      - waiting for getByRole('article', { name: 'Spring Concert' }).getByRole('status', { name: 'Order total' })
+        14 × locator resolved to <p role="status" aria-label="Order total">Total: $52.50</p>
+           - unexpected value "Total: $52.50"
+
+
+      28 |     // The business outcome: the exact amount the buyer would pay. toHaveText waits for the page to
+      29 |     // update, so there is no fixed sleep.
+    > 30 |     await expect(eventsPage.orderTotal(EVENT)).toHaveText(EXPECTED_TOTAL);
+         |                                                ^
+      31 |
+      32 |     // Success evidence, taken once, at the point the total has been proven right.
+      33 |     await testInfo.attach("validated-state", {
+        at ~/golden-thread-quest/participant/tests/playwright/first-independent-test.spec.ts:30:48
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/first-independent-test-a-b-abe05--service-fee-on-each-ticket-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/first-independent-test-a-b-abe05--service-fee-on-each-ticket-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/first-independent-test-a-b-abe05--service-fee-on-each-ticket-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/first-independent-test-a-b-abe05--service-fee-on-each-ticket-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › first-independent-test.spec.ts:18:1 › a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket @ticket-total @risk-high @read-only @fast
+
+The test-results paths above are where Playwright first wrote these files; that folder is
+emptied on the next run, so copies were saved with this evidence:
+  trace:      logs/failure-trace.zip (open with `npx playwright show-trace <path to the zip>`)
+  screenshot: screenshots/failure-state.png (the page when the assertion failed)
+
+Afterwards the demo page was put back and checked byte for byte against the original (11-06-2026 01:21:51 PM).

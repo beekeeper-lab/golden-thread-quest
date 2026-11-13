@@ -1,0 +1,5 @@
+schema_version: 1
+quest_id: github-verify-connection
+attempt_id: github-attempt-001
+created_at: '2026-11-05T22:19:40Z'
+artifacts: []

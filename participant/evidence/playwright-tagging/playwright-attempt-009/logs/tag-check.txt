@@ -1,0 +1,170 @@
+Tag check: every test against the tag scheme (participant/context/playwright/tag-scheme.md), the
+durations of a real run against each duration tag's limit, and the check rejecting badly tagged tests.
+Started: 11-12-2026 12:49:05 PM
+Node v22.23.3, Playwright 1.63.0, browser: Chromium
+Application: the local Tixly demo app (made-up data, 127.0.0.1 only), started by Playwright.
+Credential: the orders service's API key, a new made-up random value for this recording, set in the
+environment (TIXLY_API_KEY) for every command and never shown.
+Redaction: personal home-folder paths shown as ~, the recording's temporary folder as <temporary
+folder>. Blank lines are left out of command output. Lines marked "Recording script:" are notes
+written by the script that recorded this log (it is not one of the handed-in tools).
+
+====================================================================================================
+Part 1: the real project, its tags and the durations of a real run
+====================================================================================================
+
+--- All tests, with a JSON report of the run
+Recorded: 11-12-2026 12:49:12 PM
+Folder: participant/tests/playwright
+Command: PLAYWRIGHT_JSON_OUTPUT_FILE=<temporary folder>/run.json npx playwright test --reporter=list,json
+Exit code: 0
+
+  4 skipped
+  23 passed (6.9s)
+
+--- The tag check, with the run's durations
+Recorded: 11-12-2026 12:49:13 PM
+Folder: participant/tests/playwright
+Command: node tools/tagging-check.ts --results <temporary folder>/run.json
+Exit code: 0
+
+Scheme: Feature (@events @order-review @saved-orders); Risk (@risk-high @risk-medium @risk-low); Read or write (@writes-data @read-only); Layer (@layer-ui @layer-api @layer-mixed); Duration (@fast @slow); suite (optional): @locator-comparison @data-isolated @data-coupled @api-assisted @ui-only.
+Duration limits: @fast 2 s, @slow 30 s.
+Tests found: 27.
+ok      api-assisted.spec.ts:15 "a buyer cancels an order (API-assisted: API setup, cancel on screen, API check)"  @saved-orders @risk-high @writes-data @layer-mixed @fast @api-assisted
+ok      brittle.spec.ts:10 "a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (brittle locators)"  @events @risk-high @read-only @layer-ui @fast @locator-comparison
+ok      cleanup-proof.spec.ts:12 "proof 1: a test that fails after creating its order still has it cancelled by its cleanup"  @saved-orders @risk-low @writes-data @layer-api @fast
+ok      cleanup-proof.spec.ts:23 "proof 2: an order the test never got to note is cancelled by the run-end safety net"  @saved-orders @risk-low @writes-data @layer-ui @fast
+ok      coupled.spec.ts:18 "a buyer saves an order for Test User and sees it in Your orders (coupled)"  @saved-orders @risk-high @writes-data @layer-ui @fast @data-coupled
+ok      coupled.spec.ts:32 "a buyer cancels Test User's order (coupled: relies on the order the test above saved)"  @saved-orders @risk-high @writes-data @layer-ui @fast @data-coupled
+ok      first-independent-test.spec.ts:18 "a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket"  @events @risk-high @read-only @layer-ui @fast
+ok      isolated.spec.ts:10 "a buyer saves an order and sees it in Your orders (isolated)"  @saved-orders @risk-high @writes-data @layer-ui @fast @data-isolated
+ok      isolated.spec.ts:53 "a buyer cancels their own order (isolated: makes the order it cancels)"  @saved-orders @risk-high @writes-data @layer-mixed @fast @data-isolated
+ok      isolated.spec.ts:71 "cancelling one buyer's order leaves another buyer's order in Your orders (isolated)"  @saved-orders @risk-high @writes-data @layer-mixed @fast @data-isolated
+ok      model-usage.spec.ts:21 "a buyer reviewing 2 Spring Concert tickets sees the event, 2 tickets and a total of $55.00"  @order-review @risk-high @read-only @layer-ui @fast
+ok      model-usage.spec.ts:38 "a buyer who goes back from the review to choose 4 tickets instead sees the new total of $110.00"  @order-review @risk-high @read-only @layer-ui @fast
+ok      model-usage.spec.ts:54 "a review link asking for 0, a fraction, too many or no whole number of tickets explains the 1 to 6 limit instead of showing a total"  @order-review @risk-medium @read-only @layer-ui @fast
+ok      model-usage.spec.ts:71 "a review link naming an event that isn't on sale says so instead of showing a total"  @order-review @risk-medium @read-only @layer-ui @fast
+ok      model-usage.spec.ts:88 "a buyer who uses the browser's Back button from the review still sees 3 tickets and $82.50"  @order-review @risk-high @read-only @layer-ui @fast
+ok      model-usage.spec.ts:104 "review links for 1 and for 6 tickets, the smallest and largest orders, show totals of $27.50 and $165.00"  @order-review @risk-high @read-only @layer-ui @fast
+ok      stable.spec.ts:11 "a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (stable locators)"  @events @risk-high @read-only @layer-ui @fast @locator-comparison
+ok      tagged.spec.ts:16 "the events page shows the Tixly name at the top"  @events @risk-low @read-only @layer-ui @fast
+ok      tagged.spec.ts:26 "choosing 3 tickets on the events page shows a total of $82.50"  @events @risk-high @read-only @layer-ui @fast
+ok      tagged.spec.ts:37 "the review page for 4 tickets shows a total of $110.00"  @order-review @risk-high @read-only @layer-ui @fast
+ok      tagged.spec.ts:48 "a review link for an event not on sale says so instead of showing a total"  @order-review @risk-medium @read-only @layer-ui @fast
+ok      tagged.spec.ts:63 "the orders service refuses an order for 7 tickets"  @saved-orders @risk-high @writes-data @layer-api @fast
+ok      tagged.spec.ts:87 "the orders service lists every saved order that isn't test data, exactly as saved"  @saved-orders @risk-medium @read-only @layer-api @fast
+ok      tagged.spec.ts:102 "an order created through the API shows the right total on Your orders"  @saved-orders @risk-high @writes-data @layer-mixed @fast
+ok      tagged.spec.ts:115 "cancelling still shows the right result on a slow connection"  @saved-orders @risk-high @writes-data @layer-mixed @slow
+ok      tests/smoke.spec.ts:6 "a visitor sees the Spring Concert and its ticket price on the Tixly home page"  @events @risk-high @read-only @layer-ui @fast
+ok      ui-only.spec.ts:13 "a buyer cancels an order (UI-only: saved and cancelled through the screen)"  @saved-orders @risk-high @writes-data @layer-ui @fast @ui-only
+Durations (from run.json):
+  0.44 s within @fast (2 s): api-assisted.spec.ts:15 "a buyer cancels an order (API-assisted: API setup, cancel on screen, API check)"
+  0.34 s within @fast (2 s): brittle.spec.ts:10 "a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (brittle locators)"
+  skipped in that run, so not timed: cleanup-proof.spec.ts:12 "proof 1: a test that fails after creating its order still has it cancelled by its cleanup"
+  skipped in that run, so not timed: cleanup-proof.spec.ts:23 "proof 2: an order the test never got to note is cancelled by the run-end safety net"
+  skipped in that run, so not timed: coupled.spec.ts:18 "a buyer saves an order for Test User and sees it in Your orders (coupled)"
+  skipped in that run, so not timed: coupled.spec.ts:32 "a buyer cancels Test User's order (coupled: relies on the order the test above saved)"
+  0.43 s within @fast (2 s): first-independent-test.spec.ts:18 "a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket"
+  0.57 s within @fast (2 s): isolated.spec.ts:10 "a buyer saves an order and sees it in Your orders (isolated)"
+  0.23 s within @fast (2 s): isolated.spec.ts:53 "a buyer cancels their own order (isolated: makes the order it cancels)"
+  0.78 s within @fast (2 s): isolated.spec.ts:71 "cancelling one buyer's order leaves another buyer's order in Your orders (isolated)"
+  0.42 s within @fast (2 s): model-usage.spec.ts:21 "a buyer reviewing 2 Spring Concert tickets sees the event, 2 tickets and a total of $55.00"
+  0.31 s within @fast (2 s): model-usage.spec.ts:38 "a buyer who goes back from the review to choose 4 tickets instead sees the new total of $110.00"
+  0.28 s within @fast (2 s): model-usage.spec.ts:54 "a review link asking for 0, a fraction, too many or no whole number of tickets explains the 1 to 6 limit instead of showing a total"
+  0.12 s within @fast (2 s): model-usage.spec.ts:71 "a review link naming an event that isn't on sale says so instead of showing a total"
+  0.18 s within @fast (2 s): model-usage.spec.ts:88 "a buyer who uses the browser's Back button from the review still sees 3 tickets and $82.50"
+  0.12 s within @fast (2 s): model-usage.spec.ts:104 "review links for 1 and for 6 tickets, the smallest and largest orders, show totals of $27.50 and $165.00"
+  0.34 s within @fast (2 s): stable.spec.ts:11 "a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (stable locators)"
+  0.12 s within @fast (2 s): tagged.spec.ts:16 "the events page shows the Tixly name at the top"
+  0.12 s within @fast (2 s): tagged.spec.ts:26 "choosing 3 tickets on the events page shows a total of $82.50"
+  0.10 s within @fast (2 s): tagged.spec.ts:37 "the review page for 4 tickets shows a total of $110.00"
+  0.09 s within @fast (2 s): tagged.spec.ts:48 "a review link for an event not on sale says so instead of showing a total"
+  0.03 s within @fast (2 s): tagged.spec.ts:63 "the orders service refuses an order for 7 tickets"
+  0.01 s within @fast (2 s): tagged.spec.ts:87 "the orders service lists every saved order that isn't test data, exactly as saved"
+  0.11 s within @fast (2 s): tagged.spec.ts:102 "an order created through the API shows the right total on Your orders"
+  5.08 s within @slow (30 s): tagged.spec.ts:115 "cancelling still shows the right result on a slow connection"
+  0.15 s within @fast (2 s): tests/smoke.spec.ts:6 "a visitor sees the Spring Concert and its ticket price on the Tixly home page"
+  0.42 s within @fast (2 s): ui-only.spec.ts:13 "a buyer cancels an order (UI-only: saved and cancelled through the screen)"
+PASS: all 27 tests carry one tag from each dimension and only tags from the scheme, and none of the 23 timed tests ran over its duration limit (4 skipped and 0 not in the report, so not timed).
+
+
+====================================================================================================
+Part 2: three badly tagged tests, planted in a copy of the project (never in the real one)
+====================================================================================================
+
+Recording script: the copy's tests/playwright/badly-tagged.spec.ts, added to a copy of the project:
+    import { test } from "@playwright/test";
+    
+    // PLANTED for the check's demonstration: three badly tagged tests (never part of the real project).
+    test("planted: tagged smoke, a tag the scheme does not have", { tag: ["@events", "@risk-low", "@read-only", "@layer-ui", "@fast", "@smoke"] }, async () => {});
+    test("planted: missing its layer tag", { tag: ["@events", "@risk-low", "@read-only", "@fast"] }, async () => {});
+    test("planted: two risk tags", { tag: ["@events", "@risk-low", "@risk-high", "@read-only", "@layer-ui", "@fast"] }, async () => {});
+
+--- The tag check on the copy (tags only)
+Recorded: 11-12-2026 12:49:14 PM
+Folder: <temporary folder>/bad-tags/tests/playwright
+Command: node tools/tagging-check.ts
+Exit code: 1
+
+Tests found: 30.
+PROBLEM badly-tagged.spec.ts:4 "planted: tagged smoke, a tag the scheme does not have"
+  - unknown tag @smoke (not in the scheme)
+PROBLEM badly-tagged.spec.ts:5 "planted: missing its layer tag"
+  - no layer tag
+PROBLEM badly-tagged.spec.ts:6 "planted: two risk tags"
+  - more than one risk tag (@risk-low, @risk-high)
+FAIL: 3 problem(s) in the tests above.
+
+Recording script: only the check's summary lines, problems and result are kept above; the 27 real tests were all "ok" as in part 1.
+
+====================================================================================================
+Part 3: a test tagged @fast that takes 2.5 seconds, planted in a copy of the project
+====================================================================================================
+
+Recording script: the copy's tests/playwright/over-limit.spec.ts:
+    import { test } from "@playwright/test";
+    
+    // PLANTED for the check's demonstration: tagged @fast (2 seconds at most) but takes 2.5 seconds.
+    test("planted: tagged fast but takes 2.5 seconds", { tag: ["@events", "@risk-low", "@read-only", "@layer-ui", "@fast"] }, async ({ page }) => {
+      await page.waitForTimeout(2500);
+    });
+
+--- Run the planted test, with a JSON report
+Recorded: 11-12-2026 12:49:18 PM
+Folder: <temporary folder>/over-limit/tests/playwright
+Command: TIXLY_DEMO_PORT=4251 PLAYWRIGHT_JSON_OUTPUT_FILE=<temporary folder>/over-limit.json npx playwright test over-limit.spec.ts --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › over-limit.spec.ts:4:1 › planted: tagged fast but takes 2.5 seconds @events @risk-low @read-only @layer-ui @fast (2.6s)
+  1 passed (3.2s)
+
+--- The tag check on that copy, with that run's durations
+Recorded: 11-12-2026 12:49:18 PM
+Folder: <temporary folder>/over-limit/tests/playwright
+Command: node tools/tagging-check.ts --results <temporary folder>/over-limit.json
+Exit code: 1
+
+Tests found: 28.
+PROBLEM over-limit.spec.ts:4 "planted: tagged fast but takes 2.5 seconds"
+  - took 2.59 s, over the 2 s limit of @fast
+FAIL: 1 problem(s) in the tests above.
+
+Recording script: only the planted test's lines, the problems and the result are kept above; the other tests weren't run in this copy, so they are listed as not timed.
+
+====================================================================================================
+Part 4: the real orders file, the key and the credential scan
+====================================================================================================
+
+Recording script: demo-app/data/orders.json afterwards is byte for byte the committed file (the three real orders): yes
+Recording script: the key's actual value in the 7 command outputs of this recording: found in 0
+
+--- The repository's credential scan of this log (everything above)
+Recorded: 11-12-2026 12:49:19 PM
+Folder: the repository root
+Command: .venv/bin/python tools/secret_scan.py participant/evidence/playwright-tagging/playwright-attempt-009/logs/tag-check.txt
+Exit code: 0
+
+secret-scan: 1 files scanned, 0 finding(s)
+
+Finished: 11-12-2026 12:49:19 PM

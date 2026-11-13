@@ -1,0 +1,60 @@
+$ node --version
+v22.23.3
+$ node participant/tests/playwright/tools/automation-candidates-check.ts
+automation-candidates-check 1.0.0
+criteria: participant/context/playwright/automation-criteria.md (6 criteria, 6 rule steps)
+decisions: participant/context/playwright/candidate-decisions.md (15 ideas: 8 automate, 6 manual, 1 drop)
+brief: participant/context/playwright/second-person-brief.md (10 ideas)
+second person: participant/context/playwright/second-person-decisions.md (10 decisions)
+PASS  the files are in the expected form
+PASS  there are at least 12 ideas (15), each with exactly one decision of automate, manual, drop
+PASS  every decision names the criteria behind it and gives a reason of at least 8 words
+PASS  every decision is the one the written rule gives for its answers, at the step it names
+PASS  at least 3 ideas are not automated (7: I-05, I-06, I-07, I-09, I-11, I-13, I-14)
+PASS  every manual idea says how it will be checked instead (6 manual)
+PASS  no rule step decides on cost (how easy it is to automate) alone
+PASS  every rule step decides at least one combination of answers, so none is left unused
+PASS  the brief gives the second person the criteria word for word and 10 ideas' facts exactly as decided, with none of my answers
+PASS  a second person decided 10 ideas independently; 10 of 10 match mine (100%; the quest asks for at least 75%)
+      decided by Gregg Reed on 11-05-2026, given participant/context/playwright/second-person-brief.md
+      I-01: theirs automate, mine automate
+      I-02: theirs automate, mine automate
+      I-04: theirs automate, mine automate
+      I-05: theirs manual, mine manual
+      I-06: theirs manual, mine manual
+      I-07: theirs manual, mine manual
+      I-11: theirs drop, mine drop
+      I-12: theirs automate, mine automate
+      I-13: theirs manual, mine manual
+      I-14: theirs manual, mine manual
+RESULT: PASSED
+
+# The first second person's attempt, from the brief they were given (expected to fail; see PROOF.md):
+$ node participant/tests/playwright/tools/automation-candidates-check.ts --brief participant/context/playwright/second-person-brief-v1.md --second participant/context/playwright/second-person-decisions-v1.md
+automation-candidates-check 1.0.0
+criteria: participant/context/playwright/automation-criteria.md (6 criteria, 6 rule steps)
+decisions: participant/context/playwright/candidate-decisions.md (15 ideas: 8 automate, 6 manual, 1 drop)
+brief: participant/context/playwright/second-person-brief-v1.md (10 ideas)
+second person: participant/context/playwright/second-person-decisions-v1.md (10 decisions)
+PASS  the files are in the expected form
+PASS  there are at least 12 ideas (15), each with exactly one decision of automate, manual, drop
+PASS  every decision names the criteria behind it and gives a reason of at least 8 words
+PASS  every decision is the one the written rule gives for its answers, at the step it names
+PASS  at least 3 ideas are not automated (7: I-05, I-06, I-07, I-09, I-11, I-13, I-14)
+PASS  every manual idea says how it will be checked instead (6 manual)
+PASS  no rule step decides on cost (how easy it is to automate) alone
+PASS  every rule step decides at least one combination of answers, so none is left unused
+PASS  the brief gives the second person the criteria word for word and 10 ideas' facts exactly as decided, with none of my answers
+FAIL  a second person decided 10 ideas independently; 4 of 10 match mine (40%; the quest asks for at least 75%)
+      decided by a colleague on 11-03-2026, given participant/context/playwright/second-person-brief-v1.md
+      I-01: theirs automate, mine automate
+      I-02: theirs manual, mine automate  (differs)
+      I-04: theirs automate, mine automate
+      I-05: theirs automate, mine manual  (differs)
+      I-06: theirs manual, mine manual
+      I-07: theirs automate, mine manual  (differs)
+      I-11: theirs automate, mine drop  (differs)
+      I-12: theirs automate, mine automate
+      I-13: theirs automate, mine manual  (differs)
+      I-14: theirs automate, mine manual  (differs)
+RESULT: FAILED

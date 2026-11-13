@@ -1,0 +1,187 @@
+List run: every selection in the table, listed without running and checked against its expected tests.
+Started: 11-13-2026 09:39:56 AM
+Node v22.23.3, Playwright 1.63.0, browser: Chromium
+Application: the local Tixly demo app (made-up data, 127.0.0.1 only), started by Playwright when tests run.
+Credential: the orders service's API key, a new made-up random value for this recording, set in the
+environment (TIXLY_API_KEY) for every command and never shown.
+Selections: participant/context/playwright/selections.md; tags: participant/context/playwright/tag-scheme.md.
+Redaction: personal home-folder paths shown as ~. Blank lines are left out of command output. Lines
+marked "Recording script:" are notes written by the script that recorded this log (it is not one of
+the handed-in tools).
+
+--- Selection every-change, listed only
+Recorded: 11-13-2026 09:39:57 AM
+Folder: participant/tests/playwright
+Command: node tools/select.ts every-change --list-only
+Exit code: 0
+
+Selection: every-change
+Purpose:   Quick feedback on every change: every test that takes at most 2 seconds.
+Expression: @fast
+Command:   npx playwright test --grep '(?<!\S)@fast(?!\S)'
+Listed (26), without running:
+  api-assisted.spec.ts › a buyer cancels an order (API-assisted: API setup, cancel on screen, API check)
+  brittle.spec.ts › a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (brittle locators)
+  cleanup-proof.spec.ts › proof 1: a test that fails after creating its order still has it cancelled by its cleanup
+  cleanup-proof.spec.ts › proof 2: an order the test never got to note is cancelled by the run-end safety net
+  coupled.spec.ts › a buyer saves an order for Test User and sees it in Your orders (coupled)
+  coupled.spec.ts › a buyer cancels Test User's order (coupled: relies on the order the test above saved)
+  first-independent-test.spec.ts › a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket
+  isolated.spec.ts › a buyer saves an order and sees it in Your orders (isolated)
+  isolated.spec.ts › a buyer cancels their own order (isolated: makes the order it cancels)
+  isolated.spec.ts › cancelling one buyer's order leaves another buyer's order in Your orders (isolated)
+  model-usage.spec.ts › a buyer reviewing 2 Spring Concert tickets sees the event, 2 tickets and a total of $55.00
+  model-usage.spec.ts › a buyer who goes back from the review to choose 4 tickets instead sees the new total of $110.00
+  model-usage.spec.ts › a review link asking for 0, a fraction, too many or no whole number of tickets explains the 1 to 6 limit instead of showing a total
+  model-usage.spec.ts › a review link naming an event that isn't on sale says so instead of showing a total
+  model-usage.spec.ts › a buyer who uses the browser's Back button from the review still sees 3 tickets and $82.50
+  model-usage.spec.ts › review links for 1 and for 6 tickets, the smallest and largest orders, show totals of $27.50 and $165.00
+  stable.spec.ts › a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (stable locators)
+  tagged.spec.ts › the events page shows the Tixly name at the top
+  tagged.spec.ts › choosing 3 tickets on the events page shows a total of $82.50
+  tagged.spec.ts › the review page for 4 tickets shows a total of $110.00
+  tagged.spec.ts › a review link for an event not on sale says so instead of showing a total
+  tagged.spec.ts › the orders service refuses an order for 7 tickets
+  tagged.spec.ts › the orders service lists every saved order that isn't test data, exactly as saved
+  tagged.spec.ts › an order created through the API shows the right total on Your orders
+  tests/smoke.spec.ts › a visitor sees the Spring Concert and its ticket price on the Tixly home page
+  ui-only.spec.ts › a buyer cancels an order (UI-only: saved and cancelled through the screen)
+The listing matches the 26 expected tests.
+
+--- Selection safe-pipeline, listed only
+Recorded: 11-13-2026 09:39:58 AM
+Folder: participant/tests/playwright
+Command: node tools/select.ts safe-pipeline --list-only
+Exit code: 0
+
+Selection: safe-pipeline
+Purpose:   The quest's scenario: a pipeline step that runs only fast checks that never change saved data.
+Expression: @fast and @read-only
+Command:   npx playwright test --grep '^(?=[\s\S]*(?<!\S)@fast(?!\S))(?=[\s\S]*(?<!\S)@read-only(?!\S))'
+Listed (15), without running:
+  brittle.spec.ts › a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (brittle locators)
+  first-independent-test.spec.ts › a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket
+  model-usage.spec.ts › a buyer reviewing 2 Spring Concert tickets sees the event, 2 tickets and a total of $55.00
+  model-usage.spec.ts › a buyer who goes back from the review to choose 4 tickets instead sees the new total of $110.00
+  model-usage.spec.ts › a review link asking for 0, a fraction, too many or no whole number of tickets explains the 1 to 6 limit instead of showing a total
+  model-usage.spec.ts › a review link naming an event that isn't on sale says so instead of showing a total
+  model-usage.spec.ts › a buyer who uses the browser's Back button from the review still sees 3 tickets and $82.50
+  model-usage.spec.ts › review links for 1 and for 6 tickets, the smallest and largest orders, show totals of $27.50 and $165.00
+  stable.spec.ts › a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (stable locators)
+  tagged.spec.ts › the events page shows the Tixly name at the top
+  tagged.spec.ts › choosing 3 tickets on the events page shows a total of $82.50
+  tagged.spec.ts › the review page for 4 tickets shows a total of $110.00
+  tagged.spec.ts › a review link for an event not on sale says so instead of showing a total
+  tagged.spec.ts › the orders service lists every saved order that isn't test data, exactly as saved
+  tests/smoke.spec.ts › a visitor sees the Spring Concert and its ticket price on the Tixly home page
+The listing matches the 15 expected tests.
+
+--- Selection before-saving, listed only
+Recorded: 11-13-2026 09:40:00 AM
+Folder: participant/tests/playwright
+Command: node tools/select.ts before-saving --list-only
+Exit code: 0
+
+Selection: before-saving
+Purpose:   Everything a buyer sees before saving an order: the events page and the review page.
+Expression: @events or @order-review
+Command:   npx playwright test --grep '(?<!\S)@events(?!\S)|(?<!\S)@order-review(?!\S)'
+Listed (14), without running:
+  brittle.spec.ts › a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (brittle locators)
+  first-independent-test.spec.ts › a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket
+  model-usage.spec.ts › a buyer reviewing 2 Spring Concert tickets sees the event, 2 tickets and a total of $55.00
+  model-usage.spec.ts › a buyer who goes back from the review to choose 4 tickets instead sees the new total of $110.00
+  model-usage.spec.ts › a review link asking for 0, a fraction, too many or no whole number of tickets explains the 1 to 6 limit instead of showing a total
+  model-usage.spec.ts › a review link naming an event that isn't on sale says so instead of showing a total
+  model-usage.spec.ts › a buyer who uses the browser's Back button from the review still sees 3 tickets and $82.50
+  model-usage.spec.ts › review links for 1 and for 6 tickets, the smallest and largest orders, show totals of $27.50 and $165.00
+  stable.spec.ts › a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (stable locators)
+  tagged.spec.ts › the events page shows the Tixly name at the top
+  tagged.spec.ts › choosing 3 tickets on the events page shows a total of $82.50
+  tagged.spec.ts › the review page for 4 tickets shows a total of $110.00
+  tagged.spec.ts › a review link for an event not on sale says so instead of showing a total
+  tests/smoke.spec.ts › a visitor sees the Spring Concert and its ticket price on the Tixly home page
+The listing matches the 14 expected tests.
+
+--- Selection shared-environment, listed only
+Recorded: 11-13-2026 09:40:01 AM
+Folder: participant/tests/playwright
+Command: node tools/select.ts shared-environment --list-only
+Exit code: 0
+
+Selection: shared-environment
+Purpose:   Safe to run where other people's data lives: every test that doesn't change saved data.
+Expression: not @writes-data
+Command:   npx playwright test --grep-invert '(?<!\S)@writes-data(?!\S)'
+Listed (15), without running:
+  brittle.spec.ts › a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (brittle locators)
+  first-independent-test.spec.ts › a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket
+  model-usage.spec.ts › a buyer reviewing 2 Spring Concert tickets sees the event, 2 tickets and a total of $55.00
+  model-usage.spec.ts › a buyer who goes back from the review to choose 4 tickets instead sees the new total of $110.00
+  model-usage.spec.ts › a review link asking for 0, a fraction, too many or no whole number of tickets explains the 1 to 6 limit instead of showing a total
+  model-usage.spec.ts › a review link naming an event that isn't on sale says so instead of showing a total
+  model-usage.spec.ts › a buyer who uses the browser's Back button from the review still sees 3 tickets and $82.50
+  model-usage.spec.ts › review links for 1 and for 6 tickets, the smallest and largest orders, show totals of $27.50 and $165.00
+  stable.spec.ts › a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (stable locators)
+  tagged.spec.ts › the events page shows the Tixly name at the top
+  tagged.spec.ts › choosing 3 tickets on the events page shows a total of $82.50
+  tagged.spec.ts › the review page for 4 tickets shows a total of $110.00
+  tagged.spec.ts › a review link for an event not on sale says so instead of showing a total
+  tagged.spec.ts › the orders service lists every saved order that isn't test data, exactly as saved
+  tests/smoke.spec.ts › a visitor sees the Spring Concert and its ticket price on the Tixly home page
+The listing matches the 15 expected tests.
+
+--- Selection high-risk-safe, listed only
+Recorded: 11-13-2026 09:40:02 AM
+Folder: participant/tests/playwright
+Command: node tools/select.ts high-risk-safe --list-only
+Exit code: 0
+
+Selection: high-risk-safe
+Purpose:   The money checks that can run anywhere: high-risk tests that don't change saved data.
+Expression: @risk-high and not @writes-data
+Command:   npx playwright test --grep '(?<!\S)@risk-high(?!\S)' --grep-invert '(?<!\S)@writes-data(?!\S)'
+Listed (10), without running:
+  brittle.spec.ts › a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (brittle locators)
+  first-independent-test.spec.ts › a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket
+  model-usage.spec.ts › a buyer reviewing 2 Spring Concert tickets sees the event, 2 tickets and a total of $55.00
+  model-usage.spec.ts › a buyer who goes back from the review to choose 4 tickets instead sees the new total of $110.00
+  model-usage.spec.ts › a buyer who uses the browser's Back button from the review still sees 3 tickets and $82.50
+  model-usage.spec.ts › review links for 1 and for 6 tickets, the smallest and largest orders, show totals of $27.50 and $165.00
+  stable.spec.ts › a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (stable locators)
+  tagged.spec.ts › choosing 3 tickets on the events page shows a total of $82.50
+  tagged.spec.ts › the review page for 4 tickets shows a total of $110.00
+  tests/smoke.spec.ts › a visitor sees the Spring Concert and its ticket price on the Tixly home page
+The listing matches the 10 expected tests.
+
+--- Selection orders-service, listed only
+Recorded: 11-13-2026 09:40:03 AM
+Folder: participant/tests/playwright
+Command: node tools/select.ts orders-service --list-only
+Exit code: 0
+
+Selection: orders-service
+Purpose:   The orders service alone, without a browser.
+Expression: @saved-orders and @layer-api
+Command:   npx playwright test --grep '^(?=[\s\S]*(?<!\S)@saved-orders(?!\S))(?=[\s\S]*(?<!\S)@layer-api(?!\S))'
+Listed (3), without running:
+  cleanup-proof.spec.ts › proof 1: a test that fails after creating its order still has it cancelled by its cleanup
+  tagged.spec.ts › the orders service refuses an order for 7 tickets
+  tagged.spec.ts › the orders service lists every saved order that isn't test data, exactly as saved
+The listing matches the 3 expected tests.
+
+--- Selection slow-read-only, listed only
+Recorded: 11-13-2026 09:40:05 AM
+Folder: participant/tests/playwright
+Command: node tools/select.ts slow-read-only --list-only
+Exit code: 1
+
+Selection: slow-read-only
+Purpose:   Matches nothing on purpose: the only slow test changes data. It must be reported as an error, never as a pass.
+Expression: @slow and @read-only
+Command:   npx playwright test --grep '^(?=[\s\S]*(?<!\S)@slow(?!\S))(?=[\s\S]*(?<!\S)@read-only(?!\S))'
+Listed (0), without running:
+ERROR: selection "slow-read-only" matched no tests, so nothing was run. An empty selection is never a pass.
+
+Recording script: the repository's credential scan of both logs: secret-scan: 2 files scanned, 0 finding(s)
+Finished: 11-13-2026 09:40:05 AM

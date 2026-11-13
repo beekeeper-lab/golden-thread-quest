@@ -1,0 +1,17 @@
+schema_version: 1
+submission_id: submission-20261105152208-467163
+quest_id: playwright-automation-candidates
+quest_version: 1
+attempt_id: playwright-attempt-002
+content_hash: sha256:1f7cfdf8d6a8cc565b2c2fe7b560c9471b05911a6989eca30db3a1dd2047e30b
+evidence_hash: sha256:bac4964a9f5639f6c3804a1d79474820a41878f2e294fa3d1501f28e99908d37
+submitted_at: '2026-11-05T15:22:08Z'
+submitted_by: thomascarter
+secret_scan_clean: true
+proof_files:
+- path: participant/context/playwright/automation-criteria.md
+  digest: sha256:93388d4cf3039463d291be840439a53bc978f9a25b7a632330434bb45e72af13
+- path: participant/context/playwright/candidate-decisions.md
+  digest: sha256:ec39faf12dea9e061c657fa5b1cdb2cdf58a5ef5665e5bec2d154bb34492a5a3
+- path: participant/tests/playwright/tools/automation-candidates-check.ts
+  digest: sha256:1a06bebeebb518b2f1bccc86e9a7b7e41f3b108bdb80428db070962753e93559
