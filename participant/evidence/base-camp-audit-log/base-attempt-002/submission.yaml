@@ -1,0 +1,15 @@
+schema_version: 1
+submission_id: submission-20261111173648-ad8ba4
+quest_id: base-camp-audit-log
+quest_version: 1
+attempt_id: base-attempt-002
+content_hash: sha256:cf8119038bb8765cf210eb30185d64cded0708b04f74534eda9c50a5e8e29b25
+evidence_hash: sha256:80ab6c0c316e16bd1c19515058e1faf1e0e26f6d210472d2478fa5ef9b560bef
+submitted_at: '2026-11-11T17:36:48Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/audit-log-all-events.md
+  digest: sha256:3b064fb32b9f32f63406d097c1cbcf094904d7cd7b308b7700255bcbbf1c3f8f
+- path: participant/context/audit-log-format.md
+  digest: sha256:1fed15bbe8576f47f7428e0ace33414010331d9b27642c1f2cba63989d7c8f4f

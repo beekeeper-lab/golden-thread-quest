@@ -1,0 +1,19 @@
+{
+  "board": "DEMO",
+  "changes": [
+    {
+      "action": "update",
+      "id": "DEMO-4",
+      "fields": {
+        "title": "Warn before closing a story with unsaved edits"
+      }
+    },
+    {
+      "action": "update",
+      "id": "DEMO-5",
+      "fields": {
+        "status": "done"
+      }
+    }
+  ]
+}

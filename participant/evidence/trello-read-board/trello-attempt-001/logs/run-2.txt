@@ -1,0 +1,14 @@
+trello-sync: signed-in member resolved from Trello: 559966706fa3a2b338bfd681
+trello-sync: board resolved from configuration: 'GTQ Sandbox' (id 6afdf376f8b9111df7e27f99)
+trello-sync: read from Trello: 4 lists, 7 cards (2 archived), 1 checklists, 3 comments
+trello-sync: cards held: 8. This run: 0 new, 3 unchanged, 1 renamed, 1 moved, 0 reordered, 1 updated, 1 archived, 1 not returned
+trello-sync:   renamed: 'Fix login timeout' is now 'Fix sign-in timeout' [cr8GCZw8]. Same card, same record
+trello-sync:   moved: 'Search by title' [AhemHZ4a] from Review to Done
+trello-sync:   updated: 'Export report as PDF' [p6m0OaAc] (checklists)
+trello-sync:   archived in Trello: 'Write onboarding guide' [TjQwTg9X]. Kept, and marked archived
+trello-sync:   NOT RETURNED by Trello: 'Remove old banner' [g9ktKrWc]. It may be deleted, moved to another board, or hidden. Kept with its last known state
+trello-sync:   comments added to cards already held: 1
+trello-sync: card records written: 8, in participant/context/trello/cards
+trello-sync: index written: participant/context/trello/board-index.md
+trello-sync: last successful sync before this run: 2026-11-18T20:09:41Z. Now: 2026-11-18T20:13:01Z
+trello-sync: written: participant/context/trello/board.json

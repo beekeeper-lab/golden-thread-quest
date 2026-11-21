@@ -1,0 +1,55 @@
+{
+  "source": "intake",
+  "items": [
+    {
+      "source_id": "REQ-0001",
+      "title": "Replace hallway light fitting",
+      "body": "The fitting outside room 4 flickers. MARKER-BODY-01 swap it for the spare in the store cupboard."
+    },
+    {
+      "source_id": "REQ-0002",
+      "title": "Order printer paper",
+      "body": "Two boxes of plain white. MARKER-BODY-02 deliver to the front desk."
+    },
+    {
+      "source_id": "REQ-0003",
+      "title": "Fix squeaking door hinge",
+      "body": "Kitchen door, top hinge. MARKER-BODY-03 a drop of oil should do."
+    },
+    {
+      "source_id": "REQ-0004",
+      "title": "Update the visitor sign-in sheet",
+      "body": "Add a column for car registration and one for the host's name. MARKER-BODY-04B print thirty copies."
+    },
+    {
+      "source_id": "REQ-0005",
+      "title": "Book the meeting room for Friday",
+      "body": "Ten people, two hours after lunch. MARKER-BODY-05 projector needed."
+    },
+    {
+      "source_id": "REQ-0006",
+      "title": "Clear the gutter above the side entrance",
+      "body": "Leaves are blocking it. MARKER-BODY-06 ladder is in the shed."
+    },
+    {
+      "source_id": "REQ-0007",
+      "title": "Renew the fire extinguisher check",
+      "body": "Annual check is due this month. MARKER-BODY-07 four extinguishers in total."
+    },
+    {
+      "source_id": "REQ-0008",
+      "title": "Label the shelves in the store cupboard",
+      "body": "Shelf names agreed last week. MARKER-BODY-08 use the label printer."
+    },
+    {
+      "source_id": "REQ-0009",
+      "title": "Replace the kettle",
+      "body": "The old one trips the fuse. MARKER-BODY-09 budget is small."
+    },
+    {
+      "source_id": "REQ-0010",
+      "title": "Tidy the notice board",
+      "body": "Remove notices older than a month. MARKER-BODY-10 keep the fire plan."
+    }
+  ]
+}

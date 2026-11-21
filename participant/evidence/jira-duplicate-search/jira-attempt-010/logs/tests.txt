@@ -1,0 +1,38 @@
+test_a_bad_proposal_stops_the_search (test_search.TheCatalogIsNotChanged) ... ok
+test_a_hand_edited_catalog_is_not_searched (test_search.TheCatalogIsNotChanged) ... ok
+test_a_missing_catalog_or_folder_stops_the_search (test_search.TheCatalogIsNotChanged) ... ok
+test_a_stale_catalog_is_not_searched_and_not_rebuilt (test_search.TheCatalogIsNotChanged) ... ok
+test_a_title_only_proposal_can_be_searched (test_search.TheCatalogIsNotChanged) ... ok
+test_the_only_file_the_search_can_write_is_the_report (test_search.TheCatalogIsNotChanged) ... ok
+test_a_new_item_reports_none (test_search.TheFixture) ... ok
+test_a_same_title_unrelated_item_is_not_reported_as_a_duplicate (test_search.TheFixture) ... ok
+test_a_story_that_tells_the_tool_it_is_not_a_duplicate_is_still_found (test_search.TheFixture) ... ok
+test_a_true_duplicate_with_a_different_title_is_found (test_search.TheFixture) ... ok
+test_candidates_come_strongest_first (test_search.TheFixture) ... ok
+test_every_candidate_shows_all_five_signals_a_confidence_and_three_matches (test_search.TheFixture) ... ok
+test_it_says_a_person_decides (test_search.TheFixture) ... ok
+test_the_finished_duplicate_is_a_link_and_not_a_merge (test_search.TheFixture) ... ok
+test_the_near_duplicate_is_reported_as_overlap_and_not_as_the_same_work (test_search.TheFixture) ... ok
+test_the_search_changes_no_file_in_the_catalog_folder (test_search.TheFixture) ... ok
+test_a_report_of_none_says_none (test_search.TheReport) ... ok
+test_table_characters_in_a_title_stay_text_in_the_report (test_search.TheReport) ... ok
+test_the_report_cannot_be_written_over_the_catalog (test_search.TheReport) ... ok
+test_the_report_has_each_candidate_with_signals_confidence_and_recommendation (test_search.TheReport) ... ok
+test_the_same_search_writes_the_same_report (test_search.TheReport) ... ok
+test_a_description_needs_half_the_shorter_text_and_four_words (test_search.TheRules) ... ok
+test_a_finished_story_is_never_a_merge (test_search.TheRules) ... ok
+test_all_five_signals_is_the_top_score (test_search.TheRules) ... ok
+test_labels_and_components_ignore_letter_case (test_search.TheRules) ... ok
+test_parent_matches_by_key_or_by_id (test_search.TheRules) ... ok
+test_the_levels (test_search.TheRules) ... ok
+test_title_and_one_other_signal_is_not_a_candidate (test_search.TheRules) ... ok
+test_title_and_two_weak_signals_is_low_and_proceed (test_search.TheRules) ... ok
+test_two_signals_are_not_enough_however_strong (test_search.TheRules) ... ok
+test_weights_add_up_to_eleven_and_title_is_weakest (test_search.TheRules) ... ok
+test_what_cannot_be_compared_is_not_a_match (test_search.TheRules) ... ok
+test_words (test_search.TheRules) ... ok
+
+----------------------------------------------------------------------
+Ran 33 tests in 0.118s
+
+OK

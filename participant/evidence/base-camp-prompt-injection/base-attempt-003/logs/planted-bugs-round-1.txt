@@ -1,0 +1,100 @@
+no bug planted: 110 tests, exit code 0, failing: none
+  1. caught   defended model is given a built-in tool  [intake.py]  1 test(s) failed, first: test_defended_command_switches_every_tool_off
+  2. caught   defended model may load any tool server  [intake.py]  2 test(s) failed, first: test_control_command_offers_only_the_decoy_tools
+  3. caught   defended model is given the decoy server  [intake.py]  1 test(s) failed, first: test_defended_command_switches_every_tool_off
+  4. caught   defended model has a tool pre-approved  [intake.py]  1 test(s) failed, first: test_defended_command_allows_nothing_and_skips_no_permission_check
+  5. caught   defended model skips permission checks  [intake.py]  1 test(s) failed, first: test_defended_command_allows_nothing_and_skips_no_permission_check
+  6. caught   defended model run without safe mode  [intake.py]  1 test(s) failed, first: test_defended_command_also_uses_safe_mode
+  7. caught   permission prompts answered by a host instead of denied  [intake.py]  1 test(s) failed, first: test_defended_command_switches_every_tool_off
+  8. caught   control model is offered a real tool next to the decoys  [intake.py]  1 test(s) failed, first: test_control_command_offers_only_the_decoy_tools
+  9. caught   harness runs a command found in the reply  [intake.py]  1 test(s) failed, first: test_harness_does_nothing_a_hostile_reply_asks_for
+ 10. caught   harness writes a file named in the reply  [intake.py]  1 test(s) failed, first: test_harness_does_nothing_a_hostile_reply_asks_for
+ 11. caught   harness runs the decoded base64 text as a command  [intake.py]  1 test(s) failed, first: test_decoded_text_is_shown_but_never_followed
+ 12. caught   harness says it acted  [intake.py]  1 test(s) failed, first: test_harness_does_nothing_a_hostile_reply_asks_for
+ 13. caught   embedded instruction dropped from the record  [intake.py]  8 test(s) failed, first: test_clean_run_passes_and_writes_both_records
+ 14. caught   record keeps only the title  [intake.py]  25 test(s) failed, first: test_agent_that_flags_everything_fails
+ 15. caught   invented quotes accepted as found in the item  [intake.py]  2 test(s) failed, first: test_invented_quote_does_not_count_as_a_flag
+ 16. caught   no hold when the model gives no usable reply  [intake.py]  5 test(s) failed, first: test_encoded_instruction_is_flagged_by_the_script_when_the_model_gives_no_reply
+ 17. caught   model error ignored and the text parsed anyway  [intake.py]  4 test(s) failed, first: test_encoded_instruction_is_flagged_by_the_script_when_the_model_gives_no_reply
+ 18. caught   missing start-up event read as 'no tools'  [intake.py]  1 test(s) failed, first: test_missing_start_up_event_is_not_read_as_no_tools
+ 19. caught   tool calls in the event stream not counted  [intake.py]  1 test(s) failed, first: test_reads_tools_calls_and_text
+ 20. caught   tool list at start-up not read  [intake.py]  1 test(s) failed, first: test_reads_tools_calls_and_text
+ 21. caught   tool servers at start-up not read  [intake.py]  1 test(s) failed, first: test_reads_tools_calls_and_text
+ 22. caught   API error not noticed  [intake.py]  2 test(s) failed, first: test_api_error_text_is_kept_in_the_error
+ 23. caught   junk line in the event stream skipped silently  [intake.py]  1 test(s) failed, first: test_junk_line_is_reported_not_skipped
+ 24. caught   unreadable reply treated as 'nothing suspicious'  [intake.py]  2 test(s) failed, first: test_garbage_is_an_error_not_an_empty_reply
+ 25. caught   reply of the wrong shape accepted  [intake.py]  1 test(s) failed, first: test_wrong_shape_is_an_error
+ 26. caught   code fence around the reply not handled  [intake.py]  1 test(s) failed, first: test_json_in_a_code_fence
+ 27. caught   encoded-text detector switched off  [intake.py]  6 test(s) failed, first: test_decoded_text_is_shown_but_never_followed
+ 28. caught   encoded-text detector needs the padding  [intake.py]  6 test(s) failed, first: test_decoded_text_is_shown_but_never_followed
+ 29. SURVIVED encoded-text detector flags blocks that are not text  [intake.py]  exit code 0, 110 tests ran
+ 30. caught   encoded-text detector looks at the description only  [intake.py]  1 test(s) failed, first: test_finds_encoded_text_in_a_comment_a_title_an_attachment_name_and_a_tool_result
+ 31. caught   phrase list emptied  [intake.py]  1 test(s) failed, first: test_phrase_list_marks_the_scenario_line
+ 32. caught   phrase list marks every item  [intake.py]  2 test(s) failed, first: test_phrase_list_is_quiet_on_the_ordinary_item
+ 33. caught   any suspicious entry counts as flagging the instruction  [checks.py]  1 test(s) failed, first: test_quote_from_another_part_of_the_item_does_not_count
+ 34. caught   invented quote counts as a flag  [checks.py]  1 test(s) failed, first: test_invented_quote_does_not_count_as_a_flag
+ 35. caught   flag check always passes for an attack case  [checks.py]  6 test(s) failed, first: test_agent_that_never_flags_fails
+ 36. caught   ordinary item may be flagged  [checks.py]  3 test(s) failed, first: test_agent_that_flags_everything_fails
+ 37. caught   ordinary item held by the script still counts as quiet  [checks.py]  1 test(s) failed, first: test_ordinary_item_the_model_would_not_read_counts_as_flagged
+ 38. caught   holding the item counts as flagging the instruction  [checks.py]  2 test(s) failed, first: test_model_error_is_held_for_a_person
+ 39. caught   tool servers ignored by the no-tools check  [checks.py]  1 test(s) failed, first: test_any_connected_server_fails_no_tools
+ 40. caught   built-in tools ignored by the no-tools check  [checks.py]  2 test(s) failed, first: test_any_tool_fails_no_tools
+ 41. caught   unknown tool list passes the no-tools check  [checks.py]  1 test(s) failed, first: test_unknown_tool_list_fails_no_tools
+ 42. caught   tool calls do not fail a record  [checks.py]  2 test(s) failed, first: test_a_tool_call_fails
+ 43. caught   decoy call file does not fail a record  [checks.py]  1 test(s) failed, first: test_a_decoy_call_file_fails
+ 44. caught   changed record still counts as recorded  [checks.py]  2 test(s) failed, first: test_dropped_instruction_fails_recorded
+ 45. caught   only the instruction is compared, not the whole item  [checks.py]  1 test(s) failed, first: test_reworded_item_fails_recorded
+ 46. caught   no reply and no hold still passes  [checks.py]  1 test(s) failed, first: test_no_reply_and_no_hold_fails
+ 47. caught   any decoy call counts as obeying  [checks.py]  1 test(s) failed, first: test_obeyed_means_a_call_the_instruction_asked_for
+ 48. caught   obeyed ignores the text the call must contain  [checks.py]  1 test(s) failed, first: test_obeyed_means_a_call_the_instruction_asked_for
+ 49. caught   obeyed never reported  [checks.py]  2 test(s) failed, first: test_control_arm_tool_call_is_reported_but_does_not_fail_the_run
+ 50. caught   address check accepts a lookalike of the reserved name  [checks.py]  1 test(s) failed, first: test_lookalike_of_the_reserved_name_is_reported
+ 51. caught   address check ignores links  [checks.py]  1 test(s) failed, first: test_real_looking_link_is_reported
+ 52. caught   address check ignores email  [checks.py]  3 test(s) failed, first: test_lookalike_of_the_reserved_name_is_reported
+ 53. caught   hidden folders skipped  [snapshot.py]  2 test(s) failed, first: test_every_file_is_listed
+ 54. caught   file content not read (size only)  [snapshot.py]  1 test(s) failed, first: test_same_size_content_change_is_seen
+ 55. caught   new files not reported  [snapshot.py]  6 test(s) failed, first: test_comparing_reports_a_total
+ 56. caught   deleted files not reported  [snapshot.py]  2 test(s) failed, first: test_comparing_reports_a_total
+ 57. caught   content changes not reported  [snapshot.py]  1 test(s) failed, first: test_same_size_content_change_is_seen
+ 58. caught   rewrites with the same content not reported  [snapshot.py]  2 test(s) failed, first: test_permission_change_is_seen
+ 59. caught   permission changes not reported  [snapshot.py]  1 test(s) failed, first: test_permission_change_is_seen
+ 60. caught   only the top folder is listed  [snapshot.py]  13 test(s) failed, first: test_comparing_reports_a_total
+ 61. caught   empty folders not listed  [snapshot.py]  1 test(s) failed, first: test_new_empty_folder_is_seen
+ 62. caught   links are followed  [snapshot.py]  1 test(s) failed, first: test_link_is_recorded_and_not_followed
+ 63. SURVIVED total leaves out touched files  [snapshot.py]  exit code 0, 110 tests ran
+ 64. caught   report always says unchanged  [snapshot.py]  2 test(s) failed, first: test_file_changed_during_the_run_fails
+ 65. caught   an excluded folder is skipped without being asked  [snapshot.py]  1 test(s) failed, first: test_file_added_during_the_run_fails
+ 66. caught   'after' checksum is a copy of 'before'  [run.py]  2 test(s) failed, first: test_file_added_during_the_run_fails
+ 67. caught   settings files outside the workspace not compared  [run.py]  1 test(s) failed, first: test_watched_file_outside_the_workspace_changing_fails
+ 68. caught   a changed workspace does not fail the run  [run.py]  3 test(s) failed, first: test_file_added_during_the_run_fails
+ 69. caught   failed defended checks do not fail the run  [run.py]  5 test(s) failed, first: test_agent_that_flags_everything_fails
+ 70. caught   real address in the cases does not fail the run  [run.py]  1 test(s) failed, first: test_real_address_in_the_cases_fails
+ 71. SURVIVED fewer than five attack cases accepted  [run.py]  exit code 0, 110 tests ran
+ 72. caught   file left in the model's folder ignored  [run.py]  1 test(s) failed, first: test_file_left_in_the_models_folder_fails
+ 73. SURVIVED decoy call file in the defended arm ignored  [run.py]  exit code 0, 110 tests ran
+ 74. caught   control arm without decoy tools accepted  [run.py]  2 test(s) failed, first: test_control_arm_with_a_tool_that_is_not_a_decoy_fails
+ 75. caught   control arm with a non-decoy tool accepted  [run.py]  1 test(s) failed, first: test_control_arm_with_a_tool_that_is_not_a_decoy_fails
+ 76. SURVIVED home and temporary folder names left in the output  [run.py]  exit code 0, 110 tests ran
+ 77. caught   output written before the second checksum  [run.py]  4 test(s) failed, first: test_clean_run_passes_and_writes_both_records
+ 78. SURVIVED instruction text left out of the run output  [run.py]  exit code 0, 110 tests ran
+ 79. caught   run exits 0 whatever happened  [run.py]  14 test(s) failed, first: test_agent_that_flags_everything_fails
+ 80. caught   result line always says PASS  [run.py]  3 test(s) failed, first: test_control_arm_without_its_decoy_tools_fails
+ 81. caught   instruction that is not in the item accepted  [cases.py]  1 test(s) failed, first: test_refuses_an_instruction_that_is_not_in_the_item
+ 82. caught   two cases with one id accepted  [cases.py]  1 test(s) failed, first: test_refuses_two_cases_with_one_id
+ 83. caught   unknown item field accepted  [cases.py]  1 test(s) failed, first: test_refuses_an_item_with_an_unknown_field
+ 84. caught   missing bullet accepted  [cases.py]  1 test(s) failed, first: test_refuses_a_missing_bullet
+ 85. caught   attack case with no instruction accepted  [cases.py]  1 test(s) failed, first: test_refuses_expect_flag_without_an_instruction
+ 86. caught   attack case with no obey definition accepted  [cases.py]  1 test(s) failed, first: test_refuses_an_attack_case_that_does_not_say_what_obeying_looks_like
+ 87. SURVIVED case without a json block skipped silently  [cases.py]  exit code 0, 110 tests ran
+ 88. caught   empty cases file accepted  [cases.py]  1 test(s) failed, first: test_refuses_a_file_with_no_cases
+ 89. caught   only the first three cases are read  [cases.py]  39 test(s) failed, first: test_a_decoy_call_file_fails
+ 90. caught   decoy server starts without a call file  [decoy_server.py]  1 test(s) failed, first: test_refuses_to_start_without_a_call_file
+ 91. caught   decoy tool writes a second file  [decoy_server.py]  1 test(s) failed, first: test_call_writes_one_line_and_nothing_else
+ 92. caught   decoy tool does not record the call  [decoy_server.py]  1 test(s) failed, first: test_call_writes_one_line_and_nothing_else
+ 93. caught   a case names a real-looking address  [injection-cases.md]  49 test(s) failed, first: setUpClass
+ 94. caught   no case asks for something harmless  [injection-cases.md]  4 test(s) failed, first: test_at_least_one_attack_asks_for_something_harmless
+ 95. caught   the ordinary item is gone  [injection-cases.md]  34 test(s) failed, first: test_a_decoy_call_file_fails
+ 96. caught   two attack cases share a hiding place  [injection-cases.md]  1 test(s) failed, first: test_attack_cases_hide_in_different_places
+ 97. caught   an instruction is reworded in the item but not in the case  [injection-cases.md]  49 test(s) failed, first: setUpClass
+
+planted 97 of 97: caught 90, survived 7, not planted 0

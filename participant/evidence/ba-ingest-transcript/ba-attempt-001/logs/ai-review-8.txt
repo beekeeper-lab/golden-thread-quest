@@ -1,0 +1,165 @@
+# Eighth AI review, run 2026-10-29 (UTC): one Claude reviewer, started fresh, read the rewritten test suite (121 tests),
+# sampled 38 of its tests, planted 13 bugs of its own, and ran the suite forward and backward. It was given the quest, the
+# files and the same seven rules as the seventh review, not the builder's verdict.
+# Below the first blank line is its report exactly as returned, with a final newline.
+
+**Test-quality review of final/test_ingest.py (121 tests)**
+
+**Verdict.** The individual checks are strong. I sampled 38 tests across the whole file and planted 13 realistic bugs. 12 were caught and 1 slipped through. The suite also passed every time in forward and reverse order. Two parts of the "this check can fail" evidence are broken, though:
+- (F1) the candidate planted-bug runner reports every planted bug as caught, because the unmodified script already fails under it;
+- (F2) the 10-second watchdog can be swallowed by an `except Exception` in the script, which hid a slow path that grows with the square of the input.
+
+Hold any "every check shown able to fail" claim until both are fixed.
+
+**Runs (OBSERVED)**
+- **Normal order, 3 times:** 53 s, 43 s and 35 s. Each gave "121 passed, 0 failed" with exit 0, at load 16.4 to 17.0 on 10 cores. No `__pycache__` was left.
+- **Reverse and timed runs:** I made an instrumented copy that runs `TESTS.reverse()`, times each test and times each `within_seconds` block.
+  - Reverse: 28 s, 121 passed.
+  - Forward: 29 s, 121 passed.
+  - Load was about 7, and TMPDIR was an empty folder that was still empty after both runs.
+  - No NOTE lines were printed, so every macOS-only path case ran.
+  - No order dependence and no flakiness seen.
+- **Slowest tests:**
+  - hostile_text_cannot_stall_email_redaction: 5.1 s
+  - many_voice_tags_or_name_lines_in_one_cue_are_read_quickly: 3.4 s
+  - long_runs_of_digit_words_and_digit_groups_finish_quickly: 2.4 s
+  - hostile_text_cannot_stall_the_tool: 1.9 s
+- **Time limits:** there are 72 timed blocks. The worst used 3.27 s of 10 s (33%, the 400,000 voice tags plus 40,000 name lines block). The next worst used 11%.
+
+**Planted bugs (OBSERVED; my driver ran the named tests on a mutated copy)**
+
+Control: the unmodified script passed all 10 target tests.
+
+| Planted bug | Test run against it | Result |
+|---|---|---|
+| Removed instruction pattern 1, 2 or 3 (one at a time) | each_instruction_pattern_is_needed | Fails each time |
+| `generated_on: <now()>` line added to the front matter | rerun_at_a_later_time_writes_nothing | Fails |
+| Same | second_run_writes_nothing_and_duplicates_nothing | Passes (so the later-time test adds real value) |
+| `datetime.now()` local time used as the default clock | ingested_at_is_the_utc_time_of_the_run | Fails |
+| NFC normalization of the words | verbatim_text_survives_the_round_trip | Fails |
+| Temp-file clean-up removed | a_failure_at_any_write_step… | Fails (8 of 9 steps) |
+| skill_sha256 taken from the wrong file | provenance_names_everything_ac4_asks_for | Fails |
+| `(?<!\d)` dropped from the local-number shape | ordinary_numbers_are_left_alone | Fails (case 6) |
+| List-based de-duplication in possible_speakers | many_voice_tags… | Fails (stopped at 10.1 s) |
+| `.{0,80}?` changed to `.*?` in INSTRUCTION_HINTS[0] | hostile_text_cannot_stall_the_tool | Fails (stopped at 10.3 s) |
+| The same change, plus `try/except Exception: return []` around instruction_like | hostile_text_cannot_stall_the_tool | **Passes in 12.0 s**; the full suite gives 121/121 with exit 0 (see F2) |
+
+**Findings**
+
+**F1. High (blocking if its log is cited as proof): the candidate planted-bug runner fails on the unmodified script.**
+- **Where:** `<F>/runner_parts.py`, in MAIN `run_one`, which `build_planted.py` uses.
+- **What I did:** ran its `run_one(source, X, X)` with `old == new`, so the script was unchanged.
+- **Result (OBSERVED):** "failed", with 86 failing tests. All of them say `InvalidInput: git could not check the raw transcript (fatal: not a git repository ...)`. With the line `TMPDIR=str(scratch), TEMP=..., TMP=...` removed, the same run is "survived" (green).
+- **Cause:** the copy is at `root/participant/skills/x/ingest.py`, so the script treats `root` as the repository. Scratch is `root/tmp`, so every raw file the suite writes sits inside that "repository", which is not a git repo.
+- **Effect (INFERRED):**
+  - Every planted bug would print KILLED.
+  - check_claims' checks 3 and 4 would pass trivially.
+  - `final/planted_bugs.py` is not built yet, so this has not run yet.
+- **Related gap:** none of the three runners runs the unmodified script as a baseline: runner_parts, the repo's tests/planted_bugs.py, and mutrun.py.
+- **Smallest fix:**
+  - Make scratch a separate `tempfile.TemporaryDirectory()` outside `root`.
+  - Run the unmodified script first, and abort unless it exits 0.
+
+**F2. Medium (the safety-constraint claim in SKILL.md section 10 can be falsely backed): the watchdog can be swallowed.**
+- `Stalled(Exception)` raised by SIGALRM is caught by any `except Exception` in the script, and the timer fires only once.
+- **OBSERVED:** the planted bug in the last table row passes the whole suite in 41 s.
+- That scan grows with the square of the input: 5k, 10k and 20k 'bot' words took 4.4 s, 17.4 s and 69 s. So the suite's 80,000-word cue would take about 18 minutes (extrapolated, INFERRED).
+- **Smallest fix:** in `within_seconds`, after `yield`, raise AssertionError if `time.monotonic() - started > limit`. Optionally also derive Stalled from BaseException and catch it in main().
+
+**F3. High (by the review's rubric: a misleading claim; low safety impact): SKILL.md section 11 is out of date.**
+- It says "There are 32 tests" (28/1/3) and "85 planted bugs". The file has 121 tests.
+- It says "one of them renders the record". Several tests use markdown_it.
+- It says "Every test that expects a refusal also checks ... the expected reason, except command_line_exit_codes". That is false: ingestion_writes_only_the_record_and_provenance (lines 1755 to 1768) expects exits 3, 2 and 2 and checks only the codes.
+- **Smallest fix:** remove or recompute the counts, and name the second exception.
+
+**F4. Medium (R4, time-limit margin):**
+- The correct script needs 3.3 to 3.6 s for the many_voice_tags input at load 7 to 12.
+- A realistic list-based de-duplication, which grows with the square of the input, needed 13.2 s at load 10 to 12.
+- The 10 s limit sits between those two with a thin margin on both sides. A quiet machine could let that slow version pass; a busier one could fail the correct script (INFERRED, not measured).
+- **Smallest fix:** compare times at N and 4N inside one generous limit (say 60 s) and fail if the ratio is above about 8, instead of relying on a single absolute limit.
+
+**F5. Low (R5, out-of-date or wrong text):**
+- many_cues_holding_split_numbers_are_redacted_quickly says the reader "reads only four-digit utterance IDs". It is false: HEADING is `U-\d{4,}`, and a_record_of_10002 passes.
+- hostile_text_cannot_stall_the_tool says the reader "merges every utterance after U-9999". False for the same reason.
+- The KILL_MIDWAY comment says it "hooks os.replace and os.rename". It also hooks os.link, which is the call that is actually used.
+- timestamps_use_one_stated_format says "planned SKILL.md 3", but section 3 exists.
+- a_failure_at_any_write_step…'s docstring puts four sentences in quotes as SKILL.md wording. grep finds 0 of the 4 verbatim, for example "If the second move fails, the first file is removed."
+- **Fix:** edit the text.
+
+**F6. Low: the suite quietly assumes the system temp folder is outside the script's repository folder.**
+- When it is not, 86 tests fail with a git message that blames the script (OBSERVED in my first reverse attempt).
+- **Fix:** add one check in main(): if `tempfile.gettempdir()` is inside `INGEST.parents[2]`, stop with a setup message.
+
+**F7. Low (R1, disclosed in the docstrings):**
+- Some tests pin the script's own keys and wording: timestamp_format, the provenance key spellings, and refusal phrases such as "appeared while this run was writing" and "out of order".
+- instruction_text_is_recorded_and_not_followed builds its expected record with the script's own `escape_md`.
+- each_instruction_pattern_is_needed is named after the script's three regexes rather than a requirement. Its checks do fail when any one pattern is removed (OBSERVED).
+- These are honest change detectors, not defects.
+
+**F8. Low (R7):** hostile_text_cannot_stall_email_redaction's failure message gives only the actual first 60 characters and the length, not the expected text or the first difference. Fix: use the `expect_same` helper from hostile_text_cannot_stall_the_tool.
+
+**F9. Low (R4):** rerun_at_a_later_time_writes_nothing uses random hash seeds, so it is not deterministic. A failure prints its seed, so it can be reproduced.
+
+**Per-test judgment on the sample**
+
+No finding on R1 to R7 for these tests. In particular:
+- Their patches are restored or apply only to the test's own module.
+- Their broad `except` clauses all record the failure and re-raise.
+- Their child processes have time limits and their own TMPDIR.
+
+The tests:
+- verbatim_text_survives_the_round_trip
+- a_markdown_renderer_shows_the_words_exactly
+- provenance_names_everything_ac4_asks_for
+- provenance_fingerprints_the_raw_bytes_and_the_normalized_text
+- ingested_at_is_the_utc_time_of_the_run
+- second_run_writes_nothing_and_duplicates_nothing
+- rerun_at_a_later_time_writes_nothing (F9 aside)
+- ordinary_numbers_are_left_alone
+- raw_transcript_inside_participant_is_refused
+- raw_transcript_beside_participant_is_accepted
+- raw_transcript_git_would_commit_is_refused
+- raw_transcript_refusals_hold_with_the_real_layout
+- leftover_temporary_files_are_reported
+- a_killed_runs_leftovers_block_the_next_run_until_deleted
+- command_line_exit_codes (it skips the reason check, as it discloses)
+- git_that_cannot_be_run_is_reported_as_invalid_input
+- a_raw_transcript_is_refused_when_git_reports_an_error
+- speaker_tags_that_cannot_be_read_are_refused
+- speaker_tags_within_the_limits_and_words_like_very_are_read
+- hostile_speaker_tag_text_is_refused_quickly
+- a_label_written_with_character_references_reads_as_the_name
+- mistyped_arrows_make_a_damaged_timing_line
+- a_time_with_one_wrong_or_extra_character_makes_a_damaged_timing_line
+- damaged_line_checks_finish_quickly_on_long_hostile_lines
+- a_record_of_10002_utterances_reads_back_whole
+- the_record_holds_nothing_derived_from_what_was_said
+- a_record_that_appears_after_the_checks_is_never_replaced
+- a_run_killed_at_any_step_of_its_moves_leaves_a_temporary_file_only_for_an_unfinished_move
+- an_interrupt_at_any_step_of_writing_leaves_both_files_or_neither
+- ten_digits_together_and_eleven_starting_with_1_are_redacted
+- long_runs_of_digit_words_and_digit_groups_finish_quickly
+- phone_redactions_count_once_each_in_the_record_and_the_provenance
+- email_addresses_spoken_aloud_are_redacted
+- web_addresses_and_names_after_at_are_hidden_as_skill_md_says
+- a_detail_split_across_cues_is_redacted_in_each_utterance
+- speaker_labels_that_read_the_same_after_redaction_are_numbered
+
+These sampled tests have findings:
+- timestamps_use_one_stated_format: F5.
+- instruction_text_is_recorded_and_not_followed and each_instruction_pattern_is_needed: F7.
+- a_failure_at_any_write_step…: F5.
+- hostile_text_cannot_stall_the_tool: F2 and F5.
+- many_voice_tags…: F4.
+- hostile_text_cannot_stall_email_redaction: F8.
+- many_cues_holding_split_numbers_are_redacted_quickly: F5.
+
+**NOT ASSESSED**
+- The roughly 83 tests outside the sample.
+- Linux.
+- check_claims.py.
+- The built `final/planted_bugs.py`, which does not exist yet.
+- Load above 17.
+- Whether the list-based de-duplication slips under 10 s on an idle machine.
+
+**Housekeeping:** all my temporary folders under the scratchpad (tq.*, trev.*, ttmp.*, tqexp, tqmut.*) are deleted, and no repository file was touched.

@@ -1,0 +1,78 @@
+CONFIRMATION for preview 847183421875, given by: the participant (the name given with the confirmation).
+
+Board:  "GTQ Sandbox" (board id 6afdf376f8b9111df7e27f99). On the sandbox allowlist: yes.
+List:   "Backlog" (list id 6afdf3911014b50669965df7). Chosen by id. Trello says it belongs to board 6afdf376f8b9111df7e27f99, the stated board: yes. Archived: no.
+Draft:  participant/context/trello/new-card/draft-create.md
+
+Checked in this run, before writing:
+  the preview is 2 minutes old, and the limit is 15: ok
+  the saved preview is unaltered and has not been used: ok
+  the draft file is byte for byte the one that was previewed: ok
+  the payload worked out again now has the SHA-256 of the previewed one, c7eac8dfd8742d465d0a7c7d1354770828862f6530a3fa7aecbd1104a939c10b: ok
+  the board is on the sandbox allowlist, and the list is on that board and not archived: ok
+  Trello says the token may write and its member may add cards to this board: ok
+  the duplicate checks still pass: ok
+  this draft has no link file: ok
+
+Written to the link file before sending: a create is being sent, result not yet recorded, and the ids of the
+7 cards on the board now.
+CREATED in Trello: one card. Trello answered 200 with the card id 6b00b32ea6e47268f6721469.
+The confirmation and the write happened in this one run of the command.
+Written to the link file: the card id 6b00b32ea6e47268f6721469, the list id 6afdf3911014b50669965df7 and the board id 6afdf376f8b9111df7e27f99.
+
+READ BACK from Trello by card id 6b00b32ea6e47268f6721469, and compared with the payload field for field:
+  idList     sent 6afdf3911014b50669965df7
+             read 6afdf3911014b50669965df7: the same
+  pos        sent "bottom"
+             read position number 140737488388096, number 3 of 3 open cards in the list: the same: it is last in the list
+  name       sent "Made-up card to check the create workflow"
+             read "Made-up card to check the create workflow": the same
+  desc       sent 97 characters, starting "A made-up card. It checks that a card is"
+             read 97 characters, starting "A made-up card. It checks that a card is": the same, character for character
+  due        sent 2026-12-18T17:00:00.000Z
+             read 2026-12-18T17:00:00.000Z: the same
+  idBoard    sent not sent: it follows from the list
+             read 6afdf376f8b9111df7e27f99: the same as the board that was previewed
+Result: every field the payload sent reads back the same.
+What Trello set that the payload did not send:
+  card id:                         6b00b32ea6e47268f6721469
+  short link:                      9hsNtGfm
+  number on the board:             9
+  position number:                 140737488388096
+  archived:                        no
+  due marked complete:             no
+  created, read from the card id:  2026-11-20 20:53:02 UTC
+  last activity:                   2026-11-20T20:53:02.530Z
+
+The link file participant/context/trello/new-card/linked.md now holds the board, list and card ids and this comparison.
+
+RESULT RECORD
+  Board id: 6afdf376f8b9111df7e27f99, on the sandbox allowlist
+  List id: 6afdf3911014b50669965df7
+  Card id: 6b00b32ea6e47268f6721469
+  Identifier of what was created: the card, Trello card id 6b00b32ea6e47268f6721469 (short link 9hsNtGfm)
+  Created at: 2026-11-20 20:53:02 UTC by this workflow's clock; 2026-11-20 20:53:02 UTC by Trello's, read from the card id
+  Confirmed by: the participant, at 2026-11-20 20:53:00 UTC
+  Preview: fingerprint 847183421875
+  Payload: SHA-256 c7eac8dfd8742d465d0a7c7d1354770828862f6530a3fa7aecbd1104a939c10b
+  Read back and compared at 2026-11-20 20:53:02 UTC: every field the payload sent reads back the same
+  Local link: participant/context/trello/new-card/linked.md
+
+The result record was also saved as Markdown where --result said.
+
+Requests sent to Trello: 13. 12 GET and 1 POST. The POST is the one create.
+  GET /members/me
+  GET /boards/6afdf376f8b9111df7e27f99
+  GET /boards/6afdf376f8b9111df7e27f99/lists
+  GET /boards/6afdf376f8b9111df7e27f99/cards
+  GET /lists/6afdf3911014b50669965df7
+  GET /boards/6afdf376f8b9111df7e27f99/memberships
+  GET /tokens/[the token]
+  GET /boards/6afdf376f8b9111df7e27f99/cards
+  GET /boards/6afdf376f8b9111df7e27f99/lists
+  GET /boards/6afdf376f8b9111df7e27f99/cards
+  POST /cards
+  GET /cards/6b00b32ea6e47268f6721469
+  GET /boards/6afdf376f8b9111df7e27f99/cards
+
+The output above, and each file written, was searched for the API key and the token: neither found.

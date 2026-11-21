@@ -1,0 +1,224 @@
+The same question answered from fresh context and after the clock has moved: context-staleness, attempt context-attempt-001
+Recorded by scripts/record_evidence.py. Each block between dashed lines is what a command printed.
+Only local files are read. Every release, work item, team and decision here is made up, so nothing is redacted.
+
+==============================================================================
+THE DATA. Every item in the library records when it was retrieved (criterion 1). Two of the nine files:
+The first lines of participant/context/freshness/library/work-items/WI-104.md:
+------------------------------------------------------------------------------
+---
+format: "context-item/1"
+kind: "work-item-status"
+id: "WI-104"
+retrieved_at: "2026-11-19T07:00:00Z"
+title: "Update the privacy notice"
+status: "Blocked"
+blocked_by: "Legal review has not been booked"
+field_retrieved_at: {"blocked_by": "2026-11-18T12:00:00Z"}
+---
+------------------------------------------------------------------------------
+The first lines of participant/context/freshness/library/release-2.4.md:
+------------------------------------------------------------------------------
+---
+format: "context-item/1"
+kind: "release-scope"
+id: "REL-2.4"
+retrieved_at: "2026-11-18T16:00:00Z"
+work_items: ["WI-101", "WI-102", "WI-103", "WI-104", "WI-105", "WI-106"]
+---
+------------------------------------------------------------------------------
+WI-104 also gives one field, blocked_by, a retrieval time of its own, older than the record's.
+
+==============================================================================
+RUN 1. The clock is set to 2026-11-19T09:00:00Z. Everything the answer uses is inside its limit.
+$ python3 participant/skills/context-freshness/answer.py blockers --release REL-2.4 --now 2026-11-19T09:00:00Z
+------------------------------------------------------------------------------
+QUESTION: what is blocking release REL-2.4?
+Clock: 2026-11-19T09:00:00Z (set with --now)
+Policy: participant/context/freshness/policy.md
+
+ANSWER: 2 work items are blocking release REL-2.4.
+
+IN DETAIL:
+  BLOCKING      WI-101 "Card payments time out at checkout" is Blocked. Why: "Waiting for the payment provider's sandbox certificate". Owner: the payments team.
+  BLOCKING      WI-104 "Update the privacy notice" is Blocked. Why: "Legal review has not been booked". Owner: the legal liaison.
+  SET ASIDE     WI-106 "Dark mode for the settings page" is Blocked. Why: "The design is not finished". Decision D-12 sets it aside: "Release 2.4 ships without WI-106. Dark mode moves to release 2.5." So it does not block this release. Owner: the design team.
+  NOT BLOCKING  WI-102 "Export invoices as PDF" is Done. Owner: the billing team.
+  NOT BLOCKING  WI-103 "Migrate the sessions table" is In Progress. Owner: the platform team.
+  NOT BLOCKING  WI-105 "Rate-limit the public search" is In Review. Owner: the platform team.
+
+CONTEXT USED, oldest first: 10 items.
+  item                                   kind              retrieved             age          limit    verdict
+  decisions/D-12.md                      decision          2026-10-01T10:00:00Z  48d 23h 00m  90 days  fresh
+  team.md                                team-ownership    2026-11-02T09:00:00Z  17d 00h 00m  30 days  fresh
+  work-items/WI-104.md, field blocked_by work-item-status  2026-11-18T12:00:00Z  0d 21h 00m   24 hours fresh
+  release-2.4.md                         release-scope     2026-11-18T16:00:00Z  0d 17h 00m   3 days   fresh
+  work-items/WI-105.md                   work-item-status  2026-11-18T20:00:00Z  0d 13h 00m   24 hours fresh
+  work-items/WI-106.md                   work-item-status  2026-11-18T20:00:00Z  0d 13h 00m   24 hours fresh
+  work-items/WI-101.md                   work-item-status  2026-11-19T07:00:00Z  0d 02h 00m   24 hours fresh
+  work-items/WI-102.md                   work-item-status  2026-11-19T07:00:00Z  0d 02h 00m   24 hours fresh
+  work-items/WI-103.md                   work-item-status  2026-11-19T07:00:00Z  0d 02h 00m   24 hours fresh
+  work-items/WI-104.md                   work-item-status  2026-11-19T07:00:00Z  0d 02h 00m   24 hours fresh
+Oldest context used: decisions/D-12.md, retrieved 2026-10-01T10:00:00Z, age 48d 23h 00m, limit 90 days: fresh.
+
+Stale context: none. Every statement above rests on context inside its limit.
+------------------------------------------------------------------------------
+exit code: 0
+  ok   the run shows the clock value that was set (criterion 6)
+  ok   the answer is a plain statement: 2 work items are blocking, exit code 0
+  ok   it lists all 10 items of context it used, each with its retrieval time, age, limit and verdict
+  ok   it names the oldest context it used and its age: decision D-12, 48 days 23 hours, limit 90 days (criterion 3)
+  ok   it says nothing is stale
+
+==============================================================================
+RUN 2. The same question, the same library. The clock is moved nine days on, to 2026-11-28T09:00:00Z.
+This is the quest's scenario: a snapshot nine days old. The statuses (limit 24 hours) and the release
+scope (limit 3 days) are past their limits. The team (30 days) and the decision (90 days) are not.
+$ python3 participant/skills/context-freshness/answer.py blockers --release REL-2.4 --now 2026-11-28T09:00:00Z
+------------------------------------------------------------------------------
+QUESTION: what is blocking release REL-2.4?
+Clock: 2026-11-28T09:00:00Z (set with --now)
+Policy: participant/context/freshness/policy.md
+
+ANSWER: CANNOT SAY what is blocking release REL-2.4.
+  The list of what is in the release is stale: it is 9d 17h 00m old, 6d 17h 00m over its limit of 3 days.
+  Without knowing what is in the release, no list of blockers can be called complete. So nothing is
+  stated here as blocking, and nothing as not blocking.
+
+WHAT FRESH CONTEXT SUPPORTS:
+  Decision D-12, inside its limit, says: "Release 2.4 ships without WI-106. Dark mode moves to release 2.5."
+  Who owns each work item is inside its limit. It does not say what is blocking.
+
+LAST KNOWN, NOT A CURRENT CLAIM:
+  The release was last recorded as holding 6 work items: WI-101, WI-102, WI-103, WI-104, WI-105, WI-106. (it is 9d 17h 00m old, 6d 17h 00m over its limit of 3 days)
+  WI-101 "Card payments time out at checkout" was Blocked when it was retrieved, 9d 02h 00m ago. Then blocked by: "Waiting for the payment provider's sandbox certificate". It cannot be assessed: it is 9d 02h 00m old, 8d 02h 00m over its limit of 24 hours.
+  WI-102 "Export invoices as PDF" was Done when it was retrieved, 9d 02h 00m ago. It cannot be assessed: it is 9d 02h 00m old, 8d 02h 00m over its limit of 24 hours.
+  WI-103 "Migrate the sessions table" was In Progress when it was retrieved, 9d 02h 00m ago. It cannot be assessed: it is 9d 02h 00m old, 8d 02h 00m over its limit of 24 hours.
+  WI-104 "Update the privacy notice" was Blocked when it was retrieved, 9d 02h 00m ago. Then blocked by: "Legal review has not been booked". It cannot be assessed: it is 9d 02h 00m old, 8d 02h 00m over its limit of 24 hours.
+  WI-105 "Rate-limit the public search" was In Review when it was retrieved, 9d 13h 00m ago. It cannot be assessed: it is 9d 13h 00m old, 8d 13h 00m over its limit of 24 hours.
+  WI-106 "Dark mode for the settings page" was Blocked when it was retrieved, 9d 13h 00m ago. Then blocked by: "The design is not finished". It cannot be assessed: it is 9d 13h 00m old, 8d 13h 00m over its limit of 24 hours.
+
+CONTEXT USED, oldest first: 10 items.
+  item                                   kind              retrieved             age          limit    verdict
+  decisions/D-12.md                      decision          2026-10-01T10:00:00Z  57d 23h 00m  90 days  fresh
+  team.md                                team-ownership    2026-11-02T09:00:00Z  26d 00h 00m  30 days  fresh
+  work-items/WI-104.md, field blocked_by work-item-status  2026-11-18T12:00:00Z  9d 21h 00m   24 hours STALE: it is 9d 21h 00m old, 8d 21h 00m over its limit of 24 hours
+  release-2.4.md                         release-scope     2026-11-18T16:00:00Z  9d 17h 00m   3 days   STALE: it is 9d 17h 00m old, 6d 17h 00m over its limit of 3 days
+  work-items/WI-105.md                   work-item-status  2026-11-18T20:00:00Z  9d 13h 00m   24 hours STALE: it is 9d 13h 00m old, 8d 13h 00m over its limit of 24 hours
+  work-items/WI-106.md                   work-item-status  2026-11-18T20:00:00Z  9d 13h 00m   24 hours STALE: it is 9d 13h 00m old, 8d 13h 00m over its limit of 24 hours
+  work-items/WI-101.md                   work-item-status  2026-11-19T07:00:00Z  9d 02h 00m   24 hours STALE: it is 9d 02h 00m old, 8d 02h 00m over its limit of 24 hours
+  work-items/WI-102.md                   work-item-status  2026-11-19T07:00:00Z  9d 02h 00m   24 hours STALE: it is 9d 02h 00m old, 8d 02h 00m over its limit of 24 hours
+  work-items/WI-103.md                   work-item-status  2026-11-19T07:00:00Z  9d 02h 00m   24 hours STALE: it is 9d 02h 00m old, 8d 02h 00m over its limit of 24 hours
+  work-items/WI-104.md                   work-item-status  2026-11-19T07:00:00Z  9d 02h 00m   24 hours STALE: it is 9d 02h 00m old, 8d 02h 00m over its limit of 24 hours
+Oldest context used: decisions/D-12.md, retrieved 2026-10-01T10:00:00Z, age 57d 23h 00m, limit 90 days: fresh.
+
+STALE CONTEXT, 8 items, each named:
+  work-items/WI-104.md, field blocked_by (work-item-status): it is 9d 21h 00m old, 8d 21h 00m over its limit of 24 hours.
+  release-2.4.md (release-scope): it is 9d 17h 00m old, 6d 17h 00m over its limit of 3 days.
+  work-items/WI-105.md (work-item-status): it is 9d 13h 00m old, 8d 13h 00m over its limit of 24 hours.
+  work-items/WI-106.md (work-item-status): it is 9d 13h 00m old, 8d 13h 00m over its limit of 24 hours.
+  work-items/WI-101.md (work-item-status): it is 9d 02h 00m old, 8d 02h 00m over its limit of 24 hours.
+  work-items/WI-102.md (work-item-status): it is 9d 02h 00m old, 8d 02h 00m over its limit of 24 hours.
+  work-items/WI-103.md (work-item-status): it is 9d 02h 00m old, 8d 02h 00m over its limit of 24 hours.
+  work-items/WI-104.md (work-item-status): it is 9d 02h 00m old, 8d 02h 00m over its limit of 24 hours.
+TO REFRESH for a full answer, and nothing else: release-2.4.md, work-items/WI-101.md, work-items/WI-102.md, work-items/WI-103.md, work-items/WI-104.md, work-items/WI-105.md, work-items/WI-106.md.
+This answer is qualified. Nothing stale has been left out of it, and nothing stale is stated as current.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   the run shows the clock value that was set
+  ok   the answer is qualified, exit code 1: it CANNOT SAY what is blocking, and gives no count (criterion 4)
+  ok   no work item is stated as blocking or as not blocking
+  ok   what the stale items last said is shown as last known and not as a claim, for all 6 work items
+  ok   the 8 stale items are named one by one, each with its age and how far it is over its limit
+  ok   it names the oldest context it used and its age: decision D-12, 57 days 23 hours, still inside 90 days
+  ok   nothing stale was left out: all 10 items are still in the list of context used
+  ok   what is still fresh is still said: decision D-12
+
+==============================================================================
+RUN 3. In between: the clock is set twelve hours after run 1, to 2026-11-19T21:00:00Z.
+Two statuses retrieved the evening before are now 25 hours old. The scope is still inside its limit.
+So only what is said about those two items is spoiled.
+$ python3 participant/skills/context-freshness/answer.py blockers --release REL-2.4 --now 2026-11-19T21:00:00Z
+------------------------------------------------------------------------------
+QUESTION: what is blocking release REL-2.4?
+Clock: 2026-11-19T21:00:00Z (set with --now)
+Policy: participant/context/freshness/policy.md
+
+ANSWER: PARTIAL: 2 work items are blocking release REL-2.4 as far as fresh context shows. 2 cannot be assessed.
+
+WHAT FRESH CONTEXT SUPPORTS:
+  BLOCKING      WI-101 "Card payments time out at checkout" is Blocked. Why: "Waiting for the payment provider's sandbox certificate". Owner: the payments team.
+  BLOCKING      WI-104 "Update the privacy notice" is Blocked. Why, last known and not a current claim: "Legal review has not been booked" (that field: it is 1d 09h 00m old, 0d 09h 00m over its limit of 24 hours). Owner: the legal liaison.
+  NOT BLOCKING  WI-102 "Export invoices as PDF" is Done. Owner: the billing team.
+  NOT BLOCKING  WI-103 "Migrate the sessions table" is In Progress. Owner: the platform team.
+
+LAST KNOWN, NOT A CURRENT CLAIM:
+  WI-105 "Rate-limit the public search" was In Review when it was retrieved, 1d 01h 00m ago. It cannot be assessed: it is 1d 01h 00m old, 0d 01h 00m over its limit of 24 hours.
+  WI-106 "Dark mode for the settings page" was Blocked when it was retrieved, 1d 01h 00m ago. Then blocked by: "The design is not finished". It cannot be assessed: it is 1d 01h 00m old, 0d 01h 00m over its limit of 24 hours.
+
+CONTEXT USED, oldest first: 10 items.
+  item                                   kind              retrieved             age          limit    verdict
+  decisions/D-12.md                      decision          2026-10-01T10:00:00Z  49d 11h 00m  90 days  fresh
+  team.md                                team-ownership    2026-11-02T09:00:00Z  17d 12h 00m  30 days  fresh
+  work-items/WI-104.md, field blocked_by work-item-status  2026-11-18T12:00:00Z  1d 09h 00m   24 hours STALE: it is 1d 09h 00m old, 0d 09h 00m over its limit of 24 hours
+  release-2.4.md                         release-scope     2026-11-18T16:00:00Z  1d 05h 00m   3 days   fresh
+  work-items/WI-105.md                   work-item-status  2026-11-18T20:00:00Z  1d 01h 00m   24 hours STALE: it is 1d 01h 00m old, 0d 01h 00m over its limit of 24 hours
+  work-items/WI-106.md                   work-item-status  2026-11-18T20:00:00Z  1d 01h 00m   24 hours STALE: it is 1d 01h 00m old, 0d 01h 00m over its limit of 24 hours
+  work-items/WI-101.md                   work-item-status  2026-11-19T07:00:00Z  0d 14h 00m   24 hours fresh
+  work-items/WI-102.md                   work-item-status  2026-11-19T07:00:00Z  0d 14h 00m   24 hours fresh
+  work-items/WI-103.md                   work-item-status  2026-11-19T07:00:00Z  0d 14h 00m   24 hours fresh
+  work-items/WI-104.md                   work-item-status  2026-11-19T07:00:00Z  0d 14h 00m   24 hours fresh
+Oldest context used: decisions/D-12.md, retrieved 2026-10-01T10:00:00Z, age 49d 11h 00m, limit 90 days: fresh.
+
+STALE CONTEXT, 3 items, each named:
+  work-items/WI-104.md, field blocked_by (work-item-status): it is 1d 09h 00m old, 0d 09h 00m over its limit of 24 hours.
+  work-items/WI-105.md (work-item-status): it is 1d 01h 00m old, 0d 01h 00m over its limit of 24 hours.
+  work-items/WI-106.md (work-item-status): it is 1d 01h 00m old, 0d 01h 00m over its limit of 24 hours.
+TO REFRESH for a full answer, and nothing else: work-items/WI-104.md, work-items/WI-105.md, work-items/WI-106.md.
+This answer is qualified. Nothing stale has been left out of it, and nothing stale is stated as current.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   the answer is PARTIAL: 2 are blocking as far as fresh context shows, 2 cannot be assessed
+  ok   WI-105 and WI-106 are shown as last known, and are not in the statements of fact
+  ok   one field is stale while its record is fresh: WI-104 is Blocked (fresh), its reason is last known (33 hours)
+
+==============================================================================
+THE WORKING. The ages command prints, for every item, the sum a person would do by hand from the
+policy: the clock value minus the retrieval time, against the limit for the kind (criterion 7).
+$ python3 participant/skills/context-freshness/answer.py ages --now 2026-11-19T21:00:00Z
+------------------------------------------------------------------------------
+Clock: 2026-11-19T21:00:00Z (set with --now)
+Limits, from participant/context/freshness/policy.md: decision 90 days, release-scope 3 days, team-ownership 30 days, work-item-status 24 hours.
+EVERY ITEM IN THE LIBRARY, oldest first: 10 items.
+  item                                   kind              retrieved             age          limit    verdict
+  decisions/D-12.md                      decision          2026-10-01T10:00:00Z  49d 11h 00m  90 days  fresh
+  team.md                                team-ownership    2026-11-02T09:00:00Z  17d 12h 00m  30 days  fresh
+  work-items/WI-104.md, field blocked_by work-item-status  2026-11-18T12:00:00Z  1d 09h 00m   24 hours STALE: it is 1d 09h 00m old, 0d 09h 00m over its limit of 24 hours
+  release-2.4.md                         release-scope     2026-11-18T16:00:00Z  1d 05h 00m   3 days   fresh
+  work-items/WI-105.md                   work-item-status  2026-11-18T20:00:00Z  1d 01h 00m   24 hours STALE: it is 1d 01h 00m old, 0d 01h 00m over its limit of 24 hours
+  work-items/WI-106.md                   work-item-status  2026-11-18T20:00:00Z  1d 01h 00m   24 hours STALE: it is 1d 01h 00m old, 0d 01h 00m over its limit of 24 hours
+  work-items/WI-101.md                   work-item-status  2026-11-19T07:00:00Z  0d 14h 00m   24 hours fresh
+  work-items/WI-102.md                   work-item-status  2026-11-19T07:00:00Z  0d 14h 00m   24 hours fresh
+  work-items/WI-103.md                   work-item-status  2026-11-19T07:00:00Z  0d 14h 00m   24 hours fresh
+  work-items/WI-104.md                   work-item-status  2026-11-19T07:00:00Z  0d 14h 00m   24 hours fresh
+Oldest item: decisions/D-12.md, retrieved 2026-10-01T10:00:00Z, age 49d 11h 00m, limit 90 days: fresh.
+Stale: 3 of 10.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   it gives each item's age and limit, and 3 of 10 are stale at this clock value
+
+Worked by hand for run 3 from participant/context/freshness/policy.md, before looking at the tool:
+  release-2.4.md   retrieved 11-18 16:00, clock 11-19 21:00: 29 hours. Limit 3 days. Fresh.
+  WI-105, WI-106   retrieved 11-18 20:00: 25 hours. Limit 24 hours. Stale.
+  WI-101 to WI-104 retrieved 11-19 07:00: 14 hours. Limit 24 hours. Fresh.
+  WI-104 blocked_by retrieved 11-18 12:00: 33 hours. Limit 24 hours. Stale.
+  team.md 17 days (limit 30). D-12 49 days (limit 90). Fresh.
+  Scope fresh and two statuses stale, so the policy's table gives the first line: PARTIAL, 2 cannot be assessed.
+  ok   the tool's ages agree with that working
+
+==============================================================================
+AFTERWARDS. The library.
+  ok   all 9 files in the library have the SHA-256 and the modified time they had before the runs
+  Running the script again gives this same log, because every run sets the clock.
+
+RESULT: ALL CHECKS PASSED.

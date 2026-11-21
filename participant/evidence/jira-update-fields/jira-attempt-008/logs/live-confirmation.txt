@@ -1,0 +1,45 @@
+CONFIRMATION for preview 8441425734e1, given by: the participant (the name given with the confirmation).
+
+Jira site:  [site address removed]  (site fingerprint 4aabe3d08fbad6b1)
+Project:    SCRUM (project id 10000). On the sandbox allowlist: yes.
+Story:      SCRUM-1 (issue id 10000). The id is what identifies it.
+
+Checked in this run, before writing:
+  the preview is 0 minutes old, and the limit is 15: ok
+  the saved preview is unaltered and has not been used: ok
+  the change file asks for exactly what the preview showed: ok
+  the project is on the sandbox allowlist for this site: ok
+  Jira says this identity may edit the story and these fields: ok
+  each field still holds in Jira the value the preview saw, read just before the write:
+    labels    preview saw (none), Jira holds (none): the same
+    duedate   preview saw 2026-11-15, Jira holds 2026-11-15: the same
+
+WRITTEN to Jira: one edit of story SCRUM-1, fields labels, duedate. Jira answered 204.
+The confirmation and the write happened in this one run of the command.
+
+Read back from Jira after the write:
+  labels    ["gtq-sandbox"]: as proposed
+  duedate   2026-12-15: as proposed
+  priority  (not set): not part of the write, and unchanged
+
+Identifier of the change: Jira changelog entry 10049 for issue id 10000.
+  It is the history entry that was not there before the write, made by this identity, on these fields.
+  For each field, the value that entry records from before the write is the one the preview saw.
+
+RESULT RECORD
+  Issue key: SCRUM-1
+  Issue id: 10000 (this identifies the story; a key can change)
+  Target project: SCRUM (project id 10000), on the sandbox allowlist
+  Jira site: [site address removed], site fingerprint 4aabe3d08fbad6b1
+  Identifier of what was changed: Jira changelog entry 10049
+  Field labels: before (none); after ["gtq-sandbox"]; read back from Jira ["gtq-sandbox"]
+  Field duedate: before 2026-11-15; after 2026-12-15; read back from Jira 2026-12-15
+  Written at: 2026-11-19 15:47:13 UTC
+  Confirmed by: the participant, at 2026-11-19 15:47:10 UTC
+  Preview: fingerprint 8441425734e1, made 2026-11-19 15:46:21 UTC
+  To reverse: make a new preview that sets each field back to its 'before' value. A field that was not set before cannot be put back by this workflow, which does not clear fields
+
+The result record was also saved as Markdown where --result said.
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.

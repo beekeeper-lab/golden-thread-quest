@@ -1,0 +1,35 @@
+schema_version: 1
+review_id: review-20261120161127-5c39b2
+quest_id: ba-detect-ambiguity
+quest_version: 1
+attempt_id: ba-attempt-002
+evidence_hash: sha256:0cc30c29f0d81eae7c049177e11888f71438fdcc25eb2891df33922739852c0a
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-20T16:11:27Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/ambiguity/findings.md
+  digest: sha256:487fb9795cfa990735b50fd3c73703aa396e51f0a0187e08be0bc010e7cb29e9
+- path: participant/context/ambiguity/requirements.md
+  digest: sha256:867168549d1e89ce4292fa2a5721c3fb5e209d6d53b8ec84cb121505e368e484
+verification_statement: 'Automated review. I read requirements.md, findings.md, review-run.txt,
+  tests.txt, planted-bugs.txt, PROOF.md, the earlier review.yaml, the first pass,
+  the second look, the answer key and all five independent reads with their blinded
+  inputs. The requirements set is made up. It has 20 requirements: 10 sound (4 traps)
+  and all four defect types. Two contradictions span two requirements each: REQ-04/REQ-12,
+  and REQ-14/NFR-04 across two documents. Every quoted phrase in the 9 findings appears
+  word for word in requirements.md. Each finding has a type, a "A tester could not
+  decide" line, an "If unanswered" line, and a question ending in "?" that offers
+  no new wording. There are 10 unflagged requirements with reasons, and the log shows
+  20 of 20 accounted for. Both changes asked for last time were made: - F-11 was withdrawn
+  and is recorded. Reader 5 got the current file with types removed and matched all
+  9 types. The three that needed a judgment are named in findings.md. - PROOF.md explains
+  the attempt-001 vs ba-attempt-002 folder name and says copies were placed at the
+  attempt-001 paths. The pre-check reports the required files present. The definitions
+  given to reader 5 match those in findings.md. PROOF.md gives F-10 as the finding
+  removed on a second look and cites the criteria by number. The answer key''s "Do
+  not show to the reviewer" line is exercise data and is not aimed at me. No injection
+  was found. Each of the 7 acceptance criteria was matched to text quoted word for
+  word from the evidence.'

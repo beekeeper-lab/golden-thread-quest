@@ -1,0 +1,83 @@
+FIDELITY CHECK. Jira's answer for the story against the saved file. Reading only.
+
+1. IDENTITY
+  ok   the file's `id` is Jira's issue id (10000), and `id` is the first field after the format line
+  ok   the key is stored as a separate field (SCRUM-1)
+
+2. EVERY FIELD JIRA RETURNED (51). Where each is in the file, and whether its value is what Jira sent.
+     field id             Jira's name        found in      kind of value
+  ok   aggregateprogress    Σ Progress         preserved     object with 2 parts
+  ok   aggregatetimeestimate Σ Remaining Estima preserved     empty (null)
+  ok   aggregatetimeoriginalestimate Σ Original Estimat preserved     empty (null)
+  ok   aggregatetimespent   Σ Time Spent       preserved     empty (null)
+  ok   assignee             Assignee           front matter  empty (null)
+  ok   attachment           Attachment         preserved     list of 0
+  ok   comment              Comment            preserved     object with 5 parts
+  ok   components           Components         front matter  list of 0
+  ok   created              Created            front matter  text, 28 characters
+  ok   creator              Creator            front matter  object with 8 parts
+  ok   customfield_10001    Team               preserved     empty (null)
+  ok   customfield_10015    Start date         preserved     empty (null)
+  ok   customfield_10016    Story point estima preserved     empty (null)
+  ok   customfield_10017    Issue color        preserved     empty (null)
+  ok   customfield_10019    Rank               preserved     text, 9 characters
+  ok   customfield_10020    Sprint             preserved     list of 1
+  ok   customfield_10021    Flagged            preserved     empty (null)
+  ok   customfield_10026    Agent Sessions     preserved     empty (null)
+  ok   customfield_10035    Design             preserved     empty (null)
+  ok   customfield_10036    Vulnerability      preserved     empty (null)
+  ok   description          Description        body          object with 3 parts
+  ok   duedate              Due date           front matter  text, 10 characters
+  ok   environment          Environment        preserved     empty (null)
+  ok   fixVersions          Fix versions       front matter  list of 0
+  ok   issuelinks           Linked Issues      front matter  list of 0
+  ok   issuerestriction     Restrict to        preserved     object with 2 parts
+  ok   issuetype            Issue Type         front matter  object with 9 parts
+  ok   labels               Labels             front matter  list of 0
+  ok   lastViewed           Last Viewed        preserved     empty (null)
+  ok   priority             Priority           front matter  empty (null)
+  ok   progress             Progress           preserved     object with 2 parts
+  ok   project              Project            front matter  object with 7 parts
+  ok   reporter             Reporter           front matter  object with 8 parts
+  ok   resolution           Resolution         front matter  empty (null)
+  ok   resolutiondate       Resolved           front matter  empty (null)
+  ok   security             Security Level     preserved     empty (null)
+  ok   status               Status             front matter  object with 6 parts
+  ok   statusCategory       Status category    preserved     object with 5 parts
+  ok   statuscategorychangedate Status category ch preserved     text, 28 characters
+  ok   subtasks             Sub-tasks          preserved     list of 0
+  ok   summary              Summary            front matter  text, 6 characters
+  ok   timeestimate         Remaining Estimate preserved     empty (null)
+  ok   timeoriginalestimate Original estimate  preserved     empty (null)
+  ok   timespent            Time Spent         preserved     empty (null)
+  ok   timetracking         Time tracking      preserved     object with 0 parts
+  ok   updated              Updated            front matter  text, 28 characters
+  ok   versions             Affects versions   preserved     list of 0
+  ok   votes                Votes              preserved     object with 3 parts
+  ok   watches              Watchers           preserved     object with 3 parts
+  ok   worklog              Log Work           preserved     object with 4 parts
+  ok   workratio            Work Ratio         preserved     number: -1
+
+  ok   all 51 fields are in the file, none missing
+  ok   the file holds no field that Jira did not send
+  ok   every custom field (10) is in the preserved section
+  ok   fields whose value is zero or empty but present (attachment, components, fixVersions, issuelinks, labels, subtasks, timetracking, versions) kept that value and were not dropped or turned into null
+
+3. THE DESCRIPTION'S STRUCTURE
+  ok   headings: Jira has 0 (levels []), the Markdown has 0 (levels [])
+  ok   list items outside tables: Jira has 0, the Markdown has 0
+  ok   tables: Jira has 0 with 0 rows, the Markdown has 0 with 0 rows
+  ok   list items inside table cells: Jira has 0, the Markdown keeps 0 as lines
+  ok   code blocks: Jira has 0, the Markdown has 0, and each one's language and text are exactly the same
+  ok   links: Jira has 0, the Markdown has 0
+  ok   images and files: Jira has 0, the Markdown keeps 0 as references
+  ok   blocks of a kind the converter does not know: Jira has 0, the Markdown carries 0 along
+  ok   every run of text in Jira's description (0, outside code blocks) is in the Markdown, in the same order
+
+4. NOTHING PRIVATE
+  ok   Jira's answer held 5 private strings (people's names, email addresses, time zones, picture links, the site's address). In the file: 0
+  ok   no email address of any kind is in the file
+  ok   people appear only as account ids (2 places), with no displayName or emailAddress beside them
+  ok   no credential is in the file (searched for the API token, the account's email address and their encoded form)
+
+RESULT: ALL CHECKS PASSED.

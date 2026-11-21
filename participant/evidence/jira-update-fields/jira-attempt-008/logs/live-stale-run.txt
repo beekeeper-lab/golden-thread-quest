@@ -1,0 +1,6 @@
+
+REFUSED: a field changed in Jira after the preview was made: priority: the preview saw (not set) and Jira now holds "Low" (id 4). Someone or something else changed it, and writing now would overwrite that. Make a new preview and read it.
+Nothing has been written.
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.

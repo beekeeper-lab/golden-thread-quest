@@ -1,0 +1,55 @@
+Reproduce: from participant/tests/playwright, run GTQ_PLANTED_FAULT=claimed-counted-as-verified npx playwright test --grep @feature-passport
+Expected failure: the passport's Verified XP shows the claimed total (50) instead of the reviewer-approved total (20), so the first assertion fails.
+
+Trace: logs/failure-trace.zip (open with npx playwright show-trace). Screenshot: screenshots/failure-state.png.
+
+[WebServer] built 407 page(s) into generated
+[WebServer] validated 128 quest(s), 9 region(s), 4 badge(s), 2 track(s) — 0 warning(s)
+
+Running 1 test using 1 worker
+
+  ✘  1 first-independent-test.spec.ts:20:5 › passport counts only reviewer-approved work as verified XP and keeps unreviewed work as claimed @feature-passport @risk-high @read-only @duration-fast (5.3s)
+
+
+  1) first-independent-test.spec.ts:20:5 › passport counts only reviewer-approved work as verified XP and keeps unreviewed work as claimed @feature-passport @risk-high @read-only @duration-fast 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  getByRole('region', { name: 'Progress' }).getByText(/^Verified XP\s*\d+$/).getByRole('definition')
+    Expected: "20"
+    Received: "50"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveText" getByRole('region', { name: 'Progress' }).getByText(/^Verified XP\s*\d+$/).getByRole('definition') with timeout 5000ms
+      - waiting for getByRole('region', { name: 'Progress' }).getByText(/^Verified XP\s*\d+$/).getByRole('definition')
+        14 × locator resolved to <dd>50</dd>
+           - unexpected value "50"
+
+
+      26 |
+      27 |     // The reviewer-approved Base Camp quest is the only verified work.
+    > 28 |     await expect(passport.total("Verified XP")).toHaveText("20");
+         |                                                 ^
+      29 |     await expect(passport.total("Verified quests")).toHaveText("1");
+      30 |
+      31 |     // The unreviewed Jira quest still counts as the participant's claim.
+        at ~/golden-thread-quest/participant/tests/playwright/first-independent-test.spec.ts:28:49
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../../local-data/playwright-results/first-independent-test-pas-703bf--unreviewed-work-as-claimed/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../../local-data/playwright-results/first-independent-test-pas-703bf--unreviewed-work-as-claimed/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../../local-data/playwright-results/first-independent-test-pas-703bf--unreviewed-work-as-claimed/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../../local-data/playwright-results/first-independent-test-pas-703bf--unreviewed-work-as-claimed/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    first-independent-test.spec.ts:20:5 › passport counts only reviewer-approved work as verified XP and keeps unreviewed work as claimed @feature-passport @risk-high @read-only @duration-fast 
+exit code 1

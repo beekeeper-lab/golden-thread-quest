@@ -1,0 +1,31 @@
+schema_version: 1
+review_id: review-20261120193150-1be6dc
+quest_id: trello-create-card-preview
+quest_version: 1
+attempt_id: trello-attempt-005
+evidence_hash: sha256:efa9bfa97de9e955247ba24ef426dcf8e1c5db3d78b3cabc07464a62e500aa10
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-20T19:31:50Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/trello/new-card/draft.md
+  digest: sha256:59ce3c296a9627c9c62f496b44992b61e587f23117b2019d05cfa176717eb6df
+- path: participant/context/trello/new-card/payload.md
+  digest: sha256:c40fdbe615b3257cfe57a6eb9a2e118a12b37ac1760fed3d9dde2be82d847584
+verification_statement: 'Automated review. I read draft.md, payload.md, PROOF.md,
+  the logs (preview-run, invalid-target-run, live-preview-run, tests, planted-bugs)
+  and the recording scripts. preview-run.txt shows a READY preview of the main draft.
+  It names the list by id and confirms the list is on the stated board. It shows the
+  exact payload with idList and pos, and the SHA-256 the script recomputed independently
+  matches payload.md. It also shows the permission check, the duplicate result (NONE/PROCEED,
+  plus a LINK case that is NOT READY), an identical board snapshot before and after,
+  and GET-only requests. invalid-target-run.txt shows five refusals, each with a reason
+  and no payload: a list on another board, a missing list, an archived list, an unknown
+  label and a member not on the board. The real sandbox run, a read-only run on the
+  participant''s own board, confirms the same with an unchanged snapshot. No text
+  in the evidence is addressed to the reviewer. The evidence sits in trello-attempt-005;
+  PROOF.md explains that copies are in attempt-001, and the automatic check found
+  the required files. Each of the 7 acceptance criteria was matched to text quoted
+  word for word from the evidence.'

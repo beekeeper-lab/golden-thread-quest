@@ -1,0 +1,20 @@
+{
+  "source": "billing",
+  "items": [
+    {
+      "source_id": "INV-0001",
+      "title": "Invoice for paper order",
+      "body": "Made-up billing item. MARKER-BILL-01"
+    },
+    {
+      "source_id": "INV-0002",
+      "title": "Invoice for kettle",
+      "body": "Made-up billing item. MARKER-BILL-02"
+    },
+    {
+      "source_id": "INV-0003",
+      "title": "Invoice for extinguisher check",
+      "body": "Made-up billing item. MARKER-BILL-03"
+    }
+  ]
+}

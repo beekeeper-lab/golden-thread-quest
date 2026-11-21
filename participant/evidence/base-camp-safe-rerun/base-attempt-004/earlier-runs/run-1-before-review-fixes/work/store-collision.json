@@ -1,0 +1,68 @@
+{
+  "next_record_number": 10,
+  "records": [
+    {
+      "body": "The fitting outside room 4 flickers. MARKER-BODY-01 swap it for the spare in the store cupboard.",
+      "key": "intake:req-0001",
+      "record_id": "SIM-0001",
+      "revision": 1,
+      "title": "Replace hallway light fitting"
+    },
+    {
+      "body": "Two boxes of plain white. MARKER-BODY-02 deliver to the front desk.",
+      "key": "intake:req-0002",
+      "record_id": "SIM-0002",
+      "revision": 1,
+      "title": "Order printer paper"
+    },
+    {
+      "body": "Add a column for car registration. MARKER-BODY-04 print twenty copies.",
+      "key": "intake:req-0004",
+      "record_id": "SIM-0003",
+      "revision": 1,
+      "title": "Update the visitor sign-in sheet"
+    },
+    {
+      "body": "Ten people, two hours after lunch. MARKER-BODY-05 projector needed.",
+      "key": "intake:req-0005",
+      "record_id": "SIM-0004",
+      "revision": 1,
+      "title": "Book the meeting room for Friday"
+    },
+    {
+      "body": "Leaves are blocking it. MARKER-BODY-06 ladder is in the shed.",
+      "key": "intake:req-0006",
+      "record_id": "SIM-0005",
+      "revision": 1,
+      "title": "Clear the gutter above the side entrance"
+    },
+    {
+      "body": "Annual check is due this month. MARKER-BODY-07 four extinguishers in total.",
+      "key": "intake:req-0007",
+      "record_id": "SIM-0006",
+      "revision": 1,
+      "title": "Renew the fire extinguisher check"
+    },
+    {
+      "body": "Shelf names agreed last week. MARKER-BODY-08 use the label printer.",
+      "key": "intake:req-0008",
+      "record_id": "SIM-0007",
+      "revision": 1,
+      "title": "Label the shelves in the store cupboard"
+    },
+    {
+      "body": "The old one trips the fuse. MARKER-BODY-09 budget is small.",
+      "key": "intake:req-0009",
+      "record_id": "SIM-0008",
+      "revision": 1,
+      "title": "Replace the kettle"
+    },
+    {
+      "body": "Remove notices older than a month. MARKER-BODY-10 keep the fire plan.",
+      "key": "intake:req-0010",
+      "record_id": "SIM-0009",
+      "revision": 1,
+      "title": "Tidy the notice board"
+    }
+  ]
+}

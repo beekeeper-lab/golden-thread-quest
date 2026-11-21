@@ -1,0 +1,130 @@
+{
+ "schema": 1,
+ "source": "fake",
+ "projects": {
+  "10001": {
+   "id": "10001",
+   "key": "BIL",
+   "name": "Billing",
+   "first_seen": "2026-11-19T01:54:44Z",
+   "last_returned": "2026-11-19T01:54:44Z",
+   "state": "present",
+   "history": []
+  },
+  "10002": {
+   "id": "10002",
+   "key": "CPUS",
+   "name": "Customer portal",
+   "first_seen": "2026-11-19T01:54:44Z",
+   "last_returned": "2026-11-19T01:54:44Z",
+   "state": "present",
+   "history": []
+  },
+  "10003": {
+   "id": "10003",
+   "key": "DATA",
+   "name": "Data platform",
+   "first_seen": "2026-11-19T01:54:44Z",
+   "last_returned": "2026-11-19T01:54:44Z",
+   "state": "present",
+   "history": [
+    {
+     "noticed": "2026-11-19T01:54:44Z",
+     "field": "key",
+     "was": "DPAT",
+     "became": "DATA"
+    }
+   ]
+  },
+  "10004": {
+   "id": "10004",
+   "key": "DSES",
+   "name": "Design system",
+   "first_seen": "2026-11-19T01:54:44Z",
+   "last_returned": "2026-11-19T01:54:44Z",
+   "state": "present",
+   "history": []
+  },
+  "10005": {
+   "id": "10005",
+   "key": "MAOB",
+   "name": "Mobile apps",
+   "first_seen": "2026-11-19T01:54:44Z",
+   "last_returned": "2026-11-19T01:54:44Z",
+   "state": "present",
+   "history": [
+    {
+     "noticed": "2026-11-19T01:54:44Z",
+     "field": "name",
+     "was": "Mobile app",
+     "became": "Mobile apps"
+    }
+   ]
+  },
+  "10006": {
+   "id": "10006",
+   "key": "ONB",
+   "name": "Onboarding",
+   "first_seen": "2026-11-19T01:54:44Z",
+   "last_returned": "2026-11-19T01:54:44Z",
+   "state": "not_returned",
+   "history": [],
+   "not_returned_since": "2026-11-19T01:54:44Z"
+  },
+  "10008": {
+   "id": "10008",
+   "key": "P008",
+   "name": "Project 008",
+   "first_seen": "2026-11-19T01:54:44Z",
+   "last_returned": "2026-11-19T01:54:44Z",
+   "state": "present",
+   "history": []
+  },
+  "10009": {
+   "id": "10009",
+   "key": "P009",
+   "name": "Project 009",
+   "first_seen": "2026-11-19T01:54:44Z",
+   "last_returned": "2026-11-19T01:54:44Z",
+   "state": "present",
+   "history": []
+  },
+  "10010": {
+   "id": "10010",
+   "key": "P010",
+   "name": "Project 010",
+   "first_seen": "2026-11-19T01:54:44Z",
+   "last_returned": "2026-11-19T01:54:44Z",
+   "state": "present",
+   "history": []
+  },
+  "10011": {
+   "id": "10011",
+   "key": "P011",
+   "name": "Project 011",
+   "first_seen": "2026-11-19T01:54:44Z",
+   "last_returned": "2026-11-19T01:54:44Z",
+   "state": "present",
+   "history": []
+  },
+  "10007": {
+   "id": "10007",
+   "key": "SEA",
+   "name": "Search",
+   "first_seen": "2026-11-19T01:54:44Z",
+   "last_returned": "2026-11-19T01:54:44Z",
+   "state": "present",
+   "history": []
+  },
+  "10012": {
+   "id": "10012",
+   "key": "BIL2",
+   "name": "Billing",
+   "first_seen": "2026-11-19T01:54:44Z",
+   "last_returned": "2026-11-19T01:54:44Z",
+   "state": "present",
+   "history": []
+  }
+ },
+ "last_successful_sync": "2026-11-19T01:54:44Z"
+}

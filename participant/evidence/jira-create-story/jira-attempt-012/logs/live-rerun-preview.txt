@@ -1,0 +1,6 @@
+
+REFUSED: this draft has already been created in Jira as SCRUM-23 (issue id 10022), recorded in the link file. It is not created twice. Use the verify command to compare it with Jira.
+Nothing has been written to Jira.
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.

@@ -1,0 +1,247 @@
+Running the approved workflow a second time: jira-create-story, attempt jira-attempt-012
+Recorded by scripts/record_evidence.py.
+The Jira here is participant/skills/jira-create-story/fake_jira.py, a made-up one. No real Jira was read or written, so nothing is
+redacted: the site, the projects and the stories are invented. STATE stands for a temporary folder.
+This carries on from the approved run recorded in logs/confirmation.txt, in the same STATE folder.
+
+==============================================================================
+1. The same preview command again, with the same draft. This is the quest's scenario: the next run.
+$ python3 participant/skills/jira-create-story/create.py preview --source fake --link participant/context/jira/new-story/fixture-run/linked.md --state STATE --draft participant/context/jira/new-story/fixture-run/draft.md --allowlist participant/skills/jira-create-story/fake-allowlist.json --catalog participant/context/jira/duplicates/fixture --today 2026-11-19
+------------------------------------------------------------------------------
+
+REFUSED: this draft has already been created in Jira as RPT-10 (issue id 30010), recorded in the link file. It is not created twice. Use the verify command to compare it with Jira.
+Nothing has been written to Jira.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused, exit code 1: the draft is already linked to RPT-10, and it is not created twice (criterion 9)
+
+==============================================================================
+2. The same confirm command again, with the fingerprint that was already used.
+$ python3 participant/skills/jira-create-story/create.py confirm --source fake --link participant/context/jira/new-story/fixture-run/linked.md --state STATE --draft participant/context/jira/new-story/fixture-run/draft.md --allowlist participant/skills/jira-create-story/fake-allowlist.json --catalog participant/context/jira/duplicates/fixture --today 2026-11-19 --fingerprint df64d2e7a98a --confirmed-by "the participant"
+------------------------------------------------------------------------------
+
+REFUSED: the preview df64d2e7a98a has already been confirmed and its story created. A fingerprint is used once.
+Nothing has been written to Jira.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused, exit code 1: a fingerprint is used once
+
+==============================================================================
+3. What the fake Jira holds after both.
+$ python3 participant/skills/jira-create-story/fake_jira.py show --state STATE
+------------------------------------------------------------------------------
+FAKE JIRA holds 8 stories in project RPT: RPT-1 (id 30001), RPT-2 (id 30002), RPT-3 (id 30003), RPT-4 (id 30004), RPT-5 (id 30005), RPT-7 (id 30008), RPT-9 (id 30009), RPT-10 (id 30010).
+------------------------------------------------------------------------------
+exit code: 0
+  ok   still 8 stories in RPT: no second story was created
+
+==============================================================================
+4. The verify command: the link file matched to Jira by issue id, and compared again (criterion 3).
+$ python3 participant/skills/jira-create-story/create.py verify --source fake --link participant/context/jira/new-story/fixture-run/linked.md --state STATE
+------------------------------------------------------------------------------
+VERIFY. Reads Jira and writes nothing to it.
+Link file: participant/context/jira/new-story/fixture-run/linked.md
+Matched to Jira by issue id 30010: found.
+The key in Jira is RPT-10, as the link file records.
+Asked of Jira for the marker gtq-3d2f86e9: exactly one story carries it, and it is this one. So reconcile would
+have found this story had its key never been recorded.
+
+READ BACK from Jira by issue id 30010, and compared with the payload field for field:
+  components         sent id 31001
+                     read "Reports" (id 31001): the same
+  customfield_10050  sent id 32001
+                     read "Data" (id 32001): the same
+  description        sent 2 block(s) of document
+                     read 2 block(s) of document: the same, identical as sent
+  duedate            sent "2027-01-15"
+                     read "2027-01-15": the same
+  issuetype          sent id 10001
+                     read "Story" (id 10001): the same
+  labels             sent ["gtq-3d2f86e9", "reporting", "revenue"]
+                     read ["gtq-3d2f86e9", "reporting", "revenue"]: the same
+  parent             sent "RPT-1"
+                     read "RPT-1" (id 30001): the same
+  project            sent id 30000
+                     read "RPT" (id 30000): the same
+  summary            sent "Quarterly revenue by plan report for the finance team"
+                     read "Quarterly revenue by plan report for the finance team": the same
+Result: every field the payload sent reads back the same.
+Fields Jira set that the payload did not send:
+  created            Created       "2026-11-19T12:00:01.000+0000"
+  creator            Creator       a person, not shown
+  priority           Priority      "Medium" (id 3)
+  reporter           Reporter      a person, not shown
+  status             Status        "To Do" (id 1)
+  and 1 more that hold a value: updated
+
+The link file participant/context/jira/new-story/fixture-run/linked.md now holds the key, the issue id and this comparison.
+
+RESULT RECORD
+  Issue key: RPT-10
+  Identifier of what was created: Jira issue id 30010 (this identifies the story; a key can change)
+  Target project: RPT (project id 30000), on the sandbox allowlist
+  Jira site: [site address removed], site fingerprint 738169e667642f09
+  Created at: 2026-11-19 21:38:42 UTC
+  Confirmed by: the participant, at 2026-11-19 21:38:42 UTC
+  Preview: fingerprint df64d2e7a98a
+  Payload: SHA-256 9039d788799b8fdbead7bebcdd68d627b174890b185a50fd2b70da9d3e5ee4a0
+  Marker label: gtq-3d2f86e9
+  Read back and compared at 2026-11-19 21:38:43 UTC: every field the payload sent reads back the same
+  Local link: participant/context/jira/new-story/fixture-run/linked.md
+
+Requests sent to Jira: 3. Every one was a GET, which reads and cannot change anything.
+  GET /rest/api/3/issue/30010
+  GET /rest/api/3/search/jql
+  GET /rest/api/3/issue/30010
+------------------------------------------------------------------------------
+exit code: 0
+  ok   matched by issue id 30010, the key is as recorded, and every field is the same
+
+==============================================================================
+5. Someone gives the story another key in Jira, as when a story is moved. Then verify again.
+$ python3 participant/skills/jira-create-story/fake_jira.py rename --state STATE --story RPT-10 --to RPT-99
+------------------------------------------------------------------------------
+FAKE JIRA: someone gave story RPT-10 (issue id 30010) the new key RPT-99.
+FAKE JIRA holds 8 stories in project RPT: RPT-1 (id 30001), RPT-2 (id 30002), RPT-3 (id 30003), RPT-4 (id 30004), RPT-5 (id 30005), RPT-7 (id 30008), RPT-9 (id 30009), RPT-99 (id 30010).
+------------------------------------------------------------------------------
+exit code: 0
+$ python3 participant/skills/jira-create-story/create.py verify --source fake --link participant/context/jira/new-story/fixture-run/linked.md --state STATE
+------------------------------------------------------------------------------
+VERIFY. Reads Jira and writes nothing to it.
+Link file: participant/context/jira/new-story/fixture-run/linked.md
+Matched to Jira by issue id 30010: found.
+The key has CHANGED in Jira: the link file recorded RPT-10 and the story is now RPT-99. It is the same story, by its
+issue id. The link file is updated with the new key, and keeps the earlier one.
+Asked of Jira for the marker gtq-3d2f86e9: exactly one story carries it, and it is this one. So reconcile would
+have found this story had its key never been recorded.
+
+READ BACK from Jira by issue id 30010, and compared with the payload field for field:
+  components         sent id 31001
+                     read "Reports" (id 31001): the same
+  customfield_10050  sent id 32001
+                     read "Data" (id 32001): the same
+  description        sent 2 block(s) of document
+                     read 2 block(s) of document: the same, identical as sent
+  duedate            sent "2027-01-15"
+                     read "2027-01-15": the same
+  issuetype          sent id 10001
+                     read "Story" (id 10001): the same
+  labels             sent ["gtq-3d2f86e9", "reporting", "revenue"]
+                     read ["gtq-3d2f86e9", "reporting", "revenue"]: the same
+  parent             sent "RPT-1"
+                     read "RPT-1" (id 30001): the same
+  project            sent id 30000
+                     read "RPT" (id 30000): the same
+  summary            sent "Quarterly revenue by plan report for the finance team"
+                     read "Quarterly revenue by plan report for the finance team": the same
+Result: every field the payload sent reads back the same.
+Fields Jira set that the payload did not send:
+  created            Created       "2026-11-19T12:00:01.000+0000"
+  creator            Creator       a person, not shown
+  priority           Priority      "Medium" (id 3)
+  reporter           Reporter      a person, not shown
+  status             Status        "To Do" (id 1)
+  and 1 more that hold a value: updated
+
+The link file participant/context/jira/new-story/fixture-run/linked.md now holds the key, the issue id and this comparison.
+
+RESULT RECORD
+  Issue key: RPT-99
+  Identifier of what was created: Jira issue id 30010 (this identifies the story; a key can change)
+  Target project: RPT (project id 30000), on the sandbox allowlist
+  Jira site: [site address removed], site fingerprint 738169e667642f09
+  Created at: 2026-11-19 21:38:42 UTC
+  Confirmed by: the participant, at 2026-11-19 21:38:42 UTC
+  Preview: fingerprint df64d2e7a98a
+  Payload: SHA-256 9039d788799b8fdbead7bebcdd68d627b174890b185a50fd2b70da9d3e5ee4a0
+  Marker label: gtq-3d2f86e9
+  Read back and compared at 2026-11-19 21:38:43 UTC: every field the payload sent reads back the same
+  Local link: participant/context/jira/new-story/fixture-run/linked.md
+
+Requests sent to Jira: 3. Every one was a GET, which reads and cannot change anything.
+  GET /rest/api/3/issue/30010
+  GET /rest/api/3/search/jql
+  GET /rest/api/3/issue/30010
+------------------------------------------------------------------------------
+exit code: 0
+  ok   still matched, by the issue id, and the changed key is reported
+  ok   the link file now holds the new key and keeps the earlier one, under the same issue id
+
+Where Jira cannot prevent a repeat: Jira would accept this same payload again and make a second story.
+What stops it here is local: the link file, and a fingerprint that is used once. A person or a tool
+creating the same story some other way is not stopped. They would be noticed by the same-title check in
+the next preview, and by two stories with one title on the board.
+
+RESULT: ALL CHECKS PASSED. (The checks are on the fake-Jira runs above.)
+
+##############################################################################
+THE SAME ON THE REAL JIRA SANDBOX
+The blocks below were not made by this script. The participant ran each command in their own
+terminal against their real Jira sandbox, and the workflow saved its output with the site's
+address replaced by a marker. They are copied here unchanged from the log files named.
+
+The real preview command run again after the real create.
+(copied from logs/live-rerun-preview.txt)
+------------------------------------------------------------------------------
+REFUSED: this draft has already been created in Jira as SCRUM-23 (issue id 10022), recorded in the link file. It is not created twice. Use the verify command to compare it with Jira.
+Nothing has been written to Jira.
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.
+------------------------------------------------------------------------------
+
+The real verify command.
+(copied from logs/live-verify.txt)
+------------------------------------------------------------------------------
+VERIFY. Reads Jira and writes nothing to it.
+Link file: participant/context/jira/new-story/linked.md
+Matched to Jira by issue id 10022: found.
+The key in Jira is SCRUM-23, as the link file records.
+Asked of Jira for the marker gtq-57dc5556: exactly one story carries it, and it is this one. So reconcile would
+have found this story had its key never been recorded.
+
+READ BACK from Jira by issue id 10022, and compared with the payload field for field:
+  description        sent 2 block(s) of document
+                     read 2 block(s) of document: the same, identical as sent
+  duedate            sent "2027-01-15"
+                     read "2027-01-15": the same
+  issuetype          sent id 10004
+                     read "Story" (id 10004): the same
+  labels             sent ["gtq-57dc5556", "reporting", "revenue"]
+                     read ["gtq-57dc5556", "reporting", "revenue"]: the same
+  project            sent id 10000
+                     read "SCRUM" (id 10000): the same
+  summary            sent "Quarterly revenue by plan report for the finance team"
+                     read "Quarterly revenue by plan report for the finance team": the same
+Result: every field the payload sent reads back the same.
+Fields Jira set that the payload did not send:
+  created            Created       "2026-11-19T16:34:26.044-0500"
+  creator            Creator       a person, not shown
+  priority           Priority      "Medium" (id 3)
+  reporter           Reporter      a person, not shown
+  status             Status        "To Do" (id 10000)
+  and 12 more that hold a value: aggregateprogress, comment, customfield_10019, issuerestriction, progress, statusCategory, statuscategorychangedate, updated, votes, watches, worklog, workratio
+
+The link file participant/context/jira/new-story/linked.md now holds the key, the issue id and this comparison.
+
+RESULT RECORD
+  Issue key: SCRUM-23
+  Identifier of what was created: Jira issue id 10022 (this identifies the story; a key can change)
+  Target project: SCRUM (project id 10000), on the sandbox allowlist
+  Jira site: [site address removed], site fingerprint 4aabe3d08fbad6b1
+  Created at: 2026-11-19 21:34:26 UTC
+  Confirmed by: the participant, at 2026-11-19 21:34:22 UTC
+  Preview: fingerprint c931beb110b0
+  Payload: SHA-256 d044842a49cf189564af35d662d55965e82c98e124751ecab09ed2eabe3ad3a2
+  Marker label: gtq-57dc5556
+  Read back and compared at 2026-11-19 21:38:32 UTC: every field the payload sent reads back the same
+  Local link: participant/context/jira/new-story/linked.md
+
+Requests sent to Jira: 3. Every one was a GET, which reads and cannot change anything.
+  GET /rest/api/3/issue/10022
+  GET /rest/api/3/search/jql
+  GET /rest/api/3/issue/10022
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.
+------------------------------------------------------------------------------

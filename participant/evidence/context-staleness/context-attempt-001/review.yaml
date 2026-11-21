@@ -1,0 +1,30 @@
+schema_version: 1
+review_id: review-20261120020239-2e53d1
+quest_id: context-staleness
+quest_version: 1
+attempt_id: context-attempt-001
+evidence_hash: sha256:4ca403c196f7fdd6cd668db71ace053474b28c04d997b1ecc40def5689f67181
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-20T02:02:39Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/freshness/policy.md
+  digest: sha256:aabb845331eeea8e02813d1acf88e6cdd5d1bd30e236589f8027361165e409ca
+verification_statement: 'Automated review. I read the policy, PROOF.md, the stale-run,
+  missing-timestamp, refresh, tests and planted-bugs logs, and the two recording scripts.
+  stale-run.txt shows the item files with retrieved_at, then three runs on the same
+  library at three set clock values: fresh, PARTIAL (scope fresh, two statuses stale)
+  and CANNOT SAY (nine days on, scope stale). Each run prints the clock, lists the
+  context it used oldest first, and names the oldest item and its age. The stale items
+  are each named with how far over the limit they are. The numbers agree with each
+  other: 2026-11-28T09:00 minus 2026-11-18T16:00 is 9d 17h, which is 6d 17h over the
+  3-day limit. missing-timestamp.txt shows WI-103 with no retrieved_at line, treated
+  as STALE and moved out of the statements of fact. The policy gives a different limit
+  and reason for each kind, the rules, and a first-line table that lets a reader predict
+  the answer. The hand working in the log matches the tool''s ages output. I found
+  no text addressed to the reviewer. One small difference: the files are under context-attempt-001,
+  not the attempt-001 path the quest names. The pre-check still reported the required
+  files present. Each of the 7 acceptance criteria was matched to text quoted word
+  for word from the evidence.'

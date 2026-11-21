@@ -1,0 +1,54 @@
+test_a_broken_allowlist_allows_nothing (test_update.Allowlist) ... ok
+test_a_preview_cannot_be_confirmed_against_another_site (test_update.Allowlist) ... ok
+test_a_project_not_on_the_allowlist_is_refused_at_preview (test_update.Allowlist) ... ok
+test_a_story_moved_to_another_project_is_refused (test_update.Allowlist) ... ok
+test_the_allowlist_is_checked_again_at_confirmation (test_update.Allowlist) ... ok
+test_the_same_project_id_on_another_site_is_not_allowed (test_update.Allowlist) ... ok
+test_live_connection_needs_all_three_variables_and_https (test_update.CommandLine) ... ok
+test_live_preview_has_no_put_and_live_put_takes_one_kind_of_path (test_update.CommandLine) ... ok
+test_output_holding_a_credential_is_not_shown_or_saved (test_update.CommandLine) ... ok
+test_preview_then_confirm_through_the_command_line (test_update.CommandLine) ... ok
+test_the_test_clock_only_goes_forward (test_update.CommandLine) ... ok
+test_there_is_no_option_that_skips_the_confirmation (test_update.CommandLine) ... ok
+test_a_change_that_differs_from_the_preview_is_refused (test_update.Confirmation) ... ok
+test_a_fingerprint_is_used_once (test_update.Confirmation) ... ok
+test_a_preview_older_than_the_limit_is_refused (test_update.Confirmation) ... ok
+test_an_altered_saved_preview_is_refused (test_update.Confirmation) ... ok
+test_approved_run_writes_and_reads_back (test_update.Confirmation) ... ok
+test_missing_confirmation_is_refused (test_update.Confirmation) ... ok
+test_a_story_that_cannot_be_seen_is_refused (test_update.Permission) ... ok
+test_no_answer_to_the_permission_check_assumes_nothing (test_update.Permission) ... ok
+test_no_edit_permission_is_refused (test_update.Permission) ... ok
+test_permission_lost_after_the_preview_is_refused (test_update.Permission) ... ok
+test_a_field_already_as_wanted_is_reported_and_not_sent (test_update.Preview) ... ok
+test_a_preview_has_no_way_to_write (test_update.Preview) ... ok
+test_preview_changes_nothing_in_jira_and_sends_only_gets (test_update.Preview) ... ok
+test_shows_old_and_new_value_of_each_field (test_update.Preview) ... ok
+test_shows_site_project_story_and_both_checks (test_update.Preview) ... ok
+test_story_changing_during_the_preview_is_refused (test_update.Preview) ... ok
+test_story_text_is_never_printed (test_update.Preview) ... ok
+test_result_record_holds_what_criterion_8_asks_for (test_update.ResultAndRerun) ... ok
+test_running_again_changes_nothing (test_update.ResultAndRerun) ... ok
+test_someone_elses_entry_is_not_claimed (test_update.ResultAndRerun) ... ok
+test_the_changelog_entry_is_found_across_pages (test_update.ResultAndRerun) ... ok
+test_a_change_in_the_last_moment_is_reported_afterwards (test_update.Stale) ... ok
+test_a_field_changed_in_jira_after_the_preview_stops_the_update (test_update.Stale) ... ok
+test_a_field_named_but_already_as_wanted_is_watched_too (test_update.Stale) ... ok
+test_a_field_outside_the_change_moving_does_not_stop_it (test_update.Stale) ... ok
+test_a_write_jira_accepts_but_does_not_make_is_noticed (test_update.Stale) ... ok
+test_each_supported_field_is_watched (test_update.Stale) ... ok
+test_someone_else_already_making_the_same_change_also_stops_it (test_update.Stale) ... ok
+test_change_file_shape (test_update.SupportedFields) ... ok
+test_only_the_changed_supported_fields_are_sent (test_update.SupportedFields) ... ok
+test_priority_is_refused_where_jira_does_not_offer_it (test_update.SupportedFields) ... ok
+test_priority_must_be_one_jira_offers (test_update.SupportedFields) ... ok
+test_unsupported_fields_are_refused_before_any_request (test_update.SupportedFields) ... ok
+test_values_outside_the_allowed_ones_are_refused (test_update.SupportedFields) ... ok
+test_jira_refusing_the_write_writes_nothing_and_uses_up_the_preview (test_update.WhenTheWriteGoesWrong) ... ok
+test_jira_unreachable_before_the_write_is_a_refusal (test_update.WhenTheWriteGoesWrong) ... ok
+test_no_answer_means_unknown_and_no_retry (test_update.WhenTheWriteGoesWrong) ... ok
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.069s
+
+OK

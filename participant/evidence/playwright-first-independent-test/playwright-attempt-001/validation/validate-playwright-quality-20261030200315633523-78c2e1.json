@@ -1,0 +1,50 @@
+{
+  "attempt_id": "playwright-attempt-001",
+  "checks": [
+    {
+      "evidence": "participant/tests/playwright/node_modules/playwright/lib/cli/testActions.js, participant/tests/playwright/node_modules/playwright/lib/mcp/test/testBackend.js, participant/tests/playwright/node_modules/playwright/lib/mcp/test/testContext.js, participant/tests/playwright/node_modules/playwright/lib/mcp/test/testTool.js, participant/tests/playwright/node_modules/playwright/lib/mcp/test/testTools.js",
+      "id": "test-asserts-something",
+      "outcome": "fail",
+      "severity": "blocking",
+      "suggested_action": "A test that cannot fail is not evidence of anything.",
+      "summary": "A test file contains no assertion."
+    },
+    {
+      "evidence": "participant/tests/playwright/node_modules/playwright/types/test.d.ts",
+      "id": "selectors-target-behavior",
+      "outcome": "fail",
+      "severity": "high",
+      "suggested_action": "Query by role, label or visible text. A selector tied to a div renames itself out of existence the next time someone touches the CSS.",
+      "summary": "The test selects elements by markup structure."
+    },
+    {
+      "evidence": "participant/tests/playwright/node_modules/playwright/lib/mcp/test/testContext.js",
+      "id": "no-arbitrary-waits",
+      "outcome": "fail",
+      "severity": "medium",
+      "suggested_action": "Wait for the thing you actually need. A fixed sleep is slow when it works and flaky when it does not.",
+      "summary": "The test waits on the clock rather than on a condition."
+    },
+    {
+      "evidence": "participant/evidence/playwright-first-independent-test/playwright-attempt-001/logs/failure-run.txt, participant/evidence/playwright-first-independent-test/playwright-attempt-001/logs/failure-trace.zip, participant/evidence/playwright-first-independent-test/playwright-attempt-001/screenshots/failure-state.png",
+      "id": "failure-is-diagnosable",
+      "outcome": "pass",
+      "summary": "The evidence includes a record of the test failing."
+    }
+  ],
+  "completed_at": "2026-10-30T20:03:15Z",
+  "duration_ms": 66,
+  "environment": {
+    "network": "denied",
+    "validator_version": 2
+  },
+  "outcome": "fail",
+  "quest_id": "playwright-first-independent-test",
+  "redaction_applied": false,
+  "result_path": "participant/evidence/playwright-first-independent-test/playwright-attempt-001/validation/validate-playwright-quality-20261030200315633523-78c2e1.json",
+  "run_id": "validate-playwright-quality-20261030200315633523-78c2e1",
+  "schema_version": 1,
+  "started_at": "2026-10-30T20:03:15Z",
+  "validator_id": "validate-playwright-quality",
+  "validator_version": 2
+}

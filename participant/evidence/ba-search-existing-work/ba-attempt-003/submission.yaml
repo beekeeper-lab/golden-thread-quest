@@ -1,0 +1,15 @@
+schema_version: 1
+submission_id: submission-20261121003610-78d8d3
+quest_id: ba-search-existing-work
+quest_version: 1
+attempt_id: ba-attempt-003
+content_hash: sha256:e676fbf4ad23c79d99195c7f321b28d9979a4727a70634440c4b8176fd5cee08
+evidence_hash: sha256:4e2306fb24b8afbdb361e7f7a557880f9b65801177c9a49e0e10ee8baa570d61
+submitted_at: '2026-11-21T00:36:10Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/search/catalog.md
+  digest: sha256:ee590b5f1c05445fb09a537eff2d7a51296cc22f3e7d11b1c5a8f4336c9b40de
+- path: participant/context/search/report.md
+  digest: sha256:9ab17cc34cf7d13f6eb05ba1762bcb79c3a088e84306da0c7cb5e3387a688fce

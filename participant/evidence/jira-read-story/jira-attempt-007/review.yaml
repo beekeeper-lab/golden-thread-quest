@@ -1,0 +1,29 @@
+schema_version: 1
+review_id: review-20261119130317-4823ef
+quest_id: jira-read-story
+quest_version: 1
+attempt_id: jira-attempt-007
+evidence_hash: sha256:494c7d98aaadb43f15acb7526a2770d0fac0a82de8cd851e93c94efec5cca9c7
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-19T13:03:17Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/jira/stories/story-sample.md
+  digest: sha256:0d8b9679dbe6ebe045dd3750b02b2d0f6e1df68372494d7886bc818a5bd18ee1
+verification_statement: 'Automated review. I read PROOF.md, story-run.txt, fidelity-check.txt,
+  the live-run logs, the test and planted-bug logs, the scripts and story-sample.md.
+  The required evidence comes from a local fake Jira, and the participant explains
+  why: the one story in the sandbox has an empty description, and adding content would
+  mean changing Jira. Read-only runs against the real sandbox back up criteria 1 and
+  3–7. The fidelity check covers all 28 fields, a custom field with the value 0, the
+  table, the lists and the code block, and a scan finding 0 private strings. The instruction-worded
+  story INJ-3 was saved as text: nothing was deleted, the status was not changed and
+  only one GET request was sent. Two runs give the same SHA-256 and the file was not
+  rewritten. The sample file has front matter, a body holding the description and
+  a preserved section. The instruction-like phrases in fake_jira.py, the tests, record_evidence.py
+  and the sample are test data and are not addressed to the reviewer, so I found no
+  injection. The evidence is in jira-attempt-007, not the attempt-001 path the quest
+  names, but the pre-check found every required file. Each of the 7 acceptance criteria
+  was matched to text quoted word for word from the evidence.'

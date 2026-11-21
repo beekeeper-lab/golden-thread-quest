@@ -1,0 +1,116 @@
+Issues that closed, moved or became unreadable between synchronizations. github-read-assigned-issues, attempt github-attempt-001
+Recorded by scripts/record_evidence.py. No request was sent to GitHub. Every repository, issue, comment and login is made up.
+This follows the two runs in second-run.txt, in the same folder. The made-up GitHub is now at step 1, a day later:
+  acme-fixture/platform#7 was closed as completed, by a commit, after a pull request that mentions it was merged
+  acme-fixture/support#12 was transferred to beta-fixture/docs, where it is number 41 with a new node ID
+  acme-fixture/design#5 was given to someone else
+  beta-fixture/docs#3 was deleted
+  acme-fixture/legacy-tools, a private repository with two closed issues, can no longer be seen by the connection
+  acme-fixture/design was renamed acme-fixture/design-system
+  acme-fixture/platform#2 got a new comment and an edited one, and acme-fixture/platform#200 is new
+
+==============================================================================
+PART 1. The synchronization after the changes
+$ python3 participant/skills/github-read-assigned/sync.py --source fake --fake-step 1
+------------------------------------------------------------------------------
+github-sync: identity read from the connection: login robin-fixture, user id 9001. GitHub was asked "who am I?". No login is named in the skill or given to it
+github-sync: token scopes GitHub reports: none reported, as for a fine-grained token
+github-sync: scope: every repository GitHub lists an assigned issue in
+github-sync: GitHub's list of items assigned to the user: 146 items in 2 requests (100 + 46). GitHub reported no further page after the last
+github-sync: pull requests left out: 23. Issues: 123. Rule: an item is a pull request when it carries a `pull_request` key, and only then. GitHub's list of assigned items returns issues and pull requests together, and that key is how GitHub marks the pull requests
+github-sync: retrieved 123 issues. GitHub's search declares 123. The totals agree
+github-sync: repositories with an assigned issue: 4
+github-sync:   repository id 101, public: 97 issues, 20 pull requests left out, comments and timelines read in 196 requests
+github-sync:   repository id 102, public: 13 issues, 3 pull requests left out, comments and timelines read in 26 requests
+github-sync:   repository id 103, public: 8 issues, 0 pull requests left out, comments and timelines read in 16 requests
+github-sync:   repository id 104, public: 5 issues, 0 pull requests left out, comments and timelines read in 10 requests
+github-sync: comments read: 136. Added to the local copy: 1, edited: 1, no longer returned and kept: 0
+github-sync: timeline entries read: 149. Kept as material: 11. Added to the local copy: 3
+github-sync: issues held before this sync: 126. This sync: 2 new, 10 changed, 111 unchanged, 5 newly flagged as no longer assigned, 0 assigned again
+github-sync:   changed: issue I_kwFX1010007 (state, state_reason, updated_at, closed_at, timeline entries added)
+github-sync:   changed: issue I_kwFX1010002 (updated_at, comments added, comments edited)
+github-sync:   changed: issue I_kwFX1030012 (full_name)
+github-sync:   changed: issue I_kwFX1030011 (full_name)
+github-sync:   changed: issue I_kwFX1030010 (full_name)
+github-sync:   changed: issue I_kwFX1030009 (full_name)
+github-sync:   changed: issue I_kwFX1030008 (full_name)
+github-sync:   changed: issue I_kwFX1030007 (full_name)
+github-sync:   changed: issue I_kwFX1030006 (full_name)
+github-sync:   changed: issue I_kwFX1030004 (full_name)
+github-sync:   CLOSED since the last sync: issue I_kwFX1010007 is now closed (completed). It was open. Kept, with both states in its record
+github-sync:   FLAGGED, not deleted: issue I_kwFX1020012 is no longer among the user's assigned issues: transferred, now node ID I_kwFX1040041. Last known state: open. Its record and its notes are kept
+github-sync:   FLAGGED, not deleted: issue I_kwFX1030005 is no longer among the user's assigned issues: reassigned, now 1 assignee. Last known state: open. Its record and its notes are kept
+github-sync:   FLAGGED, not deleted: issue I_kwFX1040003 is no longer among the user's assigned issues: deleted. Last known state: open. Its record and its notes are kept
+github-sync:   FLAGGED, not deleted: issue I_kwFX1050001 is no longer among the user's assigned issues: not found. Last known state: closed (not_planned). Its record and its notes are kept
+github-sync:   FLAGGED, not deleted: issue I_kwFX1050002 is no longer among the user's assigned issues: not found. Last known state: closed (completed). Its record and its notes are kept
+github-sync: links held: 3 to pull requests, 3 to commits, 1 to other issues
+github-sync: counts: retrieved 123, of which 0 in unreadable repositories were not recorded or refreshed. Recorded by this sync: 123. Held in all: 128, of which 5 no longer assigned. Rows in the index: 128. Record files: 128. The counts agree
+github-sync: notes: 3 files, opened for reading only. SHA-256 before and after this sync:
+github-sync:   notes/I_kwFX1010002.md  before b063a6db666d0891a2f958e7084f2cad6600e8ec571fc44ee6dfe7c3e005faf3  after b063a6db666d0891a2f958e7084f2cad6600e8ec571fc44ee6dfe7c3e005faf3  same
+github-sync:   notes/I_kwFX1020012.md  before d0db4e472970a85ce33df2a852550535ebbdbf7aff074faf7ebb6f651e44fe8b  after d0db4e472970a85ce33df2a852550535ebbdbf7aff074faf7ebb6f651e44fe8b  same
+github-sync:   notes/I_kwFX1050001.md  before 04061de2cb3ba43aba93ae9a7b1e10d095773c2bce332fde3027a54e5e2c6732  after 04061de2cb3ba43aba93ae9a7b1e10d095773c2bce332fde3027a54e5e2c6732  same
+github-sync: requests made: 259, every one a GET. Redirects followed, all to GitHub's API: 2
+github-sync: last successful sync: 2026-11-03T09:00:00Z. Written: participant/context/github/assigned/index.md, 128 records in issues/, delivery-links.md and assigned.json
+------------------------------------------------------------------------------
+exit code: 0
+  ok   exit code 0
+  ok   nothing was deleted: every issue held before is still held, and every record file is still there
+  I_kwFX1020012  acme-fixture/support#12  transferred  last known state: open
+  I_kwFX1030005  acme-fixture/design#5  reassigned  last known state: open
+  I_kwFX1040003  beta-fixture/docs#3  deleted  last known state: open
+  I_kwFX1050001  acme-fixture/legacy-tools#1  not found  last known state: closed (not_planned)
+  I_kwFX1050002  acme-fixture/legacy-tools#2  not found  last known state: closed (completed)
+  ok   criterion 10: 5 issues are flagged, none deleted
+  ok   TRANSFERRED: support#12 is flagged as transferred, with where it went and the state it was last in
+  ok   the issue it became is recorded as new, and points back to the one it was
+  ok   UNREADABLE: both legacy-tools issues are flagged as not found, with the closed states they were last in
+  ok   the repository's last successful sync is still the earlier one
+  ok   reassigned and deleted issues are flagged with those reasons
+  github-sync:   CLOSED since the last sync: issue I_kwFX1010007 is now closed (completed). It was open. Kept, with both states in its record
+  ok   CLOSED: platform#7 is still assigned, is now closed (completed), and the run says it was open
+  ok   its record holds both states, each with the sync that saw it
+  ok   criterion 8: the pull request and the commit that answer it are held as links, and its delivery evidence exists
+  ok   each of the 5 records still holds the issue's fields, and says they are the last known state
+  ok   the index lists the 5 in their own section, with the last known state of each
+  ok   criterion 6: the renamed repository's issues kept their records, with the earlier name
+  ok   criterion 7: platform#2 has 4 comments, the new one once and the edited one in place of the old
+  ok   criterion 11: a flagged issue keeps the time it was last synced, and the others have the new time
+  ok   rows in the index and record files, counted by this script: 128 and 128
+  ok   criterion 9: every notes file has the SHA-256 it had before the first sync, the notes of two flagged issues included
+  ok   the index still shows the notes of the transferred issue
+
+==============================================================================
+PART 2. The same synchronization again
+$ python3 participant/skills/github-read-assigned/sync.py --source fake --fake-step 1
+------------------------------------------------------------------------------
+github-sync: identity read from the connection: login robin-fixture, user id 9001. GitHub was asked "who am I?". No login is named in the skill or given to it
+github-sync: token scopes GitHub reports: none reported, as for a fine-grained token
+github-sync: scope: every repository GitHub lists an assigned issue in
+github-sync: GitHub's list of items assigned to the user: 146 items in 2 requests (100 + 46). GitHub reported no further page after the last
+github-sync: pull requests left out: 23. Issues: 123. Rule: an item is a pull request when it carries a `pull_request` key, and only then. GitHub's list of assigned items returns issues and pull requests together, and that key is how GitHub marks the pull requests
+github-sync: retrieved 123 issues. GitHub's search declares 123. The totals agree
+github-sync: repositories with an assigned issue: 4
+github-sync:   repository id 101, public: 97 issues, 20 pull requests left out, comments and timelines read in 196 requests
+github-sync:   repository id 102, public: 13 issues, 3 pull requests left out, comments and timelines read in 26 requests
+github-sync:   repository id 103, public: 8 issues, 0 pull requests left out, comments and timelines read in 16 requests
+github-sync:   repository id 104, public: 5 issues, 0 pull requests left out, comments and timelines read in 10 requests
+github-sync: comments read: 136. Added to the local copy: 0, edited: 0, no longer returned and kept: 0
+github-sync: timeline entries read: 149. Kept as material: 11. Added to the local copy: 0
+github-sync: issues held before this sync: 128. This sync: 0 new, 0 changed, 123 unchanged, 0 newly flagged as no longer assigned, 0 assigned again
+github-sync: links held: 3 to pull requests, 3 to commits, 1 to other issues
+github-sync: counts: retrieved 123, of which 0 in unreadable repositories were not recorded or refreshed. Recorded by this sync: 123. Held in all: 128, of which 5 no longer assigned. Rows in the index: 128. Record files: 128. The counts agree
+github-sync: notes: 3 files, opened for reading only. SHA-256 before and after this sync:
+github-sync:   notes/I_kwFX1010002.md  before b063a6db666d0891a2f958e7084f2cad6600e8ec571fc44ee6dfe7c3e005faf3  after b063a6db666d0891a2f958e7084f2cad6600e8ec571fc44ee6dfe7c3e005faf3  same
+github-sync:   notes/I_kwFX1020012.md  before d0db4e472970a85ce33df2a852550535ebbdbf7aff074faf7ebb6f651e44fe8b  after d0db4e472970a85ce33df2a852550535ebbdbf7aff074faf7ebb6f651e44fe8b  same
+github-sync:   notes/I_kwFX1050001.md  before 04061de2cb3ba43aba93ae9a7b1e10d095773c2bce332fde3027a54e5e2c6732  after 04061de2cb3ba43aba93ae9a7b1e10d095773c2bce332fde3027a54e5e2c6732  same
+github-sync: requests made: 252, every one a GET
+github-sync: last successful sync: 2026-11-03T09:00:00Z. Written: participant/context/github/assigned/index.md, 128 records in issues/, delivery-links.md and assigned.json
+------------------------------------------------------------------------------
+exit code: 0
+  ok   exit code 0
+  ok   nothing is flagged a second time, and nothing is new or changed
+  ok   every generated file is byte for byte as it was: 131 files
+  ok   no comment or timeline entry is held twice
+  ok   every notes file has the SHA-256 it had before the first sync
+
+RESULT: ALL CHECKS PASSED. 24 checks.

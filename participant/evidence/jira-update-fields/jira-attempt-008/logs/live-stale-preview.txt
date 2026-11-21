@@ -1,0 +1,42 @@
+PREVIEW. Nothing has been written.
+
+Jira site:  [site address removed]  (site fingerprint 4aabe3d08fbad6b1)
+Project:    SCRUM (project id 10000). On the sandbox allowlist: yes.
+Story:      SCRUM-1 (issue id 10000). The id is what identifies it.
+
+Changes that would be made: 1 field.
+  priority  now:    (not set)
+            after:  "High" (id 2)
+Nothing else on the story would be sent. Not in this change: labels, duedate.
+Jira may email the story's watchers about the change, as it does for any edit.
+
+Permission check, asked of Jira for this story and this identity:
+  may see the story  (BROWSE_PROJECTS): yes
+  may edit the story (EDIT_ISSUES):     yes
+  fields Jira lists as editable here:   labels yes, duedate yes, priority yes
+Duplicate check: an edit sets a field to a value and creates nothing, so there is no second copy to make.
+  What could repeat is the same edit being sent twice. Checked against Jira just now: 0 of the 1
+  fields named already hold the wanted value and would not be sent. Jira's documentation does not say
+  whether sending a value a field already holds adds a history entry, so this workflow never sends one.
+Where Jira cannot check: its edit request has no 'only if the value is still the one I saw' condition.
+  The confirmation reads the story again just before writing and stops if a field has moved.
+
+Snapshot of the whole story as Jira returned it, before the preview: 0202ca76b1bb31d8
+Snapshot of the whole story as Jira returned it, after the preview:  0202ca76b1bb31d8
+The two are the same. Jira is unchanged.
+Requests sent to Jira: 5. Every one was a GET, which reads and cannot change anything.
+  GET /rest/api/3/issue/SCRUM-1
+  GET /rest/api/3/myself
+  GET /rest/api/3/mypermissions
+  GET /rest/api/3/issue/10000/editmeta
+  GET /rest/api/3/issue/10000
+
+Fingerprint of this preview: bc5fd63895c2
+Made:    2026-11-19 15:50:12 UTC
+Expires: 2026-11-19 16:05:12 UTC (15 minutes after it was made)
+
+Nothing has been written. To make these changes, a person who has read this preview confirms it by
+its fingerprint.
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.

@@ -1,0 +1,74 @@
+PREVIEW OF CREATING ONE CARD. Nothing has been written to Trello.
+
+Board:  "GTQ Sandbox" (board id 6afdf376f8b9111df7e27f99). On the sandbox allowlist: yes.
+List:   "Backlog" (list id 6afdf3911014b50669965df7). Chosen by id. Trello says it belongs to board 6afdf376f8b9111df7e27f99, the stated board: yes. Archived: no.
+Draft:  participant/context/trello/new-card/draft-create.md
+Link file: participant/context/trello/new-card/linked.md (not there yet: this draft has not been created)
+The change: one new card would be created, with one request: POST https://api.trello.com/1/cards
+
+FIELD BY FIELD, 5 fields in the payload:
+  idList     6afdf3911014b50669965df7
+  pos        "bottom"
+  name       "Made-up card to check the create workflow"
+  desc       97 characters, shown in full in the payload
+  due        2026-12-18T17:00:00.000Z
+Labels and members were each found on the board before being put in the payload: 0 labels, 0 members.
+Not in the payload, so decided by Trello and not by this draft: the card's id, its short link and its number on
+the board; who it is created by, which is the token's member; and, for "top" or "bottom", the position number.
+
+WHERE IN THE LIST. Position "bottom":
+  number 3 of 3 open cards, counting the new one.
+  after:  card 6afdf6556fec70bd2959905f, at position 140737488371712
+  before: nothing. It would be last.
+
+THE EXACT PAYLOAD. This is the request body, not a summary of it:
+  {
+    "desc": "A made-up card. It checks that a card is created exactly as it was previewed.\n\nIt can be deleted.",
+    "due": "2026-12-18T17:00:00.000Z",
+    "idList": "6afdf3911014b50669965df7",
+    "name": "Made-up card to check the create workflow",
+    "pos": "bottom"
+  }
+As sent it is the same data with no spaces or line breaks and its names in alphabetical order:
+  245 bytes, SHA-256 c7eac8dfd8742d465d0a7c7d1354770828862f6530a3fa7aecbd1104a939c10b
+
+THE TOKEN AND THE PERMISSION CHECK, asked of Trello for this board and this token:
+  the token's member is on the board as: admin. That role may add cards: yes
+  the token's own permissions for boards: read yes, write yes
+  the token expires: 2026-11-21T20:29:55.296Z
+
+DUPLICATE CHECKS:
+  1. This draft's own link file: there is none, so this workflow has not created it before.
+  2. Asked of Trello, open cards on this board with exactly this name: 0.
+  3. the local indexes in /tmp/gtq-trello-create/boards, 7 cards on 1 board, searched with the trello-duplicate-search skill.
+     the index of this board holds 7 cards and Trello holds 7: the counts agree.
+     Result: NONE. No card on any board searched matches this draft on three or more signals beyond the name.
+     The search's overall recommendation: PROCEED. A person decides.
+     The indexes are a local copy: a card created in Trello since the records were saved is not in them.
+Where Trello cannot check: it has no way to refuse a second create of the same card, and no way to try a
+  create without making one. The link file is this workflow's own protection against creating twice.
+
+Snapshot of the board in Trello before the preview: 4 lists, 7 cards, 6cdcd14cd70c2c06
+Snapshot of the board in Trello after the preview:  4 lists, 7 cards, 6cdcd14cd70c2c06
+The two are the same. The board is unchanged.
+Requests sent to Trello: 10. Every one was a GET, which reads and cannot change anything.
+  GET /members/me
+  GET /boards/6afdf376f8b9111df7e27f99
+  GET /boards/6afdf376f8b9111df7e27f99/lists
+  GET /boards/6afdf376f8b9111df7e27f99/cards
+  GET /lists/6afdf3911014b50669965df7
+  GET /boards/6afdf376f8b9111df7e27f99/memberships
+  GET /tokens/[the token]
+  GET /boards/6afdf376f8b9111df7e27f99/cards
+  GET /boards/6afdf376f8b9111df7e27f99/lists
+  GET /boards/6afdf376f8b9111df7e27f99/cards
+
+VERDICT: READY TO WRITE. Every check passed.
+Fingerprint of this preview: 847183421875
+Made:    2026-11-20 20:51:00 UTC
+Expires: 2026-11-20 21:06:00 UTC (15 minutes after it was made)
+
+Nothing has been written to Trello. To create this card, a person who has read this preview confirms it
+by its fingerprint.
+
+The output above, and each file written, was searched for the API key and the token: neither found.

@@ -1,0 +1,15 @@
+schema_version: 1
+submission_id: submission-20261119184103-2d742f
+quest_id: jira-build-index
+quest_version: 1
+attempt_id: jira-attempt-009
+content_hash: sha256:61ecacc2487384925182d8e592818c8c4399ccc160e2ea45e38e7517a04e455a
+evidence_hash: sha256:53e58ddf7e8098ba381b6f24c934942b03836a25c0c68d985a4f098788c3d89c
+submitted_at: '2026-11-19T18:41:03Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/jira/catalog.md
+  digest: sha256:d7c200bab5a4643ef539c651c412857c8e97daca70ae79c759b85ce3d941c24e
+- path: participant/skills/jira-build-index/SKILL.md
+  digest: sha256:bfb1286749f02cfa7238e8068ac5ae1b9f7dbdbfc07fc65a0a1a707c0852f123

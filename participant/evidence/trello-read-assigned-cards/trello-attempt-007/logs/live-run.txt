@@ -1,0 +1,21 @@
+The one real run: trello-read-assigned-cards, attempt trello-attempt-007
+Run by the participant in their own terminal, against real Trello, read-only, restricted to their sandbox board.
+The command, with the output folder shown as SCRATCH (a folder outside the repository):
+$ python3 participant/skills/trello-read-assigned-cards/sync.py --source live --out SCRATCH --only-boards 6afdf376f8b9111df7e27f99
+What it printed follows, unchanged except that the member's Trello id is shown as [member id].
+------------------------------------------------------------------------------
+assigned-sync: member read from the connection: member id [member id]. Trello was asked "who am I?". No member is named in the skill or given to it
+assigned-sync: boards the connection can reach: 19 (10 open, 9 closed)
+assigned-sync: RESTRICTED to 1 of them with --only-boards. This run does not cover every board
+assigned-sync:   board 6afdf376f8b9111df7e27f99, open: 8 cards read in 1 request (8), 2 assigned to the member
+assigned-sync: page limit: 1000 cards for one request. Largest board: 8 cards, within one page
+assigned-sync: retrieved: 2 cards assigned to the member, on 1 boards searched
+assigned-sync: Trello's own list of the member's cards holds 2. Every one of them on a board searched was found
+assigned-sync: archived cards: an archived card that is still assigned to the member is INCLUDED, in its own section, and is not counted as open work. A card is archived when the card, its list or its board is archived or closed.
+assigned-sync:   of the 2 retrieved: 2 open, 0 archived (0 by card, 0 by list, 0 by board)
+assigned-sync: cards held before this sync: 0. This sync: 2 new, 0 changed, 0 unchanged, 0 newly flagged as no longer assigned, 0 assigned again
+assigned-sync: counts: retrieved 2, held and no longer assigned 0, expected in the index 2. Rows saved in the index: 2. The counts agree
+assigned-sync: notes: 0 files, opened for reading only. SHA-256 before and after this sync:
+assigned-sync: requests made: 5, every one a GET
+assigned-sync: index written: index.md
+------------------------------------------------------------------------------

@@ -1,0 +1,10 @@
+$ python3 -B -m unittest discover -s tests   (source-name guard tests added, workflow not yet changed)
+FAIL: test_flag_on_a_known_source_changes_nothing (test_rerun.SourceNameGuard.test_flag_on_a_known_source_changes_nothing)
+FAIL: test_new_source_is_allowed_when_asked_for (test_rerun.SourceNameGuard.test_new_source_is_allowed_when_asked_for)
+FAIL: test_similar_source_names_are_not_treated_as_known (test_rerun.SourceNameGuard.test_similar_source_names_are_not_treated_as_known) [intak]
+FAIL: test_similar_source_names_are_not_treated_as_known (test_rerun.SourceNameGuard.test_similar_source_names_are_not_treated_as_known) [intake2]
+FAIL: test_similar_source_names_are_not_treated_as_known (test_rerun.SourceNameGuard.test_similar_source_names_are_not_treated_as_known) [intake-]
+FAIL: test_similar_source_names_are_not_treated_as_known (test_rerun.SourceNameGuard.test_similar_source_names_are_not_treated_as_known) [in]
+FAIL: test_unknown_source_name_is_refused_and_nothing_is_created (test_rerun.SourceNameGuard.test_unknown_source_name_is_refused_and_nothing_is_created)
+Ran 62 tests in 5.278s
+FAILED (failures=7)

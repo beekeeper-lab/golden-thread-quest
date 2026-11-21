@@ -1,0 +1,56 @@
+Two real synchronizations. github-read-assigned-issues, attempt github-attempt-001
+
+Run by the participant in their own terminal, against GitHub, with a fine-grained token limited to one private
+sandbox repository made for this quest: Issues read-only, Pull requests read-only, Metadata read-only. The
+repository holds two made-up issues and one made-up pull request, all assigned to the participant. The pull
+request's description mentions the first issue. Between the two runs the participant closed the second issue by hand.
+
+The output went to a scratch folder outside the repository, shown here as SCRATCH. The lines below are what the
+sync printed, copied by the assistant from the saved output, with the login, the user id and the repository id
+replaced by [login], [user id] and [repository id]. Nothing else was changed. The token was never shown to the assistant.
+
+==============================================================================
+RUN 1. The first real synchronization
+$ python3 participant/skills/github-read-assigned/sync.py --source live --out SCRATCH
+------------------------------------------------------------------------------
+github-sync: identity read from the connection: login [login], user id [user id]. GitHub was asked "who am I?". No login is named in the skill or given to it
+github-sync: token scopes GitHub reports: none reported, as for a fine-grained token
+github-sync: scope: every repository GitHub lists an assigned issue in
+github-sync: GitHub's list of items assigned to the user: 3 items in 1 request (3). GitHub reported no further page after the last
+github-sync: pull requests left out: 1. Issues: 2. Rule: an item is a pull request when it carries a `pull_request` key, and only then. GitHub's list of assigned items returns issues and pull requests together, and that key is how GitHub marks the pull requests
+github-sync: retrieved 2 issues. GitHub's search declares 2. The totals agree
+github-sync: repositories with an assigned issue: 1
+github-sync:   repository id [repository id], private: 2 issues, 1 pull request left out, comments and timelines read in 4 requests
+github-sync: comments read: 1. Added to the local copy: 1, edited: 0, no longer returned and kept: 0
+github-sync: timeline entries read: 4. Kept as material: 3. Added to the local copy: 3
+github-sync: issues held before this sync: 0. This sync: 2 new, 0 changed, 0 unchanged, 0 newly flagged as no longer assigned, 0 assigned again
+github-sync: links held: 1 to pull requests, 0 to commits, 0 to other issues
+github-sync: counts: retrieved 2, of which 0 in unreadable repositories were not recorded or refreshed. Recorded by this sync: 2. Held in all: 2, of which 0 no longer assigned. Rows in the index: 2. Record files: 2. The counts agree
+github-sync: notes: 0 files, opened for reading only. SHA-256 before and after this sync:
+github-sync: requests made: 7, every one a GET
+github-sync: last successful sync: 2026-11-21T17:21:25Z. Written: index.md, 2 records in issues/, delivery-links.md and assigned.json
+------------------------------------------------------------------------------
+
+==============================================================================
+RUN 2. After one issue was closed by hand
+$ python3 participant/skills/github-read-assigned/sync.py --source live --out SCRATCH
+------------------------------------------------------------------------------
+github-sync: identity read from the connection: login [login], user id [user id]. GitHub was asked "who am I?". No login is named in the skill or given to it
+github-sync: token scopes GitHub reports: none reported, as for a fine-grained token
+github-sync: scope: every repository GitHub lists an assigned issue in
+github-sync: GitHub's list of items assigned to the user: 3 items in 1 request (3). GitHub reported no further page after the last
+github-sync: pull requests left out: 1. Issues: 2. Rule: an item is a pull request when it carries a `pull_request` key, and only then. GitHub's list of assigned items returns issues and pull requests together, and that key is how GitHub marks the pull requests
+github-sync: retrieved 2 issues. GitHub's search declares 2. The totals agree
+github-sync: repositories with an assigned issue: 1
+github-sync:   repository id [repository id], private: 2 issues, 1 pull request left out, comments and timelines read in 4 requests
+github-sync: comments read: 1. Added to the local copy: 0, edited: 0, no longer returned and kept: 0
+github-sync: timeline entries read: 5. Kept as material: 4. Added to the local copy: 1
+github-sync: issues held before this sync: 2. This sync: 0 new, 1 changed, 1 unchanged, 0 newly flagged as no longer assigned, 0 assigned again
+github-sync:   changed: issue I_kwDOV207Gc8AAAABhVV3gQ (state, state_reason, updated_at, closed_at, timeline entries added)
+github-sync:   CLOSED since the last sync: issue I_kwDOV207Gc8AAAABhVV3gQ is now closed (completed). It was open. Kept, with both states in its record
+github-sync: links held: 1 to pull requests, 0 to commits, 0 to other issues
+github-sync: counts: retrieved 2, of which 0 in unreadable repositories were not recorded or refreshed. Recorded by this sync: 2. Held in all: 2, of which 0 no longer assigned. Rows in the index: 2. Record files: 2. The counts agree
+github-sync: notes: 0 files, opened for reading only. SHA-256 before and after this sync:
+github-sync: requests made: 7, every one a GET
+github-sync: last successful sync: 2026-11-21T17:22:24Z. Written: index.md, 2 records in issues/, delivery-links.md and assigned.json
+------------------------------------------------------------------------------

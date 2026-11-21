@@ -1,0 +1,131 @@
+Rate limits and paging, against the fake Trello: trello-read-board, attempt trello-attempt-001
+Recorded by scripts/record_limits.py. Each block between the dashed lines is what the skill printed.
+The fake is fake_trello.py. No network is used and no real board is read. The waits are real.
+Real Trello never rate-limited a run and the real board never needed a second page, so this is
+the only record of this behavior. It shows what the skill does with a 429 as the fake sends one.
+
+==============================================================================
+CASE 1. Trello answers 429 to the comments request, every time.
+First an ordinary run, so that there are files from a last successful sync:
+------------------------------------------------------------------------------
+trello-sync: signed-in member resolved from Trello: 5f0000000000000000000001
+trello-sync: board resolved from configuration: 'Fake Sandbox' (id 60b000000000000000000001)
+trello-sync: read from Trello: 4 lists, 8 cards (1 archived), 1 checklists, 2 comments
+trello-sync: cards held: 8. This run: 8 new, 0 unchanged, 0 renamed, 0 moved, 0 reordered, 0 updated, 0 archived, 0 not returned
+trello-sync: card records written: 8, in cards
+trello-sync: index written: board-index.md
+trello-sync: reconciliation written: reconciliation.md
+trello-sync: last successful sync before this run: never. Now: 2026-11-19T09:00:00Z
+trello-sync: written: board.json
+------------------------------------------------------------------------------
+exit code: 0      time taken: 0.0 seconds
+
+Then two changes are made on the fake board (a card renamed, a card deleted), the fake is set to
+answer 429 to every request for comments, and the skill is run again:
+------------------------------------------------------------------------------
+trello-sync: signed-in member resolved from Trello: 5f0000000000000000000001
+trello-sync: board resolved from configuration: 'Fake Sandbox' (id 60b000000000000000000001)
+trello-sync: rate limited by Trello (API_TOKEN_LIMIT_EXCEEDED). Wait 1 of 3: 10 seconds
+trello-sync: rate limited by Trello (API_TOKEN_LIMIT_EXCEEDED). Wait 2 of 3: 10 seconds
+trello-sync: rate limited by Trello (API_TOKEN_LIMIT_EXCEEDED). Wait 3 of 3: 10 seconds
+trello-sync: rate limited by Trello (API_TOKEN_LIMIT_EXCEEDED) and still limited after 3 waits
+trello-sync: INCOMPLETE: Trello rate-limited this run.
+trello-sync:   retrieved before that: the signed-in member, the board, lists, cards, checklists
+trello-sync:   NOT retrieved: comments
+trello-sync:   Nothing was written. Any files from the last successful sync are as they were, and the
+trello-sync:   time of the last successful sync has not moved. Run it again later.
+------------------------------------------------------------------------------
+exit code: 2      time taken: 30.0 seconds
+
+  ok   the run ended INCOMPLETE and did not say it had synchronized
+  ok   exit code 2
+  ok   it listed what was retrieved before the limit
+  ok   it listed what was NOT retrieved: comments
+  ok   it waited 3 times and no more (three 10 second waits; took 30 seconds)
+  ok   every file from the last successful sync is unchanged (11 files, same checksums)
+  ok   the time of the last successful sync has not moved
+  ok   no card was marked as not returned, and the rename was not half-applied
+
+==============================================================================
+CASE 2. Trello answers 429 once, with a header saying its window is 2000 milliseconds, then answers.
+------------------------------------------------------------------------------
+trello-sync: signed-in member resolved from Trello: 5f0000000000000000000001
+trello-sync: board resolved from configuration: 'Fake Sandbox' (id 60b000000000000000000001)
+trello-sync: rate limited by Trello (API_TOKEN_LIMIT_EXCEEDED). Wait 1 of 3: 2 seconds
+trello-sync: this run waited 1 time(s) for Trello's rate limit: 2 seconds
+trello-sync: read from Trello: 4 lists, 8 cards (1 archived), 1 checklists, 2 comments
+trello-sync: cards held: 8. This run: 8 new, 0 unchanged, 0 renamed, 0 moved, 0 reordered, 0 updated, 0 archived, 0 not returned
+trello-sync: card records written: 8, in cards
+trello-sync: index written: board-index.md
+trello-sync: reconciliation written: reconciliation.md
+trello-sync: last successful sync before this run: never. Now: 2026-11-19T09:00:00Z
+trello-sync: written: board.json
+------------------------------------------------------------------------------
+exit code: 0      time taken: 2.0 seconds
+
+  ok   it waited once, for the 2 seconds Trello's answer gave (took 2.0 seconds)
+  ok   it then completed: exit code 0, 8 cards held
+  ok   the report says that it waited
+
+==============================================================================
+CASE 3. A first run with nothing held, limited on the cards request every time.
+------------------------------------------------------------------------------
+trello-sync: signed-in member resolved from Trello: 5f0000000000000000000001
+trello-sync: board resolved from configuration: 'Fake Sandbox' (id 60b000000000000000000001)
+trello-sync: rate limited by Trello (API_TOKEN_LIMIT_EXCEEDED). Wait 1 of 3: 1 seconds
+trello-sync: rate limited by Trello (API_TOKEN_LIMIT_EXCEEDED). Wait 2 of 3: 1 seconds
+trello-sync: rate limited by Trello (API_TOKEN_LIMIT_EXCEEDED). Wait 3 of 3: 1 seconds
+trello-sync: rate limited by Trello (API_TOKEN_LIMIT_EXCEEDED) and still limited after 3 waits
+trello-sync: INCOMPLETE: Trello rate-limited this run.
+trello-sync:   retrieved before that: the signed-in member, the board, lists
+trello-sync:   NOT retrieved: cards, checklists, comments
+trello-sync:   Nothing was written. Any files from the last successful sync are as they were, and the
+trello-sync:   time of the last successful sync has not moved. Run it again later.
+------------------------------------------------------------------------------
+exit code: 2      time taken: 3.0 seconds
+
+  ok   exit code 2, and cards, checklists and comments listed as NOT retrieved
+  ok   no file at all was written (the folder is empty)
+
+==============================================================================
+CASE 4. Paging. The skill is told a page holds 3, so the 8 cards need three requests,
+and five more comments are added to the fake so the 7 comments need three as well.
+------------------------------------------------------------------------------
+trello-sync: signed-in member resolved from Trello: 5f0000000000000000000001
+trello-sync: board resolved from configuration: 'Fake Sandbox' (id 60b000000000000000000001)
+trello-sync: read from Trello: 4 lists, 8 cards (1 archived), 1 checklists, 7 comments
+trello-sync: cards held: 8. This run: 8 new, 0 unchanged, 0 renamed, 0 moved, 0 reordered, 0 updated, 0 archived, 0 not returned
+trello-sync: card records written: 8, in cards
+trello-sync: index written: board-index.md
+trello-sync: reconciliation written: reconciliation.md
+trello-sync: last successful sync before this run: never. Now: 2026-11-19T09:00:00Z
+trello-sync: written: board.json
+------------------------------------------------------------------------------
+exit code: 0      time taken: 0.0 seconds
+
+The requests the fake received for cards and for comments:
+  GET cards  limit=3  before=(none)
+  GET cards  limit=3  before=62c000000000000000000006
+  GET cards  limit=3  before=62c000000000000000000003
+  GET actions  limit=3  before=(none)
+  GET actions  limit=3  before=66d000000000000000000103
+  GET actions  limit=3  before=66d000000000000000000002
+  ok   the 8 cards took 3 requests of 3
+  ok   the 7 comments took 3 requests of 3
+  ok   all 8 cards and all 7 comments were read, none twice
+
+==============================================================================
+CASE 5. Paging that does not advance. This fake takes no notice of `before`, so asking for older
+cards returns the same page again.
+------------------------------------------------------------------------------
+trello-sync: signed-in member resolved from Trello: 5f0000000000000000000001
+trello-sync: board resolved from configuration: 'Fake Sandbox' (id 60b000000000000000000001)
+trello-sync: STOPPED: Trello kept returning the same cards, so the skill cannot tell whether it has them all.
+trello-sync: Nothing was written.
+------------------------------------------------------------------------------
+exit code: 1      time taken: 0.0 seconds
+
+  ok   the run stopped and did not treat the first page as the whole board (exit code 1)
+  ok   nothing was written (the folder is empty)
+
+RESULT: ALL CHECKS PASSED.

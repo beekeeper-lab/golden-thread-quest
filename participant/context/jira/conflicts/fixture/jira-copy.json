@@ -1,0 +1,195 @@
+{
+  "what": "Jira's copy of each story as stored at the last sync. Synthetic.",
+  "read_at": "2026-11-04T08:00:00Z",
+  "stories": {
+    "FIX-1": {
+      "summary": {
+        "value": "Export the weekly report as a file",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "status": {
+        "value": "To Do",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "priority": {
+        "value": "Medium",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "estimate": {
+        "value": 8,
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "due_date": {
+        "value": null,
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      }
+    },
+    "FIX-2": {
+      "summary": {
+        "value": "Show who changed a story last",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "status": {
+        "value": "To Do",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "priority": {
+        "value": "Medium",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "estimate": {
+        "value": 3,
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "due_date": {
+        "value": null,
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      }
+    },
+    "FIX-3": {
+      "summary": {
+        "value": "Search stories by title",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "status": {
+        "value": "In Progress",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "priority": {
+        "value": "Medium",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "estimate": {
+        "value": 8,
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "due_date": {
+        "value": "2026-11-20",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      }
+    },
+    "FIX-4": {
+      "summary": {
+        "value": "Warn before closing an unsaved story",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "status": {
+        "value": "To Do",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "priority": {
+        "value": "Medium",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "estimate": {
+        "value": 5,
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "due_date": {
+        "value": null,
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      }
+    },
+    "FIX-5": {
+      "summary": {
+        "value": "Sort the board by last update",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "status": {
+        "value": "To Do",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "priority": {
+        "value": "Low",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "estimate": {
+        "value": 2,
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "due_date": {
+        "value": "2026-11-27",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      }
+    },
+    "FIX-6": {
+      "summary": {
+        "value": "Remember the last search",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "status": {
+        "value": "To Do",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "priority": {
+        "value": "Low",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "estimate": {
+        "value": 1,
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "due_date": {
+        "value": null,
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      }
+    },
+    "FIX-7": {
+      "summary": {
+        "value": "Print a story",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "status": {
+        "value": "To Do",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "priority": {
+        "value": "Low",
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "estimate": {
+        "value": 2,
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      },
+      "due_date": {
+        "value": null,
+        "changed_at": "2026-11-02T09:00:00Z",
+        "changed_by": "teammate-1"
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+ "name": "Export the customer list as CSV",
+ "desc": "Admins keep asking support for their customer list. Add an Export button to the customers page that downloads the customer list as a CSV file with the account name, plan and signup date columns. Stream the download so large accounts do not time out.",
+ "labels": [
+  "export",
+  "customer-request"
+ ],
+ "members": [
+  "5f0000000000000000000001"
+ ],
+ "checklist": [
+  "Add the Export button to the customers page",
+  "Stream the download so large accounts do not time out",
+  "Write the help page for the export"
+ ],
+ "due": "2026-12-04",
+ "board": "70b000000000000000000011"
+}

@@ -1,0 +1,13 @@
+PROJECT LIST. Reading only.
+Retrieving the visible projects, 50 to a page:
+  page 1: asked for 50 from position 0, received 1
+  1 project(s) received over 1 page(s). Jira's own count: 1.
+
+Compared with what was held, matching on the project id:
+  held now: 1. new: 1, unchanged: 0, renamed: 0, not returned: 0, returned again: 0
+
+Last successful sync before this run: never. Now: 2026-11-19T01:55:44Z.
+Written: projects.md, projects.json and 1 file(s) in projects/, each named by project id.
+
+The output above was searched for the API token, the account's email address, their encoded form
+and the site's address: none found.

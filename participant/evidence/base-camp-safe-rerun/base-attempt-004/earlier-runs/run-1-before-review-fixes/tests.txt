@@ -1,0 +1,45 @@
+$ python3 -B -m unittest discover -s tests -v
+test_collision_on_existing_record_leaves_it_untouched (test_rerun.BadKeys.test_collision_on_existing_record_leaves_it_untouched) ... ok
+test_id_with_line_break_or_colon_is_refused_and_not_echoed (test_rerun.BadKeys.test_id_with_line_break_or_colon_is_refused_and_not_echoed) ... ok
+test_identical_repeat_is_created_once (test_rerun.BadKeys.test_identical_repeat_is_created_once) ... ok
+test_item_with_non_text_content_is_refused (test_rerun.BadKeys.test_item_with_non_text_content_is_refused) ... ok
+test_item_without_usable_id_is_refused_and_no_key_is_invented (test_rerun.BadKeys.test_item_without_usable_id_is_refused_and_no_key_is_invented) ... ok
+test_near_duplicate_spelling_counts_as_the_same_key (test_rerun.BadKeys.test_near_duplicate_spelling_counts_as_the_same_key) ... ok
+test_refusal_lines_give_positions (test_rerun.BadKeys.test_refusal_lines_give_positions) ... ok
+test_sample_collision_file (test_rerun.BadKeys.test_sample_collision_file) ... ok
+test_source_name_that_could_blur_keys_stops_the_run (test_rerun.BadKeys.test_source_name_that_could_blur_keys_stops_the_run) ... ok
+test_two_different_items_with_one_key_are_both_refused (test_rerun.BadKeys.test_two_different_items_with_one_key_are_both_refused) ... ok
+test_changed_body_updates_in_place (test_rerun.ChangedItem.test_changed_body_updates_in_place) ... ok
+test_mixed_run_counts_match_store (test_rerun.ChangedItem.test_mixed_run_counts_match_store) ... ok
+test_records_missing_from_input_are_left_alone (test_rerun.ChangedItem.test_records_missing_from_input_are_left_alone) ... ok
+test_rerun_of_changed_input_changes_nothing (test_rerun.ChangedItem.test_rerun_of_changed_input_changes_nothing) ... ok
+test_sample_changed_file_differs_in_exactly_one_item (test_rerun.ChangedItem.test_sample_changed_file_differs_in_exactly_one_item) ... ok
+test_update_line_names_changed_fields (test_rerun.ChangedItem.test_update_line_names_changed_fields) ... ok
+test_counts_add_up_to_input_items (test_rerun.FirstRun.test_counts_add_up_to_input_items) ... ok
+test_each_record_has_its_own_record_id (test_rerun.FirstRun.test_each_record_has_its_own_record_id) ... ok
+test_first_run_creates_ten_records_with_expected_keys (test_rerun.FirstRun.test_first_run_creates_ten_records_with_expected_keys) ... ok
+test_store_keeps_item_content (test_rerun.FirstRun.test_store_keeps_item_content) ... ok
+test_half_written_file_is_cleared_even_when_the_rerun_writes_nothing (test_rerun.Interrupted.test_half_written_file_is_cleared_even_when_the_rerun_writes_nothing) ... ok
+test_killed_after_seven_then_rerun_completes (test_rerun.Interrupted.test_killed_after_seven_then_rerun_completes) ... ok
+test_killed_during_an_update_then_rerun (test_rerun.Interrupted.test_killed_during_an_update_then_rerun) ... ok
+test_killed_during_first_write_leaves_no_store (test_rerun.Interrupted.test_killed_during_first_write_leaves_no_store) ... ok
+test_killed_in_the_middle_of_a_write_then_rerun_completes (test_rerun.Interrupted.test_killed_in_the_middle_of_a_write_then_rerun_completes) ... ok
+test_filename_or_folder (test_rerun.KeyDoesNotDependOn.test_filename_or_folder) ... ok
+test_order_of_items (test_rerun.KeyDoesNotDependOn.test_order_of_items) ... ok
+test_run_time (test_rerun.KeyDoesNotDependOn.test_run_time) ... ok
+test_spelling_of_the_id (test_rerun.KeyDoesNotDependOn.test_spelling_of_the_id) ... ok
+test_title (test_rerun.KeyDoesNotDependOn.test_title) ... ok
+test_no_title_or_body_text_in_output (test_rerun.Privacy.test_no_title_or_body_text_in_output) ... ok
+test_damaged_store_is_never_overwritten (test_rerun.RefuseTheRun.test_damaged_store_is_never_overwritten) ... ok
+test_missing_input_file (test_rerun.RefuseTheRun.test_missing_input_file) ... ok
+test_second_run_at_the_same_time_is_refused (test_rerun.RefuseTheRun.test_second_run_at_the_same_time_is_refused) ... ok
+test_unreadable_input_writes_nothing (test_rerun.RefuseTheRun.test_unreadable_input_writes_nothing) ... ok
+test_five_runs_leave_the_first_result (test_rerun.SecondRun.test_five_runs_leave_the_first_result) ... ok
+test_report_fingerprints_link_the_runs (test_rerun.SecondRun.test_report_fingerprints_link_the_runs) ... ok
+test_second_run_changes_nothing (test_rerun.SecondRun.test_second_run_changes_nothing) ... ok
+test_skip_lines_say_why (test_rerun.SecondRun.test_skip_lines_say_why) ... ok
+
+----------------------------------------------------------------------
+Ran 39 tests in 2.493s
+
+OK

@@ -1,0 +1,192 @@
+Do the tests notice a broken search? ba-search-existing-work, attempt ba-attempt-003
+Recorded by scripts/planted_bugs.py.
+
+Each bug below was put into participant/skills/ba-search-existing-work/search.py, every test was run, and the
+bug was taken out again. Only local files are used.
+
+Before any bug: OK
+
+PLANTED BUG A. The same description is a duplicate with nothing to back it up (criterion 3)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    TheRule.test_the_same_description_with_nothing_to_back_it_up_is_related
+
+PLANTED BUG B. Enough points make a duplicate, whatever the descriptions say (criterion 3)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Strength.test_points_never_make_a_duplicate_without_the_description
+    TheRule.test_the_same_description_and_the_same_component_is_a_duplicate
+    TheRule.test_the_same_source_component_labels_and_title_with_a_different_description_is_only_related
+
+PLANTED BUG C. Any two signals make an item related, a title and a label included (criteria 3 and 4)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    TheRule.test_a_title_and_a_label_together_are_no_match
+
+PLANTED BUG D. One signal makes an item related, so a title alone is a match (criterion 4)
+  unittest result: FAILED (failures=8, errors=2)
+  tests that failed (10):
+    TheRule.test_a_title_and_a_label_together_are_no_match
+    TheCatalog.test_an_item_whose_text_gives_orders_is_compared_like_any_other
+    TheCatalog.test_duplicates_are_listed_before_related_items
+    Report.test_every_match_has_its_fields_how_strongly_a_strength_and_one_of_the_three_recommendations
+    TheCatalog.test_related_items_are_labelled_related_not_duplicate
+    TheRelatedMap.test_the_command_lists_them_and_changes_nothing
+    TheRule.test_the_component_alone_is_no_match
+    TheCatalog.test_the_item_with_nearly_the_same_title_and_different_work_is_not_reported
+    TheRule.test_the_source_alone_is_no_match
+    TheRule.test_the_title_alone_is_no_match
+
+PLANTED BUG E. When nothing matches, the closest items are returned as related (criterion 4)
+  unittest result: FAILED (failures=8, errors=2)
+  tests that failed (10):
+    TheRule.test_a_title_and_a_label_together_are_no_match
+    TheCatalog.test_an_item_whose_text_gives_orders_is_compared_like_any_other
+    TheCatalog.test_duplicates_are_listed_before_related_items
+    Report.test_every_match_has_its_fields_how_strongly_a_strength_and_one_of_the_three_recommendations
+    TheCatalog.test_related_items_are_labelled_related_not_duplicate
+    TheRelatedMap.test_the_command_lists_them_and_changes_nothing
+    TheRule.test_the_component_alone_is_no_match
+    TheCatalog.test_the_item_with_nearly_the_same_title_and_different_work_is_not_reported
+    TheRule.test_the_source_alone_is_no_match
+    TheRule.test_the_title_alone_is_no_match
+
+PLANTED BUG F. The same description with nothing else in common is dropped without a word (criterion 3)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    TheRule.test_the_same_description_with_nothing_to_back_it_up_is_related
+
+PLANTED BUG G. One shared word makes the descriptions match (criterion 1)
+  unittest result: FAILED (failures=10, errors=1)
+  tests that failed (11):
+    EachSignal.test_a_description_needs_four_shared_words
+    EachSignal.test_a_description_needs_half_of_the_shorter_one
+    TheThreshold.test_a_higher_threshold_loses_the_near_duplicate
+    TheThreshold.test_a_lower_threshold_turns_the_borderline_related_item_into_a_duplicate
+    TheCatalog.test_a_proposal_with_no_match_reports_none_and_does_not_offer_the_closest
+    TheCatalog.test_duplicates_are_listed_before_related_items
+    Report.test_every_match_has_its_fields_how_strongly_a_strength_and_one_of_the_three_recommendations
+    TheCatalog.test_related_items_are_labelled_related_not_duplicate
+    TheRelatedMap.test_the_command_lists_them_and_changes_nothing
+    TheCatalog.test_the_item_with_nearly_the_same_title_and_different_work_is_not_reported
+    Report.test_the_no_match_report_says_no_match
+
+PLANTED BUG H. The threshold given on the command line is not used (the first stretch goal)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    TheThreshold.test_the_threshold_given_is_shown_in_the_output
+
+PLANTED BUG I. The same document counts as the same source, whatever the item (criterion 1)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    TheCatalog.test_a_proposal_with_no_match_reports_none_and_does_not_offer_the_closest
+    TheRelatedMap.test_the_command_lists_them_and_changes_nothing
+    EachSignal.test_the_same_document_and_a_different_item_is_not_the_same_source
+
+PLANTED BUG J. Components are compared with letter case (criterion 1)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    EachSignal.test_components_match_whatever_the_letter_case
+
+PLANTED BUG K. A signal that cannot be compared is counted as a match (criterion 2)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Proposals.test_a_title_alone_is_enough_to_search
+    EachSignal.test_what_the_item_lacks_is_not_comparable
+    EachSignal.test_what_the_proposal_lacks_is_not_comparable_and_is_not_a_match
+
+PLANTED BUG L. A finished duplicate is recommended for merging (criterion 5)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Strength.test_a_finished_duplicate_is_link
+    Recommendation.test_done_closed_and_cancelled_items_count_as_finished
+
+PLANTED BUG M. A duplicate of medium strength is recommended for merging (criterion 5)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Strength.test_a_duplicate_with_medium_strength_is_link
+
+PLANTED BUG N. A related item is recommended for merging (criteria 3 and 5)
+  unittest result: FAILED (failures=6)
+  tests that failed (6):
+    Strength.test_a_duplicate_with_medium_strength_is_link
+    Strength.test_a_related_item_is_never_merge
+    TheCatalog.test_related_items_are_labelled_related_not_duplicate
+    Recommendation.test_the_overall_recommendation_is_the_most_cautious_one
+    TheRule.test_the_same_description_with_nothing_to_back_it_up_is_related
+    TheRule.test_the_same_source_component_labels_and_title_with_a_different_description_is_only_related
+
+PLANTED BUG O. High strength starts at 8 points, not 9 (criterion 2)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Strength.test_nine_is_high_and_eight_is_medium
+    TheCatalog.test_the_near_duplicate_is_a_duplicate_with_less_strength_and_is_not_merged
+
+PLANTED BUG P. The overall recommendation is the least cautious one (criterion 5)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Report.test_a_decision_is_recorded_as_the_persons_and_changes_nothing_else
+    TheCatalog.test_an_item_whose_text_gives_orders_is_compared_like_any_other
+    Recommendation.test_the_overall_recommendation_is_the_most_cautious_one
+
+PLANTED BUG Q. A cancelled item is treated as still open (criterion 5)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Recommendation.test_done_closed_and_cancelled_items_count_as_finished
+
+PLANTED BUG R. Two catalog items with one id are both read (the catalog)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    AwkwardCatalogs.test_two_items_with_one_id_stop_the_search
+
+PLANTED BUG S. A catalog section that cannot be read is skipped without a word (the catalog)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    AwkwardCatalogs.test_a_heading_that_is_not_an_id_and_a_title_stops_the_search
+
+PLANTED BUG T. A line in a description that looks like a field is read as one (catalog text is text)
+  unittest result: FAILED (errors=1)
+  tests that failed (1):
+    AwkwardCatalogs.test_a_line_in_a_description_that_looks_like_a_field_is_not_taken_as_one
+
+PLANTED BUG U. An item with no status is read as open (the catalog)
+  unittest result: FAILED (errors=1)
+  tests that failed (1):
+    AwkwardCatalogs.test_an_item_with_no_status_stops_the_search
+
+PLANTED BUG V. The report may be written over the catalog (criterion 6)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    NothingChanges.test_a_report_cannot_be_written_over_the_catalog
+
+PLANTED BUG W. With no decision given, the search writes its own recommendation as the decision (criterion 5)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Report.test_without_a_decision_the_report_says_none_was_made
+
+PLANTED BUG X. A vertical bar in a catalog title is not escaped in the report (catalog text is text)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Report.test_a_decision_is_recorded_as_the_persons_and_changes_nothing_else
+    Report.test_catalog_titles_cannot_break_the_report
+
+PLANTED BUG Y. A proposal may hold names the search does not know (proposals)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Proposals.test_an_unknown_name_is_refused
+
+PLANTED BUG Z. In the related map an item is compared with itself (the second stretch goal)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    TheRelatedMap.test_an_item_is_not_compared_with_itself
+    TheRelatedMap.test_an_item_related_to_two_others_is_listed_with_them
+    TheRelatedMap.test_the_command_lists_them_and_changes_nothing
+
+PLANTED BUG AA. The related map lists items with a single match as having several (the second stretch goal)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    TheRelatedMap.test_the_command_lists_them_and_changes_nothing
+
+After the last bug was taken out: search.py is byte for byte what it was at the start. OK
+
+RESULT: all 27 planted bugs were caught by at least one test, and the file was restored.

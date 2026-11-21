@@ -1,0 +1,13 @@
+schema_version: 1
+submission_id: submission-20261120015308-5286c4
+quest_id: context-staleness
+quest_version: 1
+attempt_id: context-attempt-001
+content_hash: sha256:30409ed9f20734f7c419564045e38b7cf74d44118555f2c8e5e0ecb8c8a14f7b
+evidence_hash: sha256:4ca403c196f7fdd6cd668db71ace053474b28c04d997b1ecc40def5689f67181
+submitted_at: '2026-11-20T01:53:08Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/freshness/policy.md
+  digest: sha256:aabb845331eeea8e02813d1acf88e6cdd5d1bd30e236589f8027361165e409ca

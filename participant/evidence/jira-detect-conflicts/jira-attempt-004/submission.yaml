@@ -1,0 +1,15 @@
+schema_version: 1
+submission_id: submission-20261118181451-87399c
+quest_id: jira-detect-conflicts
+quest_version: 1
+attempt_id: jira-attempt-004
+content_hash: sha256:d09b804143856619ba87e5ffb465687fb73aaea81aa82264bfb9c77f81bcc343
+evidence_hash: sha256:6875c49b2b2b868ee0e2e25404b615945c6f1b4e07f9290e34a87ae7cdab24e5
+submitted_at: '2026-11-18T18:14:51Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/jira/conflicts/fixture.md
+  digest: sha256:ea13f0f7504ed77fab68fe476fb832260cca1080b1c4bc56063cd3aca3fc9982
+- path: participant/context/jira/conflicts/report.md
+  digest: sha256:9b219a529f98db0b660e71ad36d3aa6c913091f249de45a72bfe17d183cfd361

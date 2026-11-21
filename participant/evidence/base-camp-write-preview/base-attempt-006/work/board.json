@@ -1,0 +1,49 @@
+{
+  "system": "simulated story board",
+  "board": "DEMO",
+  "next_number": 8,
+  "stories": [
+    {
+      "id": "DEMO-1",
+      "title": "Export the weekly report as a file",
+      "description": "Let a team lead save the weekly report to their computer.",
+      "status": "done"
+    },
+    {
+      "id": "DEMO-2",
+      "title": "Show who changed a story last",
+      "description": "On each story, show the name of the last person to edit it.",
+      "status": "doing"
+    },
+    {
+      "id": "DEMO-3",
+      "title": "Search stories by title",
+      "description": "A search box that finds stories whose title holds the words typed.",
+      "status": "doing"
+    },
+    {
+      "id": "DEMO-4",
+      "title": "Warn before closing a story with unsaved edits",
+      "description": "Ask before the page closes if there are edits not yet saved.",
+      "status": "todo"
+    },
+    {
+      "id": "DEMO-5",
+      "title": "Sort the board by last update",
+      "description": "Add a choice to list the most recently changed stories first.",
+      "status": "doing"
+    },
+    {
+      "id": "DEMO-6",
+      "title": "Search stories by description",
+      "description": "Extend the search box so it also finds stories whose description holds the words typed.\nFollow-up to DEMO-3.",
+      "status": "todo"
+    },
+    {
+      "id": "DEMO-7",
+      "title": "Show how many stories a search found",
+      "description": "Above the search results, show the number of stories found.",
+      "status": "todo"
+    }
+  ]
+}

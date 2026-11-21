@@ -1,0 +1,252 @@
+Do the tests notice a broken preview? trello-create-card-preview, attempt trello-attempt-005
+Recorded by scripts/planted_bugs.py.
+
+Each bug below was put into participant/skills/trello-create-card-preview/preview.py, every test was run, and the
+bug was taken out again. Only local files are used.
+
+Before any bug: OK
+
+PLANTED BUG A. The list is not checked against the stated board (criterion 1)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    TheTarget.test_a_list_on_another_board_is_refused
+
+PLANTED BUG B. An archived list is accepted (criterion 1, the quest's scenario)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    TheTarget.test_an_archived_list_is_refused
+
+PLANTED BUG C. A board or list may be given by something other than its id (criterion 1)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    TheTarget.test_a_board_given_by_name_is_refused
+    TheTarget.test_a_list_given_by_name_is_refused
+
+PLANTED BUG D. The first list Trello gives is used, not the list the draft names (criterion 1, the quest's scenario)
+  unittest result: FAILED (failures=57)
+  tests that failed (57):
+    Duplicates.test_a_board_missing_from_the_local_indexes_refuses_the_preview
+    NothingIsWritten.test_a_board_that_changes_during_the_preview_refuses_it
+    Permission.test_a_deactivated_member_is_not_ready
+    Duplicates.test_a_decision_about_a_different_card_does_not_cover_the_candidate
+    Duplicates.test_a_decision_to_archive_as_duplicate_means_the_card_is_not_created
+    Duplicates.test_a_decision_with_no_cards_named_covers_nothing
+    TheDraft.test_a_draft_with_no_description_sends_none
+    LabelsAndMembers.test_a_draft_with_no_labels_or_members_sends_neither_field
+    TheTarget.test_a_good_draft_is_ready_and_names_the_list_by_id
+    LabelsAndMembers.test_a_label_is_sent_as_the_id_the_board_gives_it
+    LabelsAndMembers.test_a_label_name_must_match_exactly
+    LabelsAndMembers.test_a_label_of_another_board_is_refused
+    Duplicates.test_a_likely_duplicate_on_another_board_is_shown_and_the_preview_is_not_ready
+    TheTarget.test_a_list_on_another_board_is_refused
+    TheTarget.test_a_list_that_does_not_exist_is_refused
+    LabelsAndMembers.test_a_member_who_is_not_on_the_board_is_refused
+    WhereInTheList.test_a_number_another_card_already_has_is_said_not_to_be_known
+    WhereInTheList.test_a_number_falls_between_the_cards_either_side
+    ThePayload.test_a_number_position_is_sent_as_the_number
+    Permission.test_a_read_only_token_is_not_ready_and_the_payload_is_still_shown
+    Duplicates.test_a_recorded_decision_that_covers_the_candidate_makes_it_ready
+    Permission.test_a_token_scoped_to_another_board_only_is_not_ready
+    WhereInTheList.test_an_empty_list_is_said_to_be_empty
+    Duplicates.test_an_index_that_does_not_match_its_records_refuses_the_preview
+    Permission.test_an_observer_is_not_ready
+    LabelsAndMembers.test_an_unknown_label_is_refused_and_the_real_ones_are_named
+    WhereInTheList.test_bottom_is_after_the_last_open_card
+    Duplicates.test_cards_in_trello_that_the_index_lacks_are_warned_about
+    Duplicates.test_counts_that_agree_are_said_to_agree
+    Sources.test_each_citation_is_shown_with_its_file_and_line
+    NothingIsWritten.test_every_request_is_a_get
+    NothingIsWritten.test_every_request_sent_is_listed
+    WhereInTheList.test_no_card_name_from_trello_is_printed
+    Duplicates.test_no_duplicate_is_reported_as_none
+    Permission.test_someone_not_on_the_board_is_not_ready
+    Permission.test_the_check_is_shown_when_the_write_would_be_allowed
+    ThePayload.test_the_description_is_sent_as_written_line_breaks_included
+    NothingIsWritten.test_the_fake_trello_holds_exactly_what_it_held_before
+    TheTarget.test_the_first_list_by_position_is_the_archived_one_and_is_never_picked
+    NothingIsWritten.test_the_local_indexes_are_unchanged
+    Sources.test_the_payload_file_gives_a_source_for_each_field_of_content
+    Permission.test_the_payload_file_of_a_preview_that_is_not_ready_says_so
+    ThePayload.test_the_payload_holds_the_list_and_the_position
+    ThePayload.test_the_payload_is_built_once
+    ThePayload.test_the_payload_is_exactly_the_draft
+    NothingIsWritten.test_the_preview_shows_the_board_snapshot_before_and_after_and_they_match
+    ThePayload.test_the_printed_payload_the_saved_payload_and_the_payload_file_are_the_same
+    ThePayload.test_the_saved_preview_names_the_request_the_board_and_the_list
+    ThePayload.test_the_sha_shown_is_the_sha_of_the_bytes_a_write_would_send
+    NothingIsWritten.test_the_snapshot_notices_a_list_being_archived
+    Credentials.test_the_token_is_in_a_request_path_and_is_never_shown_or_saved
+    WhereInTheList.test_top_is_before_the_first_open_card_and_the_archived_card_is_not_counted
+    LabelsAndMembers.test_two_labels_are_joined_in_the_drafts_order
+    LabelsAndMembers.test_two_labels_with_one_name_are_refused
+    ThePayload.test_two_previews_of_one_draft_give_the_same_bytes
+    Permission.test_two_reasons_are_both_listed
+    Permission.test_when_trello_does_not_give_the_tokens_permissions_writing_is_not_assumed
+
+PLANTED BUG E. The sandbox allowlist is ignored (the target)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    TheTarget.test_a_board_not_on_the_allowlist_is_refused_before_trello_is_asked
+
+PLANTED BUG F. A label that does not exist is dropped without a word (criteria 2 and 3)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    LabelsAndMembers.test_a_label_name_must_match_exactly
+    LabelsAndMembers.test_a_label_of_another_board_is_refused
+    LabelsAndMembers.test_an_unknown_label_is_refused_and_the_real_ones_are_named
+
+PLANTED BUG G. A label is matched without regard to letter case (criterion 2)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    LabelsAndMembers.test_a_label_name_must_match_exactly
+
+PLANTED BUG H. Of two labels with one name, the first is used (criterion 2)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    LabelsAndMembers.test_two_labels_with_one_name_are_refused
+
+PLANTED BUG I. A member is not checked against the board's members (criterion 2)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    LabelsAndMembers.test_a_member_who_is_not_on_the_board_is_refused
+
+PLANTED BUG J. A draft with no position gets bottom by default (criterion 5)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    ThePayload.test_a_draft_with_no_position_is_refused
+    ThePayload.test_a_position_that_is_not_top_bottom_or_above_zero_is_refused
+
+PLANTED BUG K. The position is shown in the field list and left out of the payload (criterion 5)
+  unittest result: FAILED (failures=2, errors=2)
+  tests that failed (4):
+    LabelsAndMembers.test_a_draft_with_no_labels_or_members_sends_neither_field
+    ThePayload.test_a_number_position_is_sent_as_the_number
+    ThePayload.test_the_payload_holds_the_list_and_the_position
+    ThePayload.test_the_payload_is_exactly_the_draft
+
+PLANTED BUG L. The payload saved for the write differs from the payload shown (criterion 5)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    ThePayload.test_the_printed_payload_the_saved_payload_and_the_payload_file_are_the_same
+    ThePayload.test_the_sha_shown_is_the_sha_of_the_bytes_a_write_would_send
+
+PLANTED BUG M. The SHA-256 shown is of the indented text, not of the bytes that would be sent (criterion 5)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    ThePayload.test_the_sha_shown_is_the_sha_of_the_bytes_a_write_would_send
+
+PLANTED BUG N. The bytes are not in a fixed order of names (criterion 5)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    ThePayload.test_the_bytes_are_compact_json_with_names_in_order
+    ThePayload.test_the_sha_shown_is_the_sha_of_the_bytes_a_write_would_send
+
+PLANTED BUG O. The description's line breaks are lost on the way into the payload (criterion 5)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    ThePayload.test_the_description_is_sent_as_written_line_breaks_included
+    ThePayload.test_the_payload_is_exactly_the_draft
+
+PLANTED BUG P. A token that may not write is treated as ready (criterion 4)
+  unittest result: FAILED (failures=4)
+  tests that failed (4):
+    Permission.test_a_read_only_token_is_not_ready_and_the_payload_is_still_shown
+    Permission.test_a_token_scoped_to_another_board_only_is_not_ready
+    Permission.test_the_payload_file_of_a_preview_that_is_not_ready_says_so
+    Permission.test_two_reasons_are_both_listed
+
+PLANTED BUG Q. An observer is treated as able to add cards (criterion 4)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Permission.test_an_observer_is_not_ready
+    Permission.test_two_reasons_are_both_listed
+
+PLANTED BUG R. When Trello does not give the token's permissions, writing is assumed (criterion 4)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Permission.test_when_trello_does_not_give_the_tokens_permissions_writing_is_not_assumed
+
+PLANTED BUG S. A token's permission for some other board counts for this one (criterion 4)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Permission.test_a_token_scoped_to_another_board_only_is_not_ready
+
+PLANTED BUG T. A likely duplicate with no decision does not hold the write back (criterion 4)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Duplicates.test_a_likely_duplicate_on_another_board_is_shown_and_the_preview_is_not_ready
+
+PLANTED BUG U. Any recorded decision covers any candidate (criterion 4)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Duplicates.test_a_decision_about_a_different_card_does_not_cover_the_candidate
+    Duplicates.test_a_decision_with_no_cards_named_covers_nothing
+
+PLANTED BUG V. The index is not compared with Trello's card count (criterion 4)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Duplicates.test_cards_in_trello_that_the_index_lacks_are_warned_about
+
+PLANTED BUG W. A preview that is not ready is saved for a write, as ready (the verdict)
+  unittest result: FAILED (failures=12)
+  tests that failed (12):
+    Permission.test_a_deactivated_member_is_not_ready
+    Duplicates.test_a_decision_about_a_different_card_does_not_cover_the_candidate
+    Duplicates.test_a_decision_to_archive_as_duplicate_means_the_card_is_not_created
+    Duplicates.test_a_decision_with_no_cards_named_covers_nothing
+    Duplicates.test_a_likely_duplicate_on_another_board_is_shown_and_the_preview_is_not_ready
+    Permission.test_a_read_only_token_is_not_ready_and_the_payload_is_still_shown
+    Permission.test_a_token_scoped_to_another_board_only_is_not_ready
+    Permission.test_an_observer_is_not_ready
+    Permission.test_someone_not_on_the_board_is_not_ready
+    Permission.test_the_payload_file_of_a_preview_that_is_not_ready_says_so
+    Permission.test_two_reasons_are_both_listed
+    Permission.test_when_trello_does_not_give_the_tokens_permissions_writing_is_not_assumed
+
+PLANTED BUG X. The board snapshots before and after are not compared (criterion 6)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    NothingIsWritten.test_a_board_that_changes_during_the_preview_refuses_it
+    NothingIsWritten.test_the_snapshot_notices_a_list_being_archived
+
+PLANTED BUG Y. The snapshot leaves out the lists (criterion 6)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    NothingIsWritten.test_the_snapshot_notices_a_list_being_archived
+
+PLANTED BUG Z. A citation's quoted words are not checked against the file (criterion 7)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Sources.test_a_quotation_on_another_line_is_refused
+    Sources.test_a_quotation_that_is_not_on_the_line_is_refused
+
+PLANTED BUG AA. Content with no citation is accepted (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Sources.test_content_with_no_citation_is_refused
+
+PLANTED BUG AB. The request path holding the token is written into the list of requests (credentials)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Credentials.test_the_token_is_in_a_request_path_and_is_never_shown_or_saved
+
+PLANTED BUG AC. The output is not searched for the key and the token (credentials)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Credentials.test_if_the_token_would_appear_nothing_is_shown_or_saved
+
+PLANTED BUG AD. A due time in the past is accepted (the draft)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    TheDraft.test_a_due_time_in_the_past_is_refused
+
+PLANTED BUG AE. Archived cards are counted when working out where the card would sit (where in the list)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    WhereInTheList.test_a_number_falls_between_the_cards_either_side
+    WhereInTheList.test_bottom_is_after_the_last_open_card
+    WhereInTheList.test_top_is_before_the_first_open_card_and_the_archived_card_is_not_counted
+
+After the last bug was taken out: preview.py is byte for byte what it was at the start. OK
+
+RESULT: all 31 planted bugs were caught by at least one test, and the file was restored.

@@ -1,0 +1,22 @@
+Does the checker notice a false success? base-camp-failure-lab, attempt base-attempt-005
+
+A false success was planted by hand: a copy of work/2-partial.json.INCOMPLETE.json (60 stories)
+saved as work/2-partial.json with its status changed to "complete".
+Then: python3 scripts/check_no_false_success.py   (only its FAIL and RESULT lines are kept here)
+
+  FAIL work/2-partial.json does not exist
+  FAIL the file above says complete but does not hold all 100
+  FAIL the file above says complete under the name of a run that failed
+  FAIL 12 files swept, expected 11 (one per run, and one EARLIER file)
+RESULT: 4 CHECK(S) FAILED
+  - work/2-partial.json does not exist
+  - 2-partial.json says complete but does not hold all 100
+  - 2-partial.json says complete under the name of a run that failed
+  - 12 files swept, expected 11 (one per run, and one EARLIER file)
+exit code: 1
+
+The planted file was then deleted and the checker run again, which rewrote
+logs/no-false-success.txt from the real files:
+
+RESULT: ALL CHECKS PASSED. No failed run left a result that reads as complete.
+exit code: 0

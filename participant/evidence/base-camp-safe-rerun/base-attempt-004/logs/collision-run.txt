@@ -1,0 +1,24 @@
+$ python3 -B scripts/rerun.py --input scripts/sample/items-collision.json --store work/store-collision.json
+recorded (UTC): 2026-11-17 15:09:14
+note: separate store. The input has two different items that share one ID (positions 3 and 11) and one item with no ID (position 12).
+store file before this command, read by the recorder: absent
+--- output (stdout, then stderr) ---
+run: source=intake input_items=12
+created  intake:req-0001 -> SIM-0001
+created  intake:req-0002 -> SIM-0002
+refused  intake:req-0003 at position 3 (same key as position 11, different content; nothing written for this key)
+created  intake:req-0004 -> SIM-0003
+created  intake:req-0005 -> SIM-0004
+created  intake:req-0006 -> SIM-0005
+created  intake:req-0007 -> SIM-0006
+created  intake:req-0008 -> SIM-0007
+created  intake:req-0009 -> SIM-0008
+created  intake:req-0010 -> SIM-0009
+refused  intake:req-0003 at position 11 (same key as position 3, different content; nothing written for this key)
+refused  position 12 (no usable source_id)
+summary: created=9 updated=0 skipped=0 refused=3
+store: records_before=0 records_after=9 untouched_not_in_input=0 sha256_before=absent sha256_after=a37593b2592fdfe163c97cbd01d4aa3eec778118b4dfb23da145628193e7707c
+
+--- end of output ---
+exit code: 2
+store file after this command, read by the recorder: sha256 a37593b2592fdfe163c97cbd01d4aa3eec778118b4dfb23da145628193e7707c (2141 bytes)

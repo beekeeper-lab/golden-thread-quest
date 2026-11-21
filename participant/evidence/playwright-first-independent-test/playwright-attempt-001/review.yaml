@@ -1,0 +1,39 @@
+schema_version: 1
+review_id: review-20261101132801-cec4f5
+quest_id: playwright-first-independent-test
+quest_version: 2
+attempt_id: playwright-attempt-001
+evidence_hash: sha256:ae82e8ded1148ea59088e81bf2abcb61e2292abd938d890d4ddfea1eef538769
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-01T13:28:01Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/tests/playwright/first-independent-test.spec.ts
+  digest: sha256:379b2a20e52cd6779bfdd6e7dcd182d24ea21a278b71e679acaf80695ef1a7e8
+- path: participant/tests/playwright/pages/example-page.ts
+  digest: sha256:dd654bfc83481f041aa10843f3e01ed72334d508d3f417f031f33bf8221c684f
+verification_statement: Automated review. I read the test, the page model, the PROOF.md,
+  both run logs and the four validator records. The test title states the rule and
+  expected outcome. The test asserts exact verified and claimed totals, and it carries
+  feature, risk, read-only and duration tags. Locators live in PassportPage and use
+  roles and visible text. There are no fixed sleeps. Test data is described in the
+  test's header comment. test-run.txt shows two passing tagged runs, with the same
+  fixture fingerprint before and after. failure-run.txt opens with a two-line reproduction
+  summary and shows the run failing at the Verified XP assertion (expected 20, received
+  50). The trace zip is present, and failure-state.png is listed among the binary
+  files. I cannot view images or the full trace, so for those I counted their presence
+  and the participant's description. The latest validator run ended in 'warning',
+  which counts as a pass. The earlier failing run named only node_modules files, and
+  that is explained. Some limits are disclosed in PROOF.md (sidebar not checked, substring
+  match on the evidence-ready state). They do not undermine the main business assertion.
+  The evidence folder is named playwright-attempt-001 rather than attempt-001, but
+  the automatic pre-check found the required files present. No prompt injection was
+  found. Each of the 11 acceptance criteria was matched to text quoted word for word
+  from the evidence.
+validation_result_ids:
+- validate-playwright-quality-20261030200315633523-78c2e1
+- validate-playwright-quality-20261030200644532712-620da0
+- validate-playwright-quality-20261030203151515405-7ddc2d
+- validate-playwright-quality-20261031194458336018-9168fb

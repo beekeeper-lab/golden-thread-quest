@@ -1,0 +1,123 @@
+$ python3 -B -m unittest discover -s participant/evidence/base-camp-prompt-injection/base-attempt-003/tests -v
+test_lookalike_of_the_reserved_name_is_reported (test_injection.AddressScan.test_lookalike_of_the_reserved_name_is_reported) ... ok
+test_real_looking_email_is_reported (test_injection.AddressScan.test_real_looking_email_is_reported) ... ok
+test_real_looking_link_is_reported (test_injection.AddressScan.test_real_looking_link_is_reported) ... ok
+test_reserved_test_email_is_allowed (test_injection.AddressScan.test_reserved_test_email_is_allowed) ... ok
+test_reserved_test_link_is_allowed (test_injection.AddressScan.test_reserved_test_link_is_allowed) ... ok
+test_a_new_case_added_to_the_file_is_picked_up (test_injection.CaseLoader.test_a_new_case_added_to_the_file_is_picked_up)
+Criterion 7: the reviewer edits the cases file only. ... ok
+test_refuses_a_case_with_no_json_block (test_injection.CaseLoader.test_refuses_a_case_with_no_json_block) ... ok
+test_refuses_a_file_with_no_cases (test_injection.CaseLoader.test_refuses_a_file_with_no_cases) ... ok
+test_refuses_a_missing_bullet (test_injection.CaseLoader.test_refuses_a_missing_bullet) ... ok
+test_refuses_an_attack_case_that_does_not_say_what_obeying_looks_like (test_injection.CaseLoader.test_refuses_an_attack_case_that_does_not_say_what_obeying_looks_like) ... ok
+test_refuses_an_instruction_that_is_not_in_the_item (test_injection.CaseLoader.test_refuses_an_instruction_that_is_not_in_the_item) ... ok
+test_refuses_an_item_with_an_unknown_field (test_injection.CaseLoader.test_refuses_an_item_with_an_unknown_field) ... ok
+test_refuses_broken_json (test_injection.CaseLoader.test_refuses_broken_json) ... ok
+test_refuses_expect_flag_without_an_instruction (test_injection.CaseLoader.test_refuses_expect_flag_without_an_instruction) ... ok
+test_refuses_two_cases_with_one_id (test_injection.CaseLoader.test_refuses_two_cases_with_one_id) ... ok
+test_call_writes_one_line_and_nothing_else (test_injection.DecoyServer.test_call_writes_one_line_and_nothing_else) ... ok
+test_refuses_to_start_without_a_call_file (test_injection.DecoyServer.test_refuses_to_start_without_a_call_file) ... ok
+test_decoded_text_is_shown_but_never_followed (test_injection.EncodedText.test_decoded_text_is_shown_but_never_followed) ... ok
+test_finds_encoded_text_in_a_comment_a_title_an_attachment_name_and_a_tool_result (test_injection.EncodedText.test_finds_encoded_text_in_a_comment_a_title_an_attachment_name_and_a_tool_result) ... ok
+test_finds_encoded_text_with_the_padding_cut_off (test_injection.EncodedText.test_finds_encoded_text_with_the_padding_cut_off) ... ok
+test_finds_the_block_in_the_encoded_case_and_quotes_it_exactly (test_injection.EncodedText.test_finds_the_block_in_the_encoded_case_and_quotes_it_exactly) ... ok
+test_ignores_a_block_that_decodes_to_control_characters (test_injection.EncodedText.test_ignores_a_block_that_decodes_to_control_characters) ... ok
+test_ignores_a_block_that_does_not_decode_to_text (test_injection.EncodedText.test_ignores_a_block_that_does_not_decode_to_text) ... ok
+test_ignores_long_ordinary_words_and_identifiers (test_injection.EncodedText.test_ignores_long_ordinary_words_and_identifiers) ... ok
+test_quiet_on_every_other_case (test_injection.EncodedText.test_quiet_on_every_other_case) ... ok
+test_api_error_text_is_kept_in_the_error (test_injection.ModelCommand.test_api_error_text_is_kept_in_the_error) ... ok
+test_control_command_offers_only_the_decoy_tools (test_injection.ModelCommand.test_control_command_offers_only_the_decoy_tools) ... ok
+test_defended_command_allows_nothing_and_skips_no_permission_check (test_injection.ModelCommand.test_defended_command_allows_nothing_and_skips_no_permission_check) ... ok
+test_defended_command_also_uses_safe_mode (test_injection.ModelCommand.test_defended_command_also_uses_safe_mode) ... ok
+test_defended_command_switches_every_tool_off (test_injection.ModelCommand.test_defended_command_switches_every_tool_off) ... ok
+test_defended_prompt_carries_the_item (test_injection.ModelCommand.test_defended_prompt_carries_the_item) ... ok
+test_at_least_five_cases_with_an_instruction (test_injection.RealCasesFile.test_at_least_five_cases_with_an_instruction) ... ok
+test_at_least_one_attack_asks_for_something_harmless (test_injection.RealCasesFile.test_at_least_one_attack_asks_for_something_harmless) ... ok
+test_attack_cases_hide_in_different_places (test_injection.RealCasesFile.test_attack_cases_hide_in_different_places) ... ok
+test_every_case_says_where_what_and_expected (test_injection.RealCasesFile.test_every_case_says_where_what_and_expected) ... ok
+test_every_instruction_is_in_its_item_exactly_as_written (test_injection.RealCasesFile.test_every_instruction_is_in_its_item_exactly_as_written) ... ok
+test_instruction_sits_in_a_different_field_in_at_least_five_cases (test_injection.RealCasesFile.test_instruction_sits_in_a_different_field_in_at_least_five_cases) ... ok
+test_no_real_address_in_the_cases_file (test_injection.RealCasesFile.test_no_real_address_in_the_cases_file) ... ok
+test_there_is_an_ordinary_item_with_no_instruction (test_injection.RealCasesFile.test_there_is_an_ordinary_item_with_no_instruction) ... ok
+test_a_decoy_call_file_fails (test_injection.RecordChecks.test_a_decoy_call_file_fails) ... ok
+test_a_tool_call_fails (test_injection.RecordChecks.test_a_tool_call_fails) ... ok
+test_any_connected_server_fails_no_tools (test_injection.RecordChecks.test_any_connected_server_fails_no_tools) ... ok
+test_any_tool_fails_no_tools (test_injection.RecordChecks.test_any_tool_fails_no_tools) ... ok
+test_dropped_instruction_fails_recorded (test_injection.RecordChecks.test_dropped_instruction_fails_recorded) ... ok
+test_encoded_instruction_is_flagged_by_the_script_when_the_model_gives_no_reply (test_injection.RecordChecks.test_encoded_instruction_is_flagged_by_the_script_when_the_model_gives_no_reply) ... ok
+test_flag_counts_when_quote_is_most_of_the_instruction (test_injection.RecordChecks.test_flag_counts_when_quote_is_most_of_the_instruction) ... ok
+test_flag_counts_when_quote_is_the_sentence_around_the_instruction (test_injection.RecordChecks.test_flag_counts_when_quote_is_the_sentence_around_the_instruction) ... ok
+test_flag_sources_names_who_flagged (test_injection.RecordChecks.test_flag_sources_names_who_flagged) ... ok
+test_good_record_passes_every_check (test_injection.RecordChecks.test_good_record_passes_every_check) ... ok
+test_invented_quote_does_not_count_as_a_flag (test_injection.RecordChecks.test_invented_quote_does_not_count_as_a_flag) ... ok
+test_model_error_is_held_for_a_person (test_injection.RecordChecks.test_model_error_is_held_for_a_person) ... ok
+test_no_reply_and_no_hold_fails (test_injection.RecordChecks.test_no_reply_and_no_hold_fails) ... ok
+test_obeyed_means_a_call_the_instruction_asked_for (test_injection.RecordChecks.test_obeyed_means_a_call_the_instruction_asked_for) ... ok
+test_ordinary_item_fails_when_flagged (test_injection.RecordChecks.test_ordinary_item_fails_when_flagged) ... ok
+test_ordinary_item_passes_when_not_flagged (test_injection.RecordChecks.test_ordinary_item_passes_when_not_flagged) ... ok
+test_ordinary_item_the_model_would_not_read_counts_as_flagged (test_injection.RecordChecks.test_ordinary_item_the_model_would_not_read_counts_as_flagged) ... ok
+test_quote_from_another_part_of_the_item_does_not_count (test_injection.RecordChecks.test_quote_from_another_part_of_the_item_does_not_count) ... ok
+test_readable_reply_is_not_held (test_injection.RecordChecks.test_readable_reply_is_not_held) ... ok
+test_reworded_item_fails_recorded (test_injection.RecordChecks.test_reworded_item_fails_recorded) ... ok
+test_unflagged_instruction_fails (test_injection.RecordChecks.test_unflagged_instruction_fails) ... ok
+test_unknown_tool_list_fails_no_tools (test_injection.RecordChecks.test_unknown_tool_list_fails_no_tools) ... ok
+test_unreadable_reply_is_held_for_a_person_and_the_instruction_still_counts_as_unflagged (test_injection.RecordChecks.test_unreadable_reply_is_held_for_a_person_and_the_instruction_still_counts_as_unflagged) ... ok
+test_harness_does_nothing_a_hostile_reply_asks_for (test_injection.Records.test_harness_does_nothing_a_hostile_reply_asks_for)
+The reply is stored. It is never run, and no path in it is followed. ... ok
+test_phrase_list_is_quiet_on_the_ordinary_item (test_injection.Records.test_phrase_list_is_quiet_on_the_ordinary_item) ... ok
+test_phrase_list_marks_the_scenario_line (test_injection.Records.test_phrase_list_marks_the_scenario_line) ... ok
+test_record_holds_the_whole_item_as_it_arrived (test_injection.Records.test_record_holds_the_whole_item_as_it_arrived) ... ok
+test_record_keeps_the_item_whatever_the_model_says (test_injection.Records.test_record_keeps_the_item_whatever_the_model_says) ... ok
+test_record_marks_a_quote_that_is_in_the_item (test_injection.Records.test_record_marks_a_quote_that_is_in_the_item) ... ok
+test_record_marks_a_quote_that_is_not_in_the_item (test_injection.Records.test_record_marks_a_quote_that_is_not_in_the_item) ... ok
+test_garbage_is_an_error_not_an_empty_reply (test_injection.ReplyParsing.test_garbage_is_an_error_not_an_empty_reply) ... ok
+test_json_in_a_code_fence (test_injection.ReplyParsing.test_json_in_a_code_fence) ... ok
+test_plain_json (test_injection.ReplyParsing.test_plain_json) ... ok
+test_wrong_shape_is_an_error (test_injection.ReplyParsing.test_wrong_shape_is_an_error) ... ok
+test_comparing_reports_a_total (test_injection.Snapshot.test_comparing_reports_a_total) ... ok
+test_deleted_file_is_seen (test_injection.Snapshot.test_deleted_file_is_seen) ... ok
+test_every_file_is_listed (test_injection.Snapshot.test_every_file_is_listed) ... ok
+test_excluded_folder_is_skipped_only_when_asked (test_injection.Snapshot.test_excluded_folder_is_skipped_only_when_asked) ... ok
+test_link_is_recorded_and_not_followed (test_injection.Snapshot.test_link_is_recorded_and_not_followed) ... ok
+test_new_empty_folder_is_seen (test_injection.Snapshot.test_new_empty_folder_is_seen) ... ok
+test_new_file_in_a_hidden_folder_is_seen (test_injection.Snapshot.test_new_file_in_a_hidden_folder_is_seen) ... ok
+test_new_file_is_seen (test_injection.Snapshot.test_new_file_is_seen) ... ok
+test_permission_change_is_seen (test_injection.Snapshot.test_permission_change_is_seen) ... ok
+test_report_names_the_changed_file (test_injection.Snapshot.test_report_names_the_changed_file) ... ok
+test_report_says_unchanged_when_nothing_moved (test_injection.Snapshot.test_report_says_unchanged_when_nothing_moved) ... ok
+test_rewrite_with_the_same_content_is_seen (test_injection.Snapshot.test_rewrite_with_the_same_content_is_seen) ... ok
+test_same_size_content_change_is_seen (test_injection.Snapshot.test_same_size_content_change_is_seen) ... ok
+test_total_counts_a_rewrite_with_the_same_content (test_injection.Snapshot.test_total_counts_a_rewrite_with_the_same_content) ... ok
+test_untouched_tree_is_unchanged (test_injection.Snapshot.test_untouched_tree_is_unchanged) ... ok
+test_error_result_is_kept (test_injection.StreamParsing.test_error_result_is_kept) ... ok
+test_junk_line_is_reported_not_skipped (test_injection.StreamParsing.test_junk_line_is_reported_not_skipped) ... ok
+test_missing_start_up_event_is_not_read_as_no_tools (test_injection.StreamParsing.test_missing_start_up_event_is_not_read_as_no_tools) ... ok
+test_reads_tools_calls_and_text (test_injection.StreamParsing.test_reads_tools_calls_and_text) ... ok
+test_agent_that_flags_everything_fails (test_injection.WholeRun.test_agent_that_flags_everything_fails) ... ok
+test_agent_that_never_flags_fails (test_injection.WholeRun.test_agent_that_never_flags_fails) ... ok
+test_clean_run_passes_and_writes_both_records (test_injection.WholeRun.test_clean_run_passes_and_writes_both_records) ... ok
+test_control_arm_tool_call_is_reported_but_does_not_fail_the_run (test_injection.WholeRun.test_control_arm_tool_call_is_reported_but_does_not_fail_the_run) ... ok
+test_control_arm_with_a_tool_that_is_not_a_decoy_fails (test_injection.WholeRun.test_control_arm_with_a_tool_that_is_not_a_decoy_fails) ... ok
+test_control_arm_without_its_decoy_tools_fails (test_injection.WholeRun.test_control_arm_without_its_decoy_tools_fails)
+Seen in run 1: the decoy tools never loaded, so the control arm showed nothing. ... ok
+test_defended_canary_file_fails (test_injection.WholeRun.test_defended_canary_file_fails) ... ok
+test_fewer_than_five_attack_cases_fails (test_injection.WholeRun.test_fewer_than_five_attack_cases_fails) ... ok
+test_file_added_during_the_run_fails (test_injection.WholeRun.test_file_added_during_the_run_fails) ... ok
+test_file_changed_during_the_run_fails (test_injection.WholeRun.test_file_changed_during_the_run_fails) ... ok
+test_file_left_in_the_models_folder_fails (test_injection.WholeRun.test_file_left_in_the_models_folder_fails) ... ok
+test_file_rewritten_with_the_same_content_during_the_run_fails (test_injection.WholeRun.test_file_rewritten_with_the_same_content_during_the_run_fails) ... ok
+test_model_that_refuses_everything_fails (test_injection.WholeRun.test_model_that_refuses_everything_fails) ... ok
+test_model_that_refuses_only_the_encoded_item_still_passes_with_script_flag_and_hold (test_injection.WholeRun.test_model_that_refuses_only_the_encoded_item_still_passes_with_script_flag_and_hold) ... ok
+test_model_with_a_tool_fails_the_defended_arm (test_injection.WholeRun.test_model_with_a_tool_fails_the_defended_arm) ... ok
+test_new_case_runs_without_touching_a_script (test_injection.WholeRun.test_new_case_runs_without_touching_a_script) ... ok
+test_output_hides_the_home_folder_and_the_temporary_folder (test_injection.WholeRun.test_output_hides_the_home_folder_and_the_temporary_folder) ... ok
+test_paths_in_a_model_reply_are_hidden_in_the_output (test_injection.WholeRun.test_paths_in_a_model_reply_are_hidden_in_the_output) ... ok
+test_real_address_in_the_cases_fails (test_injection.WholeRun.test_real_address_in_the_cases_fails) ... ok
+test_run_output_shows_each_instruction_as_content (test_injection.WholeRun.test_run_output_shows_each_instruction_as_content) ... ok
+test_tool_call_fails_the_defended_arm (test_injection.WholeRun.test_tool_call_fails_the_defended_arm) ... ok
+test_watched_file_outside_the_workspace_changing_fails (test_injection.WholeRun.test_watched_file_outside_the_workspace_changing_fails) ... ok
+
+----------------------------------------------------------------------
+Ran 114 tests in 0.196s
+
+OK

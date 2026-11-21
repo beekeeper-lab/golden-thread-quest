@@ -1,0 +1,150 @@
+The sync of the member's cards: trello-read-assigned-cards, attempt trello-attempt-007
+Recorded by scripts/record_evidence.py. No request was sent to Trello. Every board, card and member is made up.
+
+==============================================================================
+PART 1. The made-up Trello, as this script counts it.
+$ python3 participant/skills/trello-read-assigned-cards/fake_trello.py
+------------------------------------------------------------------------------
+Platform         60b010000000000000000000  open    member on it: yes  cards: 130  assigned to the member: 65
+Support          60b020000000000000000000  open    member on it: yes  cards:  24  assigned to the member: 12
+Design           60b030000000000000000000  open    member on it: yes  cards:  12  assigned to the member: 6
+Hiring           60b040000000000000000000  open    member on it: yes  cards:   6  assigned to the member: 3
+Old launch 2025  60b050000000000000000000  closed  member on it: yes  cards:   9  assigned to the member: 4
+Finance          60b060000000000000000000  open    member on it: no   cards:  15  assigned to the member: 0
+------------------------------------------------------------------------------
+exit code: 0
+  Counted by this script from the made-up Trello's data, not from any sync:
+  6 boards, 5 with the member on them. 196 cards in all. 90 assigned to the member.
+  The made-up Trello returns at most 50 cards for one request. Trello's own limit is 1000.
+  ok   one board holds more cards than one request returns: 130 against a limit of 50
+  ok   the member's cards alone are more than one request returns: 90
+
+==============================================================================
+PART 2. The first sync. (criteria 1, 2, 3, 4)
+  participant/context/trello/assigned/index.md and participant/context/trello/assigned/assigned.json were removed first, so this starts from nothing. The notes folder was left alone.
+$ python3 participant/skills/trello-read-assigned-cards/sync.py --source fake
+------------------------------------------------------------------------------
+assigned-sync: member read from the connection: member id 5f0000000000000000000001. Trello was asked "who am I?". No member is named in the skill or given to it
+assigned-sync: boards the connection can reach: 5 (4 open, 1 closed)
+assigned-sync:   board 60b010000000000000000000, open: 130 cards read in 3 requests (50 + 50 + 30), 65 assigned to the member
+assigned-sync:   board 60b020000000000000000000, open: 24 cards read in 1 request (24), 12 assigned to the member
+assigned-sync:   board 60b030000000000000000000, open: 12 cards read in 1 request (12), 6 assigned to the member
+assigned-sync:   board 60b040000000000000000000, open: 6 cards read in 1 request (6), 3 assigned to the member
+assigned-sync:   board 60b050000000000000000000, closed: 9 cards read in 1 request (9), 4 assigned to the member
+assigned-sync: page limit: 50 cards for one request. Largest board: 130 cards, more than one page, retrieved completely
+assigned-sync: retrieved: 90 cards assigned to the member, on 5 boards searched
+assigned-sync: Trello's own list of the member's cards holds 90. Every one of them on a board searched was found
+assigned-sync: archived cards: an archived card that is still assigned to the member is INCLUDED, in its own section, and is not counted as open work. A card is archived when the card, its list or its board is archived or closed.
+assigned-sync:   of the 90 retrieved: 79 open, 11 archived (4 by card, 3 by list, 4 by board)
+assigned-sync: cards held before this sync: 0. This sync: 90 new, 0 changed, 0 unchanged, 0 newly flagged as no longer assigned, 0 assigned again
+assigned-sync: counts: retrieved 90, held and no longer assigned 0, expected in the index 90. Rows saved in the index: 90. The counts agree
+assigned-sync: notes: 3 files, opened for reading only. SHA-256 before and after this sync:
+assigned-sync:   notes/62c010000000000000000002.md  before 6e73e4bd4cfbd1c571bb416d8269717d602a73e4bee59e46afb60e82b477d58b  after 6e73e4bd4cfbd1c571bb416d8269717d602a73e4bee59e46afb60e82b477d58b  same
+assigned-sync:   notes/62c010000000000000000032.md  before 92b40f2a921d0619bfc86a911143f89f155d7561c0ba73e40966681d99d4ee67  after 92b40f2a921d0619bfc86a911143f89f155d7561c0ba73e40966681d99d4ee67  same
+assigned-sync:   notes/62c020000000000000000004.md  before 4723a5c8624102431a4f4bca41a367bd0239c58d17c2ac4c48204ad3120de587  after 4723a5c8624102431a4f4bca41a367bd0239c58d17c2ac4c48204ad3120de587  same
+assigned-sync: requests made: 15, every one a GET
+assigned-sync: index written: participant/context/trello/assigned/index.md
+------------------------------------------------------------------------------
+exit code: 0
+  ok   the sync ran: exit code 0
+  ok   criterion 1: the member was read from the connection: the first request was "who am I?", and the member it names is the one the made-up connection belongs to
+  ok   criterion 1: no member id is written anywhere in sync.py
+  ok   criterion 2: the boards searched are listed, and they are every board the connection can reach: 5, one of them closed
+  ok   criterion 2: the board the member is not on (Finance) was not searched, and none of its cards is held
+  ok   criterion 2: cards are held from all 5 boards
+  ok   criterion 3: the board larger than the limit took 3 requests of 50 + 50 + 30 cards, which add up to its 130 cards
+  ok   criterion 3: the cards held are exactly the member's cards in the made-up Trello, by id: 90, none missing, none extra, none twice
+  ok   criterion 3: the count reported, 90 retrieved, is the count saved: this script counts 90 card rows in the index
+  ok   criterion 3: Trello's own list of the member's cards was compared with what was found
+  ok   criterion 4: the rule for archived cards is stated in the output and in the index
+  ok   criterion 4: by this script's count 11 of the member's cards are archived: 4 by card, 3 by list, 4 by board. The sync reports the same
+
+==============================================================================
+PART 3. A closed card, handled as the rule states. (criterion 4)
+  A card archived as a card, 62c010000000000000000032. Its row in the index:
+    | Platform task 32 | `62c010000000000000000032` | Platform | Backlog | 2026-11-04T09:32:00.000Z |  | `notes/62c010000000000000000032.md` | card |
+  A card in an archived list, 62c010000000000000000040. Its row in the index:
+    | Platform task 40 | `62c010000000000000000040` | Platform | Parked | 2026-11-04T09:40:00.000Z |  |  | list |
+  A card on a closed board, 62c050000000000000000002. Its row in the index:
+    | Old launch 2025 task 2 | `62c050000000000000000002` | Old launch 2025 | Review | 2026-11-02T09:02:00.000Z |  |  | board |
+  ok   each of the three is included, under 'Assigned and archived', with how it was archived
+  ok   none of the 11 archived cards is under 'Assigned and open', which holds 79 rows
+
+==============================================================================
+PART 4. The index: board, list, identifier and last activity for each card.
+    | Card | Card id | Board | List | Last activity | Also assigned to | Your notes |
+    |---|---|---|---|---|---|---|
+    | Fix the \| pipe in (export) 'titles' | `62c010000000000000000004` | Platform | Backlog | 2026-11-04T09:04:00.000Z |  |  |
+    | Platform task 8 | `62c010000000000000000008` | Platform | Backlog | 2026-11-04T09:08:00.000Z |  |  |
+    | Platform task 12 | `62c010000000000000000012` | Platform | Backlog | 2026-09-04T09:12:00.000Z | 1 other |  |
+    ... 79 rows in this section
+  ok   every card row has a name, the card's id, its board, its list and its last activity: 90 rows
+  ok   a card name with a vertical bar and brackets did not break its row
+  ok   a card name worded as an order was written down as a name and nothing else happened: 3 notes files, all as they were
+  ok   the stretch goals: 26 open cards are listed as assigned to several members, and 26 as quiet for 30 days or more
+
+==============================================================================
+PART 5. At Trello's real limit of 1000 cards for one request. (criterion 3)
+  A made-up Trello with its limit set to 1000, and 1500 more cards given to the member on one board.
+  The index for it is written to a temporary folder, COPY, and is not kept.
+(inside this script) sync, with a limit of 1000
+------------------------------------------------------------------------------
+assigned-sync: member read from the connection: member id 5f0000000000000000000001. Trello was asked "who am I?". No member is named in the skill or given to it
+assigned-sync: boards the connection can reach: 5 (4 open, 1 closed)
+assigned-sync:   board 60b010000000000000000000, open: 130 cards read in 1 request (130), 65 assigned to the member
+assigned-sync:   board 60b020000000000000000000, open: 1524 cards read in 2 requests (1000 + 524), 1512 assigned to the member
+assigned-sync:   board 60b030000000000000000000, open: 12 cards read in 1 request (12), 6 assigned to the member
+assigned-sync:   board 60b040000000000000000000, open: 6 cards read in 1 request (6), 3 assigned to the member
+assigned-sync:   board 60b050000000000000000000, closed: 9 cards read in 1 request (9), 4 assigned to the member
+assigned-sync: page limit: 1000 cards for one request. Largest board: 1524 cards, more than one page, retrieved completely
+assigned-sync: retrieved: 1590 cards assigned to the member, on 5 boards searched
+assigned-sync: Trello's own list of the member's cards holds 1000, which is its limit, so it may not be all of them. Every one of them on a board searched was found
+assigned-sync: archived cards: an archived card that is still assigned to the member is INCLUDED, in its own section, and is not counted as open work. A card is archived when the card, its list or its board is archived or closed.
+assigned-sync:   of the 1590 retrieved: 1579 open, 11 archived (4 by card, 3 by list, 4 by board)
+assigned-sync: cards held before this sync: 0. This sync: 1590 new, 0 changed, 0 unchanged, 0 newly flagged as no longer assigned, 0 assigned again
+assigned-sync: counts: retrieved 1590, held and no longer assigned 0, expected in the index 1590. Rows saved in the index: 1590. The counts agree
+assigned-sync: notes: 0 files, opened for reading only. SHA-256 before and after this sync:
+assigned-sync: requests made: 14, every one a GET
+assigned-sync: index written: index.md
+------------------------------------------------------------------------------
+exit code: 0
+  ok   a board of 1524 cards was read in 2 requests, 1000 + 524
+  ok   all 1590 of the member's cards are held, though Trello's own list of a member's cards stops at 1000, and the sync says so
+
+==============================================================================
+PART 6. Two ways paging could go wrong, each stopped with nothing written. (criterion 3)
+  First: the sync believes one request returns up to 1000 cards, and this Trello returns 50.
+  A short page would be taken for the last one.
+(inside this script) sync, believing the limit is 1000
+------------------------------------------------------------------------------
+assigned-sync: member read from the connection: member id 5f0000000000000000000001. Trello was asked "who am I?". No member is named in the skill or given to it
+assigned-sync: boards the connection can reach: 5 (4 open, 1 closed)
+assigned-sync:   board 60b010000000000000000000, open: 50 cards read in 1 request (50), 25 assigned to the member
+assigned-sync:   board 60b020000000000000000000, open: 24 cards read in 1 request (24), 12 assigned to the member
+assigned-sync:   board 60b030000000000000000000, open: 12 cards read in 1 request (12), 6 assigned to the member
+assigned-sync:   board 60b040000000000000000000, open: 6 cards read in 1 request (6), 3 assigned to the member
+assigned-sync:   board 60b050000000000000000000, closed: 9 cards read in 1 request (9), 4 assigned to the member
+assigned-sync: page limit: 1000 cards for one request. Largest board: 50 cards, within one page
+assigned-sync: STOPPED: Trello lists 40 card(s) of the member on the boards searched that the search did not find, the first being 62c010000000000000000002. The search was not complete, so nothing is saved.
+assigned-sync: Nothing was written.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   it stopped: Trello's own list held cards the search had not found. Nothing was written
+  Second: a Trello where asking for the cards before a given one does nothing.
+(inside this script) sync, against that Trello
+------------------------------------------------------------------------------
+assigned-sync: member read from the connection: member id 5f0000000000000000000001. Trello was asked "who am I?". No member is named in the skill or given to it
+assigned-sync: boards the connection can reach: 5 (4 open, 1 closed)
+assigned-sync: STOPPED: Trello kept returning the same of the cards of board 60b010000000000000000000, so the skill cannot tell whether it has them all.
+assigned-sync: Nothing was written.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   it stopped rather than loop or guess. Nothing was written
+
+==============================================================================
+PART 7. Only reads.
+  ok   sync.py holds one way of sending a request, and it is a GET
+  ok   the key and token are read from the environment in one place and sent in a header, not in the address
+  ok   the notes files have the SHA-256 they had before the first sync
+
+RESULT: ALL CHECKS PASSED. 27 checks.

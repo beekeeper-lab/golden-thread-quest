@@ -1,0 +1,11 @@
+{
+  "title": "Clean up old data",
+  "description": "Remove customer records for accounts closed more than seven years ago, as the retention policy requires.",
+  "labels": [
+    "compliance"
+  ],
+  "components": [
+    "Billing"
+  ],
+  "parent": null
+}

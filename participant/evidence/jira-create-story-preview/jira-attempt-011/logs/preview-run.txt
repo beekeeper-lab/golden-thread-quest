@@ -1,0 +1,384 @@
+A preview of a new story, with nothing written: jira-create-story-preview, attempt jira-attempt-011
+Recorded by scripts/record_evidence.py. Each block between dashed lines is what the preview printed.
+The Jira here is participant/skills/jira-create-story-preview/fake_jira.py, a made-up one that can only be read. No real Jira was contacted, so
+nothing is redacted: the site, the projects and the stories are invented. STATE stands for a temporary folder.
+
+==============================================================================
+The draft is participant/context/jira/new-story/draft.md. Its content is cited to participant/context/jira/new-story/sources/intake-notes.md.
+The payload is also written to participant/context/jira/new-story/payload.md.
+$ python3 participant/skills/jira-create-story-preview/preview.py --source fake --draft participant/context/jira/new-story/draft.md --allowlist participant/skills/jira-create-story-preview/fake-allowlist.json --catalog participant/context/jira/duplicates/fixture --state STATE --today 2026-11-19 --payload-out participant/context/jira/new-story/payload.md
+------------------------------------------------------------------------------
+PREVIEW OF A NEW STORY. Nothing has been written to Jira.
+
+Jira site:   https://fixture-site.example.invalid  (site fingerprint 738169e667642f09)
+Project:     RPT (project id 30000). On the sandbox allowlist: yes.
+Issue type:  "Story" (issue type id 10001)
+Draft:       participant/context/jira/new-story/draft.md
+Would be sent, by a later write and not by this preview: POST /rest/api/3/issue
+
+EVERY FIELD Jira lists for creating a "Story" in RPT: 12.
+Set by the draft, 9:
+  project            Project       RPT (project id 30000)
+  issuetype          Issue Type    "Story" (issue type id 10001)
+  summary            Summary       "Quarterly revenue by plan report for the finance team"
+  description        Description   2 block(s) of Atlassian Document Format, shown in full in the payload
+  labels             Labels        ["reporting", "revenue"]
+  components         Components    "Reports" (id 31001)
+  parent             Parent        RPT-1 (issue id 30001)
+  duedate            Due date      2027-01-15
+  customfield_10050  Team          "Data" (option id 32001)
+Required by Jira, not in the draft, and LEFT TO JIRA because it has a default, 2:
+  priority           Priority      Jira's default is "Medium".
+  reporter           Reporter      Jira says it has a default and does not say what it is.
+  Jira, not this draft, decides these. If a default is wrong for this story, set the field in the draft.
+Optional, not in the draft, and not sent, 1:
+  customfield_10016  Story Points  no default reported.
+Required by Jira with no default, and missing from the draft: none.
+
+THE EXACT PAYLOAD. This is the request body, not a summary of it:
+  {
+    "fields": {
+      "components": [
+        {
+          "id": "31001"
+        }
+      ],
+      "customfield_10050": {
+        "id": "32001"
+      },
+      "description": {
+        "content": [
+          {
+            "content": [
+              {
+                "text": "Finance needs a quarterly report of recognised revenue by subscription plan, split by region.",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "content": [
+              {
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "Source of the figures: the billing warehouse, from the table of invoices.",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "paragraph"
+                  }
+                ],
+                "type": "listItem"
+              },
+              {
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "Format: a spreadsheet, with one sheet per region.",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "paragraph"
+                  }
+                ],
+                "type": "listItem"
+              },
+              {
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "First delivery: the second week of January, covering the fourth quarter.",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "paragraph"
+                  }
+                ],
+                "type": "listItem"
+              }
+            ],
+            "type": "bulletList"
+          }
+        ],
+        "type": "doc",
+        "version": 1
+      },
+      "duedate": "2027-01-15",
+      "issuetype": {
+        "id": "10001"
+      },
+      "labels": [
+        "reporting",
+        "revenue"
+      ],
+      "parent": {
+        "key": "RPT-1"
+      },
+      "project": {
+        "id": "30000"
+      },
+      "summary": "Quarterly revenue by plan report for the finance team"
+    }
+  }
+As sent it is the same data with no spaces or line breaks and its names in alphabetical order:
+  982 bytes, SHA-256 dfbd9a3fcc91db2879a5f45b319cc245562019e013756fbe633943616e406b79
+
+Sources for the content, each checked against the file: 10 citations, all true.
+  summary      sources/intake-notes.md line 7: "a quarterly report of recognised revenue by subscription plan"
+  description  sources/intake-notes.md line 7: "Finance needs a quarterly report of recognised revenue by subscription plan, split by region."
+  description  sources/intake-notes.md line 8: "the billing warehouse, from the table of invoices"
+  description  sources/intake-notes.md line 9: "a spreadsheet, with one sheet per region"
+  description  sources/intake-notes.md line 10: "the second week of January, covering the fourth quarter"
+  duedate      sources/intake-notes.md line 10: "15 January 2027 at the latest"
+  components   sources/intake-notes.md line 11: "under the component Reports"
+  custom Team  sources/intake-notes.md line 11: "The data team will build it"
+  parent       sources/intake-notes.md line 12: "under the finance reporting epic, RPT-1"
+  labels       sources/intake-notes.md line 14: "Tag it reporting and revenue"
+
+Permission check, asked of Jira for this project and this identity:
+  may see the project    (BROWSE_PROJECTS): yes
+  may create stories     (CREATE_ISSUES):   yes
+  Jira gives the field list above only to an identity that may create here.
+Duplicate search: the local catalog participant/context/jira/duplicates/fixture, 9 stories, searched with the jira-duplicate-search skill.
+  Coverage: the catalog holds 7 of project RPT's stories and Jira holds 7: the counts agree.
+  Result: 1 candidate.
+  RPT-3 (issue id 30003): confidence MEDIUM, 6 of 11 points, matched on parent, component, labels. Recommendation: LINK.
+  Looked at and not reported: RPT-1 (issue id 30001), matched on component and labels only.
+  Looked at and not reported: RPT-2 (issue id 30002), matched on parent and component only.
+  Looked at and not reported: RPT-5 (issue id 30005), matched on parent only.
+  Looked at and not reported: RPT-7 (issue id 30008), matched on parent and component only.
+  Looked at and not reported: RPT-9 (issue id 30009), matched on parent and component only.
+  Overall recommendation: LINK. A person decides. The catalog is a local copy: a story created in Jira
+  since the records were saved is not in it.
+  How the draft differs from the nearest, RPT-3:
+    labels:     only in the draft: revenue. only in the story: sales. in both: reporting.
+    components: only in the draft: none. only in the story: none. in both: Reports.
+    parent:     the draft has RPT-1, the story has RPT-1.
+    description words only in the draft (28): billing, covering, delivery, figure, finance, first, format, fourth, invoice, january, need, one, plan, quarter
+    description words only in the story: 11. in both: 1.
+
+What Jira cannot be asked: it has no way to try a create without making one, so this preview cannot
+promise the create would be accepted. Jira's list of required fields does not cover rules in the
+project's workflow or automation.
+
+Snapshot of the project's stories in Jira before the preview: 7 stories, e5f53b24d09beac6
+Snapshot of the project's stories in Jira after the preview:  7 stories, e5f53b24d09beac6
+The two are the same. Jira is unchanged.
+Requests sent to Jira: 12. Every one was a GET, which reads and cannot change anything.
+  GET /rest/api/3/project/RPT
+  GET /rest/api/3/search/jql
+  GET /rest/api/3/search/jql
+  GET /rest/api/3/myself
+  GET /rest/api/3/mypermissions
+  GET /rest/api/3/issue/createmeta/30000/issuetypes
+  GET /rest/api/3/issue/createmeta/30000/issuetypes/10001
+  GET /rest/api/3/issue/createmeta/30000/issuetypes/10001
+  GET /rest/api/3/issue/createmeta/30000/issuetypes/10001
+  GET /rest/api/3/issue/RPT-1
+  GET /rest/api/3/search/jql
+  GET /rest/api/3/search/jql
+
+Fingerprint of this preview: a05570365ed2
+Made:    2026-11-19 20:58:55 UTC
+Expires: 2026-11-19 21:13:55 UTC (15 minutes after it was made)
+The payload, its SHA-256 and this fingerprint are saved in the state folder for a later write to check.
+
+Nothing has been written to Jira. This preview creates nothing, and has no way to.
+The payload was also written, field by field, where --payload-out said.
+------------------------------------------------------------------------------
+exit code: 0
+
+  ok   a preview was made, exit code 0, and it says nothing was written
+  ok   it lists the site, the target project and the issue type (criterion 1)
+  ok   it accounts for every one of the 12 fields Jira lists: 9 set by the draft, 2 left to Jira, 1 optional and not sent (criterion 1)
+  ok   the two fields left to Jira are shown with what Jira says its default is: Priority Medium, and a Reporter default Jira does not name
+  ok   the payload is shown whole, and it parses as JSON with one member, fields, holding 9 fields (criterion 5)
+  ok   this script worked out the SHA-256 of that payload itself, and it is the one the preview printed: dfbd9a3fcc91db2879a5f45b319cc245562019e013756fbe633943616e406b79
+  ok   the preview saved for a later write holds the same payload and the same SHA-256
+  ok   payload.md holds the same payload and the same SHA-256
+  ok   the duplicate search result is shown: one candidate, RPT-3, medium confidence, recommendation LINK (criterion 3)
+  ok   it says how much of the project the search covered: the catalog holds 7 of RPT's stories and Jira holds 7
+  ok   it shows how the draft differs from that nearest story
+  ok   the permission check result is shown: may create stories, yes (criterion 4)
+  ok   10 source citations are shown, each checked against the file (criterion 7)
+  ok   it ends with the check that Jira is unchanged: the same snapshot before and after (criterion 6)
+  ok   all 12 requests were GETs. The fake Jira has no way to be written to
+  ok   the local catalog searched for duplicates is as it was: all 11 files have the same SHA-256
+
+RESULT: ALL CHECKS PASSED. (The checks are on the fake-Jira run above.)
+
+##############################################################################
+THE SAME ON THE REAL JIRA SANDBOX
+The block below was not made by this script. The participant ran the preview in their own terminal
+against their real Jira sandbox, with the draft draft-sandbox.md, and the preview saved its output
+with the site's address replaced by a marker. It is copied here unchanged from logs/live-preview.txt.
+The catalog it searched for duplicates is a copy of one real story, kept outside the repository.
+------------------------------------------------------------------------------
+PREVIEW OF A NEW STORY. Nothing has been written to Jira.
+
+Jira site:   [site address removed]  (site fingerprint 4aabe3d08fbad6b1)
+Project:     SCRUM (project id 10000). On the sandbox allowlist: yes.
+Issue type:  "Story" (issue type id 10004)
+Draft:       participant/context/jira/new-story/draft-sandbox.md
+Would be sent, by a later write and not by this preview: POST /rest/api/3/issue
+
+EVERY FIELD Jira lists for creating a "Story" in SCRUM: 20.
+Set by the draft, 6:
+  project            Project       SCRUM (project id 10000)
+  issuetype          Issue Type    "Story" (issue type id 10004)
+  summary            Summary       "Quarterly revenue by plan report for the finance team"
+  description        Description   2 block(s) of Atlassian Document Format, shown in full in the payload
+  labels             Labels        ["reporting", "revenue"]
+  duedate            Due date      2027-01-15
+Required by Jira, not in the draft, and LEFT TO JIRA because it has a default, 1:
+  reporter           Reporter      Jira says it has a default and does not say what it is.
+  Jira, not this draft, decides these. If a default is wrong for this story, set the field in the draft.
+Optional, not in the draft, and not sent, 13:
+  assignee           Assignee      no default reported.
+  attachment         Attachment    no default reported.
+  customfield_10000  Development   no default reported.
+  customfield_10001  Team          no default reported.
+  customfield_10015  Start date    no default reported.
+  customfield_10016  Story point estimate no default reported.
+  customfield_10019  Rank          no default reported.
+  customfield_10020  Sprint        no default reported.
+  customfield_10021  Flagged       no default reported.
+  issuelinks         Linked Issues no default reported.
+  issuerestriction   Restrict to   no default reported.
+  parent             Parent        no default reported.
+  priority           Priority      Jira's default is "Medium".
+Required by Jira with no default, and missing from the draft: none.
+
+THE EXACT PAYLOAD. This is the request body, not a summary of it:
+  {
+    "fields": {
+      "description": {
+        "content": [
+          {
+            "content": [
+              {
+                "text": "Finance needs a quarterly report of recognised revenue by subscription plan, split by region.",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "content": [
+              {
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "Source of the figures: the billing warehouse, from the table of invoices.",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "paragraph"
+                  }
+                ],
+                "type": "listItem"
+              },
+              {
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "Format: a spreadsheet, with one sheet per region.",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "paragraph"
+                  }
+                ],
+                "type": "listItem"
+              },
+              {
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "First delivery: the second week of January, covering the fourth quarter.",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "paragraph"
+                  }
+                ],
+                "type": "listItem"
+              }
+            ],
+            "type": "bulletList"
+          }
+        ],
+        "type": "doc",
+        "version": 1
+      },
+      "duedate": "2027-01-15",
+      "issuetype": {
+        "id": "10004"
+      },
+      "labels": [
+        "reporting",
+        "revenue"
+      ],
+      "project": {
+        "id": "10000"
+      },
+      "summary": "Quarterly revenue by plan report for the finance team"
+    }
+  }
+As sent it is the same data with no spaces or line breaks and its names in alphabetical order:
+  892 bytes, SHA-256 6016975249989e3aa212c5a025c70feeb5deb865456ec149f8cb46e1f5514fca
+
+Sources for the content, each checked against the file: 7 citations, all true.
+  summary      sources/intake-notes.md line 7: "a quarterly report of recognised revenue by subscription plan"
+  description  sources/intake-notes.md line 7: "Finance needs a quarterly report of recognised revenue by subscription plan, split by region."
+  description  sources/intake-notes.md line 8: "the billing warehouse, from the table of invoices"
+  description  sources/intake-notes.md line 9: "a spreadsheet, with one sheet per region"
+  description  sources/intake-notes.md line 10: "the second week of January, covering the fourth quarter"
+  duedate      sources/intake-notes.md line 10: "15 January 2027 at the latest"
+  labels       sources/intake-notes.md line 14: "Tag it reporting and revenue"
+
+Permission check, asked of Jira for this project and this identity:
+  may see the project    (BROWSE_PROJECTS): yes
+  may create stories     (CREATE_ISSUES):   yes
+  Jira gives the field list above only to an identity that may create here.
+Duplicate search: the local catalog /tmp/gtq-jira-preview, 1 story, searched with the jira-duplicate-search skill.
+  Coverage: WARNING: the catalog holds 1 of project SCRUM's stories and Jira holds 22. 21 in Jira have NOT been searched. Save them locally and rebuild the catalog for a complete search.
+  Result: NONE. No story in the catalog matches this draft on three or more signals.
+  Overall recommendation: PROCEED. A person decides. The catalog is a local copy: a story created in Jira
+  since the records were saved is not in it.
+
+What Jira cannot be asked: it has no way to try a create without making one, so this preview cannot
+promise the create would be accepted. Jira's list of required fields does not cover rules in the
+project's workflow or automation.
+
+Snapshot of the project's stories in Jira before the preview: 22 stories, 9f0e2178a4b1a789
+Snapshot of the project's stories in Jira after the preview:  22 stories, 9f0e2178a4b1a789
+The two are the same. Jira is unchanged.
+Requests sent to Jira: 7. Every one was a GET, which reads and cannot change anything.
+  GET /rest/api/3/project/SCRUM
+  GET /rest/api/3/search/jql
+  GET /rest/api/3/myself
+  GET /rest/api/3/mypermissions
+  GET /rest/api/3/issue/createmeta/10000/issuetypes
+  GET /rest/api/3/issue/createmeta/10000/issuetypes/10004
+  GET /rest/api/3/search/jql
+
+Fingerprint of this preview: ff6ff6eb998c
+Made:    2026-11-19 20:58:00 UTC
+Expires: 2026-11-19 21:13:00 UTC (15 minutes after it was made)
+The payload, its SHA-256 and this fingerprint are saved in the state folder for a later write to check.
+
+Nothing has been written to Jira. This preview creates nothing, and has no way to.
+The payload was also written, field by field, where --payload-out said.
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.
+------------------------------------------------------------------------------

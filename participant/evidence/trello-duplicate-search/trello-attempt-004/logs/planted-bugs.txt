@@ -1,0 +1,287 @@
+Do the tests notice a broken search? trello-duplicate-search, attempt trello-attempt-004
+Recorded by scripts/planted_bugs.py.
+
+Each bug below was put into participant/skills/trello-duplicate-search/search.py, every test was run, and the
+bug was taken out again. Only local files are used.
+
+Before any bug: OK
+
+PLANTED BUG A. The name counts as one of the three signals (criteria 1 and 4)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Confidence.test_the_name_adds_a_point_but_never_makes_a_third_signal
+    ThreeBeyondTheName.test_the_same_name_and_two_other_signals_is_not_a_candidate
+
+PLANTED BUG B. Two signals beyond the name are enough (criterion 1)
+  unittest result: FAILED (failures=4, errors=1)
+  tests that failed (5):
+    TheFixture.test_a_card_with_the_same_name_and_different_work_is_not_reported
+    AcrossBoards.test_a_label_is_matched_by_name_because_its_id_differs_on_each_board
+    Confidence.test_the_name_adds_a_point_but_never_makes_a_third_signal
+    ThreeBeyondTheName.test_the_same_name_and_two_other_signals_is_not_a_candidate
+    ThreeBeyondTheName.test_two_signals_beyond_the_name_is_not_a_candidate
+
+PLANTED BUG C. A card with a name alike is always reported (criterion 4)
+  unittest result: FAILED (failures=5)
+  tests that failed (5):
+    TheFixture.test_a_card_with_the_same_name_and_different_work_is_not_reported
+    Proposals.test_a_name_and_a_board_are_enough
+    Confidence.test_the_name_adds_a_point_but_never_makes_a_third_signal
+    ThreeBeyondTheName.test_the_same_name_alone_is_not_a_candidate
+    ThreeBeyondTheName.test_the_same_name_and_two_other_signals_is_not_a_candidate
+
+PLANTED BUG D. A card is reported only if its name is alike too, so a different name hides a duplicate (criterion 5)
+  unittest result: FAILED (failures=15, errors=1)
+  tests that failed (16):
+    TheFixture.test_a_card_whose_text_gives_orders_is_compared_like_any_other
+    Confidence.test_a_finished_card_is_proceed_on_any_board
+    AcrossBoards.test_every_board_in_the_folder_is_searched
+    Report.test_every_candidate_has_signals_confidence_and_one_of_the_three_recommendations
+    Confidence.test_high_and_open_on_the_same_board_is_archive_as_duplicate
+    Confidence.test_high_on_another_board_is_link
+    Confidence.test_medium_or_low_on_the_same_board_is_link
+    Confidence.test_nine_is_medium_and_ten_is_high
+    Confidence.test_six_is_low_and_seven_is_medium
+    TheFixture.test_the_duplicate_with_a_different_name_on_another_board_is_found
+    Confidence.test_the_least_three_signals_can_score_is_low
+    TheFixture.test_the_near_duplicate_is_reported_with_less_confidence
+    Finished.test_the_overall_recommendation_is_the_most_cautious_one
+    Report.test_the_report_says_which_board_each_candidate_is_on
+    TheFixture.test_the_same_proposal_on_the_duplicates_own_board_is_archive_as_duplicate
+    ThreeBeyondTheName.test_three_signals_beyond_the_name_is_a_candidate_whatever_the_name
+
+PLANTED BUG E. Only the board the card would go on is searched (criterion 3)
+  unittest result: FAILED (failures=9, errors=6)
+  tests that failed (15):
+    ThreeBeyondTheName.test_a_card_that_matches_nothing_is_not_listed_at_all
+    TheFixture.test_a_card_whose_text_gives_orders_is_compared_like_any_other
+    TheFixture.test_a_card_with_the_same_name_and_different_work_is_not_reported
+    AcrossBoards.test_a_label_is_matched_by_name_because_its_id_differs_on_each_board
+    Report.test_card_names_cannot_break_the_report
+    AcrossBoards.test_every_board_in_the_folder_is_searched
+    Report.test_every_candidate_has_signals_confidence_and_one_of_the_three_recommendations
+    TheFixture.test_the_duplicate_with_a_different_name_on_another_board_is_found
+    TheFixture.test_the_near_duplicate_is_reported_with_less_confidence
+    Finished.test_the_overall_recommendation_is_the_most_cautious_one
+    Report.test_the_report_says_which_board_each_candidate_is_on
+    ThreeBeyondTheName.test_the_same_name_alone_is_not_a_candidate
+    ThreeBeyondTheName.test_the_same_name_and_two_other_signals_is_not_a_candidate
+    ThreeBeyondTheName.test_three_signals_beyond_the_name_is_a_candidate_whatever_the_name
+    ThreeBeyondTheName.test_two_signals_beyond_the_name_is_not_a_candidate
+
+PLANTED BUG F. Only the first board folder is read (criterion 3)
+  unittest result: FAILED (failures=15, errors=24)
+  tests that failed (39):
+    ThreeBeyondTheName.test_a_card_that_matches_nothing_is_not_listed_at_all
+    TheFixture.test_a_card_whose_text_gives_orders_is_compared_like_any_other
+    TheFixture.test_a_card_with_the_same_name_and_different_work_is_not_reported
+    StaleIndex.test_a_changed_record_stops_the_search
+    EachSignal.test_a_checklist_item_with_quotes_in_it_is_read
+    EachSignal.test_a_description_holding_a_code_fence_is_read_whole
+    AcrossBoards.test_a_folder_that_is_not_a_board_stops_the_search
+    StaleIndex.test_a_hand_edited_index_stops_the_search
+    AcrossBoards.test_a_label_is_matched_by_name_because_its_id_differs_on_each_board
+    EachSignal.test_a_label_with_no_name_is_not_compared
+    EachSignal.test_a_record_with_no_labels_field_is_still_compared_on_the_rest
+    EachSignal.test_a_short_proposal_matches_a_long_description
+    StaleIndex.test_an_added_record_stops_the_search
+    Report.test_card_names_cannot_break_the_report
+    EachSignal.test_description_needs_four_shared_words
+    EachSignal.test_description_needs_half_of_the_shorter_one
+    EachSignal.test_due_dates_four_days_apart_do_not_match
+    EachSignal.test_due_dates_three_days_apart_match
+    AcrossBoards.test_every_board_in_the_folder_is_searched
+    Report.test_every_candidate_has_signals_confidence_and_one_of_the_three_recommendations
+    EachSignal.test_members_do_not_match_on_different_ids
+    EachSignal.test_members_match_on_the_same_member_id
+    EachSignal.test_names_alike_in_other_words_order_match
+    EachSignal.test_one_alike_checklist_item_is_not_enough
+    TheFixture.test_the_duplicate_with_a_different_name_on_another_board_is_found
+    NothingChanges.test_the_index_hashes_printed_are_the_real_ones
+    TheFixture.test_the_near_duplicate_is_reported_with_less_confidence
+    Finished.test_the_overall_recommendation_is_the_most_cautious_one
+    Report.test_the_report_says_which_board_each_candidate_is_on
+    AcrossBoards.test_the_same_board_in_two_folders_stops_the_search
+    ThreeBeyondTheName.test_the_same_name_alone_is_not_a_candidate
+    ThreeBeyondTheName.test_the_same_name_and_two_other_signals_is_not_a_candidate
+    TheFixture.test_the_same_proposal_on_the_duplicates_own_board_is_archive_as_duplicate
+    ThreeBeyondTheName.test_three_signals_beyond_the_name_is_a_candidate_whatever_the_name
+    EachSignal.test_two_alike_items_and_half_of_the_shorter_checklist_matches
+    EachSignal.test_two_alike_items_under_half_of_the_shorter_checklist_does_not_match
+    ThreeBeyondTheName.test_two_signals_beyond_the_name_is_not_a_candidate
+    EachSignal.test_what_one_side_lacks_is_not_comparable_and_is_not_a_match
+    EachSignal.test_what_the_card_lacks_is_not_comparable
+
+PLANTED BUG G. Labels are compared with letter case, so Finance and finance differ (signals)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    AcrossBoards.test_a_label_is_matched_by_name_because_its_id_differs_on_each_board
+
+PLANTED BUG H. A signal that cannot be compared is counted as a match (signals)
+  unittest result: FAILED (failures=13, errors=2)
+  tests that failed (15):
+    TheFixture.test_a_card_whose_text_gives_orders_is_compared_like_any_other
+    TheFixture.test_a_card_with_the_same_name_and_different_work_is_not_reported
+    AcrossBoards.test_a_label_is_matched_by_name_because_its_id_differs_on_each_board
+    EachSignal.test_a_label_with_no_name_is_not_compared
+    Proposals.test_a_name_and_a_board_are_enough
+    EachSignal.test_a_record_with_no_labels_field_is_still_compared_on_the_rest
+    AcrossBoards.test_every_board_in_the_folder_is_searched
+    Report.test_every_candidate_has_signals_confidence_and_one_of_the_three_recommendations
+    TheFixture.test_the_near_duplicate_is_reported_with_less_confidence
+    ThreeBeyondTheName.test_the_same_name_alone_is_not_a_candidate
+    ThreeBeyondTheName.test_the_same_name_and_two_other_signals_is_not_a_candidate
+    ThreeBeyondTheName.test_three_signals_beyond_the_name_is_a_candidate_whatever_the_name
+    ThreeBeyondTheName.test_two_signals_beyond_the_name_is_not_a_candidate
+    EachSignal.test_what_one_side_lacks_is_not_comparable_and_is_not_a_match
+    EachSignal.test_what_the_card_lacks_is_not_comparable
+
+PLANTED BUG I. Due dates up to thirty days apart match (signals)
+  unittest result: FAILED (failures=4)
+  tests that failed (4):
+    TheFixture.test_a_card_with_the_same_name_and_different_work_is_not_reported
+    Report.test_a_decision_does_not_change_what_the_search_recommends
+    EachSignal.test_due_dates_four_days_apart_do_not_match
+    TheFixture.test_the_near_duplicate_is_reported_with_less_confidence
+
+PLANTED BUG J. One shared word makes the descriptions match (signals)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    TheFixture.test_a_card_with_the_same_name_and_different_work_is_not_reported
+    EachSignal.test_description_needs_four_shared_words
+    EachSignal.test_description_needs_half_of_the_shorter_one
+
+PLANTED BUG K. One alike checklist item makes the checklists match (signals)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    EachSignal.test_one_alike_checklist_item_is_not_enough
+    EachSignal.test_two_alike_items_under_half_of_the_shorter_checklist_does_not_match
+
+PLANTED BUG L. Any member on either card counts as a shared member (signals)
+  unittest result: FAILED (failures=8)
+  tests that failed (8):
+    ThreeBeyondTheName.test_a_card_that_matches_nothing_is_not_listed_at_all
+    TheFixture.test_a_card_with_the_same_name_and_different_work_is_not_reported
+    EachSignal.test_members_do_not_match_on_different_ids
+    TheFixture.test_the_duplicate_with_a_different_name_on_another_board_is_found
+    TheFixture.test_the_near_duplicate_is_reported_with_less_confidence
+    ThreeBeyondTheName.test_the_same_name_alone_is_not_a_candidate
+    TheFixture.test_the_same_proposal_on_the_duplicates_own_board_is_archive_as_duplicate
+    ThreeBeyondTheName.test_two_signals_beyond_the_name_is_not_a_candidate
+
+PLANTED BUG M. A stale index is searched anyway (criterion 7, and the stale check)
+  unittest result: FAILED (failures=3, errors=1)
+  tests that failed (4):
+    StaleIndex.test_a_changed_record_stops_the_search
+    StaleIndex.test_a_hand_edited_index_stops_the_search
+    StaleIndex.test_a_missing_index_stops_the_search
+    StaleIndex.test_an_added_record_stops_the_search
+
+PLANTED BUG N. The search rebuilds a stale index itself, so it changes the index (criterion 7)
+  unittest result: FAILED (failures=4)
+  tests that failed (4):
+    StaleIndex.test_a_changed_record_stops_the_search
+    StaleIndex.test_a_hand_edited_index_stops_the_search
+    StaleIndex.test_a_missing_index_stops_the_search
+    StaleIndex.test_an_added_record_stops_the_search
+
+PLANTED BUG O. Archive-as-duplicate is never recommended (criterion 7)
+  unittest result: FAILED (failures=4)
+  tests that failed (4):
+    Finished.test_an_open_card_on_the_same_board_is_archive_as_duplicate
+    Confidence.test_high_and_open_on_the_same_board_is_archive_as_duplicate
+    Finished.test_the_overall_recommendation_is_the_most_cautious_one
+    TheFixture.test_the_same_proposal_on_the_duplicates_own_board_is_archive_as_duplicate
+
+PLANTED BUG P. Archive-as-duplicate is recommended for a card on another team's board (criterion 7)
+  unittest result: FAILED (failures=4)
+  tests that failed (4):
+    Report.test_a_decision_does_not_change_what_the_search_recommends
+    Confidence.test_high_on_another_board_is_link
+    TheFixture.test_the_duplicate_with_a_different_name_on_another_board_is_found
+    Finished.test_the_overall_recommendation_is_the_most_cautious_one
+
+PLANTED BUG Q. An archived or complete card is treated as open (recommendation)
+  unittest result: FAILED (failures=6)
+  tests that failed (6):
+    Finished.test_a_card_marked_complete_is_proceed
+    Finished.test_a_card_on_an_archived_list_is_proceed
+    Report.test_a_decision_does_not_change_what_the_search_recommends
+    Confidence.test_a_finished_card_is_proceed_on_any_board
+    Finished.test_an_archived_card_is_proceed
+    Finished.test_the_overall_recommendation_is_the_most_cautious_one
+
+PLANTED BUG R. A card marked complete is not seen as finished (recommendation)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Finished.test_a_card_marked_complete_is_proceed
+
+PLANTED BUG S. High confidence starts at 8 points, not 10 (criterion 2, the scale)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Report.test_a_decision_does_not_change_what_the_search_recommends
+    Confidence.test_nine_is_medium_and_ten_is_high
+    TheFixture.test_the_near_duplicate_is_reported_with_less_confidence
+
+PLANTED BUG T. The overall recommendation is the least cautious one (criterion 7)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Report.test_a_decision_does_not_change_what_the_search_recommends
+    Finished.test_the_overall_recommendation_is_the_most_cautious_one
+    TheFixture.test_the_same_proposal_on_the_duplicates_own_board_is_archive_as_duplicate
+
+PLANTED BUG U. A card that matched on one signal is put among the candidates (criteria 4 and 6)
+  unittest result: FAILED (errors=22)
+  tests that failed (22):
+    TheFixture.test_a_card_whose_text_gives_orders_is_compared_like_any_other
+    TheFixture.test_a_card_with_the_same_name_and_different_work_is_not_reported
+    Report.test_a_decision_does_not_change_what_the_search_recommends
+    Report.test_a_decision_is_recorded_as_the_persons
+    AcrossBoards.test_a_label_is_matched_by_name_because_its_id_differs_on_each_board
+    Proposals.test_a_name_and_a_board_are_enough
+    NothingChanges.test_a_search_leaves_every_index_and_record_as_it_was
+    Report.test_card_names_cannot_break_the_report
+    Report.test_every_candidate_has_signals_confidence_and_one_of_the_three_recommendations
+    TheFixture.test_the_duplicate_with_a_different_name_on_another_board_is_found
+    NothingChanges.test_the_index_hashes_printed_are_the_real_ones
+    TheFixture.test_the_near_duplicate_is_reported_with_less_confidence
+    Report.test_the_report_says_which_board_each_candidate_is_on
+    Report.test_the_report_states_the_scale
+    ThreeBeyondTheName.test_the_same_name_alone_is_not_a_candidate
+    ThreeBeyondTheName.test_the_same_name_and_two_other_signals_is_not_a_candidate
+    TheFixture.test_the_same_proposal_on_the_duplicates_own_board_is_archive_as_duplicate
+    Report.test_the_same_search_writes_the_same_report
+    NothingChanges.test_two_searches_print_the_same
+    ThreeBeyondTheName.test_two_signals_beyond_the_name_is_not_a_candidate
+    Report.test_without_a_decision_the_report_says_none_was_made
+    NothingChanges.test_without_report_no_file_is_written_anywhere
+
+PLANTED BUG V. The report may be written over an index (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    NothingChanges.test_a_report_cannot_be_written_inside_the_boards_folder
+
+PLANTED BUG W. With no decision given, the search writes its own recommendation as the decision (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Report.test_without_a_decision_the_report_says_none_was_made
+
+PLANTED BUG X. A vertical bar in a card name is not escaped in the report (card text is text)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Report.test_a_decision_is_recorded_as_the_persons
+    Report.test_card_names_cannot_break_the_report
+
+PLANTED BUG Y. A proposal may hold names the search does not know (proposals)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Proposals.test_an_unknown_name_is_refused
+
+PLANTED BUG Z. The board the card would go on need not be one of those searched (criterion 3)
+  unittest result: FAILED (errors=1)
+  tests that failed (1):
+    AcrossBoards.test_the_board_the_card_would_go_on_must_be_searched
+
+After the last bug was taken out: search.py is byte for byte what it was at the start. OK
+
+RESULT: all 26 planted bugs were caught by at least one test, and the file was restored.

@@ -1,0 +1,115 @@
+delta_check.py delta: fake Jira, synthetic tickets from delta_fixture/timeline.json, temporary folder
+
+--- run 1: first delta run, no cursor saved yet ---
+what the fake Jira holds: Five stories are assigned. Nothing has been synced yet.
+story searches sent to Jira:
+  jql: assignee = "acc-fixture" AND issuetype = Story
+       fields: full story fields
+  jql: assignee = "acc-fixture" AND issuetype = Story
+       fields: full story fields
+  jql: assignee = "acc-fixture" AND issuetype = Story
+       fields: full story fields
+result: ok
+  | mode: delta, no usable cursor yet, so everything was fetched
+  | fetched: 5
+  | new: 5
+  | changed: 0
+  | unchanged: 0
+  | removed: 0
+  | stories held: 5
+  | removed held: 0
+  | cursor before: none
+  | cursor after: 2026-11-02T09:00:00.000+0000
+  | wrote <sandbox>/participant/context/jira/assigned/stories.json, <sandbox>/participant/context/jira/assigned/index.md and <sandbox>/participant/context/jira/sync-state.md
+state file now: - cursor: 2026-11-02T09:00:00.000+0000
+
+--- run 2: delta run after changes in Jira ---
+what the fake Jira holds: GTQ-202 moved to In Progress. GTQ-204 got a second comment. GTQ-206 was created (its timestamp uses a +1100 offset). GTQ-205 was unassigned.
+story searches sent to Jira:
+  jql: assignee = "acc-fixture" AND issuetype = Story AND updated >= 1793609700000
+       fields: full story fields
+  jql: assignee = "acc-fixture" AND issuetype = Story AND updated >= 1793609700000
+       fields: full story fields
+  jql: assignee = "acc-fixture" AND issuetype = Story
+       fields: full story fields
+  jql: assignee = "acc-fixture" AND issuetype = Story
+       fields: full story fields
+  jql: assignee = "acc-fixture" AND issuetype = Story
+       fields: full story fields
+result: ok
+  | mode: delta, asking for stories updated since 2026-11-02T09:00:00.000+0000 minus 5 minutes
+  | fetched: 3
+  | new: 1
+  | changed: 2
+  | unchanged: 2
+  | removed: 1
+  | stories held: 5
+  | removed held: 1
+  | cursor before: 2026-11-02T09:00:00.000+0000
+  | cursor after: 2026-11-03T01:05:00.000+1100
+  | wrote <sandbox>/participant/context/jira/assigned/stories.json, <sandbox>/participant/context/jira/assigned/index.md and <sandbox>/participant/context/jira/sync-state.md
+state file now: - cursor: 2026-11-03T01:05:00.000+1100
+
+checks on run 2:
+  [ok] C1: every search for full story fields carried the same `updated >=` filter (2 pages of it)
+  [ok] C1: every other story search asked for the key and updated time only
+  [ok] C1: the filter was `updated >= 1793609700000`, which is 09:00:00 UTC (the cursor) minus 5 minutes
+  [ok] C1, C5: counts are exactly fetched 3, new 1, changed 2, unchanged 2, removed 1 (GTQ-202, GTQ-204, GTQ-206 fetched, not all 5)
+
+--- run 3: an edit that Jira showed late ---
+what the fake Jira holds: A late arrival. GTQ-203 was edited at 14:02:30, before the newest timestamp already synced (14:05:00), but Jira's search only shows the edit now.
+story searches sent to Jira:
+  jql: assignee = "acc-fixture" AND issuetype = Story AND updated >= 1793628000000
+       fields: full story fields
+  jql: assignee = "acc-fixture" AND issuetype = Story
+       fields: full story fields
+  jql: assignee = "acc-fixture" AND issuetype = Story
+       fields: full story fields
+  jql: assignee = "acc-fixture" AND issuetype = Story
+       fields: full story fields
+result: ok
+  | mode: delta, asking for stories updated since 2026-11-03T01:05:00.000+1100 minus 5 minutes
+  | fetched: 2
+  | new: 0
+  | changed: 1
+  | unchanged: 4
+  | removed: 0
+  | stories held: 5
+  | removed held: 1
+  | cursor before: 2026-11-03T01:05:00.000+1100
+  | cursor after: 2026-11-03T01:05:00.000+1100
+  | wrote <sandbox>/participant/context/jira/assigned/stories.json, <sandbox>/participant/context/jira/assigned/index.md and <sandbox>/participant/context/jira/sync-state.md
+state file now: - cursor: 2026-11-03T01:05:00.000+1100
+
+checks on run 3:
+  [ok] GTQ-203's edit at 14:02:30 was picked up although the cursor was already 14:05:00
+
+--- run 4: nothing changed in Jira ---
+what the fake Jira holds: A late arrival. GTQ-203 was edited at 14:02:30, before the newest timestamp already synced (14:05:00), but Jira's search only shows the edit now.
+story searches sent to Jira:
+  jql: assignee = "acc-fixture" AND issuetype = Story AND updated >= 1793628000000
+       fields: full story fields
+  jql: assignee = "acc-fixture" AND issuetype = Story
+       fields: full story fields
+  jql: assignee = "acc-fixture" AND issuetype = Story
+       fields: full story fields
+  jql: assignee = "acc-fixture" AND issuetype = Story
+       fields: full story fields
+result: ok
+  | mode: delta, asking for stories updated since 2026-11-03T01:05:00.000+1100 minus 5 minutes
+  | fetched: 2
+  | new: 0
+  | changed: 0
+  | unchanged: 5
+  | removed: 0
+  | stories held: 5
+  | removed held: 1
+  | cursor before: 2026-11-03T01:05:00.000+1100
+  | cursor after: 2026-11-03T01:05:00.000+1100
+  | wrote <sandbox>/participant/context/jira/assigned/stories.json, <sandbox>/participant/context/jira/assigned/index.md and <sandbox>/participant/context/jira/sync-state.md
+state file now: - cursor: 2026-11-03T01:05:00.000+1100
+
+checks on run 4:
+  [ok] C5: counts are exactly fetched 2, new 0, changed 0, unchanged 5, removed 0
+
+RESULT: every check held

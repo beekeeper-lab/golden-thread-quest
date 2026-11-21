@@ -1,0 +1,261 @@
+Do the tests notice a broken generator? trello-build-index, attempt trello-attempt-003
+Recorded by scripts/planted_bugs.py.
+
+Each bug below was put into participant/skills/trello-build-index/index.py, every test was run, and the
+bug was taken out again. Only local files are used.
+
+Before any bug: OK
+
+PLANTED BUG A. A card with a gap is left out of the index (every card once; gaps)
+  unittest result: FAILED (failures=22)
+  tests that failed (22):
+    Order.test_a_card_on_a_list_the_board_does_not_have_is_in_its_own_section_once
+    EveryCardOnce.test_a_card_with_a_gap_still_has_its_row
+    Order.test_a_card_with_no_position_goes_last_among_the_open_cards
+    SameInSameOut.test_a_changed_record_changes_the_fingerprint_and_a_changed_board_record_does_too
+    Lookup.test_a_clock_value_that_cannot_be_read_stops_the_run
+    Lookup.test_a_lookup_says_where_the_record_is_and_shows_a_gap
+    Lookup.test_an_empty_list_is_found_and_holds_nothing
+    Lookup.test_by_label_is_the_whole_name_in_any_capitals
+    Lookup.test_by_list_id
+    Lookup.test_by_list_name_gives_that_list_only_in_board_order
+    Lookup.test_by_member_is_the_exact_id
+    Lookup.test_due_leaves_out_complete_archived_and_overdue_cards
+    Lookup.test_due_with_no_clock_given_says_it_used_the_computers
+    Lookup.test_due_within_seven_days_counts_from_the_clock_given
+    Gaps.test_each_missing_field_is_marked_in_the_row_and_listed
+    SameInSameOut.test_nothing_about_the_run_is_in_either_file
+    Gaps.test_nothing_is_guessed_for_a_missing_value
+    Lookup.test_part_of_a_list_name_finds_nothing
+    SameInSameOut.test_the_same_records_in_another_place_give_the_same_bytes
+    Lookup.test_the_views_by_label_and_member_in_the_index_agree_with_the_rows
+    SameInSameOut.test_two_builds_give_the_same_bytes_and_the_second_writes_nothing
+    Gaps.test_values_of_the_wrong_kind_are_gaps
+
+PLANTED BUG B. A file that is not a card record is skipped without a word (every card once)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    EveryCardOnce.test_a_card_of_another_board_is_not_indexed
+    EveryCardOnce.test_files_that_are_not_card_records_are_listed_with_the_reason
+    EveryCardOnce.test_the_counts_shown_add_up_and_the_build_says_so
+
+PLANTED BUG C. A second file with the same card id replaces the first, unreported (no card repeated)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    EveryCardOnce.test_a_second_file_with_the_same_card_id_is_a_repeat_not_a_second_row
+    EveryCardOnce.test_the_counts_shown_add_up_and_the_build_says_so
+
+PLANTED BUG D. A card of another board is indexed on this one (every card once)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    EveryCardOnce.test_a_card_of_another_board_is_not_indexed
+
+PLANTED BUG E. A file in some other format is indexed as a card
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    EveryCardOnce.test_files_that_are_not_card_records_are_listed_with_the_reason
+
+PLANTED BUG F. Lists are ordered by name (list order)
+  unittest result: FAILED (failures=2, errors=4)
+  tests that failed (6):
+    Order.test_a_card_with_no_position_goes_last_among_the_open_cards
+    Order.test_an_archived_card_stays_in_its_list_after_the_open_ones
+    Order.test_an_archived_list_is_under_its_own_heading_with_its_cards
+    Order.test_cards_follow_position_not_name_id_or_file_name
+    Order.test_lists_follow_position_not_name_and_not_the_order_in_the_board_record
+    Order.test_two_lists_at_the_same_position_are_ordered_by_id
+
+PLANTED BUG G. Lists are left in the order the board record happens to hold them (list order)
+  unittest result: FAILED (failures=2, errors=4)
+  tests that failed (6):
+    Order.test_a_card_with_no_position_goes_last_among_the_open_cards
+    Order.test_an_archived_card_stays_in_its_list_after_the_open_ones
+    Order.test_an_archived_list_is_under_its_own_heading_with_its_cards
+    Order.test_cards_follow_position_not_name_id_or_file_name
+    Order.test_lists_follow_position_not_name_and_not_the_order_in_the_board_record
+    Order.test_two_lists_at_the_same_position_are_ordered_by_id
+
+PLANTED BUG H. Cards in a list are ordered by id, not position (card order)
+  unittest result: FAILED (failures=5)
+  tests that failed (5):
+    Order.test_a_card_with_no_position_goes_last_among_the_open_cards
+    Lookup.test_by_label_is_the_whole_name_in_any_capitals
+    Lookup.test_by_list_name_gives_that_list_only_in_board_order
+    Order.test_cards_follow_position_not_name_id_or_file_name
+    Lookup.test_the_views_by_label_and_member_in_the_index_agree_with_the_rows
+
+PLANTED BUG I. Card positions are compared as text, so 100.5 comes before 20 (card order)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Order.test_cards_follow_position_not_name_id_or_file_name
+
+PLANTED BUG J. An archived card is dropped from its list (archived cards)
+  unittest result: FAILED (failures=14)
+  tests that failed (14):
+    Order.test_a_card_with_no_position_goes_last_among_the_open_cards
+    Lookup.test_a_clock_value_that_cannot_be_read_stops_the_run
+    Lookup.test_a_lookup_says_where_the_record_is_and_shows_a_gap
+    Order.test_an_archived_card_stays_in_its_list_after_the_open_ones
+    Lookup.test_an_empty_list_is_found_and_holds_nothing
+    Lookup.test_by_label_is_the_whole_name_in_any_capitals
+    Lookup.test_by_list_id
+    Lookup.test_by_list_name_gives_that_list_only_in_board_order
+    Lookup.test_by_member_is_the_exact_id
+    Lookup.test_due_leaves_out_complete_archived_and_overdue_cards
+    Lookup.test_due_with_no_clock_given_says_it_used_the_computers
+    Lookup.test_due_within_seven_days_counts_from_the_clock_given
+    Lookup.test_part_of_a_list_name_finds_nothing
+    Lookup.test_the_views_by_label_and_member_in_the_index_agree_with_the_rows
+
+PLANTED BUG K. Archived lists are left out, and their cards with them (archived lists)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Order.test_an_archived_list_is_under_its_own_heading_with_its_cards
+    Order.test_lists_follow_position_not_name_and_not_the_order_in_the_board_record
+
+PLANTED BUG L. A card whose list the board does not have gets no row (every card once)
+  unittest result: FAILED (failures=13)
+  tests that failed (13):
+    Order.test_a_card_on_a_list_the_board_does_not_have_is_in_its_own_section_once
+    Lookup.test_a_clock_value_that_cannot_be_read_stops_the_run
+    Lookup.test_a_lookup_says_where_the_record_is_and_shows_a_gap
+    Lookup.test_an_empty_list_is_found_and_holds_nothing
+    Lookup.test_by_label_is_the_whole_name_in_any_capitals
+    Lookup.test_by_list_id
+    Lookup.test_by_list_name_gives_that_list_only_in_board_order
+    Lookup.test_by_member_is_the_exact_id
+    Lookup.test_due_leaves_out_complete_archived_and_overdue_cards
+    Lookup.test_due_with_no_clock_given_says_it_used_the_computers
+    Lookup.test_due_within_seven_days_counts_from_the_clock_given
+    Lookup.test_part_of_a_list_name_finds_nothing
+    Lookup.test_the_views_by_label_and_member_in_the_index_agree_with_the_rows
+
+PLANTED BUG M. The check that rows equal cards indexed is switched off (row count equals record count)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    EveryCardOnce.test_a_row_count_that_disagrees_with_the_cards_stops_the_build
+
+PLANTED BUG N. The index records when it was built (same records, same bytes)
+  unittest result: FAILED (failures=16)
+  tests that failed (16):
+    Lookup.test_a_clock_value_that_cannot_be_read_stops_the_run
+    Lookup.test_a_lookup_says_where_the_record_is_and_shows_a_gap
+    Lookup.test_an_empty_list_is_found_and_holds_nothing
+    Lookup.test_by_label_is_the_whole_name_in_any_capitals
+    Lookup.test_by_list_id
+    Lookup.test_by_list_name_gives_that_list_only_in_board_order
+    Lookup.test_by_member_is_the_exact_id
+    Stale.test_check_fails_when_either_index_file_is_edited_by_hand_or_is_gone
+    Stale.test_check_passes_straight_after_a_build_and_writes_nothing
+    Lookup.test_due_leaves_out_complete_archived_and_overdue_cards
+    Lookup.test_due_with_no_clock_given_says_it_used_the_computers
+    Lookup.test_due_within_seven_days_counts_from_the_clock_given
+    SameInSameOut.test_nothing_about_the_run_is_in_either_file
+    Lookup.test_part_of_a_list_name_finds_nothing
+    SameInSameOut.test_the_same_records_in_another_place_give_the_same_bytes
+    SameInSameOut.test_two_builds_give_the_same_bytes_and_the_second_writes_nothing
+
+PLANTED BUG O. An unchanged index is rewritten on every build (same records, same bytes)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    SameInSameOut.test_two_builds_give_the_same_bytes_and_the_second_writes_nothing
+
+PLANTED BUG P. A card with no due date is reported as a gap (gaps)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Gaps.test_no_label_no_member_and_no_due_date_are_not_gaps
+
+PLANTED BUG Q. A missing closed state is filled in as open (gaps)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Gaps.test_each_missing_field_is_marked_in_the_row_and_listed
+    Gaps.test_nothing_is_guessed_for_a_missing_value
+    Gaps.test_values_of_the_wrong_kind_are_gaps
+
+PLANTED BUG R. Missing members are shown as none, not as missing (gaps)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Gaps.test_each_missing_field_is_marked_in_the_row_and_listed
+    Gaps.test_nothing_is_guessed_for_a_missing_value
+    Lookup.test_the_views_by_label_and_member_in_the_index_agree_with_the_rows
+
+PLANTED BUG S. The count of cards with a gap is always shown as none (gaps)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Gaps.test_each_missing_field_is_marked_in_the_row_and_listed
+
+PLANTED BUG T. A lookup answers from an index that no longer matches the records (stale index)
+  unittest result: FAILED (failures=1, errors=1)
+  tests that failed (2):
+    Stale.test_a_lookup_refuses_a_stale_index_and_names_no_card
+    Stale.test_a_lookup_refuses_an_edited_index_json
+
+PLANTED BUG U. The check looks at index.md only, so an edited index.json passes (stale index)
+  unittest result: FAILED (failures=1, errors=1)
+  tests that failed (2):
+    Stale.test_a_lookup_refuses_an_edited_index_json
+    Stale.test_check_fails_when_either_index_file_is_edited_by_hand_or_is_gone
+
+PLANTED BUG V. The fingerprint leaves out the board record (stale index)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    SameInSameOut.test_a_changed_record_changes_the_fingerprint_and_a_changed_board_record_does_too
+
+PLANTED BUG W. The header no longer says the records are the source of truth (header)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Stale.test_the_header_says_what_the_file_is
+
+PLANTED BUG X. A lookup by list also matches part of a list name (lookup)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Lookup.test_part_of_a_list_name_finds_nothing
+
+PLANTED BUG Y. A lookup by label also matches part of a label name (lookup)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Lookup.test_by_label_is_the_whole_name_in_any_capitals
+
+PLANTED BUG Z. A lookup by member matches every card that has a member (lookup)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Lookup.test_by_member_is_the_exact_id
+
+PLANTED BUG AA. The due lookup counts cards already complete (due in the next seven days)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Lookup.test_due_leaves_out_complete_archived_and_overdue_cards
+    Lookup.test_due_within_seven_days_counts_from_the_clock_given
+
+PLANTED BUG AB. The due lookup counts cards that are already overdue (due in the next seven days)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Lookup.test_due_leaves_out_complete_archived_and_overdue_cards
+    Lookup.test_due_within_seven_days_counts_from_the_clock_given
+
+PLANTED BUG AC. The due lookup ignores the clock value it is given (due in the next seven days)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Lookup.test_a_clock_value_that_cannot_be_read_stops_the_run
+    Lookup.test_due_within_seven_days_counts_from_the_clock_given
+
+PLANTED BUG AD. A vertical bar in a card name is not escaped, so the name can split a table row (names are text)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    NamesAreText.test_a_list_name_and_a_label_name_are_escaped_too
+    NamesAreText.test_a_name_cannot_break_the_table_or_add_a_heading
+
+PLANTED BUG AE. A line break in a name is kept, so a name can start a heading (names are text)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    NamesAreText.test_a_list_name_and_a_label_name_are_escaped_too
+    NamesAreText.test_a_name_cannot_break_the_table_or_add_a_heading
+
+PLANTED BUG AF. A list name is written into its heading unescaped (names are text)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    NamesAreText.test_a_list_name_and_a_label_name_are_escaped_too
+
+After the last bug was taken out: index.py is byte for byte what it was at the start. OK
+
+RESULT: all 32 planted bugs were caught by at least one test, and the file was restored.

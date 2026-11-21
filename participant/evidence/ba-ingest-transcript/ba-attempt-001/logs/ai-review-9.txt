@@ -1,0 +1,326 @@
+# Ninth AI review, run 2026-10-29 (UTC): three Claude reviewers, each started fresh, each with its own angle (privacy and
+# safety; record integrity; SKILL.md against the script), read the finished candidate: the script, its 121 tests and
+# SKILL.md. They were given the quest, the files, shared instructions and a set of real Zoom transcripts of public
+# meetings to try the script on, not the builder's verdict. Their findings were not merged.
+# Below the first blank line are three parts, in this order: the privacy reviewer's report, the integrity reviewer's, and
+# the SKILL.md reviewer's, each exactly as returned. Lines that start with "=====" are labels added when the parts were
+# put together, and each part ends with a newline. The reports quote the real transcripts only in masked shapes.
+# The sample transcript's phone number, which the record redacts, was replaced with 317-555-0198 wherever this
+# report quotes it, whole or in parts, as in the earlier logs.
+
+===== Privacy and safety
+Privacy and safety review of the final candidate (ingest.py, SKILL.md). Result: 1 blocking finding, 1 high, 3 medium, and several low. The suite passed 121 of 121 on my temp copy. All 27 of SKILL.md section 8's own examples still give the stated output. I tried about 155 crafted inputs: 111 redaction probes run end to end through ingest() and report(), 17 path and git cases in a throwaway repository, 27 SKILL.md examples, and 2 CLI runs. I also scanned all 1,665 real Zoom files. Every temp folder has been deleted. Nothing was run from inside the repository, and nothing in it was written.
+
+## BLOCKING
+
+**B1. A contact detail split across two cues is not redacted when the speaker's Zoom `Name:` label is not on the participant list.**
+- SKILL.md section 8 claims this "holds whoever speaks each cue". It also gives `Please write to lee at example.` then `Dot com. Okay?` as an example that is redacted.
+- Cause: an unlisted Zoom label stays in the words (section 5). The cues are read together with that label sitting between the two halves, as in `Call me on 317 555 Carol Guest: 0198`, so nothing matches.
+
+OBSERVED with crafted input (ingest() called directly). Each of these left the detail fully visible, and the provenance file and report counted 0:
+- unlisted `Carol Guest:` cues `Call me on 317 555` then `0198 after lunch.`;
+- the same with a Zoom-style `Ada Example (Example Corp):` label;
+- `3, 1, 7,` / `5, 5, 5,` / `0, 1, 9, 8.` across 3 cues;
+- `lee at example.` / `Dot com. Okay?`;
+- `my email is ada at` / `example.com`.
+
+OBSERVED with a label longer than 60 characters: even when it is listed under `labels`, PREFIX_LABEL never reads it as a label, so the same leak follows.
+
+OBSERVED on real data:
+- The CLI on the real file trust_spanning_protocol GMT20250430, with both speakers listed by name (not with Zoom's added "(Org)"), printed "0 email address(es)".
+- The record kept the dictated address visible in U-0037/U-0038, masked shape `A, ##. Aaaaa at gmail.` then `Dot com. Okay?`.
+- Corpus scan: 14 cues where the label in the words blocks a cross-cue redaction. Without labels listed, the corpus gets 115 email and 20 phone redactions; with every label listed, 118 and 23.
+- 4,216 of 9,139 distinct label uses have "(Org)". 22 files have a label over 60 characters, which can never be read as a label.
+
+The test `a_detail_split_across_cues_is_redacted_in_each_utterance` uses only `<v Ada Example>` voice tags, so the Zoom form is never tried.
+
+Smallest fix: for the read-together pass in redact_all, start each unlabeled cue after a leading `^[^:\n]{1,120}:[ \t]*` prefix. Then add split-cue tests with listed, unlisted, "(Org)" and over-60-character Zoom labels.
+
+## HIGH
+
+**H1. Error reports print contact details unredacted, and the quest asks for one of them to be saved as evidence.**
+The quest requires saving the unparseable run as participant/evidence/.../logs/unparseable.txt. SKILL.md promises redaction only for the success report. OBSERVED:
+- `UNPARSEABLE ... found '317-555-0198 call me'` (a cue split by a blank line);
+- `found 'Write to ada@example.com'`;
+- `timestamp '317-555-0198' is not ...`;
+- `timing line is not 'START --> END': 'Call 317-555-0198 --> now'`;
+- `INVALID INPUT: ... the label 'ADA@example.com' is used for participants 1 and 2`;
+- `UNPARSEABLE <tmp>/cloud/GoogleDrive-ada@example.com/My Drive/raw.vtt: ...`. The report prints the absolute raw path, and Google Drive for desktop on a Mac keeps files under ~/Library/CloudStorage/GoogleDrive-<email>/;
+- `INVALID INPUT: raw transcript ../cloud/GoogleDrive-ada@example.com/... does not exist`.
+
+Fix: pass every printed message through redact(), give the line number instead of quoting the line, and print only the raw file's name.
+
+## MEDIUM
+
+**M1. The meeting file's location is never checked.**
+OBSERVED: a meeting file with `labels: ["ada@example.com"]` placed in participant/context/transcripts/ was accepted, and so was one in a repository folder git does not ignore. SKILL.md says "Both files stay outside source control". Section 8 says Teams uses guests' email addresses as labels, so `labels` is where those addresses go. Fix: apply the raw file's participant/ and git checks to --meeting.
+
+**M2. "Inside the repository" means the script's own checkout, so a raw file in another checkout or repository is accepted.**
+OBSERVED:
+- Run with the main checkout's script, a raw file inside a worktree at .claude/worktrees/w/participant/context/raw.vtt was written. The real .gitignore ignores .claude/worktrees/. The worktree's own `git status` shows `?? participant/context/raw.vtt`.
+- A raw file in a folder of that worktree that its own git does not ignore was also written.
+- The worktree's copy of the script accepted a raw file in the main checkout's participant/. The main checkout's status shows `?? participant/raw.vtt`.
+- A separate repository nested in local-data/ was accepted, and its status shows `?? raw.vtt`.
+
+This matters here because sessions run in .claude/worktrees/ and the hand-in commits all of participant/. Fix: also find the raw file's own work tree (`git -C <its folder> rev-parse --show-toplevel`), then check participant/ and ignore status there.
+
+**M3. Real Zoom address shapes are left visible.**
+The rules already say these stay visible, but they occur in the corpus the research used. OBSERVED on real files (masked), in both roster modes:
+- `Aaa dot Aaaaa Gmail` with no top-level domain (india_chapter GMT20250306 U185);
+- an address spread over cues as `email is Aaa, dot Aaaaa dot Aaa.` / `Aaa dot Aaaaa. Dot.` / `at Gmail.` (india_chapter GMT20250410 U80 to U82);
+- partial name parts `A, ##.` and `Aaaa ## dot Aaaaa.` beside a marker;
+- `number is… #-#######`.
+
+Crafted: `ada dot lee at gmail`, `ada at example dot in`, and `317, 555, 0198` stay visible. Suggested fix: count `at <mail provider>` without a top-level domain as an address, and allow a comma before a spoken `dot`.
+
+## LOW
+
+1. **Meeting-file values are not checked for control characters**, though transcript words are. OBSERVED:
+   - a title `Call 317<VT>555<VT>0198` shows as `Call 3175550198` in the record heading;
+   - a NEL (U+0085) separator is written raw to the provenance file;
+   - a form feed in a role, and a CR in a title, which splits the heading, leave the number unredacted.
+2. **Invisible characters and other Unicode spaces between groups are not redacted.** Soft hyphen (also as `&#173;`), word joiner, ZWNJ, U+FEFF, and em, en, ideographic, hair, math and ogham spaces, plus U+2028, leave a phone number visible. The invisible ones render as one unbroken number.
+   - In a voice-tag label they reach the heading, the Speakers list, `uncertain_speakers` and the printed report. Observed: `<v ada&#173;@example.com>`, and `<v Guest 317<em space>555<em space>0198>`.
+   - SKILL.md's "characters not listed" known miss covers the phone cases. It does not cover email addresses.
+3. **Look-alike and other undocumented forms stay visible:**
+   - a full-width or small @ (U+FF20, U+FE6B), or an ideographic or full-width full stop in the domain;
+   - superscript digits;
+   - the dashes U+FE63, U+02D7, U+2043 and U+2024 as separators;
+   - `<b>` or `<c>` tags between digit groups;
+   - `ada(at)example.com`;
+   - `ada@example\n.com`, `ada@example .com`, `ada@example. com` and `ada at example. Com.`;
+   - the double-encoded `&amp;#64;`, which shows `ada&#64;example.com`.
+4. **A tracked file can be accepted as ignored.** If its folder was renamed only in capitals after it was tracked (index `Notes2/raw.vtt`, disk `notes2/`, with `notes2/` ignored), check-ignore with the stored spelling exits 0 and the file is accepted. `git commit -a` then committed its changes. This contradicts "A file that git already tracks counts as not ignored". Fix: also check `git ls-files -- ':(icase,literal)./path'`.
+5. **A one-cue interjection between the halves defeats the split-cue redaction.** A listed speaker's number split by another speaker's `Mm-hmm.` stays visible in both halves. SKILL.md does not claim this case.
+
+## Tried with no finding
+
+- Uncertain-speaker reasons always quote the redacted words and are redacted again. Tried: a phone in the name, an em-spaced phone (hidden in the reason, though visible in the words), names built with `&#10;`/`&#58;`, and a number split by a line break.
+- Numbered labels across letter case; the look-alike numbered-marker label is a documented miss.
+- Voice-tag labels holding an email, `&#64;`, a phone, a spoken address, or `Name (email)`.
+- Unlisted Zoom labels holding an email, and participant names holding an email.
+- Title, capture_source and original_location in the claimed shapes.
+- Raw-path refusals all held: participant/ in other capitals, /System/Volumes/Data, a symlink to participant/, a tracked file an ignore rule matches, an NFD-typed accented tracked folder, and an untracked nested repository in a folder git does not ignore.
+
+## Not my lens, seen in passing
+
+- A listed Zoom label over 60 characters is never attributed to its speaker.
+- `redactions.email` counts one per utterance whose speaker label holds the address: 3 for 2 addresses.
+
+## Not assessed
+
+- Teams exports.
+- Real Zoom phone numbers (the corpus holds almost none).
+- Rendering in the application.
+
+===== Record integrity
+## Record integrity review of the final candidate (AC 1, 2, 5, 7, 11, 12)
+
+I found no blocking or high problems. The writing path held up under every interrupt, kill and concurrent-run test I ran. I reproduced 3 medium and 6 low findings, all from the command line or from a driver loading a temp copy. The baseline suite passed (121 of 121).
+
+### Findings
+
+**M1 (medium). A rerun reports `unchanged` without checking the provenance file, even when it is empty, belongs to another record, or no longer matches the inputs.**
+- **Did:** wrote a one-cue transcript, then emptied `sample.provenance.yaml` (wrote "" to it) and reran the same command. I also wrote a record, then reran after changing only what the provenance holds:
+  - raw with a NOTE block added, cue numbers added, CRLF, a trailing space, or a different phone number;
+  - raw in Zoom form instead of voice tags;
+  - meeting file with a changed `capture_source`, `original_location` or `transcription_tool`.
+- **OBSERVED:** every rerun exits 0 and prints `unchanged` and "The existing record is byte-for-byte what this run would write". The provenance stays size 0 in the first case. In the others its `source_sha256`, `capture_source` and `original_location` no longer match the raw and meeting file just ingested (checked in 15 cases).
+- **Should:** quest proof `rerun-record` and AC 7 require an identical source record; AC 4 and AC 10 rely on the provenance being right. SKILL.md 7 compares only NAME.md, so nothing warns that the provenance is broken or stale.
+- **Fix:** on the unchanged path, read the provenance and check that `record_sha256` matches the record's bytes, `transcript_id` matches, and `source_text_sha256` matches this raw. Refuse when the provenance is unreadable. Report a distinct status when the raw or meeting values differ from what it records.
+
+**M2 (medium). In the Zoom form, a speaker who is not on the participant list loses attribution, and the reason written in the record is false.**
+- **Did:** Zoom cues `Pat: Can everyone hear me?` and `Carol Guest: Yes, loud and clear.`, and two dial-in callers `13175550100: I approve the budget.` and `13175550198: I object to the budget.`
+- **OBSERVED:**
+  - All four are attributed to `Unattributed` with the reason `no speaker label in the transcript`, yet the transcript labels each one.
+  - Carol's reason adds `a line starts with "Carol Guest:", which may be another speaker`, but that line is her own label.
+  - The two callers both read `> \[REDACTED:PHONE\]: I ...` under `Unattributed`, so the record cannot tell whether the approver and the objector are one person.
+  - In voice-tag form the same callers become `[REDACTED:PHONE 1]` and `[REDACTED:PHONE 2]`.
+- **Should:** AC 12 (tell who said what). SKILL.md 8 says labels that read the same after redaction "are numbered so that the record can tell them apart". SKILL.md 5's first bullet says a guest's display name "is kept as written". Both hold only for voice tags, and Zoom is the only format tried on real data.
+- **Fix:** reword the reasons to be true (for example "the cue starts with "Pat:", which is not a listed or generic label, so it was kept as words"). Also number redaction markers in a leading `Name:` of an Unattributed cue, the same way labels are numbered.
+
+**M3 (medium). Zoom labels longer than 60 characters are never read as labels, even when the person is listed. Real files contain them.**
+- **Did:** listed a 64-character display name as a participant and ingested the cue `<that name>: We ship Friday.`
+- **OBSERVED:** the cue becomes `Unattributed`, reason `no speaker label in the transcript`, with the name kept in the words. The voice-tag form of the same name is attributed and certain.
+- **Real data:** 779 cues in 22 of the 1,665 Zoom files have a label of 61 to about 99 characters (counted with masked output only).
+- **Should:** AC 2 and AC 12. SKILL.md does not document this limit for labels; it states 60 characters only for the "another speaker" note.
+- **Fix:** `PREFIX_LABEL` is capped at 60 characters. Match listed names and labels by `startswith(name + ":")`, or raise the cap to the voice tag's 200. Have the meeting-file check warn about longer names.
+
+**L1 (low). Control characters at a line end, or as a reference at the end of a cue, are silently dropped instead of refused.**
+- **Did:** `<v Ada Example>Hello\x0c` + newline + `world&#11;`
+- **OBSERVED:** exit 0 and `written`; the record quotes `> Hello` and `> world`. The same characters in mid-line are refused (exit 2).
+- **Scope:** reproduced for U+000B, U+000C, U+001C to U+001F and U+0085. U+2028 and U+2029 at a line end are also dropped, though they are not spaces.
+- **Cause:** `rstrip()` and `strip()` use Python's definition of whitespace.
+- **Should:** SKILL.md 9 refuses any Cc character. Section 7's exception 3 covers only spaces.
+- **Fix:** check for control characters before stripping, or strip only space and tab.
+
+**L2 (low). Valid WebVTT refused: a cue whose identifier line starts with `NOTE ` (or is `STYLE`).**
+- **Did:** `NOTE Confidence: 0.9187`, then on the next line `00:00:00.000 --> 00:00:05.120` and a voice cue.
+- **OBSERVED:** UNPARSEABLE, "a timing line sits inside a NOTE block ... the cue after it would be skipped". A parser I wrote from the W3C WebVTT algorithm reads it as a cue whose identifier is that line, and the identifier syntax allows that text. So the stated reason ("would be skipped") is wrong for this shape.
+- **Context:** the refusal is the safe direction, and the quest's own `note-glued-export.vtt` treats this shape as damage.
+- **INFERRED, unverified:** Microsoft tools may write `NOTE Confidence:` lines this way. No Teams file was available.
+
+**L3 (low). The duplicate guard is bypassed by edits that leave every utterance the same.**
+- **Did:** ingested T as `first.md`, then T with a NOTE block added (or cue numbers, or one trailing space) under a new `transcript_id` as `second.md`.
+- **OBSERVED:** written; 2 of 2 utterances are duplicated across the two records.
+- **Should:** SKILL.md 4 says "one transcript makes one record".
+- **Fix:** also fingerprint the parsed cues (or the Utterances section) and compare that.
+
+**L4 (low). Timing lines that a WebVTT parser rejects are accepted and rewritten in ASCII.**
+- **Did:** a timing line with an Arabic-Indic digit `٣`, one with full-width digits, and one starting with a no-break space.
+- **OBSERVED:** each is accepted. The record shows `00:00:03.000`, an ASCII time the file never held. The W3C-algorithm parser finds no cue in any of them.
+- **Fix:** use `[0-9]` (or `re.ASCII`) in `TIMESTAMP` and strip only space and tab.
+
+**L5 (low). A speaker can look identical to a listed participant while being marked uncertain.**
+- **OBSERVED:** a name in decomposed Unicode form (or with a no-break space) is not matched, which is safe. But the Speakers list then shows the same visible name twice, once certain and once "identity uncertain".
+- **OBSERVED:** a participant named `Unattributed` shares that heading with cues that have no label.
+- **Fix:** NFC-normalize names and labels before matching, and reserve `Unattributed` in the meeting-file check.
+
+**L6 (low). A full-width colon hides a second speaker.**
+- **OBSERVED:** `Ben Example： No.` (U+FF1A) on a later line of Ada's cue stays certain with no note. This form is not in SKILL.md 5's list of known misses.
+
+Minor, outside AC 1 to 12: a U+0085 character in a meeting-file value is written raw into the YAML, and PyYAML reads it back as a space.
+
+### Candidates discarded
+- I raised an interrupt from a trace function at every line inside `write_pair`. At the inner `try:` line (bytecode offset 524, a NOP outside the exception table), the outer `finally` was skipped and two temporary files were left.
+- INFERRED: a real Ctrl-C cannot land there in CPython 3.11, because a NOP never checks for signals and the jump before it is covered by the handler. Not a finding.
+
+### Tried with no finding (OBSERVED)
+- **Real Zoom files:** all 1,665 (537,011 cues) parsed and built twice, once with no speakers listed and once with every label listed.
+  - 0 refused, 0 crashes.
+  - Cue count, IDs (U-0001 onward, in source order), times and speakers matched an independent reading in every file.
+  - Words differed only where redaction markers stand, checked by matching each marker as a wildcard.
+- **Reruns:**
+  - 40 real files via the command line, run under hash seeds 1, 2 and 3: the later runs reported unchanged, with bytes and file times untouched.
+  - 150 fuzz-accepted files rerun the same way with random hash seeds: all unchanged.
+  - The committed sample record, written by the original script, is reproduced byte for byte by the final script, so its rerun reports unchanged.
+- **Differential fuzz:** 60,000 mutated transcripts compared with the W3C-algorithm parser. Of 9,543 accepted, there were 0 cue count, time or word mismatches and 0 crashes.
+- **Interrupts:** at each of 2,829 traced points in `write_pair`, plus 400 random timer interrupts. The folder always held either nothing new or both files, with no temporary files (apart from the discarded artifact above), and the next run behaved as SKILL.md 9 says.
+- **SIGKILL:** at each of 2,899 traced points, in a forked child.
+  - A provenance file never appeared without its record.
+  - The leftovers matched SKILL.md's description.
+  - The next run refused leftover temporary files, then refused a lone record with `only one of`, and reported unchanged when both files were left.
+- **Concurrency:** 60 rounds of 5 simultaneous command-line runs writing different transcripts to one record name.
+  - Exactly one run reported written in every round.
+  - Its record and provenance always came from the same run (`record_sha256`, `source_sha256` and `transcript_id` all agreed).
+  - No temporary file was ever left.
+- **Rendering:** 17 voice labels and words full of Markdown-special characters, rendered with markdown-it (CommonMark plus table and strikethrough). Headings, quotations and the Speakers list all showed exactly.
+- **Speaker and word checks:**
+  - 30 attribution cases (two voice tags, a voice tag wrapped in `<c>`, `<lang>` or `<ruby>`, an upper-case `<V>`, generic labels in other capital letters, labels and names of the same person).
+  - 38 valid-WebVTT shapes: BOM with CRLF, CR alone, cue settings, three-digit hours, STYLE, REGION, NOTE, the HLS header line, karaoke timestamps.
+  - Character references decoded once.
+  - The quest's own damaged, glued-NOTE, SRT and truncated samples are still refused, and nothing is written for them.
+- **Cross-cue redaction on real data** (labels listed), documented behavior and so not a finding: 14 utterances in 8 files had text hidden only by reading the cues together. In 5 of them the previous cue was a different speaker.
+
+### NOT ASSESSED
+- Power loss (there is no fsync).
+- Real Teams or Stream files (none available).
+- File systems without hard links.
+- Unicode-database differences between Python versions that could change a rerun's notes.
+
+All my temporary folders are deleted. Nothing was written to the repository or to ~/.claude.
+
+===== SKILL.md against the script
+## SKILL.md checked against the final ingest.py
+
+**Result:** SKILL.md mostly matches the code. I found 1 high and 2 medium findings, plus a set of low ones. No statement turned out to be a false safety claim that leaks a contact detail. The worst problem is a misleading attribution claim that shows up on real Zoom data.
+
+**How I tested.** I copied ingest.py and test_ingest.py to a temp folder (deleted afterwards). Every probe loaded the copy with importlib and called `ingest()`, `redact()`, `redact_all()`, `parse_vtt()` or `main()`, always with `-B` and PYTHONDONTWRITEBYTECODE=1. For the git cases I used a stand-in `git` and a throwaway `git init` repo. The candidate suite passed 121 of 121, printed no NOTE lines, and left no `__pycache__`.
+
+**What held (no finding):**
+- **§8 redaction:** 136 of the 137 input→output examples matched exactly. The one miss was my own misreading of the glued `+44 ...0958` + `2026` known miss, which behaves as SKILL.md says. All 9 cross-cue examples, the counts, and every "stays visible" and known-miss example also matched.
+- **§5 speakers:** about 75 statements matched, including every refusal, every `<v` limit, every reason string, the numbered markers, and the known misses.
+- **§9 parsing:** about 170 cases matched: each damaged, kept and refused timing-line example in each place (inside a cue, NOTE, header), the line numbers, and the cue-word refusals.
+- **§2 meeting file, paths and git:** each meeting-file rule held, and so did the participant/ and repository refusals spelled through capital letters, `/System/Volumes/Data`, NFD paths and symlinks. Each git exit and stderr case matched, as did the non-executable git, the missing git, and a tracked-but-ignored file.
+- **§4 and §7:** rerun unchanged with times kept; CRLF and CR re-saves count as unchanged, a BOM is refused; the duplicate-ID, duplicate-text and missing-provenance refusals; leftover temp files.
+- **Writing:** EPERM and ENOTSUP are refused, while EIO, ENOSPC and EXDEV are raised as errors.
+- **Rendering and read-back:** escaping, indentation references and read-back all held, checked with markdown-it.
+- **§10:** the NOTICE prints and the record has the same shape with and without the instruction.
+- **Zoom research claim (§7):** in the cache of 1,665 files there are 0 voice tags and 0 inline tags, and every cue has a numeric identifier and a `Name:` prefix.
+
+---
+
+### HIGH 1. A listed Zoom-form label longer than 60 characters is never attributed (unstated rule)
+- **Input:** participant `{"name": "Ada Example (Example Foundation Working Group Liaison (EFWGL))", "role": "Guest"}` (62 characters). Cue text: `Ada Example (Example Foundation Working Group Liaison (EFWGL)): Hello there.`
+- **OBSERVED:** the utterance is `Unattributed`, uncertain, with reason `no speaker label in the transcript`. The same name in `<v ...>` form is attributed and certain.
+- **Contradicts §5:** "A label that matches a listed participant's name or one of their labels is attributed to that person." The limit comes from `PREFIX_LABEL` `[^:\n]{1,60}`. SKILL.md mentions 60 characters only for other-speaker lines and their known misses, never for the cue's own label.
+- **Real data (OBSERVED):** 779 cues in 22 of the 1,665 cached Zoom files have their first colon past character 60. Masked shape: `Aaaaaa Aaaaaaa (Aaaaaaaaaa aaaaa aaa aaaaaaaa aaaaaaaaaaa (AAAA)): words`.
+- **Effect:** conservative. The cue is marked uncertain, not given to the wrong person, and the words keep the name. Listing the long name does not help.
+- **Smallest fix:** either raise the bound in `PREFIX_LABEL` (and `LINE_NAME`), for example to 200 as voice tags allow, or add this to §5: "A `Name:` label is read only when the name is at most 60 characters. A longer one, as Zoom writes some display names with an affiliation in parentheses, is not read even when listed, and its cue is `Unattributed`."
+
+### MEDIUM 2. The meeting file's location is never checked
+- **Input:** a meeting file at `<repo>/participant/meeting.json` with `"labels": ["Ada", "ada@example.com"]`, and a raw transcript outside the repository.
+- **OBSERVED:** the run reports `written`.
+- **The claim:** §2 says "Both files stay outside source control." Only the raw transcript is refused. §5 leads users to list guest email addresses as `labels`, and the script's own message says anything inside participant/ "would be handed in".
+- **INFERRED:** contact details could be handed in, against the quest safety constraint.
+- **Fix:** run `check_paths`' participant/ and git checks on `--meeting` too, or reword to "Keep both files outside source control; the skill checks only the raw transcript's location."
+
+### MEDIUM 3. A `transcript_id` with a trailing line feed is accepted, so two records can share one ID
+- **Input:** `"transcript_id": "tr-2026-10-21-probe\n"`, run while `probe.md` (ID `tr-2026-10-21-probe`) already exists in the folder.
+- **OBSERVED:** `second.md` is written. Its front matter and provenance get a stray blank line, and its citation line splits across two lines.
+- **Cause:** `TRANSCRIPT_ID` ends in `$`, which matches before a final `\n`. `front_matter_value` strips the stored ID, so the duplicate-ID check compares unequal strings.
+- **Contradicts:** §2 (the ID must look like `tr-2026-10-21-short-name`) and §4 ("one transcript ID belongs to one record").
+- **Same cause elsewhere:** `RECORD_NAME`. `--out .../x.md\n` wrote files named `x.md\n` and `x.provenance.yaml`, against §3's NAME rule. `DATE` is saved by `fromisoformat`.
+- **Fix:** use `fullmatch` (or `\Z`) for `TRANSCRIPT_ID`, `RECORD_NAME` and `DATE`.
+
+### LOW 4. A §8 known miss says something is missed that is actually redacted
+- **Input:** `redact_all(["ada.lee@", "example.zz"])`.
+- **OBSERVED:** `['[REDACTED:EMAIL]', '[REDACTED:EMAIL]']`, counted once. The spoken rule allows spaces beside `@`. Same result for `["ada", "@example.zz"]` and `["ada@", "example.co.uk"]`.
+- **What really stays visible:** `["ada..lee@", "example.zz"]` and `["ada.@", "example.zz"]`.
+- **Fix:** replace that clause with "a written address cut at its `@` whose name has two full stops in a row or ends in one, such as `ada..lee@` then `example.zz`".
+
+### LOW 5. The output-path check is described as stricter than it is
+- **Claim (§2):** the output check "compares how the paths are spelled. If `--out` spells the repository's folder differently from the script's own path, the run is refused."
+- **OBSERVED as written:** `--out` through a symlink to the repository, through `participant/context/../context/transcripts/x.md`, and through `/tmp/...` instead of `/private/tmp/...`. Different capitals, an NFD folder name and `/System/Volumes/Data` are refused.
+- **Fix:** "...it compares the paths after following symbolic links and `..`, so a path that spells the folder in other capital letters, another Unicode form, or through /System/Volumes/Data is refused."
+- **Related:** a broken symlink at the record's own name is refused with the wrong reason, `--out must be a lower-case name` (`resolve()` follows it to `nowhere`).
+
+### LOW 6. Some control characters are dropped, not refused
+- **Claims:** §5 says a label that holds a control character once decoded is refused, for example `<v Ada&#13;Example>`. §9 says any Cc character is refused.
+- **Labels, OBSERVED:** `<v Ada&#13;>Hi</v>`, `Ada&#10;: Hi`, `<v Ada&#31;>` and `Speaker 2&#11;: Hi` are all accepted. The label is read as `Ada` or `Speaker 2`.
+- **Words, OBSERVED:** U+000B, U+000C, U+001C to U+001F and U+0085 at the end of a line, or at the start or end of a cue, are silently dropped. Example: line `x\x0b` gives `x`. A cue starting `\x0bAda: hi` is read as Ada.
+- **Cause:** `str.strip()`/`rstrip()` count these as white space. A control character mid-line is refused.
+- **Fix:** check with `has_control` before stripping, or say "a control character Python treats as white space at either end of a label, a line or a cue is dropped with the spaces".
+
+### LOW 7. §9's refusal of control characters and bad references is broader than the code
+- **OBSERVED as accepted:** `NOTE` + `a \x01 b`, `WEBVTT \x01`, a cue identifier `id\x01`, and `NOTE` + `a &#0; b`.
+- **Why it matters little:** none of these is copied into the record.
+- **Fix:** "...in a cue's words or speaker label".
+
+### LOW 8. Speakers that differ only in capital letters are listed twice
+- **Input:** cues `Speaker 2: hi`, `speaker 2: there`, `<v Carol>x</v>`, `<v carol>y</v>`.
+- **OBSERVED:** the Speakers list and `uncertain_speakers` each name `Carol`, `carol`, `Speaker 2` and `speaker 2` separately.
+- **Conflicts with:** §5 "names each speaker ... once" and "labels that differ only in capital letters count as one label".
+- **Fix:** dedupe by casefold, or say "each label as written".
+
+### LOW 9. Upper-case `&#X` references are neither decoded nor refused
+- **Input:** words `&#X41; &#X0;`.
+- **OBSERVED:** kept literally.
+- **Claims:** §7 says "numeric ones" are decoded and "a reference that is not a real character is refused".
+- **Fix:** "numeric ones written `&#65;` or `&#x41;`".
+
+### LOW 10. A refused run can leave a new empty folder
+- **Input:** the transcripts folder is missing and `os.link` raises EPERM.
+- **OBSERVED:** the run is REFUSED and an empty `participant/context/transcripts/` is left. `mkdir` runs before `write_pair`.
+- **Claim:** §9 says a REFUSED run "writes nothing".
+- **Fix:** say it may leave the empty folder, or create the folder only once the links succeed.
+
+### LOW 11. Unlabeled crashes (exit 1, traceback, nothing written)
+- **First crash:** any non-UTF-8 `.md` in the transcripts folder (for example `notes.md` with bytes `caf\xe9`) gives a `UnicodeDecodeError`. This also affects §4's "redaction-notes.md is not counted", if that file is saved in another encoding.
+- **Second crash:** an unreadable raw file (chmod 000) gives a `PermissionError`.
+- **SKILL.md:** states neither case.
+
+### LOW 12. Smaller rules SKILL.md does not state
+- **Leading spaces count toward 60:** in §5's limit on lines that may name another speaker. 50 spaces + `Carol Guest: hi` is not marked.
+- **Spacing matters for generic labels:** `Speaker 1: hi` then `Speaker  1: more` in one cue is refused as two speakers.
+- **Label redactions count per utterance:** one `<v 555-0100>` label on 3 utterances counts 3 phone redactions.
+- **Meeting-file text is not checked:** control characters or line breaks in meeting-file text are copied raw into the record (title `Probe\x01meeting` puts U+0001 in the record).
+- **Misleading report wording:** for a record re-saved with CRLF, the report says "byte-for-byte what this run would write", and the provenance `record_sha256` no longer matches the file's bytes.
+
+### Outside my lens (one line)
+Two comments in test_ingest.py are stale and contradict §4: `hostile_text_cannot_stall_the_tool` says the reader "merges every utterance after U-9999", and `many_cues_holding_split_numbers_are_redacted_quickly` says it "reads only four-digit utterance IDs".
+
+### Not assessed
+The planted-bug and claims-check claims (§11). Real Teams exports. External statements about git on macOS and exFAT behavior. The kill and interrupt paths, which the suite covers and I did not rerun independently.
+
+Nothing was written to the repository or to ~/.claude, and the temp folder is deleted.

@@ -1,0 +1,35 @@
+NOTHING TO CHANGE. Nothing has been written.
+
+Jira site:  [site address removed]  (site fingerprint 4aabe3d08fbad6b1)
+Project:    SCRUM (project id 10000). On the sandbox allowlist: yes.
+Story:      SCRUM-1 (issue id 10000). The id is what identifies it.
+
+Already as wanted, so not sent: labels, which holds ["gtq-sandbox"].
+Already as wanted, so not sent: duedate, which holds 2026-12-15.
+
+Permission check, asked of Jira for this story and this identity:
+  may see the story  (BROWSE_PROJECTS): yes
+  may edit the story (EDIT_ISSUES):     yes
+  fields Jira lists as editable here:   labels yes, duedate yes, priority yes
+Duplicate check: an edit sets a field to a value and creates nothing, so there is no second copy to make.
+  What could repeat is the same edit being sent twice. Checked against Jira just now: 2 of the 2
+  fields named already hold the wanted value and would not be sent. Jira's documentation does not say
+  whether sending a value a field already holds adds a history entry, so this workflow never sends one.
+Where Jira cannot check: its edit request has no 'only if the value is still the one I saw' condition.
+  The confirmation reads the story again just before writing and stops if a field has moved.
+
+Snapshot of the whole story as Jira returned it, before the preview: 0202ca76b1bb31d8
+Snapshot of the whole story as Jira returned it, after the preview:  0202ca76b1bb31d8
+The two are the same. Jira is unchanged.
+Requests sent to Jira: 5. Every one was a GET, which reads and cannot change anything.
+  GET /rest/api/3/issue/SCRUM-1
+  GET /rest/api/3/myself
+  GET /rest/api/3/mypermissions
+  GET /rest/api/3/issue/10000/editmeta
+  GET /rest/api/3/issue/10000
+
+The story already holds every value asked for. No fingerprint is issued, because there is nothing
+to confirm, and nothing was sent.
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.

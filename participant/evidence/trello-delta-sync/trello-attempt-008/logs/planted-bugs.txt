@@ -1,0 +1,261 @@
+Do the tests notice a broken sync? trello-delta-sync, attempt trello-attempt-008
+Recorded by scripts/planted_bugs.py.
+
+Each bug below was put into participant/skills/trello-delta-sync/sync.py, every test was run, and the
+bug was taken out again. Only local files are used.
+
+Before any bug: OK
+
+PLANTED BUG A. The activity is not read: only the cross-check of card fields finds changes (criterion 1)
+  unittest result: FAILED (failures=8)
+  tests that failed (8):
+    Moved.test_a_card_moved_between_lists_is_detected_from_the_activity
+    Moved.test_a_card_moved_twice_between_syncs_ends_where_trello_has_it
+    TheCursor.test_a_change_made_while_the_sync_is_running_is_read_by_the_next_one
+    Gone.test_a_deleted_card_is_detected_from_the_activity_and_kept
+    FromActivity.test_a_strange_activity_type_is_reported_by_its_type_only
+    Archived.test_an_archived_card_is_detected_from_the_activity_and_flagged
+    FromActivity.test_each_card_named_by_the_activity_is_listed_with_what_happened
+    FromActivity.test_entries_at_or_before_the_cursor_are_ignored_if_trello_returns_them
+
+PLANTED BUG B. The activity is asked for from the beginning, not since the cursor (criterion 1)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    FromActivity.test_the_activity_is_asked_for_since_the_cursor
+
+PLANTED BUG C. Every card is fetched, not only those with new activity (criterion 1)
+  unittest result: FAILED (failures=6)
+  tests that failed (6):
+    Moved.test_a_card_moved_twice_between_syncs_ends_where_trello_has_it
+    Archived.test_cards_in_a_list_that_was_archived_are_shown_as_archived_without_being_fetched
+    FromActivity.test_entries_at_or_before_the_cursor_are_ignored_if_trello_returns_them
+    FromActivity.test_only_cards_with_new_activity_are_fetched
+    TheCursor.test_the_next_sync_recovers_everything_the_failed_one_missed
+    FromActivity.test_with_no_new_activity_nothing_is_fetched_and_the_cursor_stays
+
+PLANTED BUG D. A change with no activity entry is not looked for: the cross-check is off (criteria 1 and 7)
+  unittest result: FAILED (failures=9)
+  tests that failed (9):
+    FullResync.test_a_full_read_from_nothing_reaches_the_same_state_as_the_deltas
+    FullResync.test_a_full_read_in_place_changes_nothing_the_deltas_had_right
+    FromActivity.test_a_label_change_which_has_no_activity_entry_is_caught_by_the_cross_check
+    FromActivity.test_entries_at_or_before_the_cursor_are_ignored_if_trello_returns_them
+    FullResync.test_field_by_field_and_not_only_by_digest
+    TheStateDocument.test_it_records_the_cursor_what_it_is_taken_from_and_how_it_advances
+    FromActivity.test_only_cards_with_new_activity_are_fetched
+    FromActivity.test_the_counts_of_new_changed_and_unchanged
+    CommandLine.test_the_steps_from_the_command_line
+
+PLANTED BUG E. A card's list is not updated when it moves (criterion 2)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Moved.test_a_card_moved_between_lists_is_detected_from_the_activity
+    Archived.test_a_card_moved_then_archived_shows_both
+    FullResync.test_the_digest_changes_when_a_card_differs
+
+PLANTED BUG F. A move is not recognised in the activity (criterion 2)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Moved.test_a_card_moved_between_lists_is_detected_from_the_activity
+    Moved.test_a_card_moved_twice_between_syncs_ends_where_trello_has_it
+    TheCursor.test_a_change_made_while_the_sync_is_running_is_read_by_the_next_one
+
+PLANTED BUG G. An archived card is not flagged as archived (criterion 3)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Archived.test_a_card_moved_then_archived_shows_both
+    Archived.test_an_archived_card_is_detected_from_the_activity_and_flagged
+
+PLANTED BUG H. An archived card stays in its list in cards.md (criterion 3)
+  unittest result: FAILED (failures=1, errors=1)
+  tests that failed (2):
+    Gone.test_gone_cards_are_not_counted_as_on_the_board
+    Archived.test_it_is_kept_in_the_archived_section_with_its_list
+
+PLANTED BUG I. Archived cards are not asked for in the listing, so an archived card looks gone (criterion 3)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    FromActivity.test_with_no_new_activity_nothing_is_fetched_and_the_cursor_stays
+
+PLANTED BUG J. The cursor is written before the cards are fetched (criterion 4)
+  unittest result: FAILED (failures=4)
+  tests that failed (4):
+    TheCursor.test_a_failure_reading_the_lists_or_the_listing_leaves_the_cursor
+    CommandLine.test_a_made_up_failure_from_the_command_line
+    TheCursor.test_a_rate_limited_sync_is_incomplete_and_leaves_the_cursor
+    TheCursor.test_a_sync_that_fails_partway_writes_nothing_and_the_cursor_stays
+
+PLANTED BUG K. A card that cannot be fetched is skipped and the sync carries on (criteria 4 and 5)
+  unittest result: FAILED (failures=5)
+  tests that failed (5):
+    TheStateDocument.test_a_failed_sync_does_not_touch_it
+    CommandLine.test_a_made_up_failure_from_the_command_line
+    TheCursor.test_a_sync_that_fails_partway_writes_nothing_and_the_cursor_stays
+    TheCursor.test_the_next_sync_recovers_everything_the_failed_one_missed
+    TheCursor.test_two_cards_had_been_fetched_before_it_failed
+
+PLANTED BUG L. The cursor is taken from this machine's clock (criterion 4)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    TheCursor.test_the_cursor_does_not_come_from_this_machines_clock
+    FirstSync.test_the_cursor_is_the_newest_activity_entry_trello_returned
+
+PLANTED BUG M. The cursor is set to the oldest new entry, not the newest (criteria 4 and 5)
+  unittest result: FAILED (failures=8)
+  tests that failed (8):
+    OnlyReads.test_a_card_name_worded_as_an_order_is_only_a_name
+    TheCursor.test_a_change_made_while_the_sync_is_running_is_read_by_the_next_one
+    FullResync.test_a_full_read_from_nothing_reaches_the_same_state_as_the_deltas
+    FromActivity.test_more_activity_than_one_page_is_read_completely
+    TheCursor.test_the_cursor_advances_to_the_newest_entry_read_and_not_beyond
+    TheCursor.test_the_cursor_does_not_come_from_this_machines_clock
+    TheCursor.test_the_next_sync_recovers_everything_the_failed_one_missed
+    FromActivity.test_with_no_new_activity_nothing_is_fetched_and_the_cursor_stays
+
+PLANTED BUG N. A rate-limited sync is treated as finished (criterion 4)
+  unittest result: FAILED (failures=5, errors=1)
+  tests that failed (6):
+    OnlyReads.test_a_board_reference_that_is_not_an_id_is_refused_before_any_request
+    TheCursor.test_a_failure_reading_the_activity_leaves_the_cursor
+    TheCursor.test_a_failure_reading_the_lists_or_the_listing_leaves_the_cursor
+    CommandLine.test_a_made_up_failure_from_the_command_line
+    TheCursor.test_a_rate_limited_sync_is_incomplete_and_leaves_the_cursor
+    TheCursor.test_a_sync_that_fails_partway_writes_nothing_and_the_cursor_stays
+
+PLANTED BUG O. The first page of activity is taken for all of it (criterion 5)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    FirstSync.test_a_board_larger_than_one_page_is_read_whole
+    FromActivity.test_more_activity_than_one_page_is_read_completely
+
+PLANTED BUG P. Entries at or before the cursor are not dropped (criterion 1)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    FromActivity.test_entries_at_or_before_the_cursor_are_ignored_if_trello_returns_them
+
+PLANTED BUG Q. Reading a notes file adds a line to it (criterion 6)
+  unittest result: FAILED (failures=18, errors=1)
+  tests that failed (19):
+    Notes.test_a_card_with_notes_points_to_them_wherever_it_ends_up
+    TheCursor.test_a_change_made_while_the_sync_is_running_is_read_by_the_next_one
+    Gone.test_a_deleted_card_is_detected_from_the_activity_and_kept
+    TheCursor.test_a_failure_reading_the_activity_leaves_the_cursor
+    TheCursor.test_a_failure_reading_the_lists_or_the_listing_leaves_the_cursor
+    TheCursor.test_a_folder_from_another_source_is_refused
+    TheCursor.test_a_rate_limited_sync_is_incomplete_and_leaves_the_cursor
+    TheCursor.test_a_short_rate_limit_is_waited_out
+    TheCursor.test_a_sync_that_fails_partway_writes_nothing_and_the_cursor_stays
+    TheCursor.test_memory_that_cannot_be_read_stops_the_run
+    Notes.test_notes_are_byte_identical_after_every_kind_of_sync
+    Notes.test_the_checksum_printed_is_the_files_own
+    TheCursor.test_the_cursor_advances_to_the_newest_entry_read_and_not_beyond
+    TheCursor.test_the_cursor_does_not_come_from_this_machines_clock
+    TheCursor.test_the_cursor_is_written_last_of_the_two_files_that_hold_state
+    TheCursor.test_the_next_sync_recovers_everything_the_failed_one_missed
+    TheCursor.test_the_recovered_state_is_what_a_sync_with_no_failure_reaches
+    Notes.test_the_sync_runs_with_the_notes_folder_read_only
+    TheCursor.test_two_cards_had_been_fetched_before_it_failed
+
+PLANTED BUG R. Writing in the notes folder is no longer refused (criterion 6)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Notes.test_writing_in_the_notes_folder_is_refused
+
+PLANTED BUG S. The digest leaves out which list a card is in (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    FullResync.test_the_digest_changes_when_a_card_differs
+
+PLANTED BUG T. The digest depends on when the sync ran (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    FullResync.test_the_digest_does_not_depend_on_when_the_sync_ran
+
+PLANTED BUG U. A card's labels are not kept (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    FromActivity.test_a_label_change_which_has_no_activity_entry_is_caught_by_the_cross_check
+
+PLANTED BUG V. A deleted card is removed from the local copy (the first stretch goal)
+  unittest result: FAILED (errors=20)
+  tests that failed (20):
+    Archived.test_a_card_moved_then_archived_shows_both
+    Gone.test_a_card_moved_to_another_board_is_told_apart_from_a_deleted_one
+    Gone.test_a_card_that_vanishes_with_no_activity_entry_is_still_noticed
+    Notes.test_a_card_with_notes_points_to_them_wherever_it_ends_up
+    TheCursor.test_a_change_made_while_the_sync_is_running_is_read_by_the_next_one
+    Gone.test_a_deleted_card_is_detected_from_the_activity_and_kept
+    FullResync.test_a_full_read_finds_a_card_that_went_while_it_was_not_looking
+    FullResync.test_a_full_read_from_nothing_reaches_the_same_state_as_the_deltas
+    FullResync.test_a_full_read_in_place_changes_nothing_the_deltas_had_right
+    Archived.test_a_restored_card_goes_back_to_its_list
+    TheCursor.test_a_short_rate_limit_is_waited_out
+    FullResync.test_field_by_field_and_not_only_by_digest
+    Gone.test_gone_cards_are_not_counted_as_on_the_board
+    OnlyReads.test_names_are_not_printed_only_ids
+    Notes.test_notes_are_byte_identical_after_every_kind_of_sync
+    TheCursor.test_the_cursor_advances_to_the_newest_entry_read_and_not_beyond
+    TheCursor.test_the_cursor_does_not_come_from_this_machines_clock
+    FullResync.test_the_digest_printed_is_the_digest_of_what_was_saved
+    TheCursor.test_the_next_sync_recovers_everything_the_failed_one_missed
+    TheCursor.test_the_recovered_state_is_what_a_sync_with_no_failure_reaches
+
+PLANTED BUG W. A card moved to another board is kept as if still here (the first stretch goal)
+  unittest result: FAILED (failures=5, errors=1)
+  tests that failed (6):
+    Gone.test_a_card_moved_to_another_board_is_told_apart_from_a_deleted_one
+    FullResync.test_a_full_read_from_nothing_reaches_the_same_state_as_the_deltas
+    FullResync.test_a_full_read_in_place_changes_nothing_the_deltas_had_right
+    Gone.test_gone_cards_are_not_counted_as_on_the_board
+    FullResync.test_the_digest_printed_is_the_digest_of_what_was_saved
+    TheCursor.test_the_next_sync_recovers_everything_the_failed_one_missed
+
+PLANTED BUG X. A card that vanishes with no activity entry is not noticed (the first stretch goal)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Gone.test_a_card_that_vanishes_with_no_activity_entry_is_still_noticed
+
+PLANTED BUG Y. A failed sync makes the cursor look fresh (the second stretch goal)
+  unittest result: FAILED (failures=10)
+  tests that failed (10):
+    Stale.test_a_failed_sync_does_not_make_the_cursor_look_fresh
+    TheCursor.test_a_failure_reading_the_activity_leaves_the_cursor
+    TheCursor.test_a_failure_reading_the_lists_or_the_listing_leaves_the_cursor
+    TheCursor.test_a_folder_from_another_source_is_refused
+    CommandLine.test_a_made_up_failure_from_the_command_line
+    TheCursor.test_a_rate_limited_sync_is_incomplete_and_leaves_the_cursor
+    TheCursor.test_a_sync_that_fails_partway_writes_nothing_and_the_cursor_stays
+    Stale.test_every_delta_says_how_old_the_cursor_is
+    Stale.test_past_the_limit_it_says_stale
+    Stale.test_the_limit_can_be_changed
+
+PLANTED BUG Z. STALE is never said (the second stretch goal)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Stale.test_past_the_limit_it_says_stale
+    Stale.test_the_limit_can_be_changed
+
+PLANTED BUG AA. Text from an activity entry is printed (card text is text)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    FromActivity.test_each_card_named_by_the_activity_is_listed_with_what_happened
+    FromActivity.test_text_from_an_activity_entry_is_never_printed_or_kept
+
+PLANTED BUG AB. The key and token are put in the address (safety)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    OnlyReads.test_the_key_and_token_go_in_a_header_and_never_in_the_address
+
+PLANTED BUG AC. The request is not a GET (safety)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    OnlyReads.test_the_skill_has_no_way_to_send_anything_but_a_get
+
+PLANTED BUG AD. A folder holding made-up cards may be synced from live Trello (safety)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    TheCursor.test_a_folder_from_another_source_is_refused
+
+After the last bug was taken out: sync.py is byte for byte what it was at the start. OK
+
+RESULT: all 30 planted bugs were caught by at least one test, and the file was restored.

@@ -1,0 +1,13 @@
+schema_version: 1
+submission_id: submission-20261117172629-0a937c
+quest_id: base-camp-safe-rerun
+quest_version: 1
+attempt_id: base-attempt-004
+content_hash: sha256:f3734c3c69b8ee79e4cea72824ec3c7982a788c35b35132885192e89de8956fa
+evidence_hash: sha256:3e0984f73e85641afc27ee52eb9d28563100201b9be243bc4c88315d1bda7e96
+submitted_at: '2026-11-17T17:26:29Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/rerun-key-rules.md
+  digest: sha256:5c5848fbe370e7db17d3917e0dfc90cb08b28d1496805f3f183ad9e167bd0f76

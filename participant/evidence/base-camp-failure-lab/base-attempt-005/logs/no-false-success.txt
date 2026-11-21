@@ -1,0 +1,104 @@
+No false success: base-camp-failure-lab, attempt base-attempt-005
+Recorded by scripts/check_no_false_success.py
+
+Checks the files left in work/ by the runs in logs/failure-runs.txt.
+The checker opens each file itself and compares it with the 100 stories
+the fake service holds (STORY-001 to STORY-100).
+
+RUN 0-healthy   (should end complete)
+  ok   work/0-healthy.json exists
+  ok   no INCOMPLETE file beside it
+  ok   it says "status": "complete"
+  ok   it holds all 100 stories, each once (found 100)
+
+RUN 1a-timeout-lasting   (should end failed or incomplete)
+  ok   work/1a-timeout-lasting.json does not exist
+  ok   work/1a-timeout-lasting.json.INCOMPLETE.json exists
+  ok   it says "status": "incomplete"
+  ok   it gives a reason: timeout: page 3 gave no answer in 3 tries
+  ok   it holds fewer than 100 stories (found 40)
+  ok   every story in it is a real one, none twice, none made up
+  ok   no EARLIER file (there was no earlier run)
+
+RUN 1b-timeout-recovers   (should end complete)
+  ok   work/1b-timeout-recovers.json exists
+  ok   no INCOMPLETE file beside it
+  ok   it says "status": "complete"
+  ok   it holds all 100 stories, each once (found 100)
+
+RUN 2-partial   (should end failed or incomplete)
+  ok   work/2-partial.json does not exist
+  ok   work/2-partial.json.INCOMPLETE.json exists
+  ok   it says "status": "incomplete"
+  ok   it gives a reason: partial response: received 60 of 100
+  ok   it holds fewer than 100 stories (found 60)
+  ok   every story in it is a real one, none twice, none made up
+  ok   no EARLIER file (there was no earlier run)
+
+RUN 3a-rate-limit-recovers   (should end complete)
+  ok   work/3a-rate-limit-recovers.json exists
+  ok   no INCOMPLETE file beside it
+  ok   it says "status": "complete"
+  ok   it holds all 100 stories, each once (found 100)
+
+RUN 3b-rate-limit-lasting   (should end failed or incomplete)
+  ok   work/3b-rate-limit-lasting.json does not exist
+  ok   work/3b-rate-limit-lasting.json.INCOMPLETE.json exists
+  ok   it says "status": "incomplete"
+  ok   it gives a reason: rate limit: page 3: still limited after 3 waits, service asked for 1 more seconds
+  ok   it holds fewer than 100 stories (found 40)
+  ok   every story in it is a real one, none twice, none made up
+  ok   no EARLIER file (there was no earlier run)
+
+RUN 3c-rate-limit-too-long   (should end failed or incomplete)
+  ok   work/3c-rate-limit-too-long.json does not exist
+  ok   work/3c-rate-limit-too-long.json.INCOMPLETE.json exists
+  ok   it says "status": "incomplete"
+  ok   it gives a reason: rate limit: page 3: service asked for a 60 second wait, limit is 10
+  ok   it holds fewer than 100 stories (found 40)
+  ok   every story in it is a real one, none twice, none made up
+  ok   no EARLIER file (there was no earlier run)
+
+RUN 4a-malformed-answer   (should end failed or incomplete)
+  ok   work/4a-malformed-answer.json does not exist
+  ok   work/4a-malformed-answer.json.INCOMPLETE.json exists
+  ok   it says "status": "incomplete"
+  ok   it gives a reason: malformed answer: page 3: not JSON: Expecting property name enclosed in double quotes: line 1 column 454 (char 453)
+  ok   it holds fewer than 100 stories (found 40)
+  ok   every story in it is a real one, none twice, none made up
+  ok   no EARLIER file (there was no earlier run)
+
+RUN 4b-malformed-item   (should end failed or incomplete)
+  ok   work/4b-malformed-item.json does not exist
+  ok   work/4b-malformed-item.json.INCOMPLETE.json exists
+  ok   it says "status": "incomplete"
+  ok   it gives a reason: 1 item(s) rejected
+  ok   it holds fewer than 100 stories (found 99)
+  ok   every story in it is a real one, none twice, none made up
+  ok   no EARLIER file (there was no earlier run)
+
+RUN 5-failure-after-earlier-success   (should end failed or incomplete)
+  ok   work/5-failure-after-earlier-success.json does not exist
+  ok   work/5-failure-after-earlier-success.json.INCOMPLETE.json exists
+  ok   it says "status": "incomplete"
+  ok   it gives a reason: partial response: received 60 of 100
+  ok   it holds fewer than 100 stories (found 60)
+  ok   every story in it is a real one, none twice, none made up
+  ok   work/5-failure-after-earlier-success.json.EARLIER.json exists (the earlier run's file, renamed)
+  ok   it still holds all 100 stories, unchanged
+
+SWEEP of every file in work/
+  0-healthy.json                                   says complete   holds 100
+  1a-timeout-lasting.json.INCOMPLETE.json          says incomplete holds  40
+  1b-timeout-recovers.json                         says complete   holds 100
+  2-partial.json.INCOMPLETE.json                   says incomplete holds  60
+  3a-rate-limit-recovers.json                      says complete   holds 100
+  3b-rate-limit-lasting.json.INCOMPLETE.json       says incomplete holds  40
+  3c-rate-limit-too-long.json.INCOMPLETE.json      says incomplete holds  40
+  4a-malformed-answer.json.INCOMPLETE.json         says incomplete holds  40
+  4b-malformed-item.json.INCOMPLETE.json           says incomplete holds  99
+  5-failure-after-earlier-success.json.EARLIER.json says complete   holds 100
+  5-failure-after-earlier-success.json.INCOMPLETE.json says incomplete holds  60
+  ok   11 files swept, expected 11 (one per run, and one EARLIER file)
+
+RESULT: ALL CHECKS PASSED. No failed run left a result that reads as complete.

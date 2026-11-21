@@ -1,0 +1,5 @@
+
+REFUSED: the preview 847183421875 has already been confirmed and its card created. A fingerprint is used once.
+Nothing has been written to Trello.
+
+The output above, and each file written, was searched for the API key and the token: neither found.

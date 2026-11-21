@@ -1,0 +1,22 @@
+{
+  "fingerprint": "8ad65111ae5fcdfa2fd3d6de1e10c76dde861f8280c0d51423ac7ab665274c87",
+  "made_at": "2027-11-17 21:02:18 UTC",
+  "expires_at": "2026-11-17 21:17:18 UTC",
+  "board_fingerprint": "6846ec85b92d9b9521c357e3cc092692b6c379a539dc703c5c4508fa8f46accc",
+  "proposal": {
+    "board": "DEMO",
+    "stories_now": 7,
+    "steps": [
+      {
+        "action": "create",
+        "id": "DEMO-8",
+        "fields": {
+          "title": "Remember the last search",
+          "description": "When the board is opened again, show the words last searched for.",
+          "status": "todo"
+        }
+      }
+    ]
+  },
+  "state": "open"
+}

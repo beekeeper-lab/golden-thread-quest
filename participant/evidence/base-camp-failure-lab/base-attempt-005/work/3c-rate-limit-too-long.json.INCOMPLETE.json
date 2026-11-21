@@ -1,0 +1,168 @@
+{
+ "status": "incomplete",
+ "reason": "rate limit: page 3: service asked for a 60 second wait, limit is 10",
+ "service_total": 100,
+ "rejected": [],
+ "items": [
+  {
+   "id": "STORY-001",
+   "title": "Story 001"
+  },
+  {
+   "id": "STORY-002",
+   "title": "Story 002"
+  },
+  {
+   "id": "STORY-003",
+   "title": "Story 003"
+  },
+  {
+   "id": "STORY-004",
+   "title": "Story 004"
+  },
+  {
+   "id": "STORY-005",
+   "title": "Story 005"
+  },
+  {
+   "id": "STORY-006",
+   "title": "Story 006"
+  },
+  {
+   "id": "STORY-007",
+   "title": "Story 007"
+  },
+  {
+   "id": "STORY-008",
+   "title": "Story 008"
+  },
+  {
+   "id": "STORY-009",
+   "title": "Story 009"
+  },
+  {
+   "id": "STORY-010",
+   "title": "Story 010"
+  },
+  {
+   "id": "STORY-011",
+   "title": "Story 011"
+  },
+  {
+   "id": "STORY-012",
+   "title": "Story 012"
+  },
+  {
+   "id": "STORY-013",
+   "title": "Story 013"
+  },
+  {
+   "id": "STORY-014",
+   "title": "Story 014"
+  },
+  {
+   "id": "STORY-015",
+   "title": "Story 015"
+  },
+  {
+   "id": "STORY-016",
+   "title": "Story 016"
+  },
+  {
+   "id": "STORY-017",
+   "title": "Story 017"
+  },
+  {
+   "id": "STORY-018",
+   "title": "Story 018"
+  },
+  {
+   "id": "STORY-019",
+   "title": "Story 019"
+  },
+  {
+   "id": "STORY-020",
+   "title": "Story 020"
+  },
+  {
+   "id": "STORY-021",
+   "title": "Story 021"
+  },
+  {
+   "id": "STORY-022",
+   "title": "Story 022"
+  },
+  {
+   "id": "STORY-023",
+   "title": "Story 023"
+  },
+  {
+   "id": "STORY-024",
+   "title": "Story 024"
+  },
+  {
+   "id": "STORY-025",
+   "title": "Story 025"
+  },
+  {
+   "id": "STORY-026",
+   "title": "Story 026"
+  },
+  {
+   "id": "STORY-027",
+   "title": "Story 027"
+  },
+  {
+   "id": "STORY-028",
+   "title": "Story 028"
+  },
+  {
+   "id": "STORY-029",
+   "title": "Story 029"
+  },
+  {
+   "id": "STORY-030",
+   "title": "Story 030"
+  },
+  {
+   "id": "STORY-031",
+   "title": "Story 031"
+  },
+  {
+   "id": "STORY-032",
+   "title": "Story 032"
+  },
+  {
+   "id": "STORY-033",
+   "title": "Story 033"
+  },
+  {
+   "id": "STORY-034",
+   "title": "Story 034"
+  },
+  {
+   "id": "STORY-035",
+   "title": "Story 035"
+  },
+  {
+   "id": "STORY-036",
+   "title": "Story 036"
+  },
+  {
+   "id": "STORY-037",
+   "title": "Story 037"
+  },
+  {
+   "id": "STORY-038",
+   "title": "Story 038"
+  },
+  {
+   "id": "STORY-039",
+   "title": "Story 039"
+  },
+  {
+   "id": "STORY-040",
+   "title": "Story 040"
+  }
+ ]
+}

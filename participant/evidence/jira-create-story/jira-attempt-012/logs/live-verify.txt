@@ -1,0 +1,51 @@
+VERIFY. Reads Jira and writes nothing to it.
+Link file: participant/context/jira/new-story/linked.md
+Matched to Jira by issue id 10022: found.
+The key in Jira is SCRUM-23, as the link file records.
+Asked of Jira for the marker gtq-57dc5556: exactly one story carries it, and it is this one. So reconcile would
+have found this story had its key never been recorded.
+
+READ BACK from Jira by issue id 10022, and compared with the payload field for field:
+  description        sent 2 block(s) of document
+                     read 2 block(s) of document: the same, identical as sent
+  duedate            sent "2027-01-15"
+                     read "2027-01-15": the same
+  issuetype          sent id 10004
+                     read "Story" (id 10004): the same
+  labels             sent ["gtq-57dc5556", "reporting", "revenue"]
+                     read ["gtq-57dc5556", "reporting", "revenue"]: the same
+  project            sent id 10000
+                     read "SCRUM" (id 10000): the same
+  summary            sent "Quarterly revenue by plan report for the finance team"
+                     read "Quarterly revenue by plan report for the finance team": the same
+Result: every field the payload sent reads back the same.
+Fields Jira set that the payload did not send:
+  created            Created       "2026-11-19T16:34:26.044-0500"
+  creator            Creator       a person, not shown
+  priority           Priority      "Medium" (id 3)
+  reporter           Reporter      a person, not shown
+  status             Status        "To Do" (id 10000)
+  and 12 more that hold a value: aggregateprogress, comment, customfield_10019, issuerestriction, progress, statusCategory, statuscategorychangedate, updated, votes, watches, worklog, workratio
+
+The link file participant/context/jira/new-story/linked.md now holds the key, the issue id and this comparison.
+
+RESULT RECORD
+  Issue key: SCRUM-23
+  Identifier of what was created: Jira issue id 10022 (this identifies the story; a key can change)
+  Target project: SCRUM (project id 10000), on the sandbox allowlist
+  Jira site: [site address removed], site fingerprint 4aabe3d08fbad6b1
+  Created at: 2026-11-19 21:34:26 UTC
+  Confirmed by: the participant, at 2026-11-19 21:34:22 UTC
+  Preview: fingerprint c931beb110b0
+  Payload: SHA-256 d044842a49cf189564af35d662d55965e82c98e124751ecab09ed2eabe3ad3a2
+  Marker label: gtq-57dc5556
+  Read back and compared at 2026-11-19 21:38:32 UTC: every field the payload sent reads back the same
+  Local link: participant/context/jira/new-story/linked.md
+
+Requests sent to Jira: 3. Every one was a GET, which reads and cannot change anything.
+  GET /rest/api/3/issue/10022
+  GET /rest/api/3/search/jql
+  GET /rest/api/3/issue/10022
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.

@@ -1,0 +1,83 @@
+Do the tests notice a broken verify.py? jira-verify-connection, attempt jira-attempt-005
+Recorded by scripts/planted_bugs.py.
+
+Each bug below was put into scripts/verify.py, every test was run, and the bug was taken out again.
+No network is used.
+
+Before any bug: OK
+
+PLANTED BUG A. A project Jira refuses is reported as empty
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    EmptyIsNotInaccessible.test_a_lost_project_is_reported_as_inaccessible_whichever_way_search_behaves
+    EmptyIsNotInaccessible.test_the_report_does_not_claim_to_know_why_a_project_is_inaccessible
+
+PLANTED BUG B. The identity is typed in, not read from the connection
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Identity.test_no_account_is_written_into_the_check
+    Identity.test_the_identity_printed_is_whatever_jira_says_the_connection_is
+
+PLANTED BUG C. Projects are listed by name, not by key
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    VisibleProjects.test_more_projects_than_one_page_are_all_listed
+    VisibleProjects.test_project_names_are_not_printed
+    VisibleProjects.test_visible_projects_are_listed_by_key_and_a_hidden_one_is_not
+
+PLANTED BUG D. The text of the item read is printed
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    EmptyIsNotInaccessible.test_a_read_of_one_item_succeeds_and_its_text_is_not_printed
+
+PLANTED BUG E. Only the first page of projects is listed
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    VisibleProjects.test_more_projects_than_one_page_are_all_listed
+
+PLANTED BUG F. The output is not searched for the credential
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    ReadOnlyAndNoCredential.test_if_jira_echoes_the_token_back_the_output_is_withheld
+
+PLANTED BUG G. The check is given a way to send a write
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    ReadOnlyAndNoCredential.test_the_check_can_only_send_get_requests
+
+PLANTED BUG H. A lost project does not change the exit code
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    EmptyIsNotInaccessible.test_a_lost_project_is_reported_as_inaccessible_whichever_way_search_behaves
+
+PLANTED BUG I. The denied run calls a visible project refused
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Denied.test_a_project_that_is_visible_when_it_should_not_be_is_a_failure
+
+PLANTED BUG J. Requests that Jira refused are left out of the list of requests
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    ReadOnlyAndNoCredential.test_a_request_jira_refused_is_listed_too
+
+PLANTED BUG K. Reading nothing at all is reported as OK
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    EmptyIsNotInaccessible.test_all_expected_projects_visible_but_nothing_to_read_is_not_ok
+
+PLANTED BUG L. Rejected credentials do not stop the check
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Identity.test_rejected_credentials_stop_the_check
+
+PLANTED BUG M. An inaccessible project is searched anyway, and the search decides
+  unittest result: FAILED (failures=2, errors=2)
+  tests that failed (4):
+    EmptyIsNotInaccessible.test_a_lost_project_is_reported_as_inaccessible_whichever_way_search_behaves
+    ReadOnlyAndNoCredential.test_a_request_jira_refused_is_listed_too
+    EmptyIsNotInaccessible.test_an_inaccessible_project_is_never_searched_to_decide
+    EmptyIsNotInaccessible.test_the_report_does_not_claim_to_know_why_a_project_is_inaccessible
+
+After the last bug was taken out: verify.py is byte for byte what it was at the start. OK
+
+RESULT: all 13 planted bugs were caught by at least one test, and verify.py was restored.

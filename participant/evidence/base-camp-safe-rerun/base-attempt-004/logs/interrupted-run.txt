@@ -1,0 +1,38 @@
+$ RERUN_SIM_CRASH=after-write:7 python3 -B scripts/rerun.py --input scripts/sample/items.json --store work/store-interrupted.json
+recorded (UTC): 2026-11-17 15:09:14
+note: separate store. The kill is simulated: the workflow ends itself abruptly (os._exit, status 137) after its 7th store write and before printing that item's line, so six 'created' lines are printed and seven records are in the store.
+store file before this command, read by the recorder: absent
+--- output (stdout, then stderr) ---
+run: source=intake input_items=10
+created  intake:req-0001 -> SIM-0001
+created  intake:req-0002 -> SIM-0002
+created  intake:req-0003 -> SIM-0003
+created  intake:req-0004 -> SIM-0004
+created  intake:req-0005 -> SIM-0005
+created  intake:req-0006 -> SIM-0006
+
+--- end of output ---
+exit code: 137
+store file after this command, read by the recorder: sha256 e753838bc4b8656c165c8f943c471b72cf965b44c7961e7d6ce47078f0d64b71 (1689 bytes)
+$ python3 -B scripts/rerun.py --input scripts/sample/items.json --store work/store-interrupted.json
+recorded (UTC): 2026-11-17 15:09:14
+note: the rerun, same store, same input, no kill.
+store file before this command, read by the recorder: sha256 e753838bc4b8656c165c8f943c471b72cf965b44c7961e7d6ce47078f0d64b71 (1689 bytes)
+--- output (stdout, then stderr) ---
+run: source=intake input_items=10
+skipped  intake:req-0001 = SIM-0001 (already present, content unchanged)
+skipped  intake:req-0002 = SIM-0002 (already present, content unchanged)
+skipped  intake:req-0003 = SIM-0003 (already present, content unchanged)
+skipped  intake:req-0004 = SIM-0004 (already present, content unchanged)
+skipped  intake:req-0005 = SIM-0005 (already present, content unchanged)
+skipped  intake:req-0006 = SIM-0006 (already present, content unchanged)
+skipped  intake:req-0007 = SIM-0007 (already present, content unchanged)
+created  intake:req-0008 -> SIM-0008
+created  intake:req-0009 -> SIM-0009
+created  intake:req-0010 -> SIM-0010
+summary: created=3 updated=0 skipped=7 refused=0
+store: records_before=7 records_after=10 untouched_not_in_input=0 sha256_before=e753838bc4b8656c165c8f943c471b72cf965b44c7961e7d6ce47078f0d64b71 sha256_after=609f1273d8a3f16ea3ad27324ce4555f974fcb6ee46af562634803a6bf98ba75
+
+--- end of output ---
+exit code: 0
+store file after this command, read by the recorder: sha256 609f1273d8a3f16ea3ad27324ce4555f974fcb6ee46af562634803a6bf98ba75 (2362 bytes)

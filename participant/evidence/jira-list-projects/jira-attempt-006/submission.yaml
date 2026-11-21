@@ -1,0 +1,13 @@
+schema_version: 1
+submission_id: submission-20261119015905-7d016e
+quest_id: jira-list-projects
+quest_version: 1
+attempt_id: jira-attempt-006
+content_hash: sha256:4d280cfd49249a9d61c128ee06d08cee55e97858abe1e09cb597effd7b9316c6
+evidence_hash: sha256:6df2e144db3dd6dc24eccf906c712b6b12202b134e57decd9574ecc2190b5543
+submitted_at: '2026-11-19T01:59:05Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/jira/projects.md
+  digest: sha256:cd69ed57c31135a3da9ad9744fc1d90dabc6dc0bf217eb8a58c67e9dbb75cf19

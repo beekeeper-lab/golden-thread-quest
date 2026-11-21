@@ -1,0 +1,58 @@
+delta_check.py intact: fake Jira, synthetic tickets from delta_fixture/timeline.json, temporary folder
+local analysis files before any sync (sha256):
+  4871b05ec64a369ff6df59d879a1af40d889d15f3f6e118656b8bb4cc99e0356  notes/GTQ-202.md
+  cced0fbe07f6743afd8702d9eb6c8bb1e62e6cfb396033edb19f48e15e8ec370  notes/GTQ-205.md
+  c4be6aa52e77c819b1feeb5c969680dade9be7a24ea5e578259c7018aecc65fa  notes/analysis/risk-table.md
+  40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880  notes/scratch.bin
+
+after: first delta run (ok)
+  4871b05ec64a369ff6df59d879a1af40d889d15f3f6e118656b8bb4cc99e0356  notes/GTQ-202.md
+  cced0fbe07f6743afd8702d9eb6c8bb1e62e6cfb396033edb19f48e15e8ec370  notes/GTQ-205.md
+  c4be6aa52e77c819b1feeb5c969680dade9be7a24ea5e578259c7018aecc65fa  notes/analysis/risk-table.md
+  40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880  notes/scratch.bin
+  [ok] C6: same files, same sha256 after the first delta run
+
+after: delta run that fails partway (stopped)
+  4871b05ec64a369ff6df59d879a1af40d889d15f3f6e118656b8bb4cc99e0356  notes/GTQ-202.md
+  cced0fbe07f6743afd8702d9eb6c8bb1e62e6cfb396033edb19f48e15e8ec370  notes/GTQ-205.md
+  c4be6aa52e77c819b1feeb5c969680dade9be7a24ea5e578259c7018aecc65fa  notes/analysis/risk-table.md
+  40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880  notes/scratch.bin
+  [ok] C6: same files, same sha256 after the delta run that fails partway
+
+after: delta run that recovers (ok)
+  4871b05ec64a369ff6df59d879a1af40d889d15f3f6e118656b8bb4cc99e0356  notes/GTQ-202.md
+  cced0fbe07f6743afd8702d9eb6c8bb1e62e6cfb396033edb19f48e15e8ec370  notes/GTQ-205.md
+  c4be6aa52e77c819b1feeb5c969680dade9be7a24ea5e578259c7018aecc65fa  notes/analysis/risk-table.md
+  40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880  notes/scratch.bin
+  [ok] C6: same files, same sha256 after the delta run that recovers
+
+after: delta run with a late edit (ok)
+  4871b05ec64a369ff6df59d879a1af40d889d15f3f6e118656b8bb4cc99e0356  notes/GTQ-202.md
+  cced0fbe07f6743afd8702d9eb6c8bb1e62e6cfb396033edb19f48e15e8ec370  notes/GTQ-205.md
+  c4be6aa52e77c819b1feeb5c969680dade9be7a24ea5e578259c7018aecc65fa  notes/analysis/risk-table.md
+  40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880  notes/scratch.bin
+  [ok] C6: same files, same sha256 after the delta run with a late edit
+
+after: delta run with no changes (ok)
+  4871b05ec64a369ff6df59d879a1af40d889d15f3f6e118656b8bb4cc99e0356  notes/GTQ-202.md
+  cced0fbe07f6743afd8702d9eb6c8bb1e62e6cfb396033edb19f48e15e8ec370  notes/GTQ-205.md
+  c4be6aa52e77c819b1feeb5c969680dade9be7a24ea5e578259c7018aecc65fa  notes/analysis/risk-table.md
+  40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880  notes/scratch.bin
+  [ok] C6: same files, same sha256 after the delta run with no changes
+
+--- full resync compared with the accumulated deltas ---
+compared: every stored field of every story, and the removed list. `retrieved_at` is left out,
+because it records when a story was fetched, and a full resync fetches everything again.
+state built by 4 delta runs:           sha256 217cfb498b107f2f8fb9986e7fc7ae917205bf95b79c314623c7d806d85d009b
+same folder after a full resync (ok):  sha256 217cfb498b107f2f8fb9986e7fc7ae917205bf95b79c314623c7d806d85d009b
+  [ok] C7: a full resync over the delta-built state changed nothing
+  [ok] C6: same files, same sha256 after the full resync
+
+stories from the delta runs:            sha256 2b9bce6e4b7e8ea05d40cc235919464888e9d5b2299a332314fc18b8d65025ea
+stories from a full sync into an empty folder: sha256 2b9bce6e4b7e8ea05d40cc235919464888e9d5b2299a332314fc18b8d65025ea
+  [ok] C7: a full sync into an empty folder holds the same stories
+removed list from the delta runs: [{"key": "GTQ-205", "last_known_status": "To Do"}]
+removed list from the empty-folder full sync: []
+  (expected to differ: a sync into an empty folder cannot know GTQ-205 was ever held)
+
+RESULT: every check held

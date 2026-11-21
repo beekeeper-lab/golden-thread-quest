@@ -1,0 +1,49 @@
+schema_version: 1
+review_id: review-20261120154937-ded0dd
+quest_id: ba-detect-ambiguity
+quest_version: 1
+attempt_id: ba-attempt-002
+evidence_hash: sha256:ab3226ec039b51bb68ec935c44143812d01fb0f00d5931be6e0d675e2a9fe2d8
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-20T15:49:37Z'
+decision: needs_changes
+findings:
+- id: finding-1
+  severity: high
+  summary: F-11's type can't be reproduced from the findings file alone.
+  evidence: 'In review-run.txt, the second and third readers both left F-11 ''not
+    settled: incomplete or vague''. The record says ''CRITERION 7 IS NOT FULLY MET.
+    Nine types of ten can be reproduced from the file. F-11 cannot.'''
+  criterion: ac-7
+  required_change: 'Make F-11 reproducible in one of two ways. (a) Add a rule to the
+    incomplete definition that says when a nearby phrase counts as ''speaking of''
+    the fact. For example: the fact counts as present only if a word names the quantity
+    the finding''s question asks for. Then run a fresh blind reader. (b) Retype F-11
+    or withdraw it, since the author''s key counts NFR-01 as sound. Then record a
+    blind read that reproduces all of the types.'
+- id: finding-2
+  severity: low
+  summary: The evidence folder name doesn't match the paths the quest requires.
+  evidence: The quest asks for participant/evidence/ba-detect-ambiguity/attempt-001/logs/review-run.txt
+    and .../attempt-001/PROOF.md. The files you submitted are under ba-attempt-002.
+  required_change: Put the files at the required attempt-001 paths, or say in PROOF.md
+    why the folder name differs.
+proof_files:
+- path: participant/context/ambiguity/findings.md
+  digest: sha256:5c9263362ca6550bd606e937f090ee02342f713baea3d99cde84516f2f930348
+- path: participant/context/ambiguity/requirements.md
+  digest: sha256:867168549d1e89ce4292fa2a5721c3fb5e209d6d53b8ec84cb121505e368e484
+verification_statement: 'I read requirements.md, findings.md, logs/review-run.txt,
+  tests.txt, planted-bugs.txt, PROOF.md and the review/ files. The requirements set
+  has 20 synthetic requirements: 10 sound (4 traps) and all four defect types, with
+  contradictions REQ-04/REQ-12 and REQ-14/NFR-04, the second across two documents.
+  Each of the 10 findings has a type, the quoted words, what a tester could not decide,
+  and a question. 9 sound requirements are unflagged with reasons. The checker log
+  reports 20 of 20 accounted for and refuses all five spoiled copies. PROOF.md gives
+  F-10 on REQ-05 as the finding withdrawn on a second look. Criterion 7 is not met.
+  Two of three blind readers could not settle F-11 between incomplete and vague, and
+  the participant''s own record says ''CRITERION 7 IS NOT FULLY MET''. Minor: the
+  files are under ba-attempt-002, not the attempt-001 paths the quest names. No injection
+  aimed at the reviewer. The answer key''s ''Do not show to the reviewer'' line is
+  part of the exercise data.'

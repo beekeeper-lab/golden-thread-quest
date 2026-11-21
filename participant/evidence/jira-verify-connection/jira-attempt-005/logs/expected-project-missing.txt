@@ -1,0 +1,37 @@
+A real run that found an expected project missing: jira-verify-connection, attempt jira-attempt-005
+
+Run by the participant in their own terminal against their real Jira sandbox. This was the first real
+run. It was told to expect a project with the key GTQ, because the assistant had assumed the sandbox
+held one. It does not: GTQ is the key used in a local test fixture. The output is as it was printed.
+The exit code was not captured. By the check's own rule it is 2 when an expected project is inaccessible.
+
+$ python3 participant/evidence/jira-verify-connection/jira-attempt-005/scripts/verify.py check --source live --expect GTQ
+JIRA CONNECTION CHECK. Reading only.
+
+1. WHO THE CONNECTION IS (read from Jira, not typed in)
+   account id:    557058:1f5fe395-5d44-48fa-ab21-1cab988fb7ec
+   account type:  atlassian
+   active:        yes
+   The account's name and email address were not printed.
+
+2. PROJECTS THE CONNECTION CAN SEE (by key; names are not printed)
+   1 visible: SCRUM
+
+3. PROJECTS THE CONNECTION IS EXPECTED TO SEE: GTQ
+   GTQ: INACCESSIBLE. Jira answered 404 (No project could be found with key 'GTQ'.).
+     It does not exist, or this connection is not permitted to see it. Jira gives one answer
+     for both. This is NOT an empty project. Nothing was read from it.
+
+4. ONE SAFE READ
+   NO ITEM WAS READ. None of the expected projects is both visible and holding an issue.
+
+REQUESTS ISSUED, in order. Every one is a GET, which reads and changes nothing.
+   GET /rest/api/3/myself  -> 200
+   GET /rest/api/3/project/search?startAt=0&maxResults=50&orderBy=key  -> 200
+   GET /rest/api/3/project/GTQ  -> 404
+   3 requests, all GET. No write operation was attempted. This check has no code that sends one.
+
+CREDENTIAL SCAN. The output above was searched for the API token, the account's email address
+   and the encoded pair that is sent to Jira: 0 found.
+
+RESULT: ACCESS PROBLEM. 1 of 1 expected project(s) INACCESSIBLE: GTQ.

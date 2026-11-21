@@ -1,0 +1,25 @@
+schema_version: 1
+review_id: review-20261014222647-4e1067
+quest_id: base-camp-repository-safety
+quest_version: 2
+attempt_id: base-attempt-001
+evidence_hash: sha256:cd65ebf517ce665f7aec8ceec7ca3df29dc6b43f797a712c77820ffad5d20cfb
+reviewer:
+  display_name: Gregg Reed
+reviewed_at: '2026-10-14T22:26:47Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/audit-log.md
+  digest: sha256:3e55456f9ffa9f81d4b679d9bab384533e7a774a0ae5d803cb0e80ff0d7ba808
+- path: participant/context/repository-ownership.md
+  digest: sha256:8bbd4b9977f406cecffe9aff944a6b8b5c1534b331e393f00294b0fd4873052a
+verification_statement: Read PROOF.md, ownership doc and audit log against all 7 acceptance
+  criteria; ran create-fake-ticket.py twice in a clean copy (preview, yes, then no
+  duplicate on rerun); checked every ownership-doc path against git and .gitignore;
+  no secrets found. Credentials section added after submission was read and is benign.
+acknowledged_changed_evidence: true
+validation_result_ids:
+- validate-repository-foundation-20261014172156037086-c84175
+- validate-repository-foundation-20261014174820451682-4cfc2b
+- validate-repository-foundation-20261014175143974982-c5c422

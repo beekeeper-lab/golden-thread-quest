@@ -1,0 +1,12 @@
+{
+  "title": "Monthly churn report for the finance team",
+  "description": "Finance needs a monthly report showing customer churn by region and plan. Export it as CSV from the billing warehouse on the first working day of each month.",
+  "labels": [
+    "reporting",
+    "finance"
+  ],
+  "components": [
+    "Reports"
+  ],
+  "parent": "RPT-1"
+}

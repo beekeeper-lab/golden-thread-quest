@@ -1,0 +1,36 @@
+JIRA CONNECTION CHECK: A PROJECT THAT SHOULD NOT BE VISIBLE. Reading only.
+
+1. WHO THE CONNECTION IS (read from Jira, not typed in)
+   account id:    557058:1f5fe395-5d44-48fa-ab21-1cab988fb7ec
+   account type:  atlassian
+   active:        yes
+   The account's name and email address were not printed.
+
+2. PROJECTS THE CONNECTION CAN SEE (by key; names are not printed)
+   1 visible: SCRUM
+
+3. THE PROJECT THAT SHOULD NOT BE VISIBLE: ZZNONE
+   In the list of visible projects above: no
+   Asked Jira for the project itself: REFUSED. Jira answered 404 (No project could be found with key 'ZZNONE'.).
+   Asked what the connection may do there: Jira answered 404 (Could not find project with provided key.).
+   For comparison, a search of the same project: Jira answered 200 with 0 issue(s).
+     Taken alone, that search is the answer an EMPTY project gives. This is why the check
+     does not decide from a search.
+
+4. WHAT THIS MEANS
+   ZZNONE is INACCESSIBLE to this connection. It does not exist, or the connection is not permitted
+   to see it. Jira gives the same answer for both, so the check cannot say which.
+   It is reported as INACCESSIBLE. It is not reported as empty. Nothing was read from it.
+
+REQUESTS ISSUED, in order. Every one is a GET, which reads and changes nothing.
+   GET /rest/api/3/myself  -> 200
+   GET /rest/api/3/project/search?startAt=0&maxResults=50&orderBy=key  -> 200
+   GET /rest/api/3/project/ZZNONE  -> 404
+   GET /rest/api/3/mypermissions?projectKey=ZZNONE&permissions=BROWSE_PROJECTS  -> 404
+   GET /rest/api/3/search/jql?jql=project = "ZZNONE" ORDER BY key ASC&maxResults=1&fields=summary,status  -> 200
+   5 requests, all GET. No write operation was attempted. This check has no code that sends one.
+
+CREDENTIAL SCAN. The output above was searched for the API token, the account's email address
+   and the encoded pair that is sent to Jira: 0 found.
+
+RESULT: REFUSED, AS IT SHOULD BE. ZZNONE is inaccessible to this connection.

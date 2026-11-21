@@ -1,0 +1,34 @@
+schema_version: 1
+review_id: review-20261022212509-203cbb
+quest_id: jira-read-assigned-stories
+quest_version: 2
+attempt_id: jira-attempt-001
+evidence_hash: sha256:4b2498941c8b8be7ee87d03b1a7c63d3f8007ff2d1f428d9cdb6fc5b6d69a75e
+reviewer:
+  display_name: Gregg Reed
+reviewed_at: '2026-10-22T21:25:09Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/jira/assigned/index.md
+  digest: sha256:ce82588d70a81e328eff15668b1977569e009e3cb0e9f72d77404c150c8c617c
+- path: participant/context/jira/assigned/stories.json
+  digest: sha256:138bd1ad4683d9e4a9c1206a9faf682a6fbc77b74f50f7bb016aacb252594722
+- path: participant/skills/jira-read-assigned/SKILL.md
+  digest: sha256:ef5d93440a67a9707070b93cb706aee427487cf3f391e22d07824a6f1940fd22
+verification_statement: Read PROOF.md and SKILL.md against all 10 acceptance criteria;
+  read sync.py (identity from /myself, token-based paging with loop guard, https only,
+  GET only, no secrets in errors); ran the 17 stub tests and rerun_check.py in a clean
+  copy, all pass; scanned evidence for tokens and emails, none. Live path only returned
+  zero stories; PROOF.md says so plainly.
+validation_result_ids:
+- validate-jira-read-assigned-20261022195837119380-391fe5
+- validate-jira-read-assigned-20261022195901935946-aa595a
+- validate-jira-read-assigned-20261022195921541139-6996af
+- validate-jira-read-assigned-20261022195922719153-47ca7b
+- validate-jira-read-assigned-20261022195923901075-703f1a
+- validate-jira-read-assigned-20261022203817688717-693239
+- validate-jira-read-assigned-20261022203818942532-522c3f
+- validate-jira-read-assigned-20261022203820235032-6079ff
+- validate-jira-read-assigned-20261022203821471144-703542
+- validate-jira-read-assigned-20261022204023764694-8deddb

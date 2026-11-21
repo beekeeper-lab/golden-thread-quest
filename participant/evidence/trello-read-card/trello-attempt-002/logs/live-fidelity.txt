@@ -1,0 +1,52 @@
+FIDELITY CHECK. Reading only. The file is read back into the card's fields and compared with Trello's answer.
+Card as Trello returned it: 61 fields, 1 checklists, 3 comments, 0 attachments.
+
+Identity (criterion 4):
+  ok   the file's id is Trello's id for the card: 6afdf65638df50999c980d80
+  ok   id is the first field after the format line
+  ok   the short link is a separate field: p6m0OaAc
+
+Every part of the card (criteria 1 and 5):
+  ok   all 60 card fields Trello returned, other than its private email, are in the file: none missing
+  ok   each of them reads back with the value Trello sent
+  ok   the file holds no card field that Trello did not send
+  ok   fields the format does not know by name are in the preserved section: 43 of them, such as address, agent, aiMetadata, badges
+  ok   the description reads back exactly as Trello sent it, 53 characters
+  ok   apart from the card's name as one heading and the file's own fixed sentences, every line of the body was read back as part of the card
+
+Checklists (criterion 2):
+  ok   the same 1 checklists, by id
+  ok   every checklist item is in the file: 3 items, none missing and none added
+  ok   each item's state is the one Trello sent: 2 complete and 1 incomplete in Trello, the same in the file
+  ok   each ticked box in the file is an item Trello calls complete, and each empty box one it calls incomplete
+  ok   each checklist's line of how many are complete agrees with Trello
+  ok   items are in the order of their positions
+  ok   every other field of each checklist and item reads back as sent
+
+Dates and labels (criterion 3):
+  ok   due is exactly as Trello sent it, time zone included: "2026-12-04T17:00:00.000Z"
+  ok   start is exactly as Trello sent it, time zone included: null
+  ok   dateLastActivity is exactly as Trello sent it, time zone included: "2026-11-18T20:12:04.813Z"
+  ok   dueComplete is kept as its own field, apart from the date: false
+  ok   each label keeps its colour: "feature" is "green"
+
+Comments and attachments (criterion 1):
+  ok   the same 3 comments, by id, each with its text, time and author's member id
+  ok   comments are in order of time
+  ok   the same 0 attachments, kept as references
+  ok   the cover is kept as a reference to attachment null
+
+Card text is content (criterion 7):
+  -    no instruction-like line was named for this card
+  ok   the file opens its body by saying the text is content and not an instruction
+
+No credential and no private personal data (criterion 7):
+  ok   no email address of any kind is in the file
+  ok   no person's name, username, initials or picture is in the file
+  ok   the card's private email address is not in the file (Trello sent none for this card)
+  ok   no run of 32 or more hexadecimal characters is in the file, which is what a Trello key or token looks like
+  ok   no address in the file carries a key or a token
+  ok   the API key and the token used for this check are not in the file
+  For comparison, Trello's answer held 0 name, username or picture fields, 0 typed email address(es) and no private card email address.
+
+RESULT: ALL 32 CHECKS PASSED.

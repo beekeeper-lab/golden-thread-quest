@@ -1,0 +1,57 @@
+test_a_citation_may_span_lines (test_preview.Citations) ... ok
+test_a_citation_that_is_not_true_is_refused (test_preview.Citations) ... ok
+test_a_source_changed_after_the_draft_was_written_is_caught (test_preview.Citations) ... ok
+test_citations_are_shown_and_counted (test_preview.Citations) ... ok
+test_content_without_a_citation_is_refused (test_preview.Citations) ... ok
+test_a_live_run_needs_all_three_variables_and_https (test_preview.CommandLine) ... ok
+test_output_holding_a_credential_is_not_shown_or_saved (test_preview.CommandLine) ... ok
+test_the_site_is_on_screen_and_not_in_the_saved_log (test_preview.CommandLine) ... ok
+test_there_is_no_option_that_creates (test_preview.CommandLine) ... ok
+test_a_likely_duplicate_is_shown_loudly_and_a_person_still_decides (test_preview.Duplicates) ... ok
+test_a_stale_catalog_stops_the_preview (test_preview.Duplicates) ... ok
+test_no_duplicate_says_none (test_preview.Duplicates) ... ok
+test_stories_in_jira_that_the_catalog_lacks_are_warned_about (test_preview.Duplicates) ... ok
+test_stories_in_the_catalog_that_jira_lacks_are_said (test_preview.Duplicates) ... ok
+test_the_catalog_and_jira_holding_the_same_number_of_stories_is_said (test_preview.Duplicates) ... ok
+test_the_difference_from_the_nearest_story_is_shown (test_preview.Duplicates) ... ok
+test_the_duplicate_search_result_is_shown (test_preview.Duplicates) ... ok
+test_the_search_leaves_the_catalog_as_it_was (test_preview.Duplicates) ... ok
+test_a_story_appearing_during_the_preview_is_refused (test_preview.NothingIsWritten) ... ok
+test_every_request_is_a_get_and_the_snapshot_is_the_same (test_preview.NothingIsWritten) ... ok
+test_jira_unreachable_is_a_refusal (test_preview.NothingIsWritten) ... ok
+test_story_text_from_jira_is_never_printed (test_preview.NothingIsWritten) ... ok
+test_the_preview_has_no_code_that_writes_to_jira (test_preview.NothingIsWritten) ... ok
+test_a_project_not_on_the_allowlist_is_refused_after_one_request (test_preview.PermissionAndAllowlist) ... ok
+test_a_project_that_cannot_be_seen_is_refused (test_preview.PermissionAndAllowlist) ... ok
+test_an_empty_field_list_is_refused (test_preview.PermissionAndAllowlist) ... ok
+test_no_answer_to_the_permission_check_assumes_nothing (test_preview.PermissionAndAllowlist) ... ok
+test_no_permission_to_create_is_refused (test_preview.PermissionAndAllowlist) ... ok
+test_the_permission_result_is_shown (test_preview.PermissionAndAllowlist) ... ok
+test_the_same_project_id_on_another_site_is_refused (test_preview.PermissionAndAllowlist) ... ok
+test_a_default_jira_does_not_name_is_said_to_be_unknown (test_preview.RequiredFields) ... ok
+test_a_draft_with_no_summary_or_target_is_refused (test_preview.RequiredFields) ... ok
+test_a_missing_required_field_stops_the_preview_and_is_named (test_preview.RequiredFields) ... ok
+test_a_required_field_with_a_default_is_left_to_jira_and_shown (test_preview.RequiredFields) ... ok
+test_every_missing_required_field_is_named (test_preview.RequiredFields) ... ok
+test_nothing_is_written_to_the_payload_file_when_refused (test_preview.RequiredFields) ... ok
+test_a_draft_with_no_description_sends_none (test_preview.ThePreview) ... ok
+test_a_preview_is_saved_with_a_fingerprint_for_a_later_write (test_preview.ThePreview) ... ok
+test_it_lists_the_project_the_issue_type_and_every_field (test_preview.ThePreview) ... ok
+test_the_field_list_is_read_through_all_its_pages (test_preview.ThePreview) ... ok
+test_the_payload_file_holds_the_same_payload_field_by_field (test_preview.ThePreview) ... ok
+test_the_payload_holds_exactly_the_draft_and_nothing_else (test_preview.ThePreview) ... ok
+test_the_payload_is_built_once_and_turned_into_bytes_in_one_place (test_preview.ThePreview) ... ok
+test_the_payload_shown_is_the_payload_saved_and_hashed (test_preview.ThePreview) ... ok
+test_the_same_draft_gives_the_same_payload_file (test_preview.ThePreview) ... ok
+test_a_field_jira_does_not_take_on_create_is_refused (test_preview.WhatJiraAllows) ... ok
+test_a_field_of_another_kind_than_expected_is_refused (test_preview.WhatJiraAllows) ... ok
+test_a_field_the_preview_does_not_support_is_refused (test_preview.WhatJiraAllows) ... ok
+test_a_priority_is_sent_by_id_and_must_be_one_jira_offers (test_preview.WhatJiraAllows) ... ok
+test_a_summary_must_be_one_line_of_at_most_255_characters (test_preview.WhatJiraAllows) ... ok
+test_description_becomes_paragraphs_and_plain_lists (test_preview.WhatJiraAllows) ... ok
+test_values_jira_does_not_allow_are_refused (test_preview.WhatJiraAllows) ... ok
+
+----------------------------------------------------------------------
+Ran 52 tests in 0.257s
+
+OK

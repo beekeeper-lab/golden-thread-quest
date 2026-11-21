@@ -1,0 +1,85 @@
+{
+ "board": {
+  "id": "80b000000000000000000002",
+  "name": "Made-up support team board"
+ },
+ "cards": [
+  {
+   "closed": false,
+   "due": "2026-12-05T17:00:00.000Z",
+   "due_complete": false,
+   "due_known": true,
+   "file": "82c000000000000000000201.md",
+   "gaps": [],
+   "id": "82c000000000000000000201",
+   "labels": [
+    {
+     "color": "blue",
+     "id": "83e000000000000000000021",
+     "name": "customer-request"
+    },
+    {
+     "color": "blue",
+     "id": "83e000000000000000000022",
+     "name": "export"
+    }
+   ],
+   "list_id": "81a000000000000000000022",
+   "members": [
+    "5f0000000000000000000012",
+    "5f0000000000000000000013"
+   ],
+   "name": "Let admins download their contacts in a spreadsheet",
+   "pos": 100,
+   "short_link": "FAKE0201"
+  },
+  {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "due_known": true,
+   "file": "82c000000000000000000202.md",
+   "gaps": [],
+   "id": "82c000000000000000000202",
+   "labels": [
+    {
+     "color": "blue",
+     "id": "83e000000000000000000023",
+     "name": "billing"
+    }
+   ],
+   "list_id": "81a000000000000000000021",
+   "members": [
+    "5f0000000000000000000013"
+   ],
+   "name": "Refund policy wording for annual plans",
+   "pos": 100,
+   "short_link": "FAKE0202"
+  }
+ ],
+ "counts": {
+  "files": 2,
+  "indexed": 2,
+  "not_indexed": 0,
+  "repeats": 0
+ },
+ "format": "trello-index/1",
+ "lists": [
+  {
+   "closed": false,
+   "id": "81a000000000000000000021",
+   "name": "Inbox",
+   "pos": 1000
+  },
+  {
+   "closed": false,
+   "id": "81a000000000000000000022",
+   "name": "In progress",
+   "pos": 2000
+  }
+ ],
+ "not_indexed": [],
+ "note": "Generated. The card records and the board record are the source of truth. Do not edit by hand.",
+ "records_fingerprint": "d91c2a18e169cb78ba25329d7dd66fd320e2ff56f2d42880518c70e9cd7ca841",
+ "repeats": []
+}

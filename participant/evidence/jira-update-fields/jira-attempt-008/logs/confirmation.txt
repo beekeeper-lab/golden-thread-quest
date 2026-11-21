@@ -1,0 +1,267 @@
+Four refusals and the approved run: jira-update-fields, attempt jira-attempt-008
+Recorded by scripts/record_evidence.py. Each block between dashed lines is what a command printed.
+The Jira here is scripts/fake_jira.py, a made-up one. No real Jira was read or written, so nothing is
+redacted: the site, the projects and the stories are invented. STATE stands for a temporary folder.
+
+
+==============================================================================
+0. The preview that the rest of this record is about.
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/update.py preview --source fake --change participant/evidence/jira-update-fields/jira-attempt-008/scripts/changes/wanted.json --allowlist participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake-allowlist.json --state STATE
+------------------------------------------------------------------------------
+PREVIEW. Nothing has been written.
+
+Jira site:  https://fixture-site.example.invalid  (site fingerprint 738169e667642f09)
+Project:    SAND (project id 20001). On the sandbox allowlist: yes.
+Story:      SAND-1 (issue id 30001). The id is what identifies it.
+
+Changes that would be made: 3 fields.
+  labels    now:    ["onboarding"]
+            after:  ["onboarding", "q4"]
+  duedate   now:    2026-12-01
+            after:  2026-12-15
+  priority  now:    "Medium" (id 3)
+            after:  "High" (id 2)
+Nothing else on the story would be sent.
+Jira may email the story's watchers about the change, as it does for any edit.
+
+Permission check, asked of Jira for this story and this identity:
+  may see the story  (BROWSE_PROJECTS): yes
+  may edit the story (EDIT_ISSUES):     yes
+  fields Jira lists as editable here:   labels yes, duedate yes, priority yes
+Duplicate check: an edit sets a field to a value and creates nothing, so there is no second copy to make.
+  What could repeat is the same edit being sent twice. Checked against Jira just now: 0 of the 3
+  fields named already hold the wanted value and would not be sent. Jira's documentation does not say
+  whether sending a value a field already holds adds a history entry, so this workflow never sends one.
+Where Jira cannot check: its edit request has no 'only if the value is still the one I saw' condition.
+  The confirmation reads the story again just before writing and stops if a field has moved.
+
+Snapshot of the whole story as Jira returned it, before the preview: 77c887e4c1e83da2
+Snapshot of the whole story as Jira returned it, after the preview:  77c887e4c1e83da2
+The two are the same. Jira is unchanged.
+Requests sent to Jira: 5. Every one was a GET, which reads and cannot change anything.
+  GET /rest/api/3/issue/SAND-1
+  GET /rest/api/3/myself
+  GET /rest/api/3/mypermissions
+  GET /rest/api/3/issue/30001/editmeta
+  GET /rest/api/3/issue/30001
+
+Fingerprint of this preview: fc564d843083
+Made:    2026-11-19 15:53:56 UTC
+Expires: 2026-11-19 16:08:56 UTC (15 minutes after it was made)
+
+Nothing has been written. To make these changes, a person who has read this preview confirms it by
+its fingerprint.
+------------------------------------------------------------------------------
+exit code: 0
+  ok   a fingerprint was issued
+
+==============================================================================
+REFUSAL 1. A missing confirmation: the confirm command with no fingerprint and no name.
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/update.py confirm --source fake --change participant/evidence/jira-update-fields/jira-attempt-008/scripts/changes/wanted.json --allowlist participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake-allowlist.json --state STATE
+------------------------------------------------------------------------------
+
+REFUSED: no confirmation was given. A confirmation names the fingerprint of the preview it approves, and there is no way to write without one.
+Nothing has been written.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused, exit code 1, nothing written
+And with a fingerprint but no name of a person confirming:
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/update.py confirm --source fake --change participant/evidence/jira-update-fields/jira-attempt-008/scripts/changes/wanted.json --allowlist participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake-allowlist.json --state STATE --fingerprint fc564d843083
+------------------------------------------------------------------------------
+
+REFUSED: no confirmation was given. A confirmation gives the name of the person confirming.
+Nothing has been written.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused, exit code 1, nothing written
+
+==============================================================================
+REFUSAL 2. A change that differs from the preview. The fingerprint is the right one, and the
+change file now asks for priority Highest where the preview showed High.
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/update.py confirm --source fake --change participant/evidence/jira-update-fields/jira-attempt-008/scripts/changes/wanted-then-edited.json --allowlist participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake-allowlist.json --state STATE --fingerprint fc564d843083 --confirmed-by "the participant"
+------------------------------------------------------------------------------
+
+REFUSED: the change is not the one that was previewed: priority: the preview showed "High" (id 2) and the change file now asks for "Highest" (id 1). Make a new preview and read it.
+Nothing has been written.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused, exit code 1, nothing written
+
+==============================================================================
+REFUSAL 3. A preview older than the limit of 15 minutes. The test clock is moved 16 minutes on.
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/update.py confirm --source fake --change participant/evidence/jira-update-fields/jira-attempt-008/scripts/changes/wanted.json --allowlist participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake-allowlist.json --state STATE --fingerprint fc564d843083 --confirmed-by "the participant" --pretend-minutes-later 16
+------------------------------------------------------------------------------
+TEST CLOCK: pretending it is 16 minutes later than it is.
+
+REFUSED: this preview is too old. It was made 16 minutes ago and the limit is 15. Make a new preview and read it.
+Nothing has been written.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused, exit code 1, nothing written
+
+==============================================================================
+REFUSAL 4. A project that is not on the sandbox allowlist. PROD-9 is a story this identity is
+permitted to edit, so the allowlist is the only thing that stops it.
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/update.py preview --source fake --change participant/evidence/jira-update-fields/jira-attempt-008/scripts/changes/not-on-allowlist.json --allowlist participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake-allowlist.json --state STATE
+------------------------------------------------------------------------------
+
+REFUSED: project PROD (project id 20002) on the Jira site with fingerprint 738169e667642f09 is not on the sandbox allowlist (participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake-allowlist.json). This workflow writes only to projects listed there.
+Nothing has been written.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused at the preview, exit code 1, and no fingerprint was issued, so there is nothing to confirm
+The allowlist is checked again at confirmation. Here the good preview is confirmed against an allowlist
+that no longer lists SAND:
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/update.py confirm --source fake --change participant/evidence/jira-update-fields/jira-attempt-008/scripts/changes/wanted.json --allowlist participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake-allowlist-without-sand.json --state STATE --fingerprint fc564d843083 --confirmed-by "the participant"
+------------------------------------------------------------------------------
+
+REFUSED: project SAND (project id 20001) on the Jira site with fingerprint 738169e667642f09 is not on the sandbox allowlist (participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake-allowlist-without-sand.json). This workflow writes only to projects listed there.
+Nothing has been written.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused, exit code 1, nothing written
+
+==============================================================================
+After the four refusals, what the fake Jira holds.
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake_jira.py show --state STATE --story SAND-1
+------------------------------------------------------------------------------
+FAKE JIRA holds for SAND-1 (issue id 30001): labels ["onboarding"], duedate "2026-12-01", priority "Medium". Changelog entries: 0.
+------------------------------------------------------------------------------
+exit code: 0
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake_jira.py show --state STATE --story PROD-9
+------------------------------------------------------------------------------
+FAKE JIRA holds for PROD-9 (issue id 30004): labels ["live"], duedate "2026-12-01", priority "Medium". Changelog entries: 0.
+------------------------------------------------------------------------------
+exit code: 0
+  ok   SAND-1 is as it was before the preview, with no history entries
+  ok   PROD-9 is as it was, with no history entries
+
+==============================================================================
+THE APPROVED RUN. The same preview, confirmed by its fingerprint, with the confirming person's
+name, the unchanged change file, and inside the time limit. In this recording the command is
+started by the recording script, which stands in for the person. In a real run a person types it.
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/update.py confirm --source fake --change participant/evidence/jira-update-fields/jira-attempt-008/scripts/changes/wanted.json --allowlist participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake-allowlist.json --state STATE --fingerprint fc564d843083 --confirmed-by "the participant"
+------------------------------------------------------------------------------
+CONFIRMATION for preview fc564d843083, given by: the participant (the name given with the confirmation).
+
+Jira site:  https://fixture-site.example.invalid  (site fingerprint 738169e667642f09)
+Project:    SAND (project id 20001). On the sandbox allowlist: yes.
+Story:      SAND-1 (issue id 30001). The id is what identifies it.
+
+Checked in this run, before writing:
+  the preview is 0 minutes old, and the limit is 15: ok
+  the saved preview is unaltered and has not been used: ok
+  the change file asks for exactly what the preview showed: ok
+  the project is on the sandbox allowlist for this site: ok
+  Jira says this identity may edit the story and these fields: ok
+  each field still holds in Jira the value the preview saw, read just before the write:
+    labels    preview saw ["onboarding"], Jira holds ["onboarding"]: the same
+    duedate   preview saw 2026-12-01, Jira holds 2026-12-01: the same
+    priority  preview saw "Medium" (id 3), Jira holds "Medium" (id 3): the same
+
+WRITTEN to Jira: one edit of story SAND-1, fields labels, duedate, priority. Jira answered 204.
+The confirmation and the write happened in this one run of the command.
+
+Read back from Jira after the write:
+  labels    ["onboarding", "q4"]: as proposed
+  duedate   2026-12-15: as proposed
+  priority  "High" (id 2): as proposed
+
+Identifier of the change: Jira changelog entry 40001 for issue id 30001.
+  It is the history entry that was not there before the write, made by this identity, on these fields.
+  For each field, the value that entry records from before the write is the one the preview saw.
+
+RESULT RECORD
+  Issue key: SAND-1
+  Issue id: 30001 (this identifies the story; a key can change)
+  Target project: SAND (project id 20001), on the sandbox allowlist
+  Jira site: [site address removed], site fingerprint 738169e667642f09
+  Identifier of what was changed: Jira changelog entry 40001
+  Field labels: before ["onboarding"]; after ["onboarding", "q4"]; read back from Jira ["onboarding", "q4"]
+  Field duedate: before 2026-12-01; after 2026-12-15; read back from Jira 2026-12-15
+  Field priority: before "Medium" (id 3); after "High" (id 2); read back from Jira "High" (id 2)
+  Written at: 2026-11-19 15:53:56 UTC
+  Confirmed by: the participant, at 2026-11-19 15:53:56 UTC
+  Preview: fingerprint fc564d843083, made 2026-11-19 15:53:56 UTC
+  To reverse: make a new preview that sets each field back to its 'before' value. A field that was not set before cannot be put back by this workflow, which does not clear fields
+------------------------------------------------------------------------------
+exit code: 0
+  ok   written, exit code 0
+  ok   the confirmation names the preview's fingerprint and who confirmed (criterion 7)
+  ok   the confirmation and the write were in the same run
+  ok   each field was read back as proposed
+  ok   the result record has the issue key, the changelog entry, the project, the time and the confirmer (criterion 8)
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake_jira.py show --state STATE --story SAND-1
+------------------------------------------------------------------------------
+FAKE JIRA holds for SAND-1 (issue id 30001): labels ["onboarding", "q4"], duedate "2026-12-15", priority "High". Changelog entries: 1.
+------------------------------------------------------------------------------
+exit code: 0
+  ok   the fake Jira now holds the three new values, with one history entry
+
+RESULT: ALL CHECKS PASSED. (The checks are on the fake-Jira runs above.)
+
+##############################################################################
+THE SAME ON THE REAL JIRA SANDBOX
+The blocks below were not made by this script. The participant ran each command in their own
+terminal against their real Jira sandbox, and the updater saved its output with the site's
+address replaced by a marker. They are copied here unchanged from the log files named.
+
+A real refusal: the first real preview, made before the sandbox project had been put on the allowlist.
+(copied from logs/live-not-on-allowlist.txt)
+------------------------------------------------------------------------------
+REFUSED: project SCRUM (project id 10000) on the Jira site with fingerprint 4aabe3d08fbad6b1 is not on the sandbox allowlist (participant/context/jira/update/sandbox-allowlist.json). This workflow writes only to projects listed there.
+Nothing has been written.
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.
+------------------------------------------------------------------------------
+
+The real approved run: the participant confirming the real preview by its fingerprint.
+(copied from logs/live-confirmation.txt)
+------------------------------------------------------------------------------
+CONFIRMATION for preview 8441425734e1, given by: the participant (the name given with the confirmation).
+
+Jira site:  [site address removed]  (site fingerprint 4aabe3d08fbad6b1)
+Project:    SCRUM (project id 10000). On the sandbox allowlist: yes.
+Story:      SCRUM-1 (issue id 10000). The id is what identifies it.
+
+Checked in this run, before writing:
+  the preview is 0 minutes old, and the limit is 15: ok
+  the saved preview is unaltered and has not been used: ok
+  the change file asks for exactly what the preview showed: ok
+  the project is on the sandbox allowlist for this site: ok
+  Jira says this identity may edit the story and these fields: ok
+  each field still holds in Jira the value the preview saw, read just before the write:
+    labels    preview saw (none), Jira holds (none): the same
+    duedate   preview saw 2026-11-15, Jira holds 2026-11-15: the same
+
+WRITTEN to Jira: one edit of story SCRUM-1, fields labels, duedate. Jira answered 204.
+The confirmation and the write happened in this one run of the command.
+
+Read back from Jira after the write:
+  labels    ["gtq-sandbox"]: as proposed
+  duedate   2026-12-15: as proposed
+  priority  (not set): not part of the write, and unchanged
+
+Identifier of the change: Jira changelog entry 10049 for issue id 10000.
+  It is the history entry that was not there before the write, made by this identity, on these fields.
+  For each field, the value that entry records from before the write is the one the preview saw.
+
+RESULT RECORD
+  Issue key: SCRUM-1
+  Issue id: 10000 (this identifies the story; a key can change)
+  Target project: SCRUM (project id 10000), on the sandbox allowlist
+  Jira site: [site address removed], site fingerprint 4aabe3d08fbad6b1
+  Identifier of what was changed: Jira changelog entry 10049
+  Field labels: before (none); after ["gtq-sandbox"]; read back from Jira ["gtq-sandbox"]
+  Field duedate: before 2026-11-15; after 2026-12-15; read back from Jira 2026-12-15
+  Written at: 2026-11-19 15:47:13 UTC
+  Confirmed by: the participant, at 2026-11-19 15:47:10 UTC
+  Preview: fingerprint 8441425734e1, made 2026-11-19 15:46:21 UTC
+  To reverse: make a new preview that sets each field back to its 'before' value. A field that was not set before cannot be put back by this workflow, which does not clear fields
+
+The result record was also saved as Markdown where --result said.
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.
+------------------------------------------------------------------------------

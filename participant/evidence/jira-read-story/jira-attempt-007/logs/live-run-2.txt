@@ -1,0 +1,14 @@
+STORY READER. Reading only.
+Story: issue id 10000, key SCRUM-1. The id is what identifies it.
+Fields Jira returned: 51
+  in the front matter, known by name:  17
+  in the body, as Markdown:            1 (the description)
+  in the preserved section, unchanged: 33
+  total placed: 51 of 51
+Removed before saving: people reduced to an account id: 2, site links removed: 12
+In the description: nothing the converter did not know
+File: UNCHANGED. It already holds exactly these 5030 bytes, and was not rewritten.
+SHA-256 of the file: 1f0399a4188e94acdaf88854a2bec3ab80d728a56b4b739c3232e34d31170eec
+
+The output above was searched for the API token, the account's email address, their encoded form
+and the site's address: none found.

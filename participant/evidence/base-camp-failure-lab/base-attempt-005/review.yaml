@@ -1,0 +1,30 @@
+schema_version: 1
+review_id: review-20261117195436-50e87e
+quest_id: base-camp-failure-lab
+quest_version: 1
+attempt_id: base-attempt-005
+evidence_hash: sha256:fcdb7a12a7513d29e5092f8fbac1dbc04268c1fed524167f1b2295671e0f5897
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-17T19:54:36Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/failure-policy.md
+  digest: sha256:b131f119244189adf0073e0110087a78e13079051788798e422f8940aa42545e
+verification_statement: 'Automated review. Read the policy, PROOF.md, both command
+  records, the planted-false-success log, the scripts and the saved work/ files, and
+  checked them against each other. The logs, saved files and code agree: counts (40/60/99/100),
+  reasons, exit codes, and the missing STORY-047 in the 4b file match the injected
+  item 7 on page 3. All four failures are injected on demand and logged with INJECTED
+  lines. The timeout is bounded at 3 tries. The partial response is caught by comparing
+  the received count with the service''s total. Rate-limit waits follow Retry-After
+  within 10 s and 3 waits. Malformed data is rejected with a reason and not repaired.
+  Every failed run reports how much work completed. The no-false-success sweep shows
+  no file says complete unless it holds all 100 stories, and a planted false success
+  was caught. PROOF.md covers how a partial response is detected and which failure
+  was hardest to tell from success, citing the criteria by number. One path difference:
+  the evidence is in base-attempt-005, not the attempt-001 path the quest names. The
+  pre-check passed, so this is noted as advisory. No text addressed to the reviewer
+  was found. Each of the 7 acceptance criteria was matched to text quoted word for
+  word from the evidence.'

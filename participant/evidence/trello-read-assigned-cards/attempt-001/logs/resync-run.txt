@@ -1,0 +1,162 @@
+Syncing again: trello-read-assigned-cards, attempt trello-attempt-007
+Recorded by scripts/record_evidence.py. No request was sent to Trello. Every board, card and member is made up.
+
+==============================================================================
+PART 1. The notes, before. (criterion 7)
+  3 notes files in participant/context/trello/assigned/notes. They stand in for what a person would write beside a card.
+  SHA-256 taken by this script before the first sync of all:
+    6e73e4bd4cfbd1c571bb416d8269717d602a73e4bee59e46afb60e82b477d58b  62c010000000000000000002.md
+    92b40f2a921d0619bfc86a911143f89f155d7561c0ba73e40966681d99d4ee67  62c010000000000000000032.md
+    4723a5c8624102431a4f4bca41a367bd0239c58d17c2ac4c48204ad3120de587  62c020000000000000000004.md
+  One of them is for card 62c020000000000000000004, which is given to someone else in part 3.
+  ok   there is a notes file for that card
+  From the first sync, recorded in assigned-run.txt: 90 cards held, all assigned.
+  SHA-256 of the index after the first sync:  c1a4bb0018421883f13b24225aaa5312ef16adb04948d3b4a7d970e06bc5c956
+  SHA-256 of the memory after the first sync: be586f356a1eb8dd99e2f5ed69025d67b8c7515f55ab89e8f55251941c83b356
+
+==============================================================================
+PART 2. Two more syncs of unchanged data. (criterion 5)
+  Sync 2.
+$ python3 participant/skills/trello-read-assigned-cards/sync.py --source fake
+------------------------------------------------------------------------------
+assigned-sync: member read from the connection: member id 5f0000000000000000000001. Trello was asked "who am I?". No member is named in the skill or given to it
+assigned-sync: boards the connection can reach: 5 (4 open, 1 closed)
+assigned-sync:   board 60b010000000000000000000, open: 130 cards read in 3 requests (50 + 50 + 30), 65 assigned to the member
+assigned-sync:   board 60b020000000000000000000, open: 24 cards read in 1 request (24), 12 assigned to the member
+assigned-sync:   board 60b030000000000000000000, open: 12 cards read in 1 request (12), 6 assigned to the member
+assigned-sync:   board 60b040000000000000000000, open: 6 cards read in 1 request (6), 3 assigned to the member
+assigned-sync:   board 60b050000000000000000000, closed: 9 cards read in 1 request (9), 4 assigned to the member
+assigned-sync: page limit: 50 cards for one request. Largest board: 130 cards, more than one page, retrieved completely
+assigned-sync: retrieved: 90 cards assigned to the member, on 5 boards searched
+assigned-sync: Trello's own list of the member's cards holds 90. Every one of them on a board searched was found
+assigned-sync: archived cards: an archived card that is still assigned to the member is INCLUDED, in its own section, and is not counted as open work. A card is archived when the card, its list or its board is archived or closed.
+assigned-sync:   of the 90 retrieved: 79 open, 11 archived (4 by card, 3 by list, 4 by board)
+assigned-sync: cards held before this sync: 90. This sync: 0 new, 0 changed, 90 unchanged, 0 newly flagged as no longer assigned, 0 assigned again
+assigned-sync: counts: retrieved 90, held and no longer assigned 0, expected in the index 90. Rows saved in the index: 90. The counts agree
+assigned-sync: notes: 3 files, opened for reading only. SHA-256 before and after this sync:
+assigned-sync:   notes/62c010000000000000000002.md  before 6e73e4bd4cfbd1c571bb416d8269717d602a73e4bee59e46afb60e82b477d58b  after 6e73e4bd4cfbd1c571bb416d8269717d602a73e4bee59e46afb60e82b477d58b  same
+assigned-sync:   notes/62c010000000000000000032.md  before 92b40f2a921d0619bfc86a911143f89f155d7561c0ba73e40966681d99d4ee67  after 92b40f2a921d0619bfc86a911143f89f155d7561c0ba73e40966681d99d4ee67  same
+assigned-sync:   notes/62c020000000000000000004.md  before 4723a5c8624102431a4f4bca41a367bd0239c58d17c2ac4c48204ad3120de587  after 4723a5c8624102431a4f4bca41a367bd0239c58d17c2ac4c48204ad3120de587  same
+assigned-sync: requests made: 15, every one a GET
+assigned-sync: index written: participant/context/trello/assigned/index.md
+------------------------------------------------------------------------------
+exit code: 0
+  ok   sync 2 ran, and found 0 new, 0 changed, 90 unchanged
+  ok   sync 2: the same 90 card ids are held, each once, and the index has 90 card rows
+  ok   sync 2: the index and the memory are byte for byte what the first sync wrote
+  ok   sync 2: every notes file has the SHA-256 it had at the start
+  Sync 3.
+$ python3 participant/skills/trello-read-assigned-cards/sync.py --source fake
+------------------------------------------------------------------------------
+assigned-sync: member read from the connection: member id 5f0000000000000000000001. Trello was asked "who am I?". No member is named in the skill or given to it
+assigned-sync: boards the connection can reach: 5 (4 open, 1 closed)
+assigned-sync:   board 60b010000000000000000000, open: 130 cards read in 3 requests (50 + 50 + 30), 65 assigned to the member
+assigned-sync:   board 60b020000000000000000000, open: 24 cards read in 1 request (24), 12 assigned to the member
+assigned-sync:   board 60b030000000000000000000, open: 12 cards read in 1 request (12), 6 assigned to the member
+assigned-sync:   board 60b040000000000000000000, open: 6 cards read in 1 request (6), 3 assigned to the member
+assigned-sync:   board 60b050000000000000000000, closed: 9 cards read in 1 request (9), 4 assigned to the member
+assigned-sync: page limit: 50 cards for one request. Largest board: 130 cards, more than one page, retrieved completely
+assigned-sync: retrieved: 90 cards assigned to the member, on 5 boards searched
+assigned-sync: Trello's own list of the member's cards holds 90. Every one of them on a board searched was found
+assigned-sync: archived cards: an archived card that is still assigned to the member is INCLUDED, in its own section, and is not counted as open work. A card is archived when the card, its list or its board is archived or closed.
+assigned-sync:   of the 90 retrieved: 79 open, 11 archived (4 by card, 3 by list, 4 by board)
+assigned-sync: cards held before this sync: 90. This sync: 0 new, 0 changed, 90 unchanged, 0 newly flagged as no longer assigned, 0 assigned again
+assigned-sync: counts: retrieved 90, held and no longer assigned 0, expected in the index 90. Rows saved in the index: 90. The counts agree
+assigned-sync: notes: 3 files, opened for reading only. SHA-256 before and after this sync:
+assigned-sync:   notes/62c010000000000000000002.md  before 6e73e4bd4cfbd1c571bb416d8269717d602a73e4bee59e46afb60e82b477d58b  after 6e73e4bd4cfbd1c571bb416d8269717d602a73e4bee59e46afb60e82b477d58b  same
+assigned-sync:   notes/62c010000000000000000032.md  before 92b40f2a921d0619bfc86a911143f89f155d7561c0ba73e40966681d99d4ee67  after 92b40f2a921d0619bfc86a911143f89f155d7561c0ba73e40966681d99d4ee67  same
+assigned-sync:   notes/62c020000000000000000004.md  before 4723a5c8624102431a4f4bca41a367bd0239c58d17c2ac4c48204ad3120de587  after 4723a5c8624102431a4f4bca41a367bd0239c58d17c2ac4c48204ad3120de587  same
+assigned-sync: requests made: 15, every one a GET
+assigned-sync: index written: participant/context/trello/assigned/index.md
+------------------------------------------------------------------------------
+exit code: 0
+  ok   sync 3 ran, and found 0 new, 0 changed, 90 unchanged
+  ok   sync 3: the same 90 card ids are held, each once, and the index has 90 card rows
+  ok   sync 3: the index and the memory are byte for byte what the first sync wrote
+  ok   sync 3: every notes file has the SHA-256 it had at the start
+
+==============================================================================
+PART 3. A card is reassigned to someone else, and the sync runs again. (criteria 6 and 7)
+  In the made-up Trello, card 62c020000000000000000004 (Support task 4) is taken from the member and given to
+  member 5f0000000000000000000003. --fake-after reassignment makes that change before the sync reads.
+$ python3 participant/skills/trello-read-assigned-cards/sync.py --source fake --fake-after reassignment
+------------------------------------------------------------------------------
+assigned-sync: member read from the connection: member id 5f0000000000000000000001. Trello was asked "who am I?". No member is named in the skill or given to it
+assigned-sync: boards the connection can reach: 5 (4 open, 1 closed)
+assigned-sync:   board 60b010000000000000000000, open: 130 cards read in 3 requests (50 + 50 + 30), 65 assigned to the member
+assigned-sync:   board 60b020000000000000000000, open: 24 cards read in 1 request (24), 11 assigned to the member
+assigned-sync:   board 60b030000000000000000000, open: 12 cards read in 1 request (12), 6 assigned to the member
+assigned-sync:   board 60b040000000000000000000, open: 6 cards read in 1 request (6), 3 assigned to the member
+assigned-sync:   board 60b050000000000000000000, closed: 9 cards read in 1 request (9), 4 assigned to the member
+assigned-sync: page limit: 50 cards for one request. Largest board: 130 cards, more than one page, retrieved completely
+assigned-sync: retrieved: 89 cards assigned to the member, on 5 boards searched
+assigned-sync: Trello's own list of the member's cards holds 89. Every one of them on a board searched was found
+assigned-sync: archived cards: an archived card that is still assigned to the member is INCLUDED, in its own section, and is not counted as open work. A card is archived when the card, its list or its board is archived or closed.
+assigned-sync:   of the 89 retrieved: 78 open, 11 archived (4 by card, 3 by list, 4 by board)
+assigned-sync: cards held before this sync: 90. This sync: 0 new, 0 changed, 89 unchanged, 1 newly flagged as no longer assigned, 0 assigned again
+assigned-sync:   FLAGGED, not deleted: card 62c020000000000000000004 is no longer assigned to the member. reassigned: now assigned to member id 5f0000000000000000000003. Its row and its notes are kept
+assigned-sync: counts: retrieved 89, held and no longer assigned 1, expected in the index 90. Rows saved in the index: 90. The counts agree
+assigned-sync: notes: 3 files, opened for reading only. SHA-256 before and after this sync:
+assigned-sync:   notes/62c010000000000000000002.md  before 6e73e4bd4cfbd1c571bb416d8269717d602a73e4bee59e46afb60e82b477d58b  after 6e73e4bd4cfbd1c571bb416d8269717d602a73e4bee59e46afb60e82b477d58b  same
+assigned-sync:   notes/62c010000000000000000032.md  before 92b40f2a921d0619bfc86a911143f89f155d7561c0ba73e40966681d99d4ee67  after 92b40f2a921d0619bfc86a911143f89f155d7561c0ba73e40966681d99d4ee67  same
+assigned-sync:   notes/62c020000000000000000004.md  before 4723a5c8624102431a4f4bca41a367bd0239c58d17c2ac4c48204ad3120de587  after 4723a5c8624102431a4f4bca41a367bd0239c58d17c2ac4c48204ad3120de587  same
+assigned-sync: requests made: 16, every one a GET
+assigned-sync: index written: participant/context/trello/assigned/index.md
+------------------------------------------------------------------------------
+exit code: 0
+  ok   the sync ran: exit code 0
+  ok   criterion 6: the card is flagged, with why: reassigned, and to which member
+  ok   criterion 6: it is not deleted: 90 cards are still held, this one among them with what was known of it
+  Its row in the index, under 'No longer assigned':
+    | Support task 4 | `62c020000000000000000004` | Support | Backlog | **reassigned**: now assigned to member id 5f0000000000000000000003 | 2026-11-20T12:00:00Z | `notes/62c020000000000000000004.md` |
+  ok   criterion 6: in the index it is under 'No longer assigned', not under 'Assigned and open', and the row points to its notes
+  ok   the counts still agree: 89 retrieved and 1 kept make 90 rows
+  ok   no other card changed: 0 new, 0 changed, 89 unchanged, 1 newly flagged
+  SHA-256 of that card's notes file, taken by this script:
+    before the first sync:      4723a5c8624102431a4f4bca41a367bd0239c58d17c2ac4c48204ad3120de587
+    after the reassignment sync: 4723a5c8624102431a4f4bca41a367bd0239c58d17c2ac4c48204ad3120de587
+  ok   criterion 7: the notes file of the reassigned card is byte for byte the same
+  ok   criterion 7: so is every other notes file, and none was added or removed
+  ok   criterion 7: the sync printed the same SHA-256 for that file, before and after
+
+==============================================================================
+PART 4. The sync after that. (criteria 5 and 6)
+$ python3 participant/skills/trello-read-assigned-cards/sync.py --source fake --fake-after reassignment
+------------------------------------------------------------------------------
+assigned-sync: member read from the connection: member id 5f0000000000000000000001. Trello was asked "who am I?". No member is named in the skill or given to it
+assigned-sync: boards the connection can reach: 5 (4 open, 1 closed)
+assigned-sync:   board 60b010000000000000000000, open: 130 cards read in 3 requests (50 + 50 + 30), 65 assigned to the member
+assigned-sync:   board 60b020000000000000000000, open: 24 cards read in 1 request (24), 11 assigned to the member
+assigned-sync:   board 60b030000000000000000000, open: 12 cards read in 1 request (12), 6 assigned to the member
+assigned-sync:   board 60b040000000000000000000, open: 6 cards read in 1 request (6), 3 assigned to the member
+assigned-sync:   board 60b050000000000000000000, closed: 9 cards read in 1 request (9), 4 assigned to the member
+assigned-sync: page limit: 50 cards for one request. Largest board: 130 cards, more than one page, retrieved completely
+assigned-sync: retrieved: 89 cards assigned to the member, on 5 boards searched
+assigned-sync: Trello's own list of the member's cards holds 89. Every one of them on a board searched was found
+assigned-sync: archived cards: an archived card that is still assigned to the member is INCLUDED, in its own section, and is not counted as open work. A card is archived when the card, its list or its board is archived or closed.
+assigned-sync:   of the 89 retrieved: 78 open, 11 archived (4 by card, 3 by list, 4 by board)
+assigned-sync: cards held before this sync: 90. This sync: 0 new, 0 changed, 89 unchanged, 0 newly flagged as no longer assigned, 0 assigned again
+assigned-sync: counts: retrieved 89, held and no longer assigned 1, expected in the index 90. Rows saved in the index: 90. The counts agree
+assigned-sync: notes: 3 files, opened for reading only. SHA-256 before and after this sync:
+assigned-sync:   notes/62c010000000000000000002.md  before 6e73e4bd4cfbd1c571bb416d8269717d602a73e4bee59e46afb60e82b477d58b  after 6e73e4bd4cfbd1c571bb416d8269717d602a73e4bee59e46afb60e82b477d58b  same
+assigned-sync:   notes/62c010000000000000000032.md  before 92b40f2a921d0619bfc86a911143f89f155d7561c0ba73e40966681d99d4ee67  after 92b40f2a921d0619bfc86a911143f89f155d7561c0ba73e40966681d99d4ee67  same
+assigned-sync:   notes/62c020000000000000000004.md  before 4723a5c8624102431a4f4bca41a367bd0239c58d17c2ac4c48204ad3120de587  after 4723a5c8624102431a4f4bca41a367bd0239c58d17c2ac4c48204ad3120de587  same
+assigned-sync: requests made: 15, every one a GET
+assigned-sync: index written: participant/context/trello/assigned/index.md
+------------------------------------------------------------------------------
+exit code: 0
+  ok   the card stays flagged and is not flagged again: 0 new, 0 changed, 0 newly flagged
+  ok   the index and the memory are byte for byte what the sync before wrote
+
+==============================================================================
+AFTERWARDS. The notes, after every sync in both records. (criterion 7)
+    62c010000000000000000002.md  before 6e73e4bd4cfbd1c571bb416d8269717d602a73e4bee59e46afb60e82b477d58b
+                                 after  6e73e4bd4cfbd1c571bb416d8269717d602a73e4bee59e46afb60e82b477d58b
+    62c010000000000000000032.md  before 92b40f2a921d0619bfc86a911143f89f155d7561c0ba73e40966681d99d4ee67
+                                 after  92b40f2a921d0619bfc86a911143f89f155d7561c0ba73e40966681d99d4ee67
+    62c020000000000000000004.md  before 4723a5c8624102431a4f4bca41a367bd0239c58d17c2ac4c48204ad3120de587
+                                 after  4723a5c8624102431a4f4bca41a367bd0239c58d17c2ac4c48204ad3120de587
+  ok   all 3 notes files are byte-identical after 5 syncs: first, two unchanged, reassignment, and one more
+  The index in the repository is as the last sync left it: 89 assigned, 1 no longer assigned.
+
+RESULT: ALL CHECKS PASSED. 21 checks.

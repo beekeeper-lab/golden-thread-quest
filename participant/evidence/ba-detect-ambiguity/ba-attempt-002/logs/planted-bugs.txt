@@ -1,0 +1,131 @@
+Do the tests notice a broken checker? ba-detect-ambiguity, attempt ba-attempt-002
+Recorded by scripts/planted_bugs.py.
+
+Each bug below was put into participant/skills/requirements-review/check.py, every test was run, and the
+bug was taken out again. Only local files are used.
+
+Before any bug: OK
+
+PLANTED BUG A. A finding may name any type, or none (criterion 1)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Rule1Type.test_a_missing_type_line_is_refused
+    Rule1Type.test_a_type_outside_the_four_is_refused
+
+PLANTED BUG B. A finding that is not a contradiction may name two requirements (criterion 1)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Rule4Contradiction.test_only_a_contradiction_may_name_two
+
+PLANTED BUG C. Quoted words are not looked for in the requirement (criterion 2)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Rule4Contradiction.test_each_quote_must_be_in_its_own_requirement
+    Rule2Words.test_words_from_another_requirement_are_refused
+    Rule2Words.test_words_that_are_not_in_the_requirement_are_refused
+
+PLANTED BUG D. Quoted words are matched without regard to capital letters, so a near miss passes (criterion 2)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Rule2Words.test_words_that_are_not_in_the_requirement_are_refused
+
+PLANTED BUG E. A finding may name a requirement that does not exist (criterion 2)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Rule2Words.test_a_requirement_that_does_not_exist_is_refused
+
+PLANTED BUG F. Only the first line of a requirement is read, so words on its second line are not found (criterion 2)
+  unittest result: FAILED (failures=5)
+  tests that failed (5):
+    Rule2Words.test_a_quote_split_over_a_line_break_in_the_requirement_still_matches
+    AGoodReview.test_a_requirement_may_have_more_than_one_finding
+    AGoodReview.test_a_requirement_that_runs_over_two_lines_is_read_whole
+    AGoodReview.test_it_is_accepted_and_printed
+    AGoodReview.test_it_says_what_it_cannot_check
+
+PLANTED BUG G. What a tester could not decide, and what goes wrong, need not be said (criterion 3)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Rule3Tester.test_what_a_tester_could_not_decide_must_be_said
+    Rule3Tester.test_what_goes_wrong_if_unanswered_must_be_said
+
+PLANTED BUG H. A contradiction may name one requirement (criterion 4)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Rule4Contradiction.test_a_contradiction_must_name_two_requirements
+
+PLANTED BUG I. A contradiction need not quote both requirements (criterion 4)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Rule4Contradiction.test_a_contradiction_must_quote_both
+
+PLANTED BUG J. A requirement with no finding and no place in the unflagged list goes unnoticed (criterion 5)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Rule5Accounted.test_a_requirement_with_no_finding_and_not_unflagged_is_refused
+
+PLANTED BUG K. A requirement may have a finding and be listed as unflagged as well (criterion 5)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Rule5Accounted.test_a_requirement_both_flagged_and_unflagged_is_refused
+
+PLANTED BUG L. A requirement may be listed as unflagged with no reason (criterion 5)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Rule5Accounted.test_an_unflagged_requirement_needs_a_reason
+
+PLANTED BUG M. A finding need not ask a question (criterion 6)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Rule6AsksAndDoesNotRewrite.test_a_finding_must_ask_a_question
+
+PLANTED BUG N. A finding may offer wording in place of a question (criterion 6)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Rule6AsksAndDoesNotRewrite.test_a_finding_that_offers_wording_is_refused
+
+PLANTED BUG O. A finding may be about a person and not the words (safety rule)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Rule6AsksAndDoesNotRewrite.test_a_finding_about_a_person_is_refused
+
+PLANTED BUG P. The definitions need not be in the findings file (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Rule7Definitions.test_each_type_must_be_defined_in_the_file
+
+PLANTED BUG Q. The definitions may be given in any order (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Rule7Definitions.test_the_definitions_must_be_in_the_order_they_are_applied
+
+PLANTED BUG R. A review that breaks its rules still exits as accepted
+  unittest result: FAILED (failures=23)
+  tests that failed (23):
+    Rule4Contradiction.test_a_contradiction_must_name_two_requirements
+    Rule4Contradiction.test_a_contradiction_must_quote_both
+    Rule6AsksAndDoesNotRewrite.test_a_finding_about_a_person_is_refused
+    Rule6AsksAndDoesNotRewrite.test_a_finding_must_ask_a_question
+    Rule6AsksAndDoesNotRewrite.test_a_finding_that_offers_wording_is_refused
+    Rule1Type.test_a_missing_type_line_is_refused
+    Rule5Accounted.test_a_requirement_both_flagged_and_unflagged_is_refused
+    Rule2Words.test_a_requirement_that_does_not_exist_is_refused
+    Rule5Accounted.test_a_requirement_with_no_finding_and_not_unflagged_is_refused
+    Rule1Type.test_a_type_outside_the_four_is_refused
+    Rule5Accounted.test_an_unflagged_requirement_needs_a_reason
+    Rule4Contradiction.test_each_quote_must_be_in_its_own_requirement
+    Rule7Definitions.test_each_type_must_be_defined_in_the_file
+    Rule1Type.test_no_findings_at_all_is_refused
+    Rule4Contradiction.test_only_a_contradiction_may_name_two
+    Rule7Definitions.test_the_definitions_must_be_in_the_order_they_are_applied
+    Rule1Type.test_two_findings_with_one_name_are_refused
+    Rule5Accounted.test_unflagged_lines_must_be_real_and_single
+    Rule3Tester.test_what_a_tester_could_not_decide_must_be_said
+    Rule3Tester.test_what_goes_wrong_if_unanswered_must_be_said
+    Rule2Words.test_words_from_another_requirement_are_refused
+    Rule2Words.test_words_not_in_quotes_or_missing_are_refused
+    Rule2Words.test_words_that_are_not_in_the_requirement_are_refused
+
+After the last bug was taken out: check.py is byte for byte what it was at the start. OK
+
+RESULT: all 18 planted bugs were caught by at least one test, and the file was restored.

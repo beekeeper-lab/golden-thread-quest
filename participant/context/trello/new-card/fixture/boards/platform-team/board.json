@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "source": "fixture",
+  "board": {
+    "id": "80b000000000000000000001",
+    "name": "Made-up platform team board",
+    "short_link": "FAKEplat",
+    "closed": false
+  },
+  "lists": [
+    {
+      "id": "81a000000000000000000010",
+      "name": "Old ideas",
+      "pos": 500,
+      "closed": true
+    },
+    {
+      "id": "81a000000000000000000011",
+      "name": "To do",
+      "pos": 1000,
+      "closed": false
+    },
+    {
+      "id": "81a000000000000000000012",
+      "name": "Doing",
+      "pos": 2000,
+      "closed": false
+    },
+    {
+      "id": "81a000000000000000000013",
+      "name": "Done",
+      "pos": 3000,
+      "closed": false
+    }
+  ]
+}

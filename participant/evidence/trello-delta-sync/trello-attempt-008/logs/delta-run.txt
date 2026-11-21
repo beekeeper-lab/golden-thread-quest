@@ -1,0 +1,140 @@
+The delta sync: trello-delta-sync, attempt trello-attempt-008
+Recorded by scripts/record_evidence.py. No request was sent to Trello. Every card and member is made up.
+
+==============================================================================
+PART 1. The made-up board's activity, up to step 1.
+$ python3 participant/skills/trello-delta-sync/fake_trello.py 1
+------------------------------------------------------------------------------
+The made-up board at step 1: 13 cards on it, 18 entries in its activity.
+  66d000000000000000000001  2026-11-16T10:01:00.000Z  createCard         card 62c000000000000000000001 
+  66d000000000000000000002  2026-11-16T10:02:00.000Z  createCard         card 62c000000000000000000002 
+  66d000000000000000000003  2026-11-16T10:03:00.000Z  createCard         card 62c000000000000000000003 
+  66d000000000000000000004  2026-11-16T10:04:00.000Z  createCard         card 62c000000000000000000004 
+  66d000000000000000000005  2026-11-16T10:05:00.000Z  createCard         card 62c000000000000000000005 
+  66d000000000000000000006  2026-11-16T10:06:00.000Z  createCard         card 62c000000000000000000006 
+  66d000000000000000000007  2026-11-16T10:07:00.000Z  createCard         card 62c000000000000000000007 
+  66d000000000000000000008  2026-11-16T10:08:00.000Z  createCard         card 62c000000000000000000008 
+  66d000000000000000000009  2026-11-16T10:09:00.000Z  createCard         card 62c000000000000000000009 
+  66d000000000000000000010  2026-11-16T10:10:00.000Z  createCard         card 62c000000000000000000010 
+  66d000000000000000000011  2026-11-16T10:11:00.000Z  createCard         card 62c000000000000000000011 
+  66d000000000000000000012  2026-11-16T10:12:00.000Z  createCard         card 62c000000000000000000012 
+  66d000000000000000000013  2026-11-18T10:01:00.000Z  updateCard         card 62c000000000000000000003 moved to another list
+  66d000000000000000000014  2026-11-18T10:02:00.000Z  updateCard         card 62c000000000000000000005 archived
+  66d000000000000000000015  2026-11-18T10:03:00.000Z  commentCard        card 62c000000000000000000007 
+  66d000000000000000000016  2026-11-18T10:04:00.000Z  updateCard         card 62c000000000000000000002 renamed
+  66d000000000000000000017  2026-11-18T10:05:00.000Z  createCard         card 62c000000000000000000013 
+  66d000000000000000000018  2026-11-18T10:07:00.000Z  updateList         (names no card) renamed
+------------------------------------------------------------------------------
+exit code: 0
+  Worked out by this script from the made-up board, not from any sync:
+  Step 0 ends with entry 66d000000000000000000012. Step 1 adds 6 entries, which name 5 cards.
+  One more card, 62c000000000000000000009, had its label changed at step 1. Trello keeps no activity entry for a label,
+  and neither does the made-up board. So a delta at step 1 should fetch 6 cards of the 13 on the board.
+
+==============================================================================
+PART 2. The first sync, of the board at step 0. There is no cursor yet.
+  participant/context/trello/delta/cards.md, participant/context/trello/delta/state.json and participant/context/trello/sync-state.md were removed first. The notes folder was left alone.
+$ python3 participant/skills/trello-delta-sync/sync.py --source fake
+------------------------------------------------------------------------------
+delta-sync: no cursor yet: this is the first sync of board 60b000000000000000000001 into participant/context/trello/delta. Reading the whole board
+delta-sync: newest activity entry on the board: 66d000000000000000000012, dated 2026-11-16T10:12:00.000Z
+delta-sync: cards on the board: 12. This sync: 12 new, 0 changed, 0 unchanged, 0 no longer on the board
+delta-sync: cursor after this sync: activity entry 66d000000000000000000012, dated 2026-11-16T10:12:00.000Z
+delta-sync: local state digest: 3108f251bb91fdd6d2ae98a8380774d8079552ed3ed22f15871d622805c86e8c (12 cards on the board; 0 more kept that are no longer on it)
+delta-sync: notes: 3 files, opened for reading only. SHA-256 before and after this sync:
+delta-sync:   notes/62c000000000000000000003.md  before 67eb89605bcec91934e52b046f351eb40b2d1ca144bfcf004028edf25b45aa46  after 67eb89605bcec91934e52b046f351eb40b2d1ca144bfcf004028edf25b45aa46  same
+delta-sync:   notes/62c000000000000000000005.md  before b4a65e0816ab7f02f0ac6b9ff268b167b2285e105a00cdd3ab1307e945adbc0e  after b4a65e0816ab7f02f0ac6b9ff268b167b2285e105a00cdd3ab1307e945adbc0e  same
+delta-sync:   notes/62c000000000000000000008.md  before fb92cec48e8cac8be232152b4c0ab26e5b14103c5f40d845976a4c589d985c2d  after fb92cec48e8cac8be232152b4c0ab26e5b14103c5f40d845976a4c589d985c2d  same
+delta-sync: requests made: 4, every one a GET (1 board, 1 activity, 1 lists, 1 all cards)
+delta-sync: written: participant/context/trello/delta/cards.md, participant/context/trello/delta/state.json and participant/context/trello/sync-state.md
+------------------------------------------------------------------------------
+exit code: 0
+  ok   the first sync ran and read the whole board: 12 cards
+  ok   the cursor is the newest activity entry of step 0, with the time Trello gave it: 66d000000000000000000012
+
+==============================================================================
+PART 3. The delta sync, of the board at step 1. (criteria 1, 2, 3)
+$ python3 participant/skills/trello-delta-sync/sync.py --source fake --fake-step 1
+------------------------------------------------------------------------------
+delta-sync: cursor before this sync: activity entry 66d000000000000000000012, dated 2026-11-16T10:12:00.000Z
+delta-sync: how stale: the last successful sync was 2026-11-17T09:00:00Z, 2.0 days before now (2026-11-19T09:00:00Z). The cursor's entry is from 2026-11-16T10:12:00.000Z, 2.9 days before now. STALE: more than 24 hours since a successful sync. The local copy may be well behind the board
+delta-sync: board activity after the cursor: 6 entries, naming 5 cards
+delta-sync:   activity: card 62c000000000000000000002 changed (name)
+delta-sync:   activity: card 62c000000000000000000003 moved from list 61a000000000000000000002 to list 61a000000000000000000004
+delta-sync:   activity: card 62c000000000000000000005 archived
+delta-sync:   activity: card 62c000000000000000000007 commented on
+delta-sync:   activity: card 62c000000000000000000013 created
+delta-sync: cross-check of last-activity times: 13 cards on the board. 1 changed with no activity entry naming it
+delta-sync: fetched in full: 6 cards, the ones with new activity. Not fetched: 7
+delta-sync: cards on the board: 13. This sync: 1 new, 5 changed, 7 unchanged, 0 no longer on the board
+delta-sync:   new: card 62c000000000000000000013
+delta-sync:   changed: card 62c000000000000000000002. changed: name
+delta-sync:   changed: card 62c000000000000000000003. MOVED to list 61a000000000000000000004
+delta-sync:   changed: card 62c000000000000000000005. ARCHIVED in Trello. Flagged, and kept with its notes
+delta-sync:   changed: card 62c000000000000000000007. new activity and no field changed
+delta-sync:   changed: card 62c000000000000000000009. changed: labels. Found by the cross-check: no activity entry names it
+delta-sync:   list 61a000000000000000000003 was renamed or restored. No card was fetched for that
+delta-sync: cursor after this sync: activity entry 66d000000000000000000018, dated 2026-11-18T10:07:00.000Z
+delta-sync: local state digest: 361e601dc43ee55efdc2902b0736882adacb12731a6420ece6e963ff07d99c1a (13 cards on the board; 0 more kept that are no longer on it)
+delta-sync: notes: 3 files, opened for reading only. SHA-256 before and after this sync:
+delta-sync:   notes/62c000000000000000000003.md  before 67eb89605bcec91934e52b046f351eb40b2d1ca144bfcf004028edf25b45aa46  after 67eb89605bcec91934e52b046f351eb40b2d1ca144bfcf004028edf25b45aa46  same
+delta-sync:   notes/62c000000000000000000005.md  before b4a65e0816ab7f02f0ac6b9ff268b167b2285e105a00cdd3ab1307e945adbc0e  after b4a65e0816ab7f02f0ac6b9ff268b167b2285e105a00cdd3ab1307e945adbc0e  same
+delta-sync:   notes/62c000000000000000000008.md  before fb92cec48e8cac8be232152b4c0ab26e5b14103c5f40d845976a4c589d985c2d  after fb92cec48e8cac8be232152b4c0ab26e5b14103c5f40d845976a4c589d985c2d  same
+delta-sync: requests made: 10, every one a GET (1 board, 1 activity, 1 lists, 1 listing, 6 card)
+delta-sync: written: participant/context/trello/delta/cards.md, participant/context/trello/delta/state.json and participant/context/trello/sync-state.md
+------------------------------------------------------------------------------
+exit code: 0
+  ok   the sync ran: exit code 0
+  ok   criterion 1: it read the activity after the cursor: 6 entries, naming 5 cards, the same as this script worked out
+  ok   criterion 1: it fetched 6 cards and did not fetch the other 7
+  ok   the counts: 1 new, 5 changed, 7 unchanged
+  ok   criterion 2: card 62c000000000000000000003 moved from Doing to Done, and nothing else about it changed. The activity says so, and the card is now held in Done
+  ok   criterion 3: card 62c000000000000000000005 was archived. The activity says so, and it is flagged
+  Its row in cards.md, under 'Archived':
+    | Search by title | `62c000000000000000000005` | feature | 1 member | 2026-11-18T10:02:00.000Z | `notes/62c000000000000000000005.md` | Doing | card |
+  ok   criterion 3: it is kept under 'Archived', with the list it was in and a pointer to its notes, and is no longer under 'Doing'
+  ok   a comment was caught: card 62c000000000000000000007 was fetched though only its last-activity time differs
+  ok   the label change, which has no activity entry, was caught by the cross-check of last-activity times: card 62c000000000000000000009
+  ok   a list was renamed, which names no card: no card was fetched for it, and cards.md shows the new name
+  ok   the cursor moved to the newest entry read, 66d000000000000000000018
+  ok   text from the activity (a comment worded as an order) is not in the output, cards.md, the state or its description
+
+==============================================================================
+PART 4. Every request that delta made. (criterion 1)
+  The same delta, run inside this script in a temporary folder so that each request can be listed.
+    GET /boards/60b000000000000000000001  fields=name,closed
+    GET /boards/60b000000000000000000001/actions  fields=type,date,data filter=all limit=1000 since=66d000000000000000000012
+    GET /boards/60b000000000000000000001/lists  fields=name,pos,closed filter=all
+    GET /boards/60b000000000000000000001/cards  fields=dateLastActivity filter=all limit=1000
+    GET /cards/62c000000000000000000002  fields=name,shortLink,idBoard,idList,closed,labels,idMembers,due,dueComplete,dateLastActivity
+    GET /cards/62c000000000000000000003  fields=name,shortLink,idBoard,idList,closed,labels,idMembers,due,dueComplete,dateLastActivity
+    GET /cards/62c000000000000000000005  fields=name,shortLink,idBoard,idList,closed,labels,idMembers,due,dueComplete,dateLastActivity
+    GET /cards/62c000000000000000000007  fields=name,shortLink,idBoard,idList,closed,labels,idMembers,due,dueComplete,dateLastActivity
+    GET /cards/62c000000000000000000009  fields=name,shortLink,idBoard,idList,closed,labels,idMembers,due,dueComplete,dateLastActivity
+    GET /cards/62c000000000000000000013  fields=name,shortLink,idBoard,idList,closed,labels,idMembers,due,dueComplete,dateLastActivity
+  ok   the activity was asked for with since=66d000000000000000000012, the cursor
+  ok   the cards fetched one by one are exactly the 6 this script expected
+  ok   the board's cards were not read in full again: the one request for all of them asks for the last-activity time only
+  ok   no description, comment or checklist was asked for
+
+==============================================================================
+PART 5. The sync state after that delta: participant/context/trello/sync-state.md.
+    ## The last successful point
+    
+    | | |
+    |---|---|
+    | Board | `60b000000000000000000001`, a made-up board |
+    | Cursor | activity entry `66d000000000000000000018`, dated 2026-11-18T10:07:00.000Z by Trello |
+    | Last successful sync | 2026-11-19T09:00:00Z, by the made-up Trello's clock |
+    | That sync was | a delta, from the board's activity |
+    | It read | 6 activity entries, naming 5 cards |
+    | It fetched | 6 cards of the 13 on the board |
+    | It found | 1 new, 5 changed, 7 unchanged, 0 no longer on the board |
+    | Successful syncs so far | 2 |
+    | Digest of the local state | `361e601dc43ee55efdc2902b0736882adacb12731a6420ece6e963ff07d99c1a` |
+    | How stale, when this file was written | the last successful sync was 2026-11-19T09:00:00Z, 0 minutes before now (2026-11-19T09:00:00Z). The cursor's entry is from 2026-11-18T10:07:00.000Z, 22.9 hours before now |
+  ok   it records the cursor, the last successful sync and what that sync found
+  ok   it says what the cursor is taken from, and how it advances
+  ok   the notes files have the SHA-256 they had before the first sync
+
+RESULT: ALL CHECKS PASSED. 21 checks.

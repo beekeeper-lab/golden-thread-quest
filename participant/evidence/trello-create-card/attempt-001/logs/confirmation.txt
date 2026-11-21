@@ -1,0 +1,724 @@
+The approved run, and four refusals: trello-create-card, attempt trello-attempt-006
+Recorded by scripts/record_evidence.py against a made-up Trello kept in a file. No Trello was contacted.
+In these recordings the script gives the confirmation. On the real board the participant typed it.
+
+==============================================================================
+PART 1. The approved run: a preview, then a confirmation naming its fingerprint. (criteria 1, 2, 4, 7, 8)
+$ python3 participant/skills/trello-create-card/create.py preview --source fake --fake-file STATE/approved/fake-trello.json --link STATE/approved/linked.md --draft participant/context/trello/new-card/draft.md --allowlist participant/context/trello/new-card/sandbox-allowlist.json --boards participant/context/trello/new-card/fixture/boards --state STATE/approved/state --now 2026-11-20T09:00:00Z
+------------------------------------------------------------------------------
+PREVIEW OF CREATING ONE CARD. Nothing has been written to Trello.
+
+Board:  "Made-up platform team board" (board id 80b000000000000000000001). On the sandbox allowlist: yes.
+List:   "To do" (list id 81a000000000000000000011). Chosen by id. Trello says it belongs to board 80b000000000000000000001, the stated board: yes. Archived: no.
+Draft:  participant/context/trello/new-card/draft.md
+Link file: STATE/approved/linked.md (not there yet: this draft has not been created)
+The change: one new card would be created, with one request: POST https://api.trello.com/1/cards
+
+FIELD BY FIELD, 7 fields in the payload:
+  idList     81a000000000000000000011
+  pos        "bottom"
+  name       "Add a status page link to the app footer"
+  desc       217 characters, shown in full in the payload
+  due        2026-12-11T17:00:00.000Z
+  idLabels   "feature" (label id 83e000000000000000000013)
+  idMembers  5f0000000000000000000012
+Labels and members were each found on the board before being put in the payload: 1 label, 1 member.
+Not in the payload, so decided by Trello and not by this draft: the card's id, its short link and its number on
+the board; who it is created by, which is the token's member; and, for "top" or "bottom", the position number.
+
+WHERE IN THE LIST. Position "bottom":
+  number 4 of 4 open cards, counting the new one.
+  after:  card 82c000000000000000000103, at position 300
+  before: nothing. It would be last.
+
+THE EXACT PAYLOAD. This is the request body, not a summary of it:
+  {
+    "desc": "Customers ask support whether the service is down before checking anything. Put a link to the status page in the footer of every signed-in page.\n\n- Use the existing footer component\n- Open the status page in a new tab",
+    "due": "2026-12-11T17:00:00.000Z",
+    "idLabels": "83e000000000000000000013",
+    "idList": "81a000000000000000000011",
+    "idMembers": "5f0000000000000000000012",
+    "name": "Add a status page link to the app footer",
+    "pos": "bottom"
+  }
+As sent it is the same data with no spaces or line breaks and its names in alphabetical order:
+  442 bytes, SHA-256 9c84dc5be6160879423247f59331a3774ba1df411040bf4c36ef51b3562005f3
+
+THE TOKEN AND THE PERMISSION CHECK, asked of Trello for this board and this token:
+  the token's member is on the board as: normal. That role may add cards: yes
+  the token's own permissions for boards: read yes, write yes
+  the token expires: Trello gives no expiry
+
+DUPLICATE CHECKS:
+  1. This draft's own link file: there is none, so this workflow has not created it before.
+  2. Asked of Trello, open cards on this board with exactly this name: 0.
+  3. the local indexes in participant/context/trello/new-card/fixture/boards, 8 cards on 2 boards, searched with the trello-duplicate-search skill.
+     the index of this board holds 6 cards and Trello holds 6: the counts agree.
+     Result: NONE. No card on any board searched matches this draft on three or more signals beyond the name.
+       looked at and not reported: card 82c000000000000000000101, matched on labels and members only.
+       looked at and not reported: card 82c000000000000000000105, matched on members only.
+       looked at and not reported: card 82c000000000000000000106, matched on labels only.
+       looked at and not reported: card 82c000000000000000000102, matched on members only.
+       looked at and not reported: card 82c000000000000000000201, matched on members only.
+     The search's overall recommendation: PROCEED. A person decides.
+     The indexes are a local copy: a card created in Trello since the records were saved is not in them.
+Where Trello cannot check: it has no way to refuse a second create of the same card, and no way to try a
+  create without making one. The link file is this workflow's own protection against creating twice.
+
+Snapshot of the board in Trello before the preview: 4 lists, 6 cards, 92852d0d52abedd7
+Snapshot of the board in Trello after the preview:  4 lists, 6 cards, 92852d0d52abedd7
+The two are the same. The board is unchanged.
+Requests sent to Trello: 12. Every one was a GET, which reads and cannot change anything.
+  GET /members/me
+  GET /boards/80b000000000000000000001
+  GET /boards/80b000000000000000000001/lists
+  GET /boards/80b000000000000000000001/cards
+  GET /lists/81a000000000000000000011
+  GET /boards/80b000000000000000000001/labels
+  GET /boards/80b000000000000000000001/members
+  GET /boards/80b000000000000000000001/memberships
+  GET /tokens/[the token]
+  GET /boards/80b000000000000000000001/cards
+  GET /boards/80b000000000000000000001/lists
+  GET /boards/80b000000000000000000001/cards
+
+VERDICT: READY TO WRITE. Every check passed.
+Fingerprint of this preview: 4044a3669f68
+Made:    2026-11-20 21:04:23 UTC
+Expires: 2026-11-20 21:19:23 UTC (15 minutes after it was made)
+
+Nothing has been written to Trello. To create this card, a person who has read this preview confirms it
+by its fingerprint.
+------------------------------------------------------------------------------
+exit code: 0
+  ok   after the preview the made-up Trello holds no new card
+The fingerprint 4044a3669f68 is read from the preview above and given with the confirmation.
+$ python3 participant/skills/trello-create-card/create.py confirm --source fake --fake-file STATE/approved/fake-trello.json --link STATE/approved/linked.md --draft participant/context/trello/new-card/draft.md --allowlist participant/context/trello/new-card/sandbox-allowlist.json --boards participant/context/trello/new-card/fixture/boards --state STATE/approved/state --now 2026-11-20T09:00:00Z --fingerprint 4044a3669f68 --confirmed-by "the participant" --result STATE/approved/result.md
+------------------------------------------------------------------------------
+CONFIRMATION for preview 4044a3669f68, given by: the participant (the name given with the confirmation).
+
+Board:  "Made-up platform team board" (board id 80b000000000000000000001). On the sandbox allowlist: yes.
+List:   "To do" (list id 81a000000000000000000011). Chosen by id. Trello says it belongs to board 80b000000000000000000001, the stated board: yes. Archived: no.
+Draft:  participant/context/trello/new-card/draft.md
+
+Checked in this run, before writing:
+  the preview is 0 minutes old, and the limit is 15: ok
+  the saved preview is unaltered and has not been used: ok
+  the draft file is byte for byte the one that was previewed: ok
+  the payload worked out again now has the SHA-256 of the previewed one, 9c84dc5be6160879423247f59331a3774ba1df411040bf4c36ef51b3562005f3: ok
+  the board is on the sandbox allowlist, and the list is on that board and not archived: ok
+  Trello says the token may write and its member may add cards to this board: ok
+  the duplicate checks still pass: ok
+  this draft has no link file: ok
+
+Written to the link file before sending: a create is being sent, result not yet recorded, and the ids of the
+6 cards on the board now.
+CREATED in Trello: one card. Trello answered 200 with the card id 6b00b5d70000000000000001.
+The confirmation and the write happened in this one run of the command.
+Written to the link file: the card id 6b00b5d70000000000000001, the list id 81a000000000000000000011 and the board id 80b000000000000000000001.
+
+READ BACK from Trello by card id 6b00b5d70000000000000001, and compared with the payload field for field:
+  idList     sent 81a000000000000000000011
+             read 81a000000000000000000011: the same
+  pos        sent "bottom"
+             read position number 65836, number 4 of 4 open cards in the list: the same: it is last in the list
+  name       sent "Add a status page link to the app footer"
+             read "Add a status page link to the app footer": the same
+  desc       sent 217 characters, starting "Customers ask support whether the servic"
+             read 217 characters, starting "Customers ask support whether the servic": the same, character for character
+  due        sent 2026-12-11T17:00:00.000Z
+             read 2026-12-11T17:00:00.000Z: the same
+  idLabels   sent 83e000000000000000000013
+             read 83e000000000000000000013: the same
+  idMembers  sent 5f0000000000000000000012
+             read 5f0000000000000000000012: the same
+  idBoard    sent not sent: it follows from the list
+             read 80b000000000000000000001: the same as the board that was previewed
+Result: every field the payload sent reads back the same.
+What Trello set that the payload did not send:
+  card id:                         6b00b5d70000000000000001
+  short link:                      NEW00001
+  number on the board:             91
+  position number:                 65836
+  archived:                        no
+  due marked complete:             no
+  created, read from the card id:  2026-11-20 21:04:23 UTC
+  last activity:                   2026-11-20T21:04:23.000Z
+
+The link file STATE/approved/linked.md now holds the board, list and card ids and this comparison.
+
+RESULT RECORD
+  Board id: 80b000000000000000000001, on the sandbox allowlist
+  List id: 81a000000000000000000011
+  Card id: 6b00b5d70000000000000001
+  Identifier of what was created: the card, Trello card id 6b00b5d70000000000000001 (short link NEW00001)
+  Created at: 2026-11-20 21:04:23 UTC by this workflow's clock; 2026-11-20 21:04:23 UTC by Trello's, read from the card id
+  Confirmed by: the participant, at 2026-11-20 21:04:23 UTC
+  Preview: fingerprint 4044a3669f68
+  Payload: SHA-256 9c84dc5be6160879423247f59331a3774ba1df411040bf4c36ef51b3562005f3
+  Read back and compared at 2026-11-20 21:04:23 UTC: every field the payload sent reads back the same
+  Local link: STATE/approved/linked.md
+
+The result record was also saved as Markdown where --result said.
+
+Requests sent to Trello: 15. 14 GET and 1 POST. The POST is the one create.
+  GET /members/me
+  GET /boards/80b000000000000000000001
+  GET /boards/80b000000000000000000001/lists
+  GET /boards/80b000000000000000000001/cards
+  GET /lists/81a000000000000000000011
+  GET /boards/80b000000000000000000001/labels
+  GET /boards/80b000000000000000000001/members
+  GET /boards/80b000000000000000000001/memberships
+  GET /tokens/[the token]
+  GET /boards/80b000000000000000000001/cards
+  GET /boards/80b000000000000000000001/lists
+  GET /boards/80b000000000000000000001/cards
+  POST /cards
+  GET /cards/6b00b5d70000000000000001
+  GET /boards/80b000000000000000000001/cards
+------------------------------------------------------------------------------
+exit code: 0
+  ok   the card was created: exit code 0
+  ok   the confirmation names the preview's fingerprint and who gave it
+  ok   the confirmation and the write were in one run of the command: it lists exactly one POST
+  ok   before writing it checked again that the payload has the SHA-256 the preview showed
+  ok   the link file was written before the create was sent
+  Checked by this script, from the made-up Trello's own file:
+  ok   exactly one card exists that was not there before
+  ok   criterion 1: that card holds the previewed payload field for field: list, name, description, due, label, member
+  ok   and it is last in its list, which is what "bottom" asked for
+  ok   criterion 2: the link file holds the card id, the list id and the board id Trello returned
+  ok   the workflow's own read-back found every field the same
+The result record it saved:
+------------------------------------------------------------------------------
+# Result record: one Trello card created
+
+- Board id: 80b000000000000000000001, on the sandbox allowlist
+- List id: 81a000000000000000000011
+- Card id: 6b00b5d70000000000000001
+- Identifier of what was created: the card, Trello card id 6b00b5d70000000000000001 (short link NEW00001)
+- Created at: 2026-11-20 21:04:23 UTC by this workflow's clock; 2026-11-20 21:04:23 UTC by Trello's, read from the card id
+- Confirmed by: the participant, at 2026-11-20 21:04:23 UTC
+- Preview: fingerprint 4044a3669f68
+- Payload: SHA-256 9c84dc5be6160879423247f59331a3774ba1df411040bf4c36ef51b3562005f3
+- Read back and compared at 2026-11-20 21:04:23 UTC: every field the payload sent reads back the same
+- Local link: STATE/approved/linked.md
+------------------------------------------------------------------------------
+  ok   criterion 8: the result record holds the board, list and card ids, what was created, the time and the confirmer
+
+==============================================================================
+PART 2. Refusal 1 of 4: a missing confirmation. (criteria 4 and 7)
+$ python3 participant/skills/trello-create-card/create.py preview --source fake --fake-file STATE/missing/fake-trello.json --link STATE/missing/linked.md --draft participant/context/trello/new-card/draft.md --allowlist participant/context/trello/new-card/sandbox-allowlist.json --boards participant/context/trello/new-card/fixture/boards --state STATE/missing/state --now 2026-11-20T09:00:00Z
+------------------------------------------------------------------------------
+PREVIEW OF CREATING ONE CARD. Nothing has been written to Trello.
+
+Board:  "Made-up platform team board" (board id 80b000000000000000000001). On the sandbox allowlist: yes.
+List:   "To do" (list id 81a000000000000000000011). Chosen by id. Trello says it belongs to board 80b000000000000000000001, the stated board: yes. Archived: no.
+Draft:  participant/context/trello/new-card/draft.md
+Link file: STATE/missing/linked.md (not there yet: this draft has not been created)
+The change: one new card would be created, with one request: POST https://api.trello.com/1/cards
+
+FIELD BY FIELD, 7 fields in the payload:
+  idList     81a000000000000000000011
+  pos        "bottom"
+  name       "Add a status page link to the app footer"
+  desc       217 characters, shown in full in the payload
+  due        2026-12-11T17:00:00.000Z
+  idLabels   "feature" (label id 83e000000000000000000013)
+  idMembers  5f0000000000000000000012
+Labels and members were each found on the board before being put in the payload: 1 label, 1 member.
+Not in the payload, so decided by Trello and not by this draft: the card's id, its short link and its number on
+the board; who it is created by, which is the token's member; and, for "top" or "bottom", the position number.
+
+WHERE IN THE LIST. Position "bottom":
+  number 4 of 4 open cards, counting the new one.
+  after:  card 82c000000000000000000103, at position 300
+  before: nothing. It would be last.
+
+THE EXACT PAYLOAD. This is the request body, not a summary of it:
+  {
+    "desc": "Customers ask support whether the service is down before checking anything. Put a link to the status page in the footer of every signed-in page.\n\n- Use the existing footer component\n- Open the status page in a new tab",
+    "due": "2026-12-11T17:00:00.000Z",
+    "idLabels": "83e000000000000000000013",
+    "idList": "81a000000000000000000011",
+    "idMembers": "5f0000000000000000000012",
+    "name": "Add a status page link to the app footer",
+    "pos": "bottom"
+  }
+As sent it is the same data with no spaces or line breaks and its names in alphabetical order:
+  442 bytes, SHA-256 9c84dc5be6160879423247f59331a3774ba1df411040bf4c36ef51b3562005f3
+
+THE TOKEN AND THE PERMISSION CHECK, asked of Trello for this board and this token:
+  the token's member is on the board as: normal. That role may add cards: yes
+  the token's own permissions for boards: read yes, write yes
+  the token expires: Trello gives no expiry
+
+DUPLICATE CHECKS:
+  1. This draft's own link file: there is none, so this workflow has not created it before.
+  2. Asked of Trello, open cards on this board with exactly this name: 0.
+  3. the local indexes in participant/context/trello/new-card/fixture/boards, 8 cards on 2 boards, searched with the trello-duplicate-search skill.
+     the index of this board holds 6 cards and Trello holds 6: the counts agree.
+     Result: NONE. No card on any board searched matches this draft on three or more signals beyond the name.
+       looked at and not reported: card 82c000000000000000000101, matched on labels and members only.
+       looked at and not reported: card 82c000000000000000000105, matched on members only.
+       looked at and not reported: card 82c000000000000000000106, matched on labels only.
+       looked at and not reported: card 82c000000000000000000102, matched on members only.
+       looked at and not reported: card 82c000000000000000000201, matched on members only.
+     The search's overall recommendation: PROCEED. A person decides.
+     The indexes are a local copy: a card created in Trello since the records were saved is not in them.
+Where Trello cannot check: it has no way to refuse a second create of the same card, and no way to try a
+  create without making one. The link file is this workflow's own protection against creating twice.
+
+Snapshot of the board in Trello before the preview: 4 lists, 6 cards, 92852d0d52abedd7
+Snapshot of the board in Trello after the preview:  4 lists, 6 cards, 92852d0d52abedd7
+The two are the same. The board is unchanged.
+Requests sent to Trello: 12. Every one was a GET, which reads and cannot change anything.
+  GET /members/me
+  GET /boards/80b000000000000000000001
+  GET /boards/80b000000000000000000001/lists
+  GET /boards/80b000000000000000000001/cards
+  GET /lists/81a000000000000000000011
+  GET /boards/80b000000000000000000001/labels
+  GET /boards/80b000000000000000000001/members
+  GET /boards/80b000000000000000000001/memberships
+  GET /tokens/[the token]
+  GET /boards/80b000000000000000000001/cards
+  GET /boards/80b000000000000000000001/lists
+  GET /boards/80b000000000000000000001/cards
+
+VERDICT: READY TO WRITE. Every check passed.
+Fingerprint of this preview: ba0c3959b116
+Made:    2026-11-20 21:04:23 UTC
+Expires: 2026-11-20 21:19:23 UTC (15 minutes after it was made)
+
+Nothing has been written to Trello. To create this card, a person who has read this preview confirms it
+by its fingerprint.
+------------------------------------------------------------------------------
+exit code: 0
+$ python3 participant/skills/trello-create-card/create.py confirm --source fake --fake-file STATE/missing/fake-trello.json --link STATE/missing/linked.md --draft participant/context/trello/new-card/draft.md --allowlist participant/context/trello/new-card/sandbox-allowlist.json --boards participant/context/trello/new-card/fixture/boards --state STATE/missing/state --now 2026-11-20T09:00:00Z
+------------------------------------------------------------------------------
+
+REFUSED: no confirmation was given. A confirmation names the fingerprint of the preview it approves, and there is no way to create without one.
+Nothing has been written to Trello.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused: exit code 1
+  ok   the reason: no confirmation was given
+  ok   nothing was written: no POST was sent, and the made-up Trello is exactly as it was
+
+==============================================================================
+PART 3. Refusal 2 of 4: the change differs from the preview. (criterion 7)
+$ python3 participant/skills/trello-create-card/create.py preview --source fake --fake-file STATE/differs/fake-trello.json --link STATE/differs/linked.md --draft STATE/differs-draft/draft.md --allowlist participant/context/trello/new-card/sandbox-allowlist.json --boards participant/context/trello/new-card/fixture/boards --state STATE/differs/state --now 2026-11-20T09:00:00Z
+------------------------------------------------------------------------------
+PREVIEW OF CREATING ONE CARD. Nothing has been written to Trello.
+
+Board:  "Made-up platform team board" (board id 80b000000000000000000001). On the sandbox allowlist: yes.
+List:   "To do" (list id 81a000000000000000000011). Chosen by id. Trello says it belongs to board 80b000000000000000000001, the stated board: yes. Archived: no.
+Draft:  STATE/differs-draft/draft.md
+Link file: STATE/differs/linked.md (not there yet: this draft has not been created)
+The change: one new card would be created, with one request: POST https://api.trello.com/1/cards
+
+FIELD BY FIELD, 7 fields in the payload:
+  idList     81a000000000000000000011
+  pos        "bottom"
+  name       "Add a status page link to the app footer"
+  desc       217 characters, shown in full in the payload
+  due        2026-12-11T17:00:00.000Z
+  idLabels   "feature" (label id 83e000000000000000000013)
+  idMembers  5f0000000000000000000012
+Labels and members were each found on the board before being put in the payload: 1 label, 1 member.
+Not in the payload, so decided by Trello and not by this draft: the card's id, its short link and its number on
+the board; who it is created by, which is the token's member; and, for "top" or "bottom", the position number.
+
+WHERE IN THE LIST. Position "bottom":
+  number 4 of 4 open cards, counting the new one.
+  after:  card 82c000000000000000000103, at position 300
+  before: nothing. It would be last.
+
+THE EXACT PAYLOAD. This is the request body, not a summary of it:
+  {
+    "desc": "Customers ask support whether the service is down before checking anything. Put a link to the status page in the footer of every signed-in page.\n\n- Use the existing footer component\n- Open the status page in a new tab",
+    "due": "2026-12-11T17:00:00.000Z",
+    "idLabels": "83e000000000000000000013",
+    "idList": "81a000000000000000000011",
+    "idMembers": "5f0000000000000000000012",
+    "name": "Add a status page link to the app footer",
+    "pos": "bottom"
+  }
+As sent it is the same data with no spaces or line breaks and its names in alphabetical order:
+  442 bytes, SHA-256 9c84dc5be6160879423247f59331a3774ba1df411040bf4c36ef51b3562005f3
+
+THE TOKEN AND THE PERMISSION CHECK, asked of Trello for this board and this token:
+  the token's member is on the board as: normal. That role may add cards: yes
+  the token's own permissions for boards: read yes, write yes
+  the token expires: Trello gives no expiry
+
+DUPLICATE CHECKS:
+  1. This draft's own link file: there is none, so this workflow has not created it before.
+  2. Asked of Trello, open cards on this board with exactly this name: 0.
+  3. the local indexes in participant/context/trello/new-card/fixture/boards, 8 cards on 2 boards, searched with the trello-duplicate-search skill.
+     the index of this board holds 6 cards and Trello holds 6: the counts agree.
+     Result: NONE. No card on any board searched matches this draft on three or more signals beyond the name.
+       looked at and not reported: card 82c000000000000000000101, matched on labels and members only.
+       looked at and not reported: card 82c000000000000000000105, matched on members only.
+       looked at and not reported: card 82c000000000000000000106, matched on labels only.
+       looked at and not reported: card 82c000000000000000000102, matched on members only.
+       looked at and not reported: card 82c000000000000000000201, matched on members only.
+     The search's overall recommendation: PROCEED. A person decides.
+     The indexes are a local copy: a card created in Trello since the records were saved is not in them.
+Where Trello cannot check: it has no way to refuse a second create of the same card, and no way to try a
+  create without making one. The link file is this workflow's own protection against creating twice.
+
+Snapshot of the board in Trello before the preview: 4 lists, 6 cards, 92852d0d52abedd7
+Snapshot of the board in Trello after the preview:  4 lists, 6 cards, 92852d0d52abedd7
+The two are the same. The board is unchanged.
+Requests sent to Trello: 12. Every one was a GET, which reads and cannot change anything.
+  GET /members/me
+  GET /boards/80b000000000000000000001
+  GET /boards/80b000000000000000000001/lists
+  GET /boards/80b000000000000000000001/cards
+  GET /lists/81a000000000000000000011
+  GET /boards/80b000000000000000000001/labels
+  GET /boards/80b000000000000000000001/members
+  GET /boards/80b000000000000000000001/memberships
+  GET /tokens/[the token]
+  GET /boards/80b000000000000000000001/cards
+  GET /boards/80b000000000000000000001/lists
+  GET /boards/80b000000000000000000001/cards
+
+VERDICT: READY TO WRITE. Every check passed.
+Fingerprint of this preview: b610557a111c
+Made:    2026-11-20 21:04:23 UTC
+Expires: 2026-11-20 21:19:23 UTC (15 minutes after it was made)
+
+Nothing has been written to Trello. To create this card, a person who has read this preview confirms it
+by its fingerprint.
+------------------------------------------------------------------------------
+exit code: 0
+After the preview, the draft was edited: position "bottom" became position "top".
+$ python3 participant/skills/trello-create-card/create.py confirm --source fake --fake-file STATE/differs/fake-trello.json --link STATE/differs/linked.md --draft STATE/differs-draft/draft.md --allowlist participant/context/trello/new-card/sandbox-allowlist.json --boards participant/context/trello/new-card/fixture/boards --state STATE/differs/state --now 2026-11-20T09:00:00Z --fingerprint b610557a111c --confirmed-by "the participant"
+------------------------------------------------------------------------------
+
+REFUSED: the change is not the one that was previewed: the payload now differs in pos. Make a new preview and read it.
+Nothing has been written to Trello.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused: exit code 1
+  ok   the reason: the change is not the one that was previewed: the payload now differs in pos
+  ok   nothing was written: no POST was sent, and the made-up Trello is exactly as it was
+
+==============================================================================
+PART 4. Refusal 3 of 4: a preview older than the stated limit of 15 minutes. (criterion 7)
+$ python3 participant/skills/trello-create-card/create.py preview --source fake --fake-file STATE/too-old/fake-trello.json --link STATE/too-old/linked.md --draft participant/context/trello/new-card/draft.md --allowlist participant/context/trello/new-card/sandbox-allowlist.json --boards participant/context/trello/new-card/fixture/boards --state STATE/too-old/state --now 2026-11-20T09:00:00Z
+------------------------------------------------------------------------------
+PREVIEW OF CREATING ONE CARD. Nothing has been written to Trello.
+
+Board:  "Made-up platform team board" (board id 80b000000000000000000001). On the sandbox allowlist: yes.
+List:   "To do" (list id 81a000000000000000000011). Chosen by id. Trello says it belongs to board 80b000000000000000000001, the stated board: yes. Archived: no.
+Draft:  participant/context/trello/new-card/draft.md
+Link file: STATE/too-old/linked.md (not there yet: this draft has not been created)
+The change: one new card would be created, with one request: POST https://api.trello.com/1/cards
+
+FIELD BY FIELD, 7 fields in the payload:
+  idList     81a000000000000000000011
+  pos        "bottom"
+  name       "Add a status page link to the app footer"
+  desc       217 characters, shown in full in the payload
+  due        2026-12-11T17:00:00.000Z
+  idLabels   "feature" (label id 83e000000000000000000013)
+  idMembers  5f0000000000000000000012
+Labels and members were each found on the board before being put in the payload: 1 label, 1 member.
+Not in the payload, so decided by Trello and not by this draft: the card's id, its short link and its number on
+the board; who it is created by, which is the token's member; and, for "top" or "bottom", the position number.
+
+WHERE IN THE LIST. Position "bottom":
+  number 4 of 4 open cards, counting the new one.
+  after:  card 82c000000000000000000103, at position 300
+  before: nothing. It would be last.
+
+THE EXACT PAYLOAD. This is the request body, not a summary of it:
+  {
+    "desc": "Customers ask support whether the service is down before checking anything. Put a link to the status page in the footer of every signed-in page.\n\n- Use the existing footer component\n- Open the status page in a new tab",
+    "due": "2026-12-11T17:00:00.000Z",
+    "idLabels": "83e000000000000000000013",
+    "idList": "81a000000000000000000011",
+    "idMembers": "5f0000000000000000000012",
+    "name": "Add a status page link to the app footer",
+    "pos": "bottom"
+  }
+As sent it is the same data with no spaces or line breaks and its names in alphabetical order:
+  442 bytes, SHA-256 9c84dc5be6160879423247f59331a3774ba1df411040bf4c36ef51b3562005f3
+
+THE TOKEN AND THE PERMISSION CHECK, asked of Trello for this board and this token:
+  the token's member is on the board as: normal. That role may add cards: yes
+  the token's own permissions for boards: read yes, write yes
+  the token expires: Trello gives no expiry
+
+DUPLICATE CHECKS:
+  1. This draft's own link file: there is none, so this workflow has not created it before.
+  2. Asked of Trello, open cards on this board with exactly this name: 0.
+  3. the local indexes in participant/context/trello/new-card/fixture/boards, 8 cards on 2 boards, searched with the trello-duplicate-search skill.
+     the index of this board holds 6 cards and Trello holds 6: the counts agree.
+     Result: NONE. No card on any board searched matches this draft on three or more signals beyond the name.
+       looked at and not reported: card 82c000000000000000000101, matched on labels and members only.
+       looked at and not reported: card 82c000000000000000000105, matched on members only.
+       looked at and not reported: card 82c000000000000000000106, matched on labels only.
+       looked at and not reported: card 82c000000000000000000102, matched on members only.
+       looked at and not reported: card 82c000000000000000000201, matched on members only.
+     The search's overall recommendation: PROCEED. A person decides.
+     The indexes are a local copy: a card created in Trello since the records were saved is not in them.
+Where Trello cannot check: it has no way to refuse a second create of the same card, and no way to try a
+  create without making one. The link file is this workflow's own protection against creating twice.
+
+Snapshot of the board in Trello before the preview: 4 lists, 6 cards, 92852d0d52abedd7
+Snapshot of the board in Trello after the preview:  4 lists, 6 cards, 92852d0d52abedd7
+The two are the same. The board is unchanged.
+Requests sent to Trello: 12. Every one was a GET, which reads and cannot change anything.
+  GET /members/me
+  GET /boards/80b000000000000000000001
+  GET /boards/80b000000000000000000001/lists
+  GET /boards/80b000000000000000000001/cards
+  GET /lists/81a000000000000000000011
+  GET /boards/80b000000000000000000001/labels
+  GET /boards/80b000000000000000000001/members
+  GET /boards/80b000000000000000000001/memberships
+  GET /tokens/[the token]
+  GET /boards/80b000000000000000000001/cards
+  GET /boards/80b000000000000000000001/lists
+  GET /boards/80b000000000000000000001/cards
+
+VERDICT: READY TO WRITE. Every check passed.
+Fingerprint of this preview: c5b30faf0850
+Made:    2026-11-20 21:04:23 UTC
+Expires: 2026-11-20 21:19:23 UTC (15 minutes after it was made)
+
+Nothing has been written to Trello. To create this card, a person who has read this preview confirms it
+by its fingerprint.
+------------------------------------------------------------------------------
+exit code: 0
+The workflow's clock is moved 16 minutes on with its tests-only option. The output says so.
+$ python3 participant/skills/trello-create-card/create.py confirm --source fake --fake-file STATE/too-old/fake-trello.json --link STATE/too-old/linked.md --draft participant/context/trello/new-card/draft.md --allowlist participant/context/trello/new-card/sandbox-allowlist.json --boards participant/context/trello/new-card/fixture/boards --state STATE/too-old/state --now 2026-11-20T09:00:00Z --fingerprint c5b30faf0850 --confirmed-by "the participant" --pretend-minutes-later 16
+------------------------------------------------------------------------------
+TEST CLOCK: pretending it is 16 minutes later than it is.
+
+REFUSED: this preview is too old. It was made 16 minutes ago and the limit is 15. Make a new preview and read it.
+Nothing has been written to Trello.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused: exit code 1
+  ok   the reason: this preview is too old. It was made 16 minutes ago and the limit is 15
+  ok   nothing was written: no POST was sent, and the made-up Trello is exactly as it was
+
+==============================================================================
+PART 5. Refusal 4 of 4: a board that is not on the sandbox allowlist. (criterion 6)
+First, a draft for the made-up support board, which the allowlist leaves out. It is refused at the preview.
+$ python3 participant/skills/trello-create-card/create.py preview --source fake --fake-file STATE/not-allowed/fake-trello.json --link STATE/not-allowed/linked.md --draft STATE/support-draft/draft.md --allowlist participant/context/trello/new-card/sandbox-allowlist.json --boards participant/context/trello/new-card/fixture/boards --state STATE/not-allowed/state --now 2026-11-20T09:00:00Z
+------------------------------------------------------------------------------
+
+REFUSED: board 80b000000000000000000002 is not on the sandbox allowlist (participant/context/trello/new-card/sandbox-allowlist.json). This workflow writes only to boards listed there.
+Nothing has been written to Trello.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused: exit code 1
+  ok   the reason: board 80b000000000000000000002 is not on the sandbox allowlist
+  ok   nothing was written: no POST was sent, and the made-up Trello is exactly as it was
+  ok   no preview was saved, so there is no fingerprint to confirm
+
+Second, a board that is taken off the allowlist after a preview was made. It is refused at the confirmation.
+$ python3 participant/skills/trello-create-card/create.py preview --source fake --fake-file STATE/taken-off/fake-trello.json --link STATE/taken-off/linked.md --draft participant/context/trello/new-card/draft.md --allowlist participant/context/trello/new-card/sandbox-allowlist.json --boards participant/context/trello/new-card/fixture/boards --state STATE/taken-off/state --now 2026-11-20T09:00:00Z
+------------------------------------------------------------------------------
+PREVIEW OF CREATING ONE CARD. Nothing has been written to Trello.
+
+Board:  "Made-up platform team board" (board id 80b000000000000000000001). On the sandbox allowlist: yes.
+List:   "To do" (list id 81a000000000000000000011). Chosen by id. Trello says it belongs to board 80b000000000000000000001, the stated board: yes. Archived: no.
+Draft:  participant/context/trello/new-card/draft.md
+Link file: STATE/taken-off/linked.md (not there yet: this draft has not been created)
+The change: one new card would be created, with one request: POST https://api.trello.com/1/cards
+
+FIELD BY FIELD, 7 fields in the payload:
+  idList     81a000000000000000000011
+  pos        "bottom"
+  name       "Add a status page link to the app footer"
+  desc       217 characters, shown in full in the payload
+  due        2026-12-11T17:00:00.000Z
+  idLabels   "feature" (label id 83e000000000000000000013)
+  idMembers  5f0000000000000000000012
+Labels and members were each found on the board before being put in the payload: 1 label, 1 member.
+Not in the payload, so decided by Trello and not by this draft: the card's id, its short link and its number on
+the board; who it is created by, which is the token's member; and, for "top" or "bottom", the position number.
+
+WHERE IN THE LIST. Position "bottom":
+  number 4 of 4 open cards, counting the new one.
+  after:  card 82c000000000000000000103, at position 300
+  before: nothing. It would be last.
+
+THE EXACT PAYLOAD. This is the request body, not a summary of it:
+  {
+    "desc": "Customers ask support whether the service is down before checking anything. Put a link to the status page in the footer of every signed-in page.\n\n- Use the existing footer component\n- Open the status page in a new tab",
+    "due": "2026-12-11T17:00:00.000Z",
+    "idLabels": "83e000000000000000000013",
+    "idList": "81a000000000000000000011",
+    "idMembers": "5f0000000000000000000012",
+    "name": "Add a status page link to the app footer",
+    "pos": "bottom"
+  }
+As sent it is the same data with no spaces or line breaks and its names in alphabetical order:
+  442 bytes, SHA-256 9c84dc5be6160879423247f59331a3774ba1df411040bf4c36ef51b3562005f3
+
+THE TOKEN AND THE PERMISSION CHECK, asked of Trello for this board and this token:
+  the token's member is on the board as: normal. That role may add cards: yes
+  the token's own permissions for boards: read yes, write yes
+  the token expires: Trello gives no expiry
+
+DUPLICATE CHECKS:
+  1. This draft's own link file: there is none, so this workflow has not created it before.
+  2. Asked of Trello, open cards on this board with exactly this name: 0.
+  3. the local indexes in participant/context/trello/new-card/fixture/boards, 8 cards on 2 boards, searched with the trello-duplicate-search skill.
+     the index of this board holds 6 cards and Trello holds 6: the counts agree.
+     Result: NONE. No card on any board searched matches this draft on three or more signals beyond the name.
+       looked at and not reported: card 82c000000000000000000101, matched on labels and members only.
+       looked at and not reported: card 82c000000000000000000105, matched on members only.
+       looked at and not reported: card 82c000000000000000000106, matched on labels only.
+       looked at and not reported: card 82c000000000000000000102, matched on members only.
+       looked at and not reported: card 82c000000000000000000201, matched on members only.
+     The search's overall recommendation: PROCEED. A person decides.
+     The indexes are a local copy: a card created in Trello since the records were saved is not in them.
+Where Trello cannot check: it has no way to refuse a second create of the same card, and no way to try a
+  create without making one. The link file is this workflow's own protection against creating twice.
+
+Snapshot of the board in Trello before the preview: 4 lists, 6 cards, 92852d0d52abedd7
+Snapshot of the board in Trello after the preview:  4 lists, 6 cards, 92852d0d52abedd7
+The two are the same. The board is unchanged.
+Requests sent to Trello: 12. Every one was a GET, which reads and cannot change anything.
+  GET /members/me
+  GET /boards/80b000000000000000000001
+  GET /boards/80b000000000000000000001/lists
+  GET /boards/80b000000000000000000001/cards
+  GET /lists/81a000000000000000000011
+  GET /boards/80b000000000000000000001/labels
+  GET /boards/80b000000000000000000001/members
+  GET /boards/80b000000000000000000001/memberships
+  GET /tokens/[the token]
+  GET /boards/80b000000000000000000001/cards
+  GET /boards/80b000000000000000000001/lists
+  GET /boards/80b000000000000000000001/cards
+
+VERDICT: READY TO WRITE. Every check passed.
+Fingerprint of this preview: 1e70e4e7e84b
+Made:    2026-11-20 21:04:24 UTC
+Expires: 2026-11-20 21:19:24 UTC (15 minutes after it was made)
+
+Nothing has been written to Trello. To create this card, a person who has read this preview confirms it
+by its fingerprint.
+------------------------------------------------------------------------------
+exit code: 0
+$ python3 participant/skills/trello-create-card/create.py confirm --source fake --fake-file STATE/taken-off/fake-trello.json --link STATE/taken-off/linked.md --draft participant/context/trello/new-card/draft.md --allowlist STATE/allowlist-without-the-board.json --boards participant/context/trello/new-card/fixture/boards --state STATE/taken-off/state --now 2026-11-20T09:00:00Z --fingerprint 1e70e4e7e84b --confirmed-by "the participant"
+------------------------------------------------------------------------------
+
+REFUSED: board 80b000000000000000000001 is not on the sandbox allowlist (STATE/allowlist-without-the-board.json). This workflow writes only to boards listed there.
+Nothing has been written to Trello.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused: exit code 1
+  ok   the reason: board 80b000000000000000000001 is not on the sandbox allowlist
+  ok   nothing was written: no POST was sent, and the made-up Trello is exactly as it was
+
+==============================================================================
+A REAL REFUSAL, NOT PLANNED: the confirm command was first run with the placeholder word still where the fingerprint goes. The participant's own run on the real sandbox board, copied unchanged from logs/live-confirmation-refused.txt.
+
+REFUSED: a fingerprint is 12 characters, each 0 to 9 or a to f.
+Nothing has been written to Trello.
+
+The output above, and each file written, was searched for the API key and the token: neither found.
+
+==============================================================================
+A SECOND REAL REFUSAL, NOT PLANNED: the confirm command was then run with an empty fingerprint. The participant's own run on the real sandbox board, copied unchanged from logs/live-confirmation-missing.txt.
+
+REFUSED: no confirmation was given. A confirmation names the fingerprint of the preview it approves, and there is no way to create without one.
+Nothing has been written to Trello.
+
+The output above, and each file written, was searched for the API key and the token: neither found.
+
+==============================================================================
+THE REAL APPROVED RUN, with the fingerprint typed by the participant. The participant's own run on the real sandbox board, copied unchanged from logs/live-confirmation.txt.
+CONFIRMATION for preview 847183421875, given by: the participant (the name given with the confirmation).
+
+Board:  "GTQ Sandbox" (board id 6afdf376f8b9111df7e27f99). On the sandbox allowlist: yes.
+List:   "Backlog" (list id 6afdf3911014b50669965df7). Chosen by id. Trello says it belongs to board 6afdf376f8b9111df7e27f99, the stated board: yes. Archived: no.
+Draft:  participant/context/trello/new-card/draft-create.md
+
+Checked in this run, before writing:
+  the preview is 2 minutes old, and the limit is 15: ok
+  the saved preview is unaltered and has not been used: ok
+  the draft file is byte for byte the one that was previewed: ok
+  the payload worked out again now has the SHA-256 of the previewed one, c7eac8dfd8742d465d0a7c7d1354770828862f6530a3fa7aecbd1104a939c10b: ok
+  the board is on the sandbox allowlist, and the list is on that board and not archived: ok
+  Trello says the token may write and its member may add cards to this board: ok
+  the duplicate checks still pass: ok
+  this draft has no link file: ok
+
+Written to the link file before sending: a create is being sent, result not yet recorded, and the ids of the
+7 cards on the board now.
+CREATED in Trello: one card. Trello answered 200 with the card id 6b00b32ea6e47268f6721469.
+The confirmation and the write happened in this one run of the command.
+Written to the link file: the card id 6b00b32ea6e47268f6721469, the list id 6afdf3911014b50669965df7 and the board id 6afdf376f8b9111df7e27f99.
+
+READ BACK from Trello by card id 6b00b32ea6e47268f6721469, and compared with the payload field for field:
+  idList     sent 6afdf3911014b50669965df7
+             read 6afdf3911014b50669965df7: the same
+  pos        sent "bottom"
+             read position number 140737488388096, number 3 of 3 open cards in the list: the same: it is last in the list
+  name       sent "Made-up card to check the create workflow"
+             read "Made-up card to check the create workflow": the same
+  desc       sent 97 characters, starting "A made-up card. It checks that a card is"
+             read 97 characters, starting "A made-up card. It checks that a card is": the same, character for character
+  due        sent 2026-12-18T17:00:00.000Z
+             read 2026-12-18T17:00:00.000Z: the same
+  idBoard    sent not sent: it follows from the list
+             read 6afdf376f8b9111df7e27f99: the same as the board that was previewed
+Result: every field the payload sent reads back the same.
+What Trello set that the payload did not send:
+  card id:                         6b00b32ea6e47268f6721469
+  short link:                      9hsNtGfm
+  number on the board:             9
+  position number:                 140737488388096
+  archived:                        no
+  due marked complete:             no
+  created, read from the card id:  2026-11-20 20:53:02 UTC
+  last activity:                   2026-11-20T20:53:02.530Z
+
+The link file participant/context/trello/new-card/linked.md now holds the board, list and card ids and this comparison.
+
+RESULT RECORD
+  Board id: 6afdf376f8b9111df7e27f99, on the sandbox allowlist
+  List id: 6afdf3911014b50669965df7
+  Card id: 6b00b32ea6e47268f6721469
+  Identifier of what was created: the card, Trello card id 6b00b32ea6e47268f6721469 (short link 9hsNtGfm)
+  Created at: 2026-11-20 20:53:02 UTC by this workflow's clock; 2026-11-20 20:53:02 UTC by Trello's, read from the card id
+  Confirmed by: the participant, at 2026-11-20 20:53:00 UTC
+  Preview: fingerprint 847183421875
+  Payload: SHA-256 c7eac8dfd8742d465d0a7c7d1354770828862f6530a3fa7aecbd1104a939c10b
+  Read back and compared at 2026-11-20 20:53:02 UTC: every field the payload sent reads back the same
+  Local link: participant/context/trello/new-card/linked.md
+
+The result record was also saved as Markdown where --result said.
+
+Requests sent to Trello: 13. 12 GET and 1 POST. The POST is the one create.
+  GET /members/me
+  GET /boards/6afdf376f8b9111df7e27f99
+  GET /boards/6afdf376f8b9111df7e27f99/lists
+  GET /boards/6afdf376f8b9111df7e27f99/cards
+  GET /lists/6afdf3911014b50669965df7
+  GET /boards/6afdf376f8b9111df7e27f99/memberships
+  GET /tokens/[the token]
+  GET /boards/6afdf376f8b9111df7e27f99/cards
+  GET /boards/6afdf376f8b9111df7e27f99/lists
+  GET /boards/6afdf376f8b9111df7e27f99/cards
+  POST /cards
+  GET /cards/6b00b32ea6e47268f6721469
+  GET /boards/6afdf376f8b9111df7e27f99/cards
+
+The output above, and each file written, was searched for the API key and the token: neither found.
+
+RESULT: ALL CHECKS PASSED. 28 checks.

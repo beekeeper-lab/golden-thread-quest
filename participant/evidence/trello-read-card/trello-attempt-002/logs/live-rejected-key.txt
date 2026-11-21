@@ -1,0 +1,5 @@
+
+STOPPED: Trello answered 401 and said the API key is invalid. Check TRELLO_API_KEY.
+Nothing was written.
+
+The file and the output above were searched for the API key and the token: neither found.

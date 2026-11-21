@@ -1,0 +1,60 @@
+Retrieving one story and writing it, then running it again: jira-read-story, attempt jira-attempt-007
+Recorded by scripts/record_evidence.py. Each block between dashed lines is what a script printed.
+The Jira here is scripts/fake_jira.py, a made-up one. No real Jira was read. The story, UGLY-7, is made
+up and was built to be awkward to save, so nothing is redacted here. What the reader itself removes
+before saving is listed in its output.
+
+==============================================================================
+RUN 1. The file does not exist yet. The story is asked for by its key.
+$ python3 participant/evidence/jira-read-story/jira-attempt-007/scripts/story.py --source fake --story UGLY-7 --out participant/context/jira/stories/story-sample.md
+------------------------------------------------------------------------------
+STORY READER. Reading only.
+Story: issue id 10042, key UGLY-7. The id is what identifies it.
+Fields Jira returned: 28
+  in the front matter, known by name:  16
+  in the body, as Markdown:            1 (the description)
+  in the preserved section, unchanged: 11
+  total placed: 28 of 28
+Removed before saving: email addresses removed from text: 2, names removed from mentions: 1, people reduced to an account id: 5, site links removed: 18
+In the description: list inside a table cell, kept as lines: 1, media kept as a reference: 1, unrecognised block: extension: 1
+File: WRITTEN, 6624 bytes.
+SHA-256 of the file: 3f9da38f0368d0f40435aa05be2d6e301a799e7495423e2599734d9bb5223a10
+------------------------------------------------------------------------------
+exit code: 0
+
+  ok   every field Jira returned was placed in the file: 28 of 28
+  ok   the file was written
+  ok   the story is identified by its issue id, 10042
+  SHA-256 of participant/context/jira/stories/story-sample.md after run 1: 3f9da38f0368d0f40435aa05be2d6e301a799e7495423e2599734d9bb5223a10
+
+==============================================================================
+RUN 2. The same story again, with the file now there. This time it is asked for by its id.
+$ python3 participant/evidence/jira-read-story/jira-attempt-007/scripts/story.py --source fake --story 10042 --out participant/context/jira/stories/story-sample.md
+------------------------------------------------------------------------------
+STORY READER. Reading only.
+Story: issue id 10042, key UGLY-7. The id is what identifies it.
+Fields Jira returned: 28
+  in the front matter, known by name:  16
+  in the body, as Markdown:            1 (the description)
+  in the preserved section, unchanged: 11
+  total placed: 28 of 28
+Removed before saving: email addresses removed from text: 2, names removed from mentions: 1, people reduced to an account id: 5, site links removed: 18
+In the description: list inside a table cell, kept as lines: 1, media kept as a reference: 1, unrecognised block: extension: 1
+File: UNCHANGED. It already holds exactly these 6624 bytes, and was not rewritten.
+SHA-256 of the file: 3f9da38f0368d0f40435aa05be2d6e301a799e7495423e2599734d9bb5223a10
+------------------------------------------------------------------------------
+exit code: 0
+
+  SHA-256 of participant/context/jira/stories/story-sample.md after run 2: 3f9da38f0368d0f40435aa05be2d6e301a799e7495423e2599734d9bb5223a10
+  ok   the file is byte-identical after the second run (the two SHA-256 values are the same)
+  ok   the reader said the file was unchanged, and did not rewrite it (its modified time has not moved)
+  ok   asking by id gave the same file as asking by key
+
+The first four lines of the file:
+    ---
+    format: "jira-story/1"
+    id: "10042"
+    key: "UGLY-7"
+  ok   the issue id comes first, and the key is a separate field after it
+
+RESULT: ALL CHECKS PASSED.

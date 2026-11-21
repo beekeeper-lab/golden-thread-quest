@@ -1,0 +1,159 @@
+Do the tests notice a broken updater? jira-update-fields, attempt jira-attempt-008
+Recorded by scripts/planted_bugs.py.
+
+Each bug below was put into scripts/update.py, every test was run, and the bug was taken out again.
+No network is used.
+
+Before any bug: OK
+
+PLANTED BUG A. A field outside the supported list is let through (criterion 2)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    SupportedFields.test_unsupported_fields_are_refused_before_any_request
+
+PLANTED BUG B. A label of any shape is accepted (criterion 2)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    SupportedFields.test_values_outside_the_allowed_ones_are_refused
+
+PLANTED BUG C. A due date is not checked to be a real date (criterion 2)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    SupportedFields.test_values_outside_the_allowed_ones_are_refused
+
+PLANTED BUG D. Any priority name is accepted, and the first one Jira offers is used (criterion 2)
+  unittest result: FAILED (failures=9)
+  tests that failed (9):
+    Confirmation.test_a_change_that_differs_from_the_preview_is_refused
+    Preview.test_a_field_already_as_wanted_is_reported_and_not_sent
+    Confirmation.test_an_altered_saved_preview_is_refused
+    Confirmation.test_approved_run_writes_and_reads_back
+    WhenTheWriteGoesWrong.test_no_answer_means_unknown_and_no_retry
+    SupportedFields.test_only_the_changed_supported_fields_are_sent
+    SupportedFields.test_priority_must_be_one_jira_offers
+    ResultAndRerun.test_result_record_holds_what_criterion_8_asks_for
+    Preview.test_shows_old_and_new_value_of_each_field
+
+PLANTED BUG E. Jira's list of editable fields is ignored (criteria 2 and 5)
+  unittest result: FAILED (errors=1)
+  tests that failed (1):
+    SupportedFields.test_priority_is_refused_where_jira_does_not_offer_it
+
+PLANTED BUG F. A field changed in Jira after the preview no longer stops the update (criterion 3)
+  unittest result: FAILED (failures=4)
+  tests that failed (4):
+    Stale.test_a_field_changed_in_jira_after_the_preview_stops_the_update
+    Stale.test_a_field_named_but_already_as_wanted_is_watched_too
+    Stale.test_each_supported_field_is_watched
+    Stale.test_someone_else_already_making_the_same_change_also_stops_it
+
+PLANTED BUG G. The story changing while the preview is made goes unnoticed (criterion 4)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Preview.test_story_changing_during_the_preview_is_refused
+
+PLANTED BUG H. A preview is able to send a write (criterion 4)
+  unittest result: FAILED (errors=1)
+  tests that failed (1):
+    Preview.test_a_preview_has_no_way_to_write
+
+PLANTED BUG I. The permission check's answer is ignored (criterion 5)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Permission.test_no_edit_permission_is_refused
+    Permission.test_permission_lost_after_the_preview_is_refused
+
+PLANTED BUG J. The allowlist is not applied (criterion 6)
+  unittest result: FAILED (failures=4)
+  tests that failed (4):
+    Allowlist.test_a_project_not_on_the_allowlist_is_refused_at_preview
+    Allowlist.test_a_story_moved_to_another_project_is_refused
+    Allowlist.test_the_allowlist_is_checked_again_at_confirmation
+    Allowlist.test_the_same_project_id_on_another_site_is_not_allowed
+
+PLANTED BUG K. The allowlist forgets which Jira site a project id belongs to (criterion 6)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Allowlist.test_the_same_project_id_on_another_site_is_not_allowed
+
+PLANTED BUG L. A confirmation with no name is accepted (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Confirmation.test_missing_confirmation_is_refused
+
+PLANTED BUG M. A change that differs from the preview is written (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Confirmation.test_a_change_that_differs_from_the_preview_is_refused
+
+PLANTED BUG N. A preview never expires (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Confirmation.test_a_preview_older_than_the_limit_is_refused
+
+PLANTED BUG O. An altered saved preview is accepted (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Confirmation.test_an_altered_saved_preview_is_refused
+
+PLANTED BUG P. The test clock can be moved backwards, to make an old preview look new (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    CommandLine.test_the_test_clock_only_goes_forward
+
+PLANTED BUG Q. A fingerprint that has been written can be used again (criterion 9)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Confirmation.test_a_fingerprint_is_used_once
+
+PLANTED BUG R. A preview whose write was sent and went wrong can be sent again (criterion 9)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    WhenTheWriteGoesWrong.test_jira_refusing_the_write_writes_nothing_and_uses_up_the_preview
+    WhenTheWriteGoesWrong.test_no_answer_means_unknown_and_no_retry
+
+PLANTED BUG S. A field that already holds the wanted value is sent anyway (criterion 9)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Preview.test_a_field_already_as_wanted_is_reported_and_not_sent
+    CommandLine.test_preview_then_confirm_through_the_command_line
+    ResultAndRerun.test_running_again_changes_nothing
+
+PLANTED BUG T. A write that gets no answer is sent a second time (criterion 9)
+  unittest result: FAILED (errors=1)
+  tests that failed (1):
+    WhenTheWriteGoesWrong.test_no_answer_means_unknown_and_no_retry
+
+PLANTED BUG U. The read-back after the write is not compared with what was proposed (criterion 8)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Stale.test_a_write_jira_accepts_but_does_not_make_is_noticed
+
+PLANTED BUG V. Any new history entry is claimed as this write's, whoever made it (criterion 8)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Stale.test_a_change_in_the_last_moment_is_reported_afterwards
+
+PLANTED BUG W. A change overwritten in the last moment is not reported (criterion 3)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Stale.test_a_change_in_the_last_moment_is_reported_afterwards
+
+PLANTED BUG X. The story's summary is printed in the preview (safety rule: story text is untrusted)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Preview.test_story_text_is_never_printed
+
+PLANTED BUG Y. The saved log keeps the site's address (safety rule: redacted records)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    CommandLine.test_preview_then_confirm_through_the_command_line
+
+PLANTED BUG Z. Output is not searched for credentials (safety rule: no credential in a log)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    CommandLine.test_output_holding_a_credential_is_not_shown_or_saved
+
+After the last bug was taken out: update.py is byte for byte what it was at the start. OK
+
+RESULT: all 26 planted bugs were caught by at least one test, and the file was restored.

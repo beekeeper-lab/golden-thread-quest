@@ -1,0 +1,5 @@
+
+REFUSED: no confirmation was given. A confirmation names the fingerprint of the preview it approves, and there is no way to create without one.
+Nothing has been written to Trello.
+
+The output above, and each file written, was searched for the API key and the token: neither found.

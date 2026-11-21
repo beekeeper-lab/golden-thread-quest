@@ -1,0 +1,13 @@
+schema_version: 1
+submission_id: submission-20261119012459-58d066
+quest_id: jira-verify-connection
+quest_version: 1
+attempt_id: jira-attempt-005
+content_hash: sha256:40070ac981ddd20cf761ded0bdde12346f955b3c8fd2590c990dfcbcf27f0c7d
+evidence_hash: sha256:9da80016301ff93e3ed9fea83d8375bbba0e128bbc2d16dcba50c126532f1270
+submitted_at: '2026-11-19T01:24:59Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/jira/verify-notes.md
+  digest: sha256:49327a63f02bed652c85df3ed72eb0f95238ad437c53ad0d9e270d04feff1ba1

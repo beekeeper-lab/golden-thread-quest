@@ -1,0 +1,130 @@
+Do the tests notice a broken projects.py? jira-list-projects, attempt jira-attempt-006
+Recorded by scripts/planted_bugs.py.
+
+Each bug below was put into scripts/projects.py, every test was run, and the bug was taken out again.
+No network is used.
+
+Before any bug: OK
+
+PLANTED BUG A. Projects are matched by key, not by id
+  unittest result: FAILED (failures=4)
+  tests that failed (4):
+    Renames.test_a_changed_key_is_matched_to_the_existing_record_and_file
+    Renames.test_a_changed_name_and_a_change_of_both_are_matched_too
+    FindableByAnyLabel.test_a_former_key_and_a_former_name_still_lead_to_the_project
+    Renames.test_two_projects_that_swap_keys_stay_the_right_way_round
+
+PLANTED BUG B. Projects are matched by name, not by id
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Renames.test_a_changed_name_and_a_change_of_both_are_matched_too
+    FindableByAnyLabel.test_a_former_key_and_a_former_name_still_lead_to_the_project
+    Renames.test_two_projects_with_the_same_name_stay_two
+
+PLANTED BUG C. Files are named by key
+  unittest result: FAILED (failures=4, errors=1)
+  tests that failed (5):
+    Renames.test_a_changed_key_is_matched_to_the_existing_record_and_file
+    Vanished.test_a_project_that_disappears_is_flagged_and_kept_with_its_last_labels
+    ThreeFieldsAndFilesById.test_each_record_stores_the_id_the_key_and_the_name_as_separate_fields
+    ThreeFieldsAndFilesById.test_every_link_in_the_list_points_to_a_file_named_by_id
+    ThreeFieldsAndFilesById.test_files_are_named_by_the_id_and_by_nothing_else
+
+PLANTED BUG D. Paging stops at the first page that is not completely full, without asking Jira's count
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    EveryProjectAcrossPages.test_projects_past_the_first_page_are_retrieved_and_the_page_count_is_shown
+    EveryProjectAcrossPages.test_when_jira_gives_fewer_to_a_page_than_asked_none_is_skipped
+
+PLANTED BUG E. Only the first page is read
+  unittest result: FAILED (failures=6, errors=19)
+  tests that failed (25):
+    Renames.test_a_changed_key_is_matched_to_the_existing_record_and_file
+    Renames.test_a_changed_name_and_a_change_of_both_are_matched_too
+    Safety.test_a_failed_second_run_leaves_the_first_runs_files_as_they_were
+    Safety.test_a_folder_from_a_fake_run_is_refused_by_a_live_run
+    FindableByAnyLabel.test_a_former_key_and_a_former_name_still_lead_to_the_project
+    Safety.test_a_name_cannot_add_structure_to_the_list
+    Renames.test_a_new_project_given_another_projects_old_key_is_a_separate_record
+    Vanished.test_a_project_that_disappears_is_flagged_and_kept_with_its_last_labels
+    Renames.test_an_unchanged_second_run_changes_nothing
+    FindableByAnyLabel.test_each_lookup_is_sorted_by_its_own_label
+    ThreeFieldsAndFilesById.test_each_record_stores_the_id_the_key_and_the_name_as_separate_fields
+    ThreeFieldsAndFilesById.test_every_link_in_the_list_points_to_a_file_named_by_id
+    FindableByAnyLabel.test_every_project_is_in_all_three_lookups_with_its_other_two_labels
+    EveryProjectAcrossPages.test_exactly_a_full_page_and_exact_multiples_are_read_whole
+    ThreeFieldsAndFilesById.test_files_are_named_by_the_id_and_by_nothing_else
+    Vanished.test_it_is_reported_once_and_is_cleared_if_the_project_comes_back
+    EveryProjectAcrossPages.test_one_more_than_a_page_is_not_lost
+    EveryProjectAcrossPages.test_pages_that_do_not_move_forward_stop_the_run
+    EveryProjectAcrossPages.test_pages_with_no_count_are_read_to_the_last_page
+    EveryProjectAcrossPages.test_pages_with_no_last_marker_are_read_to_jiras_count
+    EveryProjectAcrossPages.test_projects_past_the_first_page_are_retrieved_and_the_page_count_is_shown
+    Vanished.test_the_list_does_not_claim_to_know_why_a_project_is_missing
+    Renames.test_two_projects_that_swap_keys_stay_the_right_way_round
+    Renames.test_two_projects_with_the_same_name_stay_two
+    EveryProjectAcrossPages.test_when_jira_gives_fewer_to_a_page_than_asked_none_is_skipped
+
+PLANTED BUG F. The count is not held against Jira's own
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    EveryProjectAcrossPages.test_a_first_page_that_wrongly_claims_to_be_the_last_stops_the_run
+
+PLANTED BUG G. The next page starts one page-size on, whatever was actually returned
+  unittest result: FAILED (errors=1)
+  tests that failed (1):
+    EveryProjectAcrossPages.test_when_jira_gives_fewer_to_a_page_than_asked_none_is_skipped
+
+PLANTED BUG H. A project that disappears is deleted from the local copy
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Vanished.test_a_project_that_disappears_is_flagged_and_kept_with_its_last_labels
+    Vanished.test_it_is_reported_once_and_is_cleared_if_the_project_comes_back
+    Vanished.test_the_list_does_not_claim_to_know_why_a_project_is_missing
+
+PLANTED BUG I. A rename keeps no record of the old key or name
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Renames.test_a_changed_key_is_matched_to_the_existing_record_and_file
+    Renames.test_a_changed_name_and_a_change_of_both_are_matched_too
+    FindableByAnyLabel.test_a_former_key_and_a_former_name_still_lead_to_the_project
+
+PLANTED BUG J. Links in the list use the key
+  unittest result: FAILED (failures=3, errors=1)
+  tests that failed (4):
+    FindableByAnyLabel.test_a_former_key_and_a_former_name_still_lead_to_the_project
+    Safety.test_a_name_cannot_add_structure_to_the_list
+    ThreeFieldsAndFilesById.test_every_link_in_the_list_points_to_a_file_named_by_id
+    FindableByAnyLabel.test_every_project_is_in_all_three_lookups_with_its_other_two_labels
+
+PLANTED BUG K. The lookup by key is left out of the list
+  unittest result: FAILED (failures=1, errors=3)
+  tests that failed (4):
+    FindableByAnyLabel.test_a_former_key_and_a_former_name_still_lead_to_the_project
+    Vanished.test_a_project_that_disappears_is_flagged_and_kept_with_its_last_labels
+    FindableByAnyLabel.test_each_lookup_is_sorted_by_its_own_label
+    FindableByAnyLabel.test_every_project_is_in_all_three_lookups_with_its_other_two_labels
+
+PLANTED BUG L. The skill is given a way to send a write
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Safety.test_the_skill_can_only_send_get_requests
+
+PLANTED BUG M. Files are written before the whole list has been read
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Safety.test_a_failed_second_run_leaves_the_first_runs_files_as_they_were
+
+PLANTED BUG N. The site's address is left out of the search for credentials
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Safety.test_the_things_searched_for_are_the_token_the_email_the_encoded_pair_and_the_sites_address
+
+PLANTED BUG O. A vanished project is reported again on every run
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Vanished.test_it_is_reported_once_and_is_cleared_if_the_project_comes_back
+
+After the last bug was taken out: projects.py is byte for byte what it was at the start. OK
+
+RESULT: all 15 planted bugs were caught by at least one test, and projects.py was restored.

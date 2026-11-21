@@ -1,0 +1,28 @@
+{
+  "board": "DEMO",
+  "changes": [
+    {
+      "action": "create",
+      "fields": {
+        "title": "Search stories by description",
+        "description": "Extend the search box so it also finds stories whose description holds the words typed.\nFollow-up to DEMO-3.",
+        "status": "todo"
+      }
+    },
+    {
+      "action": "create",
+      "fields": {
+        "title": "Show how many stories a search found",
+        "description": "Above the search results, show the number of stories found.",
+        "status": "todo"
+      }
+    },
+    {
+      "action": "update",
+      "id": "DEMO-3",
+      "fields": {
+        "status": "doing"
+      }
+    }
+  ]
+}

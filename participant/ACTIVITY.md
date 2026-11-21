@@ -1,0 +1,208 @@
+# Activity
+
+Every change this application made to your files, newest last.
+
+- `2026-10-14T17:19:15Z` Started base-camp-repository-safety as attempt base-attempt-001.
+- `2026-10-14T17:47:18Z` base-camp-repository-safety: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-10-14T17:48:41Z` base-camp-repository-safety: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-10-14T17:51:55Z` base-camp-repository-safety: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-10-14T17:51:55Z` Submitted base-camp-repository-safety for review as submission-20261014175155-58f16c.
+- `2026-10-14T22:26:47Z` Review of base-camp-repository-safety: approved by Gregg Reed.
+- `2026-10-22T17:38:17Z` Started jira-read-assigned-stories as attempt jira-attempt-001.
+- `2026-10-22T20:41:32Z` jira-read-assigned-stories: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-10-22T20:41:47Z` jira-read-assigned-stories: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-10-22T20:42:18Z` jira-read-assigned-stories: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-10-22T20:42:18Z` Submitted jira-read-assigned-stories for review as submission-20261022204218-2fac7a.
+- `2026-10-22T21:25:09Z` Review of jira-read-assigned-stories: approved by Gregg Reed.
+- `2026-10-28T00:23:26Z` Started ba-ingest-transcript as attempt ba-attempt-001.
+- `2026-10-30T19:03:15Z` ba-ingest-transcript: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-10-30T19:03:45Z` ba-ingest-transcript: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-10-30T19:04:16Z` ba-ingest-transcript: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-10-30T19:04:16Z` Submitted ba-ingest-transcript for review as submission-20261030190416-114346.
+- `2026-10-30T19:58:32Z` Started playwright-first-independent-test as attempt playwright-attempt-001.
+- `2026-11-01T06:40:57Z` Review of ba-ingest-transcript: approved by Claude (automated reviewer).
+- `2026-11-01T13:22:48Z` playwright-first-independent-test: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-01T13:23:06Z` playwright-first-independent-test: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-01T13:23:22Z` playwright-first-independent-test: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-01T13:23:22Z` Submitted playwright-first-independent-test for review as submission-20261101132322-3ebd8d.
+- `2026-11-01T13:28:02Z` Review of playwright-first-independent-test: approved by Claude (automated reviewer).
+- `2026-11-10T17:10:46Z` Started jira-delta-sync as attempt jira-attempt-002.
+- `2026-11-10T21:13:53Z` jira-delta-sync: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-10T21:14:19Z` jira-delta-sync: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-10T21:14:45Z` jira-delta-sync: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-10T21:14:45Z` Submitted jira-delta-sync for review as submission-20261110211445-d6958a.
+- `2026-11-10T21:27:27Z` Review of jira-delta-sync: approved by Claude (automated reviewer).
+- `2026-11-10T23:17:06Z` Started base-camp-audit-log as attempt base-attempt-002.
+- `2026-11-11T17:36:08Z` base-camp-audit-log: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-11T17:36:29Z` base-camp-audit-log: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-11T17:36:48Z` base-camp-audit-log: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-11T17:36:48Z` Submitted base-camp-audit-log for review as submission-20261111173648-ad8ba4.
+- `2026-11-11T17:47:39Z` Review of base-camp-audit-log: approved by Claude (automated reviewer).
+- `2026-11-17T00:19:38Z` Started base-camp-prompt-injection as attempt base-attempt-003.
+- `2026-11-17T01:21:53Z` base-camp-prompt-injection: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-17T01:22:18Z` base-camp-prompt-injection: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-17T01:22:39Z` base-camp-prompt-injection: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-17T01:22:39Z` Submitted base-camp-prompt-injection for review as submission-20261117012239-f62c3f.
+- `2026-11-17T01:25:48Z` Review of base-camp-prompt-injection: approved by Claude (automated reviewer).
+- `2026-11-17T14:39:51Z` Started base-camp-safe-rerun as attempt base-attempt-004.
+- `2026-11-17T17:25:43Z` base-camp-safe-rerun: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-17T17:26:08Z` base-camp-safe-rerun: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-17T17:26:29Z` base-camp-safe-rerun: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-17T17:26:29Z` Submitted base-camp-safe-rerun for review as submission-20261117172629-0a937c.
+- `2026-11-17T17:37:45Z` Review of base-camp-safe-rerun: approved by Claude (automated reviewer).
+- `2026-11-17T18:29:06Z` Started base-camp-failure-lab as attempt base-attempt-005.
+- `2026-11-17T19:39:52Z` base-camp-failure-lab: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-17T19:40:09Z` base-camp-failure-lab: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-17T19:40:28Z` base-camp-failure-lab: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-17T19:40:28Z` Submitted base-camp-failure-lab for review as submission-20261117194028-db7815.
+- `2026-11-17T19:54:36Z` Review of base-camp-failure-lab: approved by Claude (automated reviewer).
+- `2026-11-17T20:01:59Z` Started base-camp-write-preview as attempt base-attempt-006.
+- `2026-11-17T21:05:29Z` base-camp-write-preview: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-17T21:05:54Z` base-camp-write-preview: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-17T21:06:26Z` base-camp-write-preview: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-17T21:06:26Z` Submitted base-camp-write-preview for review as submission-20261117210626-513783.
+- `2026-11-17T21:18:30Z` Review of base-camp-write-preview: approved by Claude (automated reviewer).
+- `2026-11-18T16:24:47Z` Started jira-compare-access-methods as attempt jira-attempt-003.
+- `2026-11-18T16:57:46Z` jira-compare-access-methods: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-18T16:58:04Z` jira-compare-access-methods: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-18T16:58:22Z` jira-compare-access-methods: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-18T16:58:22Z` Submitted jira-compare-access-methods for review as submission-20261118165822-063856.
+- `2026-11-18T17:09:29Z` Review of jira-compare-access-methods: approved by Claude (automated reviewer).
+- `2026-11-18T17:17:42Z` Started jira-detect-conflicts as attempt jira-attempt-004.
+- `2026-11-18T18:13:01Z` jira-detect-conflicts: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-18T18:13:22Z` jira-detect-conflicts: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-18T18:14:51Z` jira-detect-conflicts: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-18T18:14:51Z` Submitted jira-detect-conflicts for review as submission-20261118181451-87399c.
+- `2026-11-18T18:23:30Z` Review of jira-detect-conflicts: approved by Claude (automated reviewer).
+- `2026-11-18T18:39:39Z` Started trello-read-board as attempt trello-attempt-001.
+- `2026-11-18T20:31:44Z` trello-read-board: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-18T20:32:03Z` trello-read-board: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-18T20:33:15Z` trello-read-board: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-18T20:33:15Z` Submitted trello-read-board for review as submission-20261118203315-9df3d3.
+- `2026-11-18T20:40:05Z` Review of trello-read-board: needs_changes by Claude (automated reviewer).
+- `2026-11-18T20:54:02Z` trello-read-board: needs_changes → in_progress (Resume after a reviewer asked for changes.)
+- `2026-11-18T20:59:46Z` trello-read-board: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-18T21:00:05Z` trello-read-board: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-18T21:00:26Z` trello-read-board: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-18T21:00:26Z` Submitted trello-read-board for review as submission-20261118210026-782b46.
+- `2026-11-18T21:11:58Z` Review of trello-read-board: approved by Claude (automated reviewer).
+- `2026-11-19T00:51:04Z` Started jira-verify-connection as attempt jira-attempt-005.
+- `2026-11-19T01:23:39Z` jira-verify-connection: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-19T01:24:25Z` jira-verify-connection: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-19T01:24:59Z` jira-verify-connection: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-19T01:24:59Z` Submitted jira-verify-connection for review as submission-20261119012459-58d066.
+- `2026-11-19T01:33:32Z` Review of jira-verify-connection: approved by Claude (automated reviewer).
+- `2026-11-19T01:40:17Z` Started jira-list-projects as attempt jira-attempt-006.
+- `2026-11-19T01:58:27Z` jira-list-projects: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-19T01:58:45Z` jira-list-projects: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-19T01:59:05Z` jira-list-projects: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-19T01:59:05Z` Submitted jira-list-projects for review as submission-20261119015905-7d016e.
+- `2026-11-19T02:05:34Z` Review of jira-list-projects: approved by Claude (automated reviewer).
+- `2026-11-19T12:13:26Z` Started jira-read-story as attempt jira-attempt-007.
+- `2026-11-19T12:53:43Z` jira-read-story: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-19T12:55:12Z` jira-read-story: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-19T12:55:36Z` jira-read-story: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-19T12:55:36Z` Submitted jira-read-story for review as submission-20261119125536-9bc9dc.
+- `2026-11-19T13:03:17Z` Review of jira-read-story: approved by Claude (automated reviewer).
+- `2026-11-19T15:00:37Z` Started jira-update-fields as attempt jira-attempt-008.
+- `2026-11-19T15:56:57Z` jira-update-fields: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-19T15:59:03Z` jira-update-fields: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-19T16:00:09Z` jira-update-fields: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-19T16:00:09Z` Submitted jira-update-fields for review as submission-20261119160009-9d1964.
+- `2026-11-19T16:12:06Z` Review of jira-update-fields: approved by Claude (automated reviewer).
+- `2026-11-19T18:26:42Z` Started jira-build-index as attempt jira-attempt-009.
+- `2026-11-19T18:40:23Z` jira-build-index: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-19T18:40:42Z` jira-build-index: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-19T18:41:03Z` jira-build-index: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-19T18:41:03Z` Submitted jira-build-index for review as submission-20261119184103-2d742f.
+- `2026-11-19T18:50:27Z` Review of jira-build-index: approved by Claude (automated reviewer).
+- `2026-11-19T18:57:25Z` Started jira-duplicate-search as attempt jira-attempt-010.
+- `2026-11-19T19:15:45Z` jira-duplicate-search: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-19T19:16:04Z` jira-duplicate-search: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-19T19:16:27Z` jira-duplicate-search: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-19T19:16:27Z` Submitted jira-duplicate-search for review as submission-20261119191627-219748.
+- `2026-11-19T19:22:32Z` Review of jira-duplicate-search: approved by Claude (automated reviewer).
+- `2026-11-19T19:47:03Z` Started jira-create-story-preview as attempt jira-attempt-011.
+- `2026-11-19T21:04:20Z` jira-create-story-preview: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-19T21:04:39Z` jira-create-story-preview: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-19T21:05:01Z` jira-create-story-preview: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-19T21:05:01Z` Submitted jira-create-story-preview for review as submission-20261119210501-54d653.
+- `2026-11-19T21:07:39Z` Review of jira-create-story-preview: approved by Claude (automated reviewer).
+- `2026-11-19T21:10:22Z` Started jira-create-story as attempt jira-attempt-012.
+- `2026-11-19T21:41:11Z` jira-create-story: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-19T21:44:47Z` jira-create-story: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-19T21:46:52Z` jira-create-story: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-19T21:46:52Z` Submitted jira-create-story for review as submission-20261119214652-528212.
+- `2026-11-19T21:50:44Z` Review of jira-create-story: approved by Claude (automated reviewer).
+- `2026-11-20T01:41:42Z` Started context-staleness as attempt context-attempt-001.
+- `2026-11-20T01:52:25Z` context-staleness: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-20T01:52:46Z` context-staleness: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-20T01:53:08Z` context-staleness: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-20T01:53:08Z` Submitted context-staleness for review as submission-20261120015308-5286c4.
+- `2026-11-20T02:02:39Z` Review of context-staleness: approved by Claude (automated reviewer).
+- `2026-11-20T12:38:29Z` Started trello-read-card as attempt trello-attempt-002.
+- `2026-11-20T13:05:36Z` trello-read-card: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-20T13:06:12Z` trello-read-card: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-20T13:07:11Z` trello-read-card: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-20T13:07:11Z` Submitted trello-read-card for review as submission-20261120130711-268abb.
+- `2026-11-20T13:11:34Z` Review of trello-read-card: approved by Claude (automated reviewer).
+- `2026-11-20T15:10:21Z` Started ba-detect-ambiguity as attempt ba-attempt-002.
+- `2026-11-20T15:36:55Z` ba-detect-ambiguity: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-20T15:37:15Z` ba-detect-ambiguity: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-20T15:37:38Z` ba-detect-ambiguity: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-20T15:37:38Z` Submitted ba-detect-ambiguity for review as submission-20261120153738-0623a5.
+- `2026-11-20T15:49:37Z` Review of ba-detect-ambiguity: needs_changes by Claude (automated reviewer).
+- `2026-11-20T15:58:53Z` ba-detect-ambiguity: needs_changes → in_progress (Resume after a reviewer asked for changes.)
+- `2026-11-20T15:59:15Z` ba-detect-ambiguity: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-20T15:59:35Z` ba-detect-ambiguity: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-20T15:59:58Z` ba-detect-ambiguity: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-20T15:59:58Z` Submitted ba-detect-ambiguity for review as submission-20261120155958-43c379.
+- `2026-11-20T16:11:27Z` Review of ba-detect-ambiguity: approved by Claude (automated reviewer).
+- `2026-11-20T16:23:54Z` Started trello-build-index as attempt trello-attempt-003.
+- `2026-11-20T16:54:20Z` trello-build-index: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-20T16:54:41Z` trello-build-index: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-20T16:55:04Z` trello-build-index: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-20T16:55:04Z` Submitted trello-build-index for review as submission-20261120165504-b83f7c.
+- `2026-11-20T17:04:43Z` Review of trello-build-index: approved by Claude (automated reviewer).
+- `2026-11-20T17:58:26Z` Started trello-duplicate-search as attempt trello-attempt-004.
+- `2026-11-20T18:24:35Z` trello-duplicate-search: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-20T18:24:56Z` trello-duplicate-search: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-20T18:47:11Z` trello-duplicate-search: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-20T18:47:11Z` Submitted trello-duplicate-search for review as submission-20261120184711-101c75.
+- `2026-11-20T18:49:39Z` Review of trello-duplicate-search: approved by Claude (automated reviewer).
+- `2026-11-20T19:03:02Z` Started trello-create-card-preview as attempt trello-attempt-005.
+- `2026-11-20T19:22:01Z` trello-create-card-preview: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-20T19:22:23Z` trello-create-card-preview: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-20T19:23:10Z` trello-create-card-preview: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-20T19:23:10Z` Submitted trello-create-card-preview for review as submission-20261120192310-91507e.
+- `2026-11-20T19:31:50Z` Review of trello-create-card-preview: approved by Claude (automated reviewer).
+- `2026-11-20T20:03:23Z` Started trello-create-card as attempt trello-attempt-006.
+- `2026-11-20T21:13:23Z` trello-create-card: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-20T21:14:09Z` trello-create-card: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-20T21:14:34Z` trello-create-card: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-20T21:14:34Z` Submitted trello-create-card for review as submission-20261120211434-727896.
+- `2026-11-20T21:18:22Z` Review of trello-create-card: approved by Claude (automated reviewer).
+- `2026-11-20T21:25:42Z` Started ba-search-existing-work as attempt ba-attempt-003.
+- `2026-11-21T00:35:19Z` ba-search-existing-work: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-21T00:35:44Z` ba-search-existing-work: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-21T00:36:10Z` ba-search-existing-work: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-21T00:36:10Z` Submitted ba-search-existing-work for review as submission-20261121003610-78d8d3.
+- `2026-11-21T00:37:39Z` Review of ba-search-existing-work: approved by Claude (automated reviewer).
+- `2026-11-21T00:56:30Z` Started trello-read-assigned-cards as attempt trello-attempt-007.
+- `2026-11-21T01:08:48Z` trello-read-assigned-cards: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-21T01:09:29Z` trello-read-assigned-cards: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-21T01:10:06Z` trello-read-assigned-cards: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-21T01:10:06Z` Submitted trello-read-assigned-cards for review as submission-20261121011006-70098d.
+- `2026-11-21T01:20:38Z` Review of trello-read-assigned-cards: approved by Claude (automated reviewer).
+- `2026-11-21T01:28:31Z` Started trello-delta-sync as attempt trello-attempt-008.
+- `2026-11-21T01:41:54Z` trello-delta-sync: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-21T01:49:24Z` trello-delta-sync: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-21T01:54:14Z` trello-delta-sync: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-21T01:54:14Z` Submitted trello-delta-sync for review as submission-20261121015413-9df447.
+- `2026-11-21T02:03:35Z` Review of trello-delta-sync: approved by Claude (automated reviewer).
+- `2026-11-21T16:54:21Z` Started github-read-assigned-issues as attempt github-attempt-001.
+- `2026-11-21T17:28:33Z` github-read-assigned-issues: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-21T17:29:03Z` github-read-assigned-issues: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-21T17:29:30Z` github-read-assigned-issues: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-21T17:29:30Z` Submitted github-read-assigned-issues for review as submission-20261121172930-16258e.
+- `2026-11-21T17:43:05Z` Review of github-read-assigned-issues: approved by Claude (automated reviewer).

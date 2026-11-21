@@ -1,0 +1,14 @@
+Part A: each fixture, run twice, in the workspace
+  notes files checked: GTQ-101.md
+  happy-path: PASS | stories 3 | removed [] | unchanged apart from timestamps: True | duplicate comments: none
+  pagination: PASS | stories 4 | removed [] | unchanged apart from timestamps: True | duplicate comments: none
+  stale-item: PASS | stories 2 | removed ['GTQ-100'] | unchanged apart from timestamps: True | duplicate comments: none
+  duplicate-comment: PASS | stories 3 | removed [] | unchanged apart from timestamps: True | duplicate comments: none
+  stories.json restored to the happy-path output
+  notes unchanged: PASS
+Part B: two runs with a changed answer from Jira, in a temporary folder
+  comment 7 stored once, comment 8 added once: PASS
+  GTQ-2 reported under removed, not deleted: PASS
+  participant note unchanged: PASS
+  index links the note: PASS
+Result: PASS

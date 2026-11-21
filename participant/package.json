@@ -1,0 +1,11 @@
+{
+  "name": "gtq-playwright-first-independent-test",
+  "private": true,
+  "description": "Playwright quest: the passport counts only reviewer-approved work as verified. Installed here, not under tests/, so the quest checker does not scan Playwright's own files.",
+  "scripts": {
+    "test:playwright": "cd tests/playwright && playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

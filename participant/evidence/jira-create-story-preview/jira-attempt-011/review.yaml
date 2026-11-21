@@ -1,0 +1,31 @@
+schema_version: 1
+review_id: review-20261119210739-c8f034
+quest_id: jira-create-story-preview
+quest_version: 1
+attempt_id: jira-attempt-011
+evidence_hash: sha256:82231225663c2083a09abf1a15e452e6b3293ff57bc34e07af7ff31068ae2860
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-19T21:07:39Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/jira/new-story/draft.md
+  digest: sha256:7fa7aa112310869e15f3cbbb7fc9dd726a14240fc36148beb4e95edd0de368e4
+- path: participant/context/jira/new-story/payload.md
+  digest: sha256:95dd6704cde45019a0fb7ee64b5629a6d8639cecaf2a88e01caed2c5892c69c0
+verification_statement: 'Automated review. I read the draft, the payload, both required
+  run records, the live sandbox log, the test and planted-bug logs, both recording
+  scripts and PROOF.md. - **Fake Jira run:** the record lists the project, the issue
+  type and all 12 fields. It shows the full JSON payload with its byte count and SHA-256.
+  The same payload and SHA-256 (dfbd9a3f…) appear in payload.md. It also shows a duplicate
+  search result (RPT-3, recommendation LINK), a permission check (CREATE_ISSUES: yes),
+  10 checked source citations, and identical before and after snapshots with only
+  GET requests. - **Real sandbox run:** the same checks hold there, with the site
+  address redacted and a warning that the duplicate search covered only 1 of the 22
+  stories. - **Refusal record:** a draft with no component is refused, naming the
+  missing field, and a draft with no summary is also refused. - **Paths:** the files
+  are under jira-attempt-011 rather than attempt-001, but the automatic pre-check
+  found every required file present. The records agree with each other and nothing
+  looks fabricated. No text in the evidence addresses the reviewer. Each of the 7
+  acceptance criteria was matched to text quoted word for word from the evidence.'

@@ -1,0 +1,17 @@
+{
+ "board": "70b000000000000000000011",
+ "name": "Upgrade the staging database to the next major version",
+ "desc": "The staging database is two major versions behind. Upgrade it, run the migration rehearsal and restart the workers.",
+ "labels": [
+  "maintenance"
+ ],
+ "members": [
+  "5f0000000000000000000004"
+ ],
+ "checklist": [
+  "Take a snapshot first",
+  "Run the migration rehearsal",
+  "Restart the workers"
+ ],
+ "due": "2027-01-15"
+}

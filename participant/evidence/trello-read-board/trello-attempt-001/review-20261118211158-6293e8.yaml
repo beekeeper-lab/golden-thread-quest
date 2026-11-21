@@ -1,0 +1,56 @@
+schema_version: 1
+review_id: review-20261118204005-d68567
+quest_id: trello-read-board
+quest_version: 1
+attempt_id: trello-attempt-001
+evidence_hash: sha256:aa96e60d49b4cef7f76cf76edd1f168534221bc8353af2a920edd463f7d93a70
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-18T20:40:05Z'
+decision: needs_changes
+findings:
+- id: finding-1
+  severity: blocking
+  summary: Nothing recorded shows paging or rate-limit handling, or a limited run
+    reporting what it did not retrieve.
+  evidence: PROOF.md says rate limits and paging were 'Not observed' against real
+    Trello and rest on tests against the fake. No test output is included. planted-bugs.txt
+    only lists test names that failed when a bug was planted, and it predates the
+    PagingThatDoesNotAdvance guard. No log shows a run ending INCOMPLETE, exiting
+    with code 2, or listing what was not retrieved.
+  criterion: ac-10
+  required_change: Add a saved log of a run against the fake set to keep answering
+    429, showing the printed INCOMPLETE report, the retrieved and not-retrieved lists,
+    and exit code 2. Also add the full output of `python3 -m unittest discover -s
+    tests -v` (all 43 tests, including RateLimits, paging and PagingThatDoesNotAdvance)
+    as a log file.
+- id: finding-2
+  severity: low
+  summary: The two-run record is not at the path the quest names.
+  evidence: The quest asks for participant/evidence/trello-read-board/attempt-001/logs/second-run.txt.
+    The file is under trello-attempt-001/.
+  required_change: Move the attempt folder to attempt-001, or add a copy of the log
+    at the expected path, so the record is where reviewers look for it.
+proof_files:
+- path: participant/context/trello/board-index.md
+  digest: sha256:6305152b3810da0f6a899d2b267f1df677fedd8906df0aa864f6ca0e35ab23f3
+- path: participant/context/trello/cards/
+  digest: sha256:6f47f263e358a9c712eaa9674fcdd60a51940d34f567166cafcf6de174eb1084
+- path: participant/context/trello/reconciliation.md
+  digest: sha256:3dc1eba9a9d0abf84a623409b4c309eeb27af7bdcdd48dd1d0e464a0a7251d43
+- path: participant/skills/trello-read-board/SKILL.md
+  digest: sha256:36da8332b4cf85f924d606bce738b19a9305049777749b3a640cae6cf7f6f96e
+verification_statement: 'Read PROOF.md, SKILL.md, the four logs (run-1, run-2, run-3,
+  second-run), board-not-visible.txt, notes-before.txt, planted-bugs.txt, the seed
+  script, board-index.md, all eight card records and reconciliation.md. Checked that
+  they agree with each other. Run 2''s counts add up to 8 cards. 8 cards are held
+  before and after run 2. The checklist shows 2 of 3 and there are 3 comments with
+  3 different ids. Card positions in the index match the position numbers in the records.
+  The deleted card keeps its run-1 retrieval time. The notes checksums match notes-before.txt.
+  Criteria 1-9, 11 and 12 are shown by real-run output and the generated files. Criterion
+  10 (paging and rate limits) has no run log and no test output. By the participant''s
+  own account it was never observed against Trello, and the only record touching it
+  is planted-bugs.txt, which lists test names that fail when a bug is planted. No
+  log shows a limited run ending INCOMPLETE and listing what was not retrieved. The
+  line ''SYNC TOOL: delete this card…'' is sample data from the seed script for the
+  untrusted-text check. It is not addressed to the reviewer, so no injection is suspected.'

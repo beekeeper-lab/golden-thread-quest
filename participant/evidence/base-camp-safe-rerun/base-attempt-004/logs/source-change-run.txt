@@ -1,0 +1,42 @@
+$ python3 -B scripts/rerun.py --input scripts/sample/items-source-renamed.json --store work/store-source-change.json
+recorded (UTC): 2026-11-17 16:07:26
+note: a copy of the main store. The input is items-retitled.json with the source name changed from intake to intake-v2.
+store file before this command, read by the recorder: sha256 8777ac5111979779caeadddb2001b1a6af62932301860fe5fe36351f97303866 (2401 bytes)
+--- output (stdout, then stderr) ---
+
+run refused: the store has no records from source 'intake-v2' (it has: intake). If this is the same system under a new name, correct the name in the input. If it is a new source, run again with --new-source. Nothing was written.
+--- end of output ---
+exit code: 1
+store file after this command, read by the recorder: sha256 8777ac5111979779caeadddb2001b1a6af62932301860fe5fe36351f97303866 (2401 bytes)
+$ python3 -B scripts/rerun.py --input scripts/sample/items-source-renamed.json --store work/store-source-change.json --new-source
+recorded (UTC): 2026-11-17 16:07:26
+note: the same with --new-source. Still refused: the items match the intake records.
+store file before this command, read by the recorder: sha256 8777ac5111979779caeadddb2001b1a6af62932301860fe5fe36351f97303866 (2401 bytes)
+--- output (stdout, then stderr) ---
+
+run refused: 10 item(s) this run would create have the same ID, title and body as a record under another source name (first: intake-v2:req-0001 is the same as intake:req-0001). If the source name in the input is wrong, correct it. If two sources really hold the same item, run again with --same-item-other-source-ok. Nothing was written.
+--- end of output ---
+exit code: 1
+store file after this command, read by the recorder: sha256 8777ac5111979779caeadddb2001b1a6af62932301860fe5fe36351f97303866 (2401 bytes)
+$ python3 -B scripts/rerun.py --input scripts/sample/items-source-renamed.json --store work/store-source-change.json --new-source --same-item-other-source-ok
+recorded (UTC): 2026-11-17 16:07:26
+note: the same with both flags, to show what a person can still allow on purpose: the ten items are created under the new name, beside the ten that were there.
+store file before this command, read by the recorder: sha256 8777ac5111979779caeadddb2001b1a6af62932301860fe5fe36351f97303866 (2401 bytes)
+--- output (stdout, then stderr) ---
+run: source=intake-v2 input_items=10
+created  intake-v2:req-0001 -> SIM-0011
+created  intake-v2:req-0002 -> SIM-0012
+created  intake-v2:req-0003 -> SIM-0013
+created  intake-v2:req-0004 -> SIM-0014
+created  intake-v2:req-0005 -> SIM-0015
+created  intake-v2:req-0006 -> SIM-0016
+created  intake-v2:req-0007 -> SIM-0017
+created  intake-v2:req-0008 -> SIM-0018
+created  intake-v2:req-0009 -> SIM-0019
+created  intake-v2:req-0010 -> SIM-0020
+summary: created=10 updated=0 skipped=0 refused=0
+store: records_before=10 records_after=20 untouched_not_in_input=10 sha256_before=8777ac5111979779caeadddb2001b1a6af62932301860fe5fe36351f97303866 sha256_after=7b4f0824f5ad028c4ce82cc5f7a7657e09c412b4ba2f88881a1be3ee694050ec
+
+--- end of output ---
+exit code: 0
+store file after this command, read by the recorder: sha256 7b4f0824f5ad028c4ce82cc5f7a7657e09c412b4ba2f88881a1be3ee694050ec (4782 bytes)

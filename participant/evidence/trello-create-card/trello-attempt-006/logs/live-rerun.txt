@@ -1,0 +1,5 @@
+
+REFUSED: this draft has already been created in Trello as card 6b00b32ea6e47268f6721469, recorded in the link file. It is not created twice. Use the verify command to compare it with Trello.
+Nothing has been written to Trello.
+
+The output above, and each file written, was searched for the API key and the token: neither found.

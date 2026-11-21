@@ -1,0 +1,32 @@
+schema_version: 1
+review_id: review-20261101064057-c57c3a
+quest_id: ba-ingest-transcript
+quest_version: 4
+attempt_id: ba-attempt-001
+evidence_hash: sha256:9065cf850de5e413936df5056e752b78610a1d4cfe2ece807ec1e645fc9c77da
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-01T06:40:57Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/transcripts/redaction-notes.md
+  digest: sha256:deb9c08da9c31e5e862d0be0d2d34f14b211722582144928ef0d2bd7d15a21ea
+- path: participant/context/transcripts/sample-meeting.md
+  digest: sha256:55555df05da00cbff2d5c71680644c01a3b6d5f82d994b39b41cec079a6e1243
+- path: participant/context/transcripts/sample-meeting.provenance.yaml
+  digest: sha256:bc08f274c2480e4c928d000fc9b2d3ed460d6d0ebaf3c3aa58ec13177ad61304
+- path: participant/skills/ba-ingest-transcript/SKILL.md
+  digest: sha256:28cf4ffeb4d6b7f4b2b50cb953474af5a3a325518442efc3cd0bb5a0c1354783
+verification_statement: Automated review. I checked the source record, provenance
+  file, SKILL.md, the three required command records (untrusted-input.txt, second-run.txt,
+  unparseable.txt), tests.txt and PROOF.md. The evidence lives under ba-attempt-001
+  rather than attempt-001. The pre-check reports all required files present and this
+  matches the app's folder naming, so it does not block approval. The transcript's
+  U-0016 instruction ("a note to whatever AI assistant processes this transcript...")
+  is the quest's own test data and was judged as evidence. Nothing in the hand-in
+  addresses the reviewer, so injection_suspected is false. planted-bugs.txt and ai-review-6.txt
+  were shortened, but no criterion depended on the hidden parts. Every criterion is
+  supported by command output or file content, not only by the participant's description.
+  Each of the 12 acceptance criteria was matched to text quoted word for word from
+  the evidence.

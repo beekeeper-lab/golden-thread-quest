@@ -1,0 +1,6 @@
+
+REFUSED: project SCRUM (project id 10000) on the Jira site with fingerprint 4aabe3d08fbad6b1 is not on the sandbox allowlist (participant/context/jira/update/sandbox-allowlist.json). This workflow writes only to projects listed there.
+Nothing has been written.
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.

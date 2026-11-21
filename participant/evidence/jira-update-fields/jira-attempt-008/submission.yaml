@@ -1,0 +1,15 @@
+schema_version: 1
+submission_id: submission-20261119160009-9d1964
+quest_id: jira-update-fields
+quest_version: 1
+attempt_id: jira-attempt-008
+content_hash: sha256:f4f54405820f01e39e3a37148cee432928dbbe18cec0c4296df6d4f12369d961
+evidence_hash: sha256:2f632f3e6515d1c55a6333701d9d539062d55950343057f257e0225ee53aed9b
+submitted_at: '2026-11-19T16:00:09Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/jira/results/update-fields.md
+  digest: sha256:e95541b2adf5085f797a1a78e12b752afde3231ec34c1eada957267033632167
+- path: participant/context/jira/update/supported-fields.md
+  digest: sha256:3c77c72caad16c3224b0d8543966a22bf3cb4c7ea8d7c7ac4c269fd15658787b

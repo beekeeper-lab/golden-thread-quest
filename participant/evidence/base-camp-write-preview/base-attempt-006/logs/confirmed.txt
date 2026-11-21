@@ -1,0 +1,122 @@
+# The preview from logs/preview.txt confirmed, and the board after it.
+# base-camp-write-preview, attempt base-attempt-006. Recorded by scripts/record_evidence.py.
+# The board is a simulated one: the local file work/board.json. No real system is contacted.
+
+==============================================================================
+# 1. The board before. It is as logs/preview.txt left it.
+
+$ scripts/board.py show work/board.json
+board: DEMO (simulated story board), file work/board.json
+stories: 5
+  DEMO-1   [done ] Export the weekly report as a file
+  DEMO-2   [doing] Show who changed a story last
+  DEMO-3   [todo ] Search stories by title
+  DEMO-4   [todo ] Warn before closing an unsaved story
+  DEMO-5   [todo ] Sort the board by last update
+board fingerprint: 72c344ea47e6
+(exit code 0)
+
+==============================================================================
+# 2. Confirm preview a9ed32572f0c, the one shown in logs/preview.txt.
+
+$ scripts/writer.py confirm --board work/board.json --change work/change-a.json --fingerprint a9ed32572f0c --confirmed-by "Beau Brown"
+CONFIRMED. The change file and the board were checked against preview a9ed32572f0c, and they match.
+
+WRITTEN to board DEMO (simulated story board, file work/board.json): 3 changes.
+  1. CREATED DEMO-6  (title, description, status)
+  2. CREATED DEMO-7  (title, description, status)
+  3. UPDATED DEMO-3  (status)
+
+Confirmed by: Beau Brown (the name given with the confirmation)
+Confirmed at: 2026-11-17 21:02:16 UTC
+Preview:      a9ed32572f0c, made 2026-11-17 21:02:16 UTC
+Record of this write: work/board.json.written/a9ed32572f0c.json
+(exit code 0)
+
+==============================================================================
+# 3. The board after. Compare with the preview: DEMO-6 and DEMO-7 are new, DEMO-3 is now doing.
+
+$ scripts/board.py show work/board.json
+board: DEMO (simulated story board), file work/board.json
+stories: 7
+  DEMO-1   [done ] Export the weekly report as a file
+  DEMO-2   [doing] Show who changed a story last
+  DEMO-3   [doing] Search stories by title
+  DEMO-4   [todo ] Warn before closing an unsaved story
+  DEMO-5   [todo ] Sort the board by last update
+  DEMO-6   [todo ] Search stories by description
+  DEMO-7   [todo ] Show how many stories a search found
+board fingerprint: 6846ec85b92d
+(exit code 0)
+
+# Board fingerprint before: 72c344ea47e6   after: 6846ec85b92d
+# The board is CHANGED.
+
+==============================================================================
+# 4. The record the write left behind.
+
+$ cat work/board.json.written/a9ed32572f0c.json
+{
+  "fingerprint": "a9ed32572f0cb0f6779655c85fef68e9a6b43adfc4a1ffd9e9d8c5b73b1a21a3",
+  "confirmed_by": "Beau Brown",
+  "confirmed_at": "2026-11-17 21:02:16 UTC",
+  "preview_made_at": "2026-11-17 21:02:16 UTC",
+  "board_fingerprint_before": "72c344ea47e65b3ee9202baa2ddf43e14ee8acbdfc00038027d4662c9749178b",
+  "board_fingerprint_after": "6846ec85b92d9b9521c357e3cc092692b6c379a539dc703c5c4508fa8f46accc",
+  "written": [
+    {
+      "action": "create",
+      "id": "DEMO-6",
+      "fields": {
+        "title": "Search stories by description",
+        "description": "Extend the search box so it also finds stories whose description holds the words typed.\nFollow-up to DEMO-3.",
+        "status": "todo"
+      }
+    },
+    {
+      "action": "create",
+      "id": "DEMO-7",
+      "fields": {
+        "title": "Show how many stories a search found",
+        "description": "Above the search results, show the number of stories found.",
+        "status": "todo"
+      }
+    },
+    {
+      "action": "update",
+      "id": "DEMO-3",
+      "title_now": "Search stories by title",
+      "fields": {
+        "status": {
+          "now": "todo",
+          "after": "doing"
+        }
+      }
+    }
+  ]
+}
+(exit code 0)
+
+==============================================================================
+# 5. Confirm the same preview a second time. It is refused, and the board does not change again.
+
+$ scripts/writer.py confirm --board work/board.json --change work/change-a.json --fingerprint a9ed32572f0c --confirmed-by "Beau Brown"
+REFUSED: the preview a9ed32572f0c has already been confirmed and written. A fingerprint is used once.
+Nothing has been written.
+(exit code 1)
+
+$ scripts/board.py show work/board.json
+board: DEMO (simulated story board), file work/board.json
+stories: 7
+  DEMO-1   [done ] Export the weekly report as a file
+  DEMO-2   [doing] Show who changed a story last
+  DEMO-3   [doing] Search stories by title
+  DEMO-4   [todo ] Warn before closing an unsaved story
+  DEMO-5   [todo ] Sort the board by last update
+  DEMO-6   [todo ] Search stories by description
+  DEMO-7   [todo ] Show how many stories a search found
+board fingerprint: 6846ec85b92d
+(exit code 0)
+
+# Board fingerprint before: 6846ec85b92d   after: 6846ec85b92d
+# The board is UNCHANGED.

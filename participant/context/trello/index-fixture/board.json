@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "source": "fixture",
+  "board": {
+    "id": "70b000000000000000000001",
+    "name": "Made-up release board",
+    "short_link": "FIXboard",
+    "closed": false
+  },
+  "lists": [
+    {
+      "id": "71a000000000000000000001",
+      "name": "To do",
+      "pos": 1000,
+      "closed": false
+    },
+    {
+      "id": "71a000000000000000000002",
+      "name": "Doing",
+      "pos": 2000,
+      "closed": false
+    },
+    {
+      "id": "71a000000000000000000003",
+      "name": "In review",
+      "pos": 3000,
+      "closed": false
+    },
+    {
+      "id": "71a000000000000000000004",
+      "name": "Done",
+      "pos": 4000,
+      "closed": false
+    },
+    {
+      "id": "71a000000000000000000005",
+      "name": "Abandoned",
+      "pos": 2500,
+      "closed": true
+    }
+  ]
+}

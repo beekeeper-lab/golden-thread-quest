@@ -1,0 +1,41 @@
+test_ages_lists_every_item_in_the_library_with_its_working (test_answer.AgesAndRefresh) ... ok
+test_an_item_the_source_does_not_have_stays_stale (test_answer.AgesAndRefresh) ... ok
+test_refresh_fetches_only_the_stale_items_and_leaves_the_fresh_ones_untouched (test_answer.AgesAndRefresh) ... ok
+test_a_fresh_answer_is_a_plain_statement (test_answer.FreshAnswer) ... ok
+test_every_answer_states_the_clock_and_lists_the_oldest_context_it_used (test_answer.FreshAnswer) ... ok
+test_every_item_used_is_shown_with_its_retrieval_time_age_limit_and_verdict (test_answer.FreshAnswer) ... ok
+test_the_context_is_listed_oldest_first (test_answer.FreshAnswer) ... ok
+test_a_field_with_no_time_of_its_own_uses_the_records (test_answer.NoRetrievalTime) ... ok
+test_a_missing_item_or_one_of_another_kind_is_stale (test_answer.NoRetrievalTime) ... ok
+test_a_retrieval_time_later_than_the_clock_is_stale (test_answer.NoRetrievalTime) ... ok
+test_a_retrieval_time_that_cannot_be_read_is_stale (test_answer.NoRetrievalTime) ... ok
+test_an_item_with_no_retrieval_time_is_stale_and_not_fresh (test_answer.NoRetrievalTime) ... ok
+test_an_unknown_age_is_listed_as_the_oldest (test_answer.NoRetrievalTime) ... ok
+test_a_release_the_library_does_not_hold_stops_the_tool (test_answer.Safety) ... ok
+test_text_in_an_item_worded_as_an_instruction_is_quoted_and_changes_nothing (test_answer.Safety) ... ok
+test_the_library_in_the_repository_has_a_retrieval_time_on_every_item (test_answer.Safety) ... ok
+test_the_tool_has_no_code_that_reaches_a_network_or_runs_a_command (test_answer.Safety) ... ok
+test_a_field_can_be_stale_while_its_record_is_fresh (test_answer.StaleAnswer) ... ok
+test_a_stale_decision_is_not_applied (test_answer.StaleAnswer) ... ok
+test_a_stale_scope_spoils_the_whole_answer (test_answer.StaleAnswer) ... ok
+test_a_stale_scope_with_fresh_statuses_still_cannot_say (test_answer.StaleAnswer) ... ok
+test_nothing_is_hidden_and_nothing_stale_is_stated_as_current_at_any_clock (test_answer.StaleAnswer) ... ok
+test_one_stale_status_spoils_only_what_is_said_of_that_item (test_answer.StaleAnswer) ... ok
+test_stale_ownership_leaves_owners_out_and_keeps_the_blockers (test_answer.StaleAnswer) ... ok
+test_the_stale_items_are_named_one_by_one_with_what_to_refresh (test_answer.StaleAnswer) ... ok
+test_what_is_still_fresh_is_still_said_when_the_scope_is_stale (test_answer.StaleAnswer) ... ok
+test_a_clock_value_that_cannot_be_read_stops_the_tool (test_answer.TheClock) ... ok
+test_at_exactly_the_limit_an_item_is_fresh_and_one_second_later_it_is_stale (test_answer.TheClock) ... ok
+test_the_same_clock_gives_the_same_answer (test_answer.TheClock) ... ok
+test_without_now_the_computers_clock_is_used_and_said (test_answer.TheClock) ... ok
+test_a_kind_the_policy_does_not_list_is_stale (test_answer.ThePolicy) ... ok
+test_a_policy_that_cannot_be_read_stops_the_tool_and_nothing_is_called_fresh (test_answer.ThePolicy) ... ok
+test_changing_the_policy_changes_the_answer (test_answer.ThePolicy) ... ok
+test_the_first_line_can_be_predicted_from_the_policy_by_hand (test_answer.ThePolicy)
+A second working of the rules, written here from policy.md and sharing no code with the tool. ... ok
+test_the_limits_are_the_four_in_the_policy_file (test_answer.ThePolicy) ... ok
+
+----------------------------------------------------------------------
+Ran 35 tests in 0.444s
+
+OK

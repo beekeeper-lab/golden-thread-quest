@@ -1,0 +1,150 @@
+An item with no retrieval time, treated as stale: context-staleness, attempt context-attempt-001
+Recorded by scripts/record_evidence.py. Each block between dashed lines is what a command printed.
+Only local files are read. Every release, work item, team and decision here is made up, so nothing is redacted.
+The library here is a copy of the one in the repository, in a temporary folder shown as COPY.
+
+==============================================================================
+1. In the copy, the retrieved_at line is taken out of WI-103. Everything else is as in run 1 of
+stale-run.txt, where WI-103 was 2 hours old, In Progress and stated as not blocking.
+The first lines of COPY/library/work-items/WI-103.md:
+------------------------------------------------------------------------------
+---
+format: "context-item/1"
+kind: "work-item-status"
+id: "WI-103"
+title: "Migrate the sessions table"
+status: "In Progress"
+blocked_by: null
+---
+
+------------------------------------------------------------------------------
+$ python3 participant/skills/context-freshness/answer.py blockers --release REL-2.4 --now 2026-11-19T09:00:00Z --library COPY/library
+------------------------------------------------------------------------------
+QUESTION: what is blocking release REL-2.4?
+Clock: 2026-11-19T09:00:00Z (set with --now)
+Policy: participant/context/freshness/policy.md
+
+ANSWER: PARTIAL: 2 work items are blocking release REL-2.4 as far as fresh context shows. 1 cannot be assessed.
+
+WHAT FRESH CONTEXT SUPPORTS:
+  BLOCKING      WI-101 "Card payments time out at checkout" is Blocked. Why: "Waiting for the payment provider's sandbox certificate". Owner: the payments team.
+  BLOCKING      WI-104 "Update the privacy notice" is Blocked. Why: "Legal review has not been booked". Owner: the legal liaison.
+  SET ASIDE     WI-106 "Dark mode for the settings page" is Blocked. Why: "The design is not finished". Decision D-12 sets it aside: "Release 2.4 ships without WI-106. Dark mode moves to release 2.5." So it does not block this release. Owner: the design team.
+  NOT BLOCKING  WI-102 "Export invoices as PDF" is Done. Owner: the billing team.
+  NOT BLOCKING  WI-105 "Rate-limit the public search" is In Review. Owner: the platform team.
+
+LAST KNOWN, NOT A CURRENT CLAIM:
+  WI-103 "Migrate the sessions table" was In Progress in a copy of unknown age. It cannot be assessed: it records no retrieval time.
+
+CONTEXT USED, oldest first: 10 items.
+  item                                   kind              retrieved             age          limit    verdict
+  work-items/WI-103.md                   work-item-status  none recorded         unknown      24 hours STALE: it records no retrieval time
+  decisions/D-12.md                      decision          2026-10-01T10:00:00Z  48d 23h 00m  90 days  fresh
+  team.md                                team-ownership    2026-11-02T09:00:00Z  17d 00h 00m  30 days  fresh
+  work-items/WI-104.md, field blocked_by work-item-status  2026-11-18T12:00:00Z  0d 21h 00m   24 hours fresh
+  release-2.4.md                         release-scope     2026-11-18T16:00:00Z  0d 17h 00m   3 days   fresh
+  work-items/WI-105.md                   work-item-status  2026-11-18T20:00:00Z  0d 13h 00m   24 hours fresh
+  work-items/WI-106.md                   work-item-status  2026-11-18T20:00:00Z  0d 13h 00m   24 hours fresh
+  work-items/WI-101.md                   work-item-status  2026-11-19T07:00:00Z  0d 02h 00m   24 hours fresh
+  work-items/WI-102.md                   work-item-status  2026-11-19T07:00:00Z  0d 02h 00m   24 hours fresh
+  work-items/WI-104.md                   work-item-status  2026-11-19T07:00:00Z  0d 02h 00m   24 hours fresh
+Oldest context used: work-items/WI-103.md. Its age is unknown, because it records no retrieval time. An unknown age is treated as the oldest.
+
+STALE CONTEXT, 1 item, each named:
+  work-items/WI-103.md (work-item-status): it records no retrieval time.
+TO REFRESH for a full answer, and nothing else: work-items/WI-103.md.
+This answer is qualified. Nothing stale has been left out of it, and nothing stale is stated as current.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   the item is treated as STALE, with the reason: it records no retrieval time (criterion 5)
+  ok   it is not stated as fresh fact: WI-103 is no longer among the items stated as not blocking
+  ok   the answer is qualified, exit code 1: PARTIAL, 1 cannot be assessed
+  ok   what its copy says is shown as last known, of unknown age
+  ok   an unknown age is treated as the oldest: WI-103 is named as the oldest context used
+  ok   the item is not hidden: it is in the list of context used and in the list to refresh
+
+==============================================================================
+2. The same for a time that cannot be read. WI-103's retrieved_at is set to the word "yesterday".
+$ python3 participant/skills/context-freshness/answer.py blockers --release REL-2.4 --now 2026-11-19T09:00:00Z --library COPY/library
+------------------------------------------------------------------------------
+QUESTION: what is blocking release REL-2.4?
+Clock: 2026-11-19T09:00:00Z (set with --now)
+Policy: participant/context/freshness/policy.md
+
+ANSWER: PARTIAL: 2 work items are blocking release REL-2.4 as far as fresh context shows. 1 cannot be assessed.
+
+WHAT FRESH CONTEXT SUPPORTS:
+  BLOCKING      WI-101 "Card payments time out at checkout" is Blocked. Why: "Waiting for the payment provider's sandbox certificate". Owner: the payments team.
+  BLOCKING      WI-104 "Update the privacy notice" is Blocked. Why: "Legal review has not been booked". Owner: the legal liaison.
+  SET ASIDE     WI-106 "Dark mode for the settings page" is Blocked. Why: "The design is not finished". Decision D-12 sets it aside: "Release 2.4 ships without WI-106. Dark mode moves to release 2.5." So it does not block this release. Owner: the design team.
+  NOT BLOCKING  WI-102 "Export invoices as PDF" is Done. Owner: the billing team.
+  NOT BLOCKING  WI-105 "Rate-limit the public search" is In Review. Owner: the platform team.
+
+LAST KNOWN, NOT A CURRENT CLAIM:
+  WI-103 "Migrate the sessions table" was In Progress in a copy of unknown age. It cannot be assessed: its retrieval time cannot be read as a time in UTC.
+
+CONTEXT USED, oldest first: 10 items.
+  item                                   kind              retrieved             age          limit    verdict
+  work-items/WI-103.md                   work-item-status  unreadable            unknown      24 hours STALE: its retrieval time cannot be read as a time in UTC
+  decisions/D-12.md                      decision          2026-10-01T10:00:00Z  48d 23h 00m  90 days  fresh
+  team.md                                team-ownership    2026-11-02T09:00:00Z  17d 00h 00m  30 days  fresh
+  work-items/WI-104.md, field blocked_by work-item-status  2026-11-18T12:00:00Z  0d 21h 00m   24 hours fresh
+  release-2.4.md                         release-scope     2026-11-18T16:00:00Z  0d 17h 00m   3 days   fresh
+  work-items/WI-105.md                   work-item-status  2026-11-18T20:00:00Z  0d 13h 00m   24 hours fresh
+  work-items/WI-106.md                   work-item-status  2026-11-18T20:00:00Z  0d 13h 00m   24 hours fresh
+  work-items/WI-101.md                   work-item-status  2026-11-19T07:00:00Z  0d 02h 00m   24 hours fresh
+  work-items/WI-102.md                   work-item-status  2026-11-19T07:00:00Z  0d 02h 00m   24 hours fresh
+  work-items/WI-104.md                   work-item-status  2026-11-19T07:00:00Z  0d 02h 00m   24 hours fresh
+Oldest context used: work-items/WI-103.md. Its age is unknown, because its retrieval time cannot be read as a time in UTC. An unknown age is treated as the oldest.
+
+STALE CONTEXT, 1 item, each named:
+  work-items/WI-103.md (work-item-status): its retrieval time cannot be read as a time in UTC.
+TO REFRESH for a full answer, and nothing else: work-items/WI-103.md.
+This answer is qualified. Nothing stale has been left out of it, and nothing stale is stated as current.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   treated as stale: its retrieval time cannot be read
+
+==============================================================================
+3. And for a time later than the clock: retrieved_at is set one hour after the clock value.
+$ python3 participant/skills/context-freshness/answer.py blockers --release REL-2.4 --now 2026-11-19T09:00:00Z --library COPY/library
+------------------------------------------------------------------------------
+QUESTION: what is blocking release REL-2.4?
+Clock: 2026-11-19T09:00:00Z (set with --now)
+Policy: participant/context/freshness/policy.md
+
+ANSWER: PARTIAL: 2 work items are blocking release REL-2.4 as far as fresh context shows. 1 cannot be assessed.
+
+WHAT FRESH CONTEXT SUPPORTS:
+  BLOCKING      WI-101 "Card payments time out at checkout" is Blocked. Why: "Waiting for the payment provider's sandbox certificate". Owner: the payments team.
+  BLOCKING      WI-104 "Update the privacy notice" is Blocked. Why: "Legal review has not been booked". Owner: the legal liaison.
+  SET ASIDE     WI-106 "Dark mode for the settings page" is Blocked. Why: "The design is not finished". Decision D-12 sets it aside: "Release 2.4 ships without WI-106. Dark mode moves to release 2.5." So it does not block this release. Owner: the design team.
+  NOT BLOCKING  WI-102 "Export invoices as PDF" is Done. Owner: the billing team.
+  NOT BLOCKING  WI-105 "Rate-limit the public search" is In Review. Owner: the platform team.
+
+LAST KNOWN, NOT A CURRENT CLAIM:
+  WI-103 "Migrate the sessions table" was In Progress in a copy of unknown age. It cannot be assessed: its retrieval time is later than the clock.
+
+CONTEXT USED, oldest first: 10 items.
+  item                                   kind              retrieved             age          limit    verdict
+  work-items/WI-103.md                   work-item-status  2026-11-19T10:00:00Z  unknown      24 hours STALE: its retrieval time is later than the clock
+  decisions/D-12.md                      decision          2026-10-01T10:00:00Z  48d 23h 00m  90 days  fresh
+  team.md                                team-ownership    2026-11-02T09:00:00Z  17d 00h 00m  30 days  fresh
+  work-items/WI-104.md, field blocked_by work-item-status  2026-11-18T12:00:00Z  0d 21h 00m   24 hours fresh
+  release-2.4.md                         release-scope     2026-11-18T16:00:00Z  0d 17h 00m   3 days   fresh
+  work-items/WI-105.md                   work-item-status  2026-11-18T20:00:00Z  0d 13h 00m   24 hours fresh
+  work-items/WI-106.md                   work-item-status  2026-11-18T20:00:00Z  0d 13h 00m   24 hours fresh
+  work-items/WI-101.md                   work-item-status  2026-11-19T07:00:00Z  0d 02h 00m   24 hours fresh
+  work-items/WI-102.md                   work-item-status  2026-11-19T07:00:00Z  0d 02h 00m   24 hours fresh
+  work-items/WI-104.md                   work-item-status  2026-11-19T07:00:00Z  0d 02h 00m   24 hours fresh
+Oldest context used: work-items/WI-103.md. Its age is unknown, because its retrieval time is later than the clock. An unknown age is treated as the oldest.
+
+STALE CONTEXT, 1 item, each named:
+  work-items/WI-103.md (work-item-status): its retrieval time is later than the clock.
+TO REFRESH for a full answer, and nothing else: work-items/WI-103.md.
+This answer is qualified. Nothing stale has been left out of it, and nothing stale is stated as current.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   treated as stale: its retrieval time is later than the clock
+
+RESULT: ALL CHECKS PASSED.

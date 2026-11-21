@@ -1,0 +1,759 @@
+Do the tests notice a broken sync? github-read-assigned-issues, attempt github-attempt-001
+Recorded by scripts/planted_bugs.py.
+
+Each bug below was put into participant/skills/github-read-assigned/sync.py, every test was run, and the
+bug was taken out again. Only local files are used.
+
+Before any bug: OK
+
+PLANTED BUG A. The login is written into the skill instead of read from the connection (criterion 1)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Identity.test_a_folder_holding_another_users_issues_is_refused
+    Identity.test_another_identity_gets_that_identitys_issues
+    Identity.test_no_login_is_written_in_the_skill
+
+PLANTED BUG B. An item that is not assigned to the signed-in user is accepted (criterion 1)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Identity.test_another_identity_gets_that_identitys_issues
+
+PLANTED BUG C. A folder holding another user's issues is synced into (criterion 1)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Identity.test_a_folder_holding_another_users_issues_is_refused
+
+PLANTED BUG D. A folder holding made-up issues may be synced from live GitHub (safety)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Identity.test_a_folder_holding_made_up_issues_refuses_a_live_run
+
+PLANTED BUG E. A restricted run does not say it is restricted (criterion 2)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Scope.test_a_restricted_run_says_so_and_records_only_those_repositories
+
+PLANTED BUG F. A repository that could not be read is not marked as such (criterion 2)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Scope.test_a_repository_that_cannot_be_read_is_reported_not_left_out
+    Scope.test_a_repository_that_stops_being_readable_keeps_its_issues_and_its_older_sync_time
+
+PLANTED BUG G. Pull requests are kept as issues (criterion 3)
+  unittest result: FAILED (failures=42, errors=34)
+  tests that failed (76):
+    OnlyReads.test_a_403_that_is_a_rate_limit_is_waited_for_until_the_reset
+    OtherPeoplesText.test_a_body_cannot_close_its_fence
+    OtherPeoplesText.test_a_body_that_gives_orders_is_recorded_as_text_and_changes_nothing
+    Gone.test_a_closed_issue_is_reported_with_the_state_it_was_in
+    CommentsAndTimeline.test_a_comment_github_no_longer_returns_is_kept_and_marked
+    Links.test_a_commit_id_that_is_not_a_sha_is_not_kept
+    CommentsAndTimeline.test_a_cross_reference_which_has_no_id_is_still_held_once
+    Gone.test_a_deleted_issue_is_flagged
+    Paging.test_a_disagreeing_total_stops_the_run_with_nothing_written
+    CommandLine.test_a_fake_run_from_the_command_line
+    Identity.test_a_folder_holding_another_users_issues_is_refused
+    Identity.test_a_folder_holding_made_up_issues_refuses_a_live_run
+    Links.test_a_link_that_changes_state_is_updated_not_added_again
+    Links.test_a_linked_issue_is_kept_as_an_issue_link
+    OnlyReads.test_a_long_or_repeated_rate_limit_ends_the_run_with_nothing_written
+    Links.test_a_merged_pull_request_on_an_open_issue_is_partial
+    CommentsAndTimeline.test_a_new_comment_is_added_once_and_an_edited_one_is_replaced
+    Notes.test_a_notes_file_with_no_issue_is_listed_and_left
+    Links.test_a_pull_request_is_kept_as_a_link_with_its_own_identifiers
+    OnlyReads.test_a_rate_limit_is_waited_for
+    OnlyReads.test_a_redirect_to_githubs_api_is_followed
+    LocalIdentity.test_a_renamed_repository_updates_the_record_in_place
+    Scope.test_a_repository_readable_again_is_no_longer_marked
+    Scope.test_a_repository_that_cannot_be_read_is_reported_not_left_out
+    Scope.test_a_repository_that_stops_being_readable_keeps_its_issues_and_its_older_sync_time
+    Scope.test_a_restricted_run_says_so_and_records_only_those_repositories
+    CommentsAndTimeline.test_a_second_sync_adds_no_duplicate_and_changes_no_file
+    Times.test_a_stopped_run_does_not_move_any_time
+    OtherPeoplesText.test_a_title_cannot_break_a_table_or_make_a_link
+    GoneInOtherWays.test_a_transfer_that_keeps_the_node_id_updates_the_record_in_place
+    GoneInOtherWays.test_a_transfer_to_someone_else_says_so
+    Gone.test_a_transferred_issue_is_flagged_with_where_it_went
+    Gone.test_an_issue_assigned_again_is_no_longer_flagged
+    GoneInOtherWays.test_an_issue_github_refuses_to_show
+    Gone.test_an_issue_given_to_someone_else_is_flagged
+    GoneInOtherWays.test_an_issue_outside_a_restriction_is_not_called_gone
+    GoneInOtherWays.test_an_unassigned_issue
+    GoneInOtherWays.test_an_unknown_answer_about_a_missing_issue_stops_the_run
+    Links.test_closed_without_a_link_is_not_called_delivered
+    CommentsAndTimeline.test_comments_are_kept_with_author_and_time
+    Paging.test_comments_beyond_one_page_are_all_retrieved
+    CommentsAndTimeline.test_comments_in_the_timeline_and_entries_that_are_not_material_are_not_kept_as_events
+    Links.test_commits_are_kept_with_their_sha_and_repository
+    Links.test_delivery_evidence_exists_partial_or_missing
+    Times.test_each_issue_and_each_repository_has_its_last_successful_sync
+    Fields.test_every_field_is_kept
+    LocalIdentity.test_every_record_file_is_named_by_node_id
+    Scope.test_every_repository_is_listed_with_its_id
+    OnlyReads.test_every_request_is_counted
+    Gone.test_issues_in_a_repository_that_became_unreadable_are_flagged
+    Fields.test_labels_milestone_and_shared_assignees
+    CommentsAndTimeline.test_material_timeline_entries_are_kept_with_who_and_when
+    CommentsAndTimeline.test_no_comment_or_timeline_entry_is_held_twice_after_three_syncs
+    Notes.test_notes_are_apart_from_the_synced_fields
+    Notes.test_notes_are_unchanged_by_two_syncs
+    Gone.test_nothing_is_deleted
+    Fields.test_only_the_fields_named_are_kept_not_the_whole_answer
+    Paging.test_pages_are_followed_until_github_reports_no_more
+    PullRequests.test_pull_requests_are_left_out_and_counted
+    PullRequests.test_pull_requests_left_out_are_counted_for_each_repository
+    GoneInOtherWays.test_still_assigned_and_not_listed_stops_the_run
+    Gone.test_the_issue_it_became_points_back
+    PullRequests.test_the_key_alone_decides_even_when_it_holds_nothing
+    Links.test_the_links_are_in_the_record_and_in_delivery_links
+    Identity.test_the_login_is_asked_from_github
+    Notes.test_the_notes_of_an_issue_no_longer_assigned_are_kept_and_shown
+    Fields.test_the_record_shows_every_field
+    PullRequests.test_the_rule_is_written_in_the_index_and_the_output
+    Identity.test_the_run_and_the_index_say_which_identity_produced_the_data
+    Scope.test_the_scope_is_in_the_index
+    OtherPeoplesText.test_the_screen_output_holds_no_title_body_or_comment
+    Times.test_the_times_are_in_the_index_and_the_record
+    Paging.test_the_total_retrieved_is_reported_against_the_total_github_declares
+    Gone.test_they_are_listed_in_their_own_section_with_the_last_known_state
+    Gone.test_they_stay_flagged_and_keep_the_time_they_were_noticed
+    LocalIdentity.test_two_issues_numbered_twelve_do_not_collide
+
+PLANTED BUG H. A pull request is told by what the key holds, not by the key (criterion 3)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    PullRequests.test_the_key_alone_decides_even_when_it_holds_nothing
+
+PLANTED BUG I. Reading stops after the first page (criterion 4)
+  unittest result: FAILED (failures=44, errors=33)
+  tests that failed (77):
+    OnlyReads.test_a_403_that_is_a_rate_limit_is_waited_for_until_the_reset
+    OtherPeoplesText.test_a_body_cannot_close_its_fence
+    OtherPeoplesText.test_a_body_that_gives_orders_is_recorded_as_text_and_changes_nothing
+    Gone.test_a_closed_issue_is_reported_with_the_state_it_was_in
+    CommentsAndTimeline.test_a_comment_github_no_longer_returns_is_kept_and_marked
+    Links.test_a_commit_id_that_is_not_a_sha_is_not_kept
+    CommentsAndTimeline.test_a_cross_reference_which_has_no_id_is_still_held_once
+    Gone.test_a_deleted_issue_is_flagged
+    Paging.test_a_disagreeing_total_stops_the_run_with_nothing_written
+    CommandLine.test_a_fake_run_from_the_command_line
+    Identity.test_a_folder_holding_another_users_issues_is_refused
+    Identity.test_a_folder_holding_made_up_issues_refuses_a_live_run
+    Links.test_a_link_that_changes_state_is_updated_not_added_again
+    Links.test_a_linked_issue_is_kept_as_an_issue_link
+    OnlyReads.test_a_long_or_repeated_rate_limit_ends_the_run_with_nothing_written
+    Links.test_a_merged_pull_request_on_an_open_issue_is_partial
+    CommentsAndTimeline.test_a_new_comment_is_added_once_and_an_edited_one_is_replaced
+    Notes.test_a_notes_file_with_no_issue_is_listed_and_left
+    Links.test_a_pull_request_is_kept_as_a_link_with_its_own_identifiers
+    OnlyReads.test_a_rate_limit_is_waited_for
+    OnlyReads.test_a_redirect_to_githubs_api_is_followed
+    LocalIdentity.test_a_renamed_repository_updates_the_record_in_place
+    Scope.test_a_repository_readable_again_is_no_longer_marked
+    Scope.test_a_repository_that_cannot_be_read_is_reported_not_left_out
+    Scope.test_a_repository_that_stops_being_readable_keeps_its_issues_and_its_older_sync_time
+    Scope.test_a_restricted_run_says_so_and_records_only_those_repositories
+    CommentsAndTimeline.test_a_second_sync_adds_no_duplicate_and_changes_no_file
+    Times.test_a_stopped_run_does_not_move_any_time
+    OtherPeoplesText.test_a_title_cannot_break_a_table_or_make_a_link
+    GoneInOtherWays.test_a_transfer_that_keeps_the_node_id_updates_the_record_in_place
+    GoneInOtherWays.test_a_transfer_to_someone_else_says_so
+    Gone.test_a_transferred_issue_is_flagged_with_where_it_went
+    Gone.test_an_issue_assigned_again_is_no_longer_flagged
+    GoneInOtherWays.test_an_issue_github_refuses_to_show
+    Gone.test_an_issue_given_to_someone_else_is_flagged
+    GoneInOtherWays.test_an_issue_outside_a_restriction_is_not_called_gone
+    GoneInOtherWays.test_an_unassigned_issue
+    GoneInOtherWays.test_an_unknown_answer_about_a_missing_issue_stops_the_run
+    Links.test_closed_without_a_link_is_not_called_delivered
+    CommentsAndTimeline.test_comments_are_kept_with_author_and_time
+    Paging.test_comments_beyond_one_page_are_all_retrieved
+    CommentsAndTimeline.test_comments_in_the_timeline_and_entries_that_are_not_material_are_not_kept_as_events
+    Links.test_commits_are_kept_with_their_sha_and_repository
+    Links.test_delivery_evidence_exists_partial_or_missing
+    Times.test_each_issue_and_each_repository_has_its_last_successful_sync
+    Fields.test_every_field_is_kept
+    LocalIdentity.test_every_record_file_is_named_by_node_id
+    Scope.test_every_repository_is_listed_with_its_id
+    OnlyReads.test_every_request_is_counted
+    Gone.test_issues_in_a_repository_that_became_unreadable_are_flagged
+    Fields.test_labels_milestone_and_shared_assignees
+    CommentsAndTimeline.test_material_timeline_entries_are_kept_with_who_and_when
+    CommentsAndTimeline.test_no_comment_or_timeline_entry_is_held_twice_after_three_syncs
+    Notes.test_notes_are_apart_from_the_synced_fields
+    Notes.test_notes_are_unchanged_by_two_syncs
+    Gone.test_nothing_is_deleted
+    Fields.test_only_the_fields_named_are_kept_not_the_whole_answer
+    Paging.test_pages_are_followed_until_github_reports_no_more
+    PullRequests.test_pull_requests_are_left_out_and_counted
+    PullRequests.test_pull_requests_left_out_are_counted_for_each_repository
+    GoneInOtherWays.test_still_assigned_and_not_listed_stops_the_run
+    Gone.test_the_issue_it_became_points_back
+    PullRequests.test_the_key_alone_decides_even_when_it_holds_nothing
+    Links.test_the_links_are_in_the_record_and_in_delivery_links
+    Identity.test_the_login_is_asked_from_github
+    Notes.test_the_notes_of_an_issue_no_longer_assigned_are_kept_and_shown
+    Fields.test_the_record_shows_every_field
+    PullRequests.test_the_rule_is_written_in_the_index_and_the_output
+    Identity.test_the_run_and_the_index_say_which_identity_produced_the_data
+    Paging.test_the_same_page_returned_again_is_not_taken_as_the_end
+    Scope.test_the_scope_is_in_the_index
+    OtherPeoplesText.test_the_screen_output_holds_no_title_body_or_comment
+    Times.test_the_times_are_in_the_index_and_the_record
+    Paging.test_the_total_retrieved_is_reported_against_the_total_github_declares
+    Gone.test_they_are_listed_in_their_own_section_with_the_last_known_state
+    Gone.test_they_stay_flagged_and_keep_the_time_they_were_noticed
+    LocalIdentity.test_two_issues_numbered_twelve_do_not_collide
+
+PLANTED BUG J. The next page is never asked for (criterion 4)
+  unittest result: FAILED (failures=49, errors=34)
+  tests that failed (83):
+    OnlyReads.test_a_403_that_is_a_rate_limit_is_waited_for_until_the_reset
+    OtherPeoplesText.test_a_body_cannot_close_its_fence
+    OtherPeoplesText.test_a_body_that_gives_orders_is_recorded_as_text_and_changes_nothing
+    Gone.test_a_closed_issue_is_reported_with_the_state_it_was_in
+    CommentsAndTimeline.test_a_comment_github_no_longer_returns_is_kept_and_marked
+    Links.test_a_commit_id_that_is_not_a_sha_is_not_kept
+    CommentsAndTimeline.test_a_cross_reference_which_has_no_id_is_still_held_once
+    Gone.test_a_deleted_issue_is_flagged
+    Paging.test_a_disagreeing_total_stops_the_run_with_nothing_written
+    CommandLine.test_a_fake_run_from_the_command_line
+    Identity.test_a_folder_holding_another_users_issues_is_refused
+    Identity.test_a_folder_holding_made_up_issues_refuses_a_live_run
+    Links.test_a_link_that_changes_state_is_updated_not_added_again
+    Links.test_a_linked_issue_is_kept_as_an_issue_link
+    OnlyReads.test_a_long_or_repeated_rate_limit_ends_the_run_with_nothing_written
+    Links.test_a_merged_pull_request_on_an_open_issue_is_partial
+    CommentsAndTimeline.test_a_new_comment_is_added_once_and_an_edited_one_is_replaced
+    Notes.test_a_notes_file_with_no_issue_is_listed_and_left
+    Links.test_a_pull_request_is_kept_as_a_link_with_its_own_identifiers
+    OnlyReads.test_a_rate_limit_is_waited_for
+    OnlyReads.test_a_redirect_to_githubs_api_is_followed
+    LocalIdentity.test_a_renamed_repository_updates_the_record_in_place
+    Scope.test_a_repository_readable_again_is_no_longer_marked
+    Scope.test_a_repository_that_cannot_be_read_is_reported_not_left_out
+    Scope.test_a_repository_that_stops_being_readable_keeps_its_issues_and_its_older_sync_time
+    Scope.test_a_restricted_run_checks_its_count_against_a_restricted_search
+    Scope.test_a_restricted_run_says_so_and_records_only_those_repositories
+    Paging.test_a_search_that_calls_itself_incomplete_stops_the_run
+    Paging.test_a_search_that_fails_stops_the_run
+    CommentsAndTimeline.test_a_second_sync_adds_no_duplicate_and_changes_no_file
+    Times.test_a_stopped_run_does_not_move_any_time
+    OtherPeoplesText.test_a_title_cannot_break_a_table_or_make_a_link
+    GoneInOtherWays.test_a_transfer_that_keeps_the_node_id_updates_the_record_in_place
+    GoneInOtherWays.test_a_transfer_to_someone_else_says_so
+    Gone.test_a_transferred_issue_is_flagged_with_where_it_went
+    Gone.test_an_issue_assigned_again_is_no_longer_flagged
+    GoneInOtherWays.test_an_issue_github_refuses_to_show
+    Gone.test_an_issue_given_to_someone_else_is_flagged
+    GoneInOtherWays.test_an_issue_outside_a_restriction_is_not_called_gone
+    GoneInOtherWays.test_an_unassigned_issue
+    GoneInOtherWays.test_an_unknown_answer_about_a_missing_issue_stops_the_run
+    LocalIdentity.test_an_unusable_node_id_stops_the_run
+    Identity.test_another_identity_gets_that_identitys_issues
+    Links.test_closed_without_a_link_is_not_called_delivered
+    CommentsAndTimeline.test_comments_are_kept_with_author_and_time
+    Paging.test_comments_beyond_one_page_are_all_retrieved
+    CommentsAndTimeline.test_comments_in_the_timeline_and_entries_that_are_not_material_are_not_kept_as_events
+    Links.test_commits_are_kept_with_their_sha_and_repository
+    Links.test_delivery_evidence_exists_partial_or_missing
+    Times.test_each_issue_and_each_repository_has_its_last_successful_sync
+    Fields.test_every_field_is_kept
+    LocalIdentity.test_every_record_file_is_named_by_node_id
+    Scope.test_every_repository_is_listed_with_its_id
+    OnlyReads.test_every_request_is_counted
+    Gone.test_issues_in_a_repository_that_became_unreadable_are_flagged
+    Fields.test_labels_milestone_and_shared_assignees
+    CommentsAndTimeline.test_material_timeline_entries_are_kept_with_who_and_when
+    CommentsAndTimeline.test_no_comment_or_timeline_entry_is_held_twice_after_three_syncs
+    LocalIdentity.test_node_ids_that_differ_only_in_case_stop_the_run
+    Notes.test_notes_are_apart_from_the_synced_fields
+    Notes.test_notes_are_unchanged_by_two_syncs
+    Gone.test_nothing_is_deleted
+    Fields.test_only_the_fields_named_are_kept_not_the_whole_answer
+    Paging.test_pages_are_followed_until_github_reports_no_more
+    PullRequests.test_pull_requests_are_left_out_and_counted
+    PullRequests.test_pull_requests_left_out_are_counted_for_each_repository
+    GoneInOtherWays.test_still_assigned_and_not_listed_stops_the_run
+    Gone.test_the_issue_it_became_points_back
+    PullRequests.test_the_key_alone_decides_even_when_it_holds_nothing
+    Links.test_the_links_are_in_the_record_and_in_delivery_links
+    Identity.test_the_login_is_asked_from_github
+    Notes.test_the_notes_of_an_issue_no_longer_assigned_are_kept_and_shown
+    Fields.test_the_record_shows_every_field
+    PullRequests.test_the_rule_is_written_in_the_index_and_the_output
+    Identity.test_the_run_and_the_index_say_which_identity_produced_the_data
+    Scope.test_the_scope_is_in_the_index
+    OtherPeoplesText.test_the_screen_output_holds_no_title_body_or_comment
+    Paging.test_the_search_is_asked_for_issues_only_and_for_the_signed_in_user
+    Times.test_the_times_are_in_the_index_and_the_record
+    Paging.test_the_total_retrieved_is_reported_against_the_total_github_declares
+    Gone.test_they_are_listed_in_their_own_section_with_the_last_known_state
+    Gone.test_they_stay_flagged_and_keep_the_time_they_were_noticed
+    LocalIdentity.test_two_issues_numbered_twelve_do_not_collide
+
+PLANTED BUG K. The same page returned again is taken as the end (criterion 4)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Paging.test_the_same_page_returned_again_is_not_taken_as_the_end
+
+PLANTED BUG L. The total retrieved is not compared with the total GitHub declares (criterion 4)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Paging.test_a_disagreeing_total_stops_the_run_with_nothing_written
+    Paging.test_a_list_that_ends_early_is_caught_by_the_declared_total
+    Times.test_a_stopped_run_does_not_move_any_time
+
+PLANTED BUG M. The search is not asked for issues only, so its total counts pull requests (criteria 3 and 4)
+  unittest result: FAILED (failures=44, errors=34)
+  tests that failed (78):
+    OnlyReads.test_a_403_that_is_a_rate_limit_is_waited_for_until_the_reset
+    OtherPeoplesText.test_a_body_cannot_close_its_fence
+    OtherPeoplesText.test_a_body_that_gives_orders_is_recorded_as_text_and_changes_nothing
+    Gone.test_a_closed_issue_is_reported_with_the_state_it_was_in
+    CommentsAndTimeline.test_a_comment_github_no_longer_returns_is_kept_and_marked
+    Links.test_a_commit_id_that_is_not_a_sha_is_not_kept
+    CommentsAndTimeline.test_a_cross_reference_which_has_no_id_is_still_held_once
+    Gone.test_a_deleted_issue_is_flagged
+    Paging.test_a_disagreeing_total_stops_the_run_with_nothing_written
+    CommandLine.test_a_fake_run_from_the_command_line
+    Identity.test_a_folder_holding_another_users_issues_is_refused
+    Identity.test_a_folder_holding_made_up_issues_refuses_a_live_run
+    Links.test_a_link_that_changes_state_is_updated_not_added_again
+    Links.test_a_linked_issue_is_kept_as_an_issue_link
+    OnlyReads.test_a_long_or_repeated_rate_limit_ends_the_run_with_nothing_written
+    Links.test_a_merged_pull_request_on_an_open_issue_is_partial
+    CommentsAndTimeline.test_a_new_comment_is_added_once_and_an_edited_one_is_replaced
+    Notes.test_a_notes_file_with_no_issue_is_listed_and_left
+    Links.test_a_pull_request_is_kept_as_a_link_with_its_own_identifiers
+    OnlyReads.test_a_rate_limit_is_waited_for
+    OnlyReads.test_a_redirect_to_githubs_api_is_followed
+    LocalIdentity.test_a_renamed_repository_updates_the_record_in_place
+    Scope.test_a_repository_readable_again_is_no_longer_marked
+    Scope.test_a_repository_that_cannot_be_read_is_reported_not_left_out
+    Scope.test_a_repository_that_stops_being_readable_keeps_its_issues_and_its_older_sync_time
+    Scope.test_a_restricted_run_checks_its_count_against_a_restricted_search
+    Scope.test_a_restricted_run_says_so_and_records_only_those_repositories
+    CommentsAndTimeline.test_a_second_sync_adds_no_duplicate_and_changes_no_file
+    Times.test_a_stopped_run_does_not_move_any_time
+    OtherPeoplesText.test_a_title_cannot_break_a_table_or_make_a_link
+    GoneInOtherWays.test_a_transfer_that_keeps_the_node_id_updates_the_record_in_place
+    GoneInOtherWays.test_a_transfer_to_someone_else_says_so
+    Gone.test_a_transferred_issue_is_flagged_with_where_it_went
+    Gone.test_an_issue_assigned_again_is_no_longer_flagged
+    GoneInOtherWays.test_an_issue_github_refuses_to_show
+    Gone.test_an_issue_given_to_someone_else_is_flagged
+    GoneInOtherWays.test_an_issue_outside_a_restriction_is_not_called_gone
+    GoneInOtherWays.test_an_unassigned_issue
+    GoneInOtherWays.test_an_unknown_answer_about_a_missing_issue_stops_the_run
+    Links.test_closed_without_a_link_is_not_called_delivered
+    CommentsAndTimeline.test_comments_are_kept_with_author_and_time
+    Paging.test_comments_beyond_one_page_are_all_retrieved
+    CommentsAndTimeline.test_comments_in_the_timeline_and_entries_that_are_not_material_are_not_kept_as_events
+    Links.test_commits_are_kept_with_their_sha_and_repository
+    Links.test_delivery_evidence_exists_partial_or_missing
+    Times.test_each_issue_and_each_repository_has_its_last_successful_sync
+    Fields.test_every_field_is_kept
+    LocalIdentity.test_every_record_file_is_named_by_node_id
+    Scope.test_every_repository_is_listed_with_its_id
+    OnlyReads.test_every_request_is_counted
+    Gone.test_issues_in_a_repository_that_became_unreadable_are_flagged
+    Fields.test_labels_milestone_and_shared_assignees
+    CommentsAndTimeline.test_material_timeline_entries_are_kept_with_who_and_when
+    CommentsAndTimeline.test_no_comment_or_timeline_entry_is_held_twice_after_three_syncs
+    Notes.test_notes_are_apart_from_the_synced_fields
+    Notes.test_notes_are_unchanged_by_two_syncs
+    Gone.test_nothing_is_deleted
+    Fields.test_only_the_fields_named_are_kept_not_the_whole_answer
+    Paging.test_pages_are_followed_until_github_reports_no_more
+    PullRequests.test_pull_requests_are_left_out_and_counted
+    PullRequests.test_pull_requests_left_out_are_counted_for_each_repository
+    GoneInOtherWays.test_still_assigned_and_not_listed_stops_the_run
+    Gone.test_the_issue_it_became_points_back
+    PullRequests.test_the_key_alone_decides_even_when_it_holds_nothing
+    Links.test_the_links_are_in_the_record_and_in_delivery_links
+    Identity.test_the_login_is_asked_from_github
+    Notes.test_the_notes_of_an_issue_no_longer_assigned_are_kept_and_shown
+    Fields.test_the_record_shows_every_field
+    PullRequests.test_the_rule_is_written_in_the_index_and_the_output
+    Identity.test_the_run_and_the_index_say_which_identity_produced_the_data
+    Scope.test_the_scope_is_in_the_index
+    OtherPeoplesText.test_the_screen_output_holds_no_title_body_or_comment
+    Paging.test_the_search_is_asked_for_issues_only_and_for_the_signed_in_user
+    Times.test_the_times_are_in_the_index_and_the_record
+    Paging.test_the_total_retrieved_is_reported_against_the_total_github_declares
+    Gone.test_they_are_listed_in_their_own_section_with_the_last_known_state
+    Gone.test_they_stay_flagged_and_keep_the_time_they_were_noticed
+    LocalIdentity.test_two_issues_numbered_twelve_do_not_collide
+
+PLANTED BUG N. A search that calls its own result incomplete is believed (criterion 4)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Paging.test_a_search_that_calls_itself_incomplete_stops_the_run
+
+PLANTED BUG O. Closed issues are not asked for (criteria 4 and 10)
+  unittest result: FAILED (failures=42, errors=34)
+  tests that failed (76):
+    OnlyReads.test_a_403_that_is_a_rate_limit_is_waited_for_until_the_reset
+    OtherPeoplesText.test_a_body_cannot_close_its_fence
+    OtherPeoplesText.test_a_body_that_gives_orders_is_recorded_as_text_and_changes_nothing
+    Gone.test_a_closed_issue_is_reported_with_the_state_it_was_in
+    CommentsAndTimeline.test_a_comment_github_no_longer_returns_is_kept_and_marked
+    Links.test_a_commit_id_that_is_not_a_sha_is_not_kept
+    CommentsAndTimeline.test_a_cross_reference_which_has_no_id_is_still_held_once
+    Gone.test_a_deleted_issue_is_flagged
+    Paging.test_a_disagreeing_total_stops_the_run_with_nothing_written
+    CommandLine.test_a_fake_run_from_the_command_line
+    Identity.test_a_folder_holding_another_users_issues_is_refused
+    Identity.test_a_folder_holding_made_up_issues_refuses_a_live_run
+    Links.test_a_link_that_changes_state_is_updated_not_added_again
+    Links.test_a_linked_issue_is_kept_as_an_issue_link
+    OnlyReads.test_a_long_or_repeated_rate_limit_ends_the_run_with_nothing_written
+    Links.test_a_merged_pull_request_on_an_open_issue_is_partial
+    CommentsAndTimeline.test_a_new_comment_is_added_once_and_an_edited_one_is_replaced
+    Notes.test_a_notes_file_with_no_issue_is_listed_and_left
+    Links.test_a_pull_request_is_kept_as_a_link_with_its_own_identifiers
+    OnlyReads.test_a_rate_limit_is_waited_for
+    OnlyReads.test_a_redirect_to_githubs_api_is_followed
+    LocalIdentity.test_a_renamed_repository_updates_the_record_in_place
+    Scope.test_a_repository_readable_again_is_no_longer_marked
+    Scope.test_a_repository_that_cannot_be_read_is_reported_not_left_out
+    Scope.test_a_repository_that_stops_being_readable_keeps_its_issues_and_its_older_sync_time
+    Scope.test_a_restricted_run_says_so_and_records_only_those_repositories
+    CommentsAndTimeline.test_a_second_sync_adds_no_duplicate_and_changes_no_file
+    Times.test_a_stopped_run_does_not_move_any_time
+    OtherPeoplesText.test_a_title_cannot_break_a_table_or_make_a_link
+    GoneInOtherWays.test_a_transfer_that_keeps_the_node_id_updates_the_record_in_place
+    GoneInOtherWays.test_a_transfer_to_someone_else_says_so
+    Gone.test_a_transferred_issue_is_flagged_with_where_it_went
+    Gone.test_an_issue_assigned_again_is_no_longer_flagged
+    GoneInOtherWays.test_an_issue_github_refuses_to_show
+    Gone.test_an_issue_given_to_someone_else_is_flagged
+    GoneInOtherWays.test_an_issue_outside_a_restriction_is_not_called_gone
+    GoneInOtherWays.test_an_unassigned_issue
+    GoneInOtherWays.test_an_unknown_answer_about_a_missing_issue_stops_the_run
+    Links.test_closed_without_a_link_is_not_called_delivered
+    CommentsAndTimeline.test_comments_are_kept_with_author_and_time
+    Paging.test_comments_beyond_one_page_are_all_retrieved
+    CommentsAndTimeline.test_comments_in_the_timeline_and_entries_that_are_not_material_are_not_kept_as_events
+    Links.test_commits_are_kept_with_their_sha_and_repository
+    Links.test_delivery_evidence_exists_partial_or_missing
+    Times.test_each_issue_and_each_repository_has_its_last_successful_sync
+    Fields.test_every_field_is_kept
+    LocalIdentity.test_every_record_file_is_named_by_node_id
+    Scope.test_every_repository_is_listed_with_its_id
+    OnlyReads.test_every_request_is_counted
+    Gone.test_issues_in_a_repository_that_became_unreadable_are_flagged
+    Fields.test_labels_milestone_and_shared_assignees
+    CommentsAndTimeline.test_material_timeline_entries_are_kept_with_who_and_when
+    CommentsAndTimeline.test_no_comment_or_timeline_entry_is_held_twice_after_three_syncs
+    Notes.test_notes_are_apart_from_the_synced_fields
+    Notes.test_notes_are_unchanged_by_two_syncs
+    Gone.test_nothing_is_deleted
+    Fields.test_only_the_fields_named_are_kept_not_the_whole_answer
+    Paging.test_pages_are_followed_until_github_reports_no_more
+    PullRequests.test_pull_requests_are_left_out_and_counted
+    PullRequests.test_pull_requests_left_out_are_counted_for_each_repository
+    GoneInOtherWays.test_still_assigned_and_not_listed_stops_the_run
+    Gone.test_the_issue_it_became_points_back
+    PullRequests.test_the_key_alone_decides_even_when_it_holds_nothing
+    Links.test_the_links_are_in_the_record_and_in_delivery_links
+    Identity.test_the_login_is_asked_from_github
+    Notes.test_the_notes_of_an_issue_no_longer_assigned_are_kept_and_shown
+    Fields.test_the_record_shows_every_field
+    PullRequests.test_the_rule_is_written_in_the_index_and_the_output
+    Identity.test_the_run_and_the_index_say_which_identity_produced_the_data
+    Scope.test_the_scope_is_in_the_index
+    OtherPeoplesText.test_the_screen_output_holds_no_title_body_or_comment
+    Times.test_the_times_are_in_the_index_and_the_record
+    Paging.test_the_total_retrieved_is_reported_against_the_total_github_declares
+    Gone.test_they_are_listed_in_their_own_section_with_the_last_known_state
+    Gone.test_they_stay_flagged_and_keep_the_time_they_were_noticed
+    LocalIdentity.test_two_issues_numbered_twelve_do_not_collide
+
+PLANTED BUG P. The state reason is not kept (criterion 5)
+  unittest result: FAILED (failures=7)
+  tests that failed (7):
+    Gone.test_a_closed_issue_is_reported_with_the_state_it_was_in
+    Links.test_delivery_evidence_exists_partial_or_missing
+    Fields.test_every_field_is_kept
+    Gone.test_issues_in_a_repository_that_became_unreadable_are_flagged
+    Links.test_the_links_are_in_the_record_and_in_delivery_links
+    Fields.test_the_record_shows_every_field
+    Gone.test_they_are_listed_in_their_own_section_with_the_last_known_state
+
+PLANTED BUG Q. The milestone is not kept (criterion 5)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Fields.test_labels_milestone_and_shared_assignees
+    Fields.test_the_record_shows_every_field
+
+PLANTED BUG R. Record files are named by issue number alone, so two number 12s overwrite each other (criterion 6)
+  unittest result: FAILED (failures=34, errors=9)
+  tests that failed (43):
+    OnlyReads.test_a_403_that_is_a_rate_limit_is_waited_for_until_the_reset
+    OtherPeoplesText.test_a_body_cannot_close_its_fence
+    OtherPeoplesText.test_a_body_that_gives_orders_is_recorded_as_text_and_changes_nothing
+    Gone.test_a_closed_issue_is_reported_with_the_state_it_was_in
+    CommentsAndTimeline.test_a_comment_github_no_longer_returns_is_kept_and_marked
+    Gone.test_a_deleted_issue_is_flagged
+    CommandLine.test_a_fake_run_from_the_command_line
+    CommentsAndTimeline.test_a_new_comment_is_added_once_and_an_edited_one_is_replaced
+    OnlyReads.test_a_rate_limit_is_waited_for
+    OnlyReads.test_a_redirect_to_githubs_api_is_followed
+    LocalIdentity.test_a_renamed_repository_updates_the_record_in_place
+    Scope.test_a_repository_readable_again_is_no_longer_marked
+    Scope.test_a_repository_that_cannot_be_read_is_reported_not_left_out
+    Scope.test_a_repository_that_stops_being_readable_keeps_its_issues_and_its_older_sync_time
+    Scope.test_a_restricted_run_says_so_and_records_only_those_repositories
+    CommentsAndTimeline.test_a_second_sync_adds_no_duplicate_and_changes_no_file
+    OtherPeoplesText.test_a_title_cannot_break_a_table_or_make_a_link
+    GoneInOtherWays.test_a_transfer_that_keeps_the_node_id_updates_the_record_in_place
+    Gone.test_a_transferred_issue_is_flagged_with_where_it_went
+    Gone.test_an_issue_assigned_again_is_no_longer_flagged
+    Gone.test_an_issue_given_to_someone_else_is_flagged
+    GoneInOtherWays.test_an_issue_outside_a_restriction_is_not_called_gone
+    CommentsAndTimeline.test_comments_are_kept_with_author_and_time
+    Links.test_delivery_evidence_exists_partial_or_missing
+    Times.test_each_issue_and_each_repository_has_its_last_successful_sync
+    LocalIdentity.test_every_record_file_is_named_by_node_id
+    Gone.test_issues_in_a_repository_that_became_unreadable_are_flagged
+    CommentsAndTimeline.test_material_timeline_entries_are_kept_with_who_and_when
+    Notes.test_notes_are_apart_from_the_synced_fields
+    Gone.test_nothing_is_deleted
+    Paging.test_pages_are_followed_until_github_reports_no_more
+    PullRequests.test_pull_requests_are_left_out_and_counted
+    Gone.test_the_issue_it_became_points_back
+    PullRequests.test_the_key_alone_decides_even_when_it_holds_nothing
+    Links.test_the_links_are_in_the_record_and_in_delivery_links
+    Identity.test_the_login_is_asked_from_github
+    Notes.test_the_notes_of_an_issue_no_longer_assigned_are_kept_and_shown
+    Fields.test_the_record_shows_every_field
+    OtherPeoplesText.test_the_screen_output_holds_no_title_body_or_comment
+    Times.test_the_times_are_in_the_index_and_the_record
+    Gone.test_they_are_listed_in_their_own_section_with_the_last_known_state
+    Gone.test_they_stay_flagged_and_keep_the_time_they_were_noticed
+    LocalIdentity.test_two_issues_numbered_twelve_do_not_collide
+
+PLANTED BUG S. An issue whose repository was renamed loses its earlier identity (criterion 6)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    LocalIdentity.test_a_renamed_repository_updates_the_record_in_place
+    GoneInOtherWays.test_a_transfer_that_keeps_the_node_id_updates_the_record_in_place
+
+PLANTED BUG T. Comments are added again at every sync (criterion 7)
+  unittest result: FAILED (failures=4)
+  tests that failed (4):
+    CommentsAndTimeline.test_a_comment_github_no_longer_returns_is_kept_and_marked
+    CommentsAndTimeline.test_a_new_comment_is_added_once_and_an_edited_one_is_replaced
+    CommentsAndTimeline.test_a_second_sync_adds_no_duplicate_and_changes_no_file
+    CommentsAndTimeline.test_no_comment_or_timeline_entry_is_held_twice_after_three_syncs
+
+PLANTED BUG U. Timeline entries are added again at every sync (criterion 7)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    CommentsAndTimeline.test_a_cross_reference_which_has_no_id_is_still_held_once
+    CommentsAndTimeline.test_a_second_sync_adds_no_duplicate_and_changes_no_file
+    CommentsAndTimeline.test_no_comment_or_timeline_entry_is_held_twice_after_three_syncs
+
+PLANTED BUG V. A cross-reference, which has no id, gets a new key at every sync (criterion 7)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    CommentsAndTimeline.test_a_cross_reference_which_has_no_id_is_still_held_once
+    CommentsAndTimeline.test_a_second_sync_adds_no_duplicate_and_changes_no_file
+
+PLANTED BUG W. Every timeline entry is kept as an event, comments included (criterion 7)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    CommentsAndTimeline.test_a_second_sync_adds_no_duplicate_and_changes_no_file
+    CommentsAndTimeline.test_comments_in_the_timeline_and_entries_that_are_not_material_are_not_kept_as_events
+    CommentsAndTimeline.test_material_timeline_entries_are_kept_with_who_and_when
+
+PLANTED BUG X. A comment GitHub no longer returns is dropped (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    CommentsAndTimeline.test_a_comment_github_no_longer_returns_is_kept_and_marked
+
+PLANTED BUG Y. A linked pull request is kept without its node ID (criterion 8)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Links.test_a_linked_issue_is_kept_as_an_issue_link
+    Links.test_a_pull_request_is_kept_as_a_link_with_its_own_identifiers
+    Links.test_the_links_are_in_the_record_and_in_delivery_links
+
+PLANTED BUG Z. Commits are not kept as links (criterion 8)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Links.test_commits_are_kept_with_their_sha_and_repository
+    Links.test_the_links_are_in_the_record_and_in_delivery_links
+
+PLANTED BUG AA. Reading a notes file adds a line to it (criterion 9)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    LocalIdentity.test_a_renamed_repository_updates_the_record_in_place
+    Notes.test_notes_are_unchanged_by_two_syncs
+    Notes.test_the_notes_of_an_issue_no_longer_assigned_are_kept_and_shown
+
+PLANTED BUG AB. Writing in the notes folder is no longer refused (criterion 9)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Notes.test_the_one_writing_function_refuses_the_notes_folder
+
+PLANTED BUG AC. An issue no longer assigned is deleted from the memory (criterion 10)
+  unittest result: FAILED (errors=23)
+  tests that failed (23):
+    Gone.test_a_closed_issue_is_reported_with_the_state_it_was_in
+    Gone.test_a_deleted_issue_is_flagged
+    CommandLine.test_a_fake_run_from_the_command_line
+    CommentsAndTimeline.test_a_new_comment_is_added_once_and_an_edited_one_is_replaced
+    OnlyReads.test_a_redirect_to_githubs_api_is_followed
+    LocalIdentity.test_a_renamed_repository_updates_the_record_in_place
+    GoneInOtherWays.test_a_transfer_to_someone_else_says_so
+    Gone.test_a_transferred_issue_is_flagged_with_where_it_went
+    Gone.test_an_issue_assigned_again_is_no_longer_flagged
+    GoneInOtherWays.test_an_issue_github_refuses_to_show
+    Gone.test_an_issue_given_to_someone_else_is_flagged
+    GoneInOtherWays.test_an_unassigned_issue
+    Times.test_each_issue_and_each_repository_has_its_last_successful_sync
+    Gone.test_issues_in_a_repository_that_became_unreadable_are_flagged
+    CommentsAndTimeline.test_no_comment_or_timeline_entry_is_held_twice_after_three_syncs
+    Notes.test_notes_are_unchanged_by_two_syncs
+    Gone.test_nothing_is_deleted
+    Gone.test_the_issue_it_became_points_back
+    Notes.test_the_notes_of_an_issue_no_longer_assigned_are_kept_and_shown
+    OtherPeoplesText.test_the_screen_output_holds_no_title_body_or_comment
+    Times.test_the_times_are_in_the_index_and_the_record
+    Gone.test_they_are_listed_in_their_own_section_with_the_last_known_state
+    Gone.test_they_stay_flagged_and_keep_the_time_they_were_noticed
+
+PLANTED BUG AD. An issue no longer assigned is left out of the index (criterion 10)
+  unittest result: FAILED (failures=13, errors=1)
+  tests that failed (14):
+    Gone.test_a_closed_issue_is_reported_with_the_state_it_was_in
+    Gone.test_a_deleted_issue_is_flagged
+    CommandLine.test_a_fake_run_from_the_command_line
+    CommentsAndTimeline.test_a_new_comment_is_added_once_and_an_edited_one_is_replaced
+    LocalIdentity.test_a_renamed_repository_updates_the_record_in_place
+    Gone.test_a_transferred_issue_is_flagged_with_where_it_went
+    Gone.test_an_issue_assigned_again_is_no_longer_flagged
+    Gone.test_an_issue_given_to_someone_else_is_flagged
+    Gone.test_issues_in_a_repository_that_became_unreadable_are_flagged
+    Gone.test_nothing_is_deleted
+    Gone.test_the_issue_it_became_points_back
+    Notes.test_the_notes_of_an_issue_no_longer_assigned_are_kept_and_shown
+    Gone.test_they_are_listed_in_their_own_section_with_the_last_known_state
+    Gone.test_they_stay_flagged_and_keep_the_time_they_were_noticed
+
+PLANTED BUG AE. A transferred issue is not recognised (criterion 10)
+  unittest result: FAILED (failures=18)
+  tests that failed (18):
+    Gone.test_a_closed_issue_is_reported_with_the_state_it_was_in
+    Gone.test_a_deleted_issue_is_flagged
+    CommandLine.test_a_fake_run_from_the_command_line
+    CommentsAndTimeline.test_a_new_comment_is_added_once_and_an_edited_one_is_replaced
+    OnlyReads.test_a_redirect_to_githubs_api_is_followed
+    LocalIdentity.test_a_renamed_repository_updates_the_record_in_place
+    GoneInOtherWays.test_a_transfer_to_someone_else_says_so
+    Gone.test_a_transferred_issue_is_flagged_with_where_it_went
+    Gone.test_an_issue_assigned_again_is_no_longer_flagged
+    Gone.test_an_issue_given_to_someone_else_is_flagged
+    Times.test_each_issue_and_each_repository_has_its_last_successful_sync
+    Gone.test_issues_in_a_repository_that_became_unreadable_are_flagged
+    Notes.test_notes_are_unchanged_by_two_syncs
+    Gone.test_nothing_is_deleted
+    Gone.test_the_issue_it_became_points_back
+    Times.test_the_times_are_in_the_index_and_the_record
+    Gone.test_they_are_listed_in_their_own_section_with_the_last_known_state
+    Gone.test_they_stay_flagged_and_keep_the_time_they_were_noticed
+
+PLANTED BUG AF. A deleted issue is not recognised (criterion 10)
+  unittest result: FAILED (failures=17)
+  tests that failed (17):
+    Gone.test_a_closed_issue_is_reported_with_the_state_it_was_in
+    Gone.test_a_deleted_issue_is_flagged
+    CommandLine.test_a_fake_run_from_the_command_line
+    CommentsAndTimeline.test_a_new_comment_is_added_once_and_an_edited_one_is_replaced
+    OnlyReads.test_a_redirect_to_githubs_api_is_followed
+    LocalIdentity.test_a_renamed_repository_updates_the_record_in_place
+    Gone.test_a_transferred_issue_is_flagged_with_where_it_went
+    Gone.test_an_issue_assigned_again_is_no_longer_flagged
+    Gone.test_an_issue_given_to_someone_else_is_flagged
+    Times.test_each_issue_and_each_repository_has_its_last_successful_sync
+    Gone.test_issues_in_a_repository_that_became_unreadable_are_flagged
+    Notes.test_notes_are_unchanged_by_two_syncs
+    Gone.test_nothing_is_deleted
+    Gone.test_the_issue_it_became_points_back
+    Times.test_the_times_are_in_the_index_and_the_record
+    Gone.test_they_are_listed_in_their_own_section_with_the_last_known_state
+    Gone.test_they_stay_flagged_and_keep_the_time_they_were_noticed
+
+PLANTED BUG AG. An issue closed between syncs is not reported (criterion 10)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Gone.test_a_closed_issue_is_reported_with_the_state_it_was_in
+
+PLANTED BUG AH. The earlier states of an issue are thrown away (criterion 10)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Gone.test_a_closed_issue_is_reported_with_the_state_it_was_in
+    CommentsAndTimeline.test_a_second_sync_adds_no_duplicate_and_changes_no_file
+
+PLANTED BUG AI. An issue assigned again stays flagged (criterion 10)
+  unittest result: FAILED (errors=1)
+  tests that failed (1):
+    Gone.test_an_issue_assigned_again_is_no_longer_flagged
+
+PLANTED BUG AJ. A repository that could not be read gets a new last successful sync time (criterion 11)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Scope.test_a_repository_that_cannot_be_read_is_reported_not_left_out
+    Scope.test_a_repository_that_stops_being_readable_keeps_its_issues_and_its_older_sync_time
+
+PLANTED BUG AK. The time an issue was first seen is replaced at every sync (criterion 11)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    LocalIdentity.test_a_renamed_repository_updates_the_record_in_place
+    Times.test_each_issue_and_each_repository_has_its_last_successful_sync
+
+PLANTED BUG AL. The token is put in the address (criterion 12)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    OnlyReads.test_the_token_goes_in_a_header_and_never_in_the_address
+
+PLANTED BUG AM. The whole answer from GitHub is kept, not the fields named (criterion 12)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Fields.test_only_the_fields_named_are_kept_not_the_whole_answer
+
+PLANTED BUG AN. The request is not a GET (safety)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    OnlyReads.test_the_skill_has_no_way_to_send_anything_but_a_get
+    OnlyReads.test_the_token_goes_in_a_header_and_never_in_the_address
+
+PLANTED BUG AO. A redirect to a host other than GitHub's API is followed (safety)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    OnlyReads.test_a_redirect_to_anywhere_else_is_refused
+
+PLANTED BUG AP. An issue's body is written into its record as Markdown, not as text (safety)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    OtherPeoplesText.test_a_body_cannot_close_its_fence
+
+PLANTED BUG AQ. A vertical bar in a title is not escaped (safety)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    OtherPeoplesText.test_a_title_cannot_break_a_table_or_make_a_link
+    OtherPeoplesText.test_one_line_and_fenced
+
+PLANTED BUG AR. A closed issue that nothing points to is said to have delivery evidence (third stretch goal)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Links.test_closed_without_a_link_is_not_called_delivered
+    Links.test_delivery_evidence_exists_partial_or_missing
+    Links.test_the_links_are_in_the_record_and_in_delivery_links
+
+After the last bug was taken out: sync.py is byte for byte what it was at the start. OK
+
+RESULT: all 44 planted bugs were caught by at least one test, and the file was restored.

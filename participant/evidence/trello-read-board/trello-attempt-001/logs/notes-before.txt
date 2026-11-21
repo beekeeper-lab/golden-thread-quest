@@ -1,0 +1,5 @@
+Notes files before the second sync. SHA-256, then the file.
+
+3e51d67abe5b85805f3af04a33ba93e673a3aef4559cb3843d8c9a35571a179d  participant/context/trello/notes/6afdf6556fec70bd2959905f.md   (card: Fix login timeout)
+9adce8d5e699242f42038fa200373615e48232e3dbb51aade981737ad77fa616  participant/context/trello/notes/6afdf65aa3a5b8d67f9c9a21.md   (card: Remove old banner)
+4f08ec44306fda01a39ee9825ea67369e07584060fb861998e04d8b893a7b686  participant/context/trello/notes/6afdf65638df50999c980d80.md   (card: Export report as PDF)

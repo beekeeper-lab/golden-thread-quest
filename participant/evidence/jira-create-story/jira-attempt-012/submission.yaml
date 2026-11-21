@@ -1,0 +1,15 @@
+schema_version: 1
+submission_id: submission-20261119214652-528212
+quest_id: jira-create-story
+quest_version: 1
+attempt_id: jira-attempt-012
+content_hash: sha256:3e67297d48a1c298a945bd97e574107597012309d16368a433a4606e95c15d9f
+evidence_hash: sha256:e27d77df3bb92c03eac289adc62aac95ab30d2b102020dd77918e8b24aaa38b1
+submitted_at: '2026-11-19T21:46:52Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/jira/new-story/linked.md
+  digest: sha256:a01a97f9d0784186c0e18839f297b24d51cda1ca1959fa2f932a003e18c48079
+- path: participant/context/jira/results/create-story.md
+  digest: sha256:7b6a774d27472d67258d16239989ff44c289863ecbab1a99d91be465535c5ce5

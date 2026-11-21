@@ -1,0 +1,31 @@
+schema_version: 1
+review_id: review-20261121003739-5e9b6e
+quest_id: ba-search-existing-work
+quest_version: 1
+attempt_id: ba-attempt-003
+evidence_hash: sha256:4e2306fb24b8afbdb361e7f7a557880f9b65801177c9a49e0e10ee8baa570d61
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-21T00:37:39Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/search/catalog.md
+  digest: sha256:ee590b5f1c05445fb09a537eff2d7a51296cc22f3e7d11b1c5a8f4336c9b40de
+- path: participant/context/search/report.md
+  digest: sha256:9ab17cc34cf7d13f6eb05ba1762bcb79c3a088e84306da0c7cb5e3387a688fce
+verification_statement: 'Automated review. I read PROOF.md, the run log (search-run.txt),
+  tests.txt, planted-bugs.txt, the two recording scripts, catalog.md and report.md.
+  - The catalog has 16 synthetic items, including a true duplicate under a different
+  title (WRK-101), a near duplicate (WRK-106) and related but distinct items (WRK-102,
+  WRK-103, WRK-104). - The run log shows the duplicate proposal returning WRK-101
+  as DUPLICATE with field-by-field match details. - The no-match proposal returns
+  "RESULT: NO MATCH" and names no catalog item. - The catalog''s SHA-256 is the same
+  before and after the searches. - Every recommendation is merge, link or proceed,
+  and the output says a person decides. - report.md matches the run log and records
+  the participant''s decision, merge. The files shown sit under ba-attempt-003 rather
+  than the attempt-001 path the quest names. PROOF.md says copies are in attempt-001,
+  and the automatic pre-check found the required files present. Catalog item WRK-116
+  is worded as orders to the search tool. That is planted test data, not text addressed
+  to me as reviewer, so no injection is suspected. Each of the 7 acceptance criteria
+  was matched to text quoted word for word from the evidence.'

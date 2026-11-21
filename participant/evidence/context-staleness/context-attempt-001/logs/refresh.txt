@@ -1,0 +1,67 @@
+Refreshing only the items found stale: context-staleness, attempt context-attempt-001
+Recorded by scripts/record_evidence.py. Each block between dashed lines is what a command printed.
+Only local files are read. Every release, work item, team and decision here is made up, so nothing is redacted.
+A stretch goal. The quest allows no live connection, so the place items are fetched from is a made-up
+folder, COPY/source, standing for the system the context came from. In it WI-105 has moved on: it is now
+Blocked. The library is a copy in COPY/library.
+
+==============================================================================
+1. The clock is 2026-11-19T21:00:00Z, as in run 3 of stale-run.txt: three items are stale.
+$ python3 participant/skills/context-freshness/answer.py refresh --source COPY/source --now 2026-11-19T21:00:00Z --library COPY/library
+------------------------------------------------------------------------------
+REFRESH. Fetches again only what is stale. The source here is a local folder: COPY/source
+Clock: 2026-11-19T21:00:00Z (set with --now)
+Stale, to be fetched again: 3. Fresh, left untouched: 6.
+  REFRESHED      work-items/WI-104.md: fetched again, retrieved_at is now 2026-11-19T21:00:00Z.
+  REFRESHED      work-items/WI-105.md: fetched again, retrieved_at is now 2026-11-19T21:00:00Z.
+  REFRESHED      work-items/WI-106.md: fetched again, retrieved_at is now 2026-11-19T21:00:00Z.
+  left as it is  decisions/D-12.md
+  left as it is  release-2.4.md
+  left as it is  team.md
+  left as it is  work-items/WI-101.md
+  left as it is  work-items/WI-102.md
+  left as it is  work-items/WI-103.md
+Refreshed 3 of 3 stale items. 6 fresh items were not fetched and not rewritten.
+------------------------------------------------------------------------------
+exit code: 0
+  ok   3 stale items were fetched again and 6 fresh ones were left untouched
+  ok   checked by this script: exactly those 3 files changed, and the other 6 have the same SHA-256 and modified time
+
+==============================================================================
+2. The same question again, at the same clock value.
+$ python3 participant/skills/context-freshness/answer.py blockers --release REL-2.4 --now 2026-11-19T21:00:00Z --library COPY/library
+------------------------------------------------------------------------------
+QUESTION: what is blocking release REL-2.4?
+Clock: 2026-11-19T21:00:00Z (set with --now)
+Policy: participant/context/freshness/policy.md
+
+ANSWER: 3 work items are blocking release REL-2.4.
+
+IN DETAIL:
+  BLOCKING      WI-101 "Card payments time out at checkout" is Blocked. Why: "Waiting for the payment provider's sandbox certificate". Owner: the payments team.
+  BLOCKING      WI-104 "Update the privacy notice" is Blocked. Why: "Legal review has not been booked". Owner: the legal liaison.
+  BLOCKING      WI-105 "Rate-limit the public search" is Blocked. Why: "A load test failed". Owner: the platform team.
+  SET ASIDE     WI-106 "Dark mode for the settings page" is Blocked. Why: "The design is not finished". Decision D-12 sets it aside: "Release 2.4 ships without WI-106. Dark mode moves to release 2.5." So it does not block this release. Owner: the design team.
+  NOT BLOCKING  WI-102 "Export invoices as PDF" is Done. Owner: the billing team.
+  NOT BLOCKING  WI-103 "Migrate the sessions table" is In Progress. Owner: the platform team.
+
+CONTEXT USED, oldest first: 9 items.
+  item                                   kind              retrieved             age          limit    verdict
+  decisions/D-12.md                      decision          2026-10-01T10:00:00Z  49d 11h 00m  90 days  fresh
+  team.md                                team-ownership    2026-11-02T09:00:00Z  17d 12h 00m  30 days  fresh
+  release-2.4.md                         release-scope     2026-11-18T16:00:00Z  1d 05h 00m   3 days   fresh
+  work-items/WI-101.md                   work-item-status  2026-11-19T07:00:00Z  0d 14h 00m   24 hours fresh
+  work-items/WI-102.md                   work-item-status  2026-11-19T07:00:00Z  0d 14h 00m   24 hours fresh
+  work-items/WI-103.md                   work-item-status  2026-11-19T07:00:00Z  0d 14h 00m   24 hours fresh
+  work-items/WI-104.md                   work-item-status  2026-11-19T21:00:00Z  0d 00h 00m   24 hours fresh
+  work-items/WI-105.md                   work-item-status  2026-11-19T21:00:00Z  0d 00h 00m   24 hours fresh
+  work-items/WI-106.md                   work-item-status  2026-11-19T21:00:00Z  0d 00h 00m   24 hours fresh
+Oldest context used: decisions/D-12.md, retrieved 2026-10-01T10:00:00Z, age 49d 11h 00m, limit 90 days: fresh.
+
+Stale context: none. Every statement above rests on context inside its limit.
+------------------------------------------------------------------------------
+exit code: 0
+  ok   the answer is a plain statement again, exit code 0, and nothing is stale
+  ok   it is a different answer: 3 work items are blocking. The stale copy of WI-105 said In Review, and it is now Blocked
+
+RESULT: ALL CHECKS PASSED.

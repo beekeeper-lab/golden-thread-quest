@@ -1,0 +1,32 @@
+{
+  "fingerprint": "7f5606e446030b5813a664ac5b1ee4f212286ec81f223be8b4994e29691b9661",
+  "confirmed_by": "Beau Brown",
+  "confirmed_at": "2026-11-17 21:02:20 UTC",
+  "preview_made_at": "2026-11-17 21:02:19 UTC",
+  "board_fingerprint_before": "6846ec85b92d9b9521c357e3cc092692b6c379a539dc703c5c4508fa8f46accc",
+  "board_fingerprint_after": "7875cd7fde7d2e495a823b26d51c42b199dcd572d0b86834914a235cb206b9f6",
+  "written": [
+    {
+      "action": "update",
+      "id": "DEMO-4",
+      "title_now": "Warn before closing an unsaved story",
+      "fields": {
+        "title": {
+          "now": "Warn before closing an unsaved story",
+          "after": "Warn before closing a story with unsaved edits"
+        }
+      }
+    },
+    {
+      "action": "update",
+      "id": "DEMO-5",
+      "title_now": "Sort the board by last update",
+      "fields": {
+        "status": {
+          "now": "todo",
+          "after": "doing"
+        }
+      }
+    }
+  ]
+}

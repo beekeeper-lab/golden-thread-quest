@@ -1,0 +1,109 @@
+Two consecutive synchronization runs, and a third: trello-read-board, attempt trello-attempt-001
+
+Both runs were started by the participant in their own terminal, against a sandbox Trello board made for this
+quest, with a token that has read scope only. The output of each was saved as it was printed, to
+logs/run-1.txt and logs/run-2.txt. This file puts the two together, with what was changed on the board
+between them. It was put together by the AI assistant from those files.
+
+Redaction: in run 1 the skill printed full paths, which began with a home folder named after a person.
+That beginning was removed from the three lines that had it, and the skill was then changed to print
+paths from the project folder. Nothing else was altered. The board holds made-up content only. People
+appear as Trello member ids, never as names. No key or token appears.
+
+==============================================================================
+RUN 1. An empty participant/context/trello/. Nothing was held before.
+$ python3 participant/skills/trello-read-board/sync.py --source live
+------------------------------------------------------------------------------
+trello-sync: signed-in member resolved from Trello: 559966706fa3a2b338bfd681
+trello-sync: board resolved from configuration: 'GTQ Sandbox' (id 6afdf376f8b9111df7e27f99)
+trello-sync: read from Trello: 4 lists, 8 cards (1 archived), 1 checklists, 2 comments
+trello-sync: cards held: 8. This run: 8 new, 0 unchanged, 0 renamed, 0 moved, 0 reordered, 0 updated, 0 archived, 0 not returned
+trello-sync: card records written: 8, in participant/context/trello/cards
+trello-sync: index written: participant/context/trello/board-index.md
+trello-sync: last successful sync before this run: never. Now: 2026-11-18T20:09:41Z
+trello-sync: written: participant/context/trello/board.json
+------------------------------------------------------------------------------
+
+==============================================================================
+BETWEEN THE RUNS. Six changes made on the board, by hand, in Trello:
+  1. Renamed the card 'Fix login timeout' to 'Fix sign-in timeout'.
+  2. Moved 'Search by title' from the Review list to the Done list.
+  3. Archived 'Write onboarding guide'.
+  4. Added a comment to 'Export report as PDF'.
+  5. Ticked the item 'File downloads' in that card's checklist.
+  6. Archived and then deleted 'Remove old banner'.
+Also between the runs, three notes files were written into participant/context/trello/notes/, and
+their checksums taken. They are in logs/notes-before.txt and repeated below.
+
+==============================================================================
+RUN 2. The same command, 3 minutes 20 seconds after run 1.
+$ python3 participant/skills/trello-read-board/sync.py --source live
+------------------------------------------------------------------------------
+trello-sync: signed-in member resolved from Trello: 559966706fa3a2b338bfd681
+trello-sync: board resolved from configuration: 'GTQ Sandbox' (id 6afdf376f8b9111df7e27f99)
+trello-sync: read from Trello: 4 lists, 7 cards (2 archived), 1 checklists, 3 comments
+trello-sync: cards held: 8. This run: 0 new, 3 unchanged, 1 renamed, 1 moved, 0 reordered, 1 updated, 1 archived, 1 not returned
+trello-sync:   renamed: 'Fix login timeout' is now 'Fix sign-in timeout' [cr8GCZw8]. Same card, same record
+trello-sync:   moved: 'Search by title' [AhemHZ4a] from Review to Done
+trello-sync:   updated: 'Export report as PDF' [p6m0OaAc] (checklists)
+trello-sync:   archived in Trello: 'Write onboarding guide' [TjQwTg9X]. Kept, and marked archived
+trello-sync:   NOT RETURNED by Trello: 'Remove old banner' [g9ktKrWc]. It may be deleted, moved to another board, or hidden. Kept with its last known state
+trello-sync:   comments added to cards already held: 1
+trello-sync: card records written: 8, in participant/context/trello/cards
+trello-sync: index written: participant/context/trello/board-index.md
+trello-sync: last successful sync before this run: 2026-11-18T20:09:41Z. Now: 2026-11-18T20:13:01Z
+trello-sync: written: participant/context/trello/board.json
+------------------------------------------------------------------------------
+
+==============================================================================
+WHAT THE SECOND RUN CHANGED, set against the six changes
+  change on the board                 what run 2 reported
+  1. card renamed                     renamed: ... Same card, same record
+  2. card moved to another list       moved: 'Search by title' from Review to Done
+  3. card archived                    archived in Trello: 'Write onboarding guide'. Kept, and marked archived
+  4. comment added                    comments added to cards already held: 1
+  5. checklist item ticked            updated: 'Export report as PDF' (checklists)
+  6. card deleted                     NOT RETURNED by Trello: 'Remove old banner'. ... Kept with its last known state
+
+After run 2, from participant/context/trello/board.json:
+  cards held: 8 (run 1 held 8). Card files in cards/: 8.
+  comments on 'Export report as PDF': 3, with 3 different comment ids (run 1: 2).
+  the deleted card is still held: 'Remove old banner', state not_returned, last retrieved 2026-11-18T20:09:41Z.
+  last successful sync for the board: 2026-11-18T20:13:01Z. Every card that was returned: last retrieved 2026-11-18T20:13:01Z.
+
+==============================================================================
+THE NOTES FILES, before and after run 2 (SHA-256)
+  participant/context/trello/notes/6afdf6556fec70bd2959905f.md
+    notes for the card that was: Fix login timeout
+    before  3e51d67abe5b85805f3af04a33ba93e673a3aef4559cb3843d8c9a35571a179d
+    after   3e51d67abe5b85805f3af04a33ba93e673a3aef4559cb3843d8c9a35571a179d   UNCHANGED
+  participant/context/trello/notes/6afdf65aa3a5b8d67f9c9a21.md
+    notes for the card that was: Remove old banner
+    before  9adce8d5e699242f42038fa200373615e48232e3dbb51aade981737ad77fa616
+    after   9adce8d5e699242f42038fa200373615e48232e3dbb51aade981737ad77fa616   UNCHANGED
+  participant/context/trello/notes/6afdf65638df50999c980d80.md
+    notes for the card that was: Export report as PDF
+    before  4f08ec44306fda01a39ee9825ea67369e07584060fb861998e04d8b893a7b686
+    after   4f08ec44306fda01a39ee9825ea67369e07584060fb861998e04d8b893a7b686   UNCHANGED
+  files in the notes folder after run 2: 3, the same three.
+
+==============================================================================
+RUN 3. Added later. The same command again, 16 minutes after run 2, with no change made on the board.
+It was run after the skill was taught to write reconciliation.md, so that file would come from a real run.
+$ python3 participant/skills/trello-read-board/sync.py --source live
+------------------------------------------------------------------------------
+trello-sync: signed-in member resolved from Trello: 559966706fa3a2b338bfd681
+trello-sync: board resolved from configuration: 'GTQ Sandbox' (id 6afdf376f8b9111df7e27f99)
+trello-sync: read from Trello: 4 lists, 7 cards (2 archived), 1 checklists, 3 comments
+trello-sync: cards held: 8. This run: 0 new, 7 unchanged, 0 renamed, 0 moved, 0 reordered, 0 updated, 0 archived, 0 not returned
+trello-sync: card records written: 8, in participant/context/trello/cards
+trello-sync: index written: participant/context/trello/board-index.md
+trello-sync: reconciliation written: participant/context/trello/reconciliation.md
+trello-sync: last successful sync before this run: 2026-11-18T20:13:01Z. Now: 2026-11-18T20:29:47Z
+trello-sync: written: participant/context/trello/board.json
+------------------------------------------------------------------------------
+A third run on a board nobody had touched: 7 unchanged, nothing new, nothing renamed or moved, and the
+deleted card not reported a second time. Still 8 cards held. The three notes files had the same checksums
+after it as before run 2.
+
+RESULT: the second run reported all six changes, duplicated nothing, deleted nothing, and left the three notes files unchanged.

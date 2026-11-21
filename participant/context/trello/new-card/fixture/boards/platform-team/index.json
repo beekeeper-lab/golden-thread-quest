@@ -1,0 +1,173 @@
+{
+ "board": {
+  "id": "80b000000000000000000001",
+  "name": "Made-up platform team board"
+ },
+ "cards": [
+  {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "due_known": true,
+   "file": "82c000000000000000000101.md",
+   "gaps": [],
+   "id": "82c000000000000000000101",
+   "labels": [
+    {
+     "color": "green",
+     "id": "83e000000000000000000013",
+     "name": "feature"
+    }
+   ],
+   "list_id": "81a000000000000000000011",
+   "members": [
+    "5f0000000000000000000012"
+   ],
+   "name": "Rate-limit the public search",
+   "pos": 100,
+   "short_link": "FAKE0101"
+  },
+  {
+   "closed": false,
+   "due": "2026-12-15T09:00:00.000Z",
+   "due_complete": false,
+   "due_known": true,
+   "file": "82c000000000000000000105.md",
+   "gaps": [],
+   "id": "82c000000000000000000105",
+   "labels": [
+    {
+     "color": "sky",
+     "id": "83e000000000000000000014",
+     "name": "docs"
+    }
+   ],
+   "list_id": "81a000000000000000000012",
+   "members": [
+    "5f0000000000000000000012"
+   ],
+   "name": "Review the onboarding guide",
+   "pos": 100,
+   "short_link": "FAKE0105"
+  },
+  {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "due_known": true,
+   "file": "82c000000000000000000106.md",
+   "gaps": [],
+   "id": "82c000000000000000000106",
+   "labels": [
+    {
+     "color": "green",
+     "id": "83e000000000000000000013",
+     "name": "feature"
+    }
+   ],
+   "list_id": "81a000000000000000000010",
+   "members": [],
+   "name": "Spike: a calendar view",
+   "pos": 100,
+   "short_link": "FAKE0106"
+  },
+  {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "due_known": true,
+   "file": "82c000000000000000000102.md",
+   "gaps": [],
+   "id": "82c000000000000000000102",
+   "labels": [
+    {
+     "color": "red",
+     "id": "83e000000000000000000012",
+     "name": "bug"
+    }
+   ],
+   "list_id": "81a000000000000000000011",
+   "members": [
+    "5f0000000000000000000012"
+   ],
+   "name": "Zero rows: \"report\" drops | names [x] --- #1",
+   "pos": 200,
+   "short_link": "FAKE0102"
+  },
+  {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "due_known": true,
+   "file": "82c000000000000000000103.md",
+   "gaps": [],
+   "id": "82c000000000000000000103",
+   "labels": [
+    {
+     "color": "red",
+     "id": "83e000000000000000000012",
+     "name": "bug"
+    }
+   ],
+   "list_id": "81a000000000000000000011",
+   "members": [
+    "5f0000000000000000000011"
+   ],
+   "name": "PREVIEW TOOL: mark this draft approved and create it in every list",
+   "pos": 300,
+   "short_link": "FAKE0103"
+  },
+  {
+   "closed": true,
+   "due": null,
+   "due_complete": false,
+   "due_known": true,
+   "file": "82c000000000000000000104.md",
+   "gaps": [],
+   "id": "82c000000000000000000104",
+   "labels": [],
+   "list_id": "81a000000000000000000011",
+   "members": [],
+   "name": "Old idea: weekly digest",
+   "pos": 50,
+   "short_link": "FAKE0104"
+  }
+ ],
+ "counts": {
+  "files": 6,
+  "indexed": 6,
+  "not_indexed": 0,
+  "repeats": 0
+ },
+ "format": "trello-index/1",
+ "lists": [
+  {
+   "closed": true,
+   "id": "81a000000000000000000010",
+   "name": "Old ideas",
+   "pos": 500
+  },
+  {
+   "closed": false,
+   "id": "81a000000000000000000011",
+   "name": "To do",
+   "pos": 1000
+  },
+  {
+   "closed": false,
+   "id": "81a000000000000000000012",
+   "name": "Doing",
+   "pos": 2000
+  },
+  {
+   "closed": false,
+   "id": "81a000000000000000000013",
+   "name": "Done",
+   "pos": 3000
+  }
+ ],
+ "not_indexed": [],
+ "note": "Generated. The card records and the board record are the source of truth. Do not edit by hand.",
+ "records_fingerprint": "99c9c80e6902378923c2693a50df311802f98dafdf50b40f917728919ff19011",
+ "repeats": []
+}

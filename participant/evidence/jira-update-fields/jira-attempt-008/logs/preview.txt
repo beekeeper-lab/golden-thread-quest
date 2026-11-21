@@ -1,0 +1,136 @@
+The workflow stopping at a preview: jira-update-fields, attempt jira-attempt-008
+Recorded by scripts/record_evidence.py. Each block between dashed lines is what a command printed.
+The Jira here is scripts/fake_jira.py, a made-up one. No real Jira was read or written, so nothing is
+redacted: the site, the projects and the stories are invented. STATE stands for a temporary folder.
+
+
+==============================================================================
+1. What the fake Jira holds before the preview.
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake_jira.py show --state STATE --story SAND-1
+------------------------------------------------------------------------------
+FAKE JIRA holds for SAND-1 (issue id 30001): labels ["onboarding"], duedate "2026-12-01", priority "Medium". Changelog entries: 0.
+------------------------------------------------------------------------------
+exit code: 0
+
+==============================================================================
+2. The preview. The change file asks for two labels, a due date and a priority.
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/update.py preview --source fake --change participant/evidence/jira-update-fields/jira-attempt-008/scripts/changes/wanted.json --allowlist participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake-allowlist.json --state STATE
+------------------------------------------------------------------------------
+PREVIEW. Nothing has been written.
+
+Jira site:  https://fixture-site.example.invalid  (site fingerprint 738169e667642f09)
+Project:    SAND (project id 20001). On the sandbox allowlist: yes.
+Story:      SAND-1 (issue id 30001). The id is what identifies it.
+
+Changes that would be made: 3 fields.
+  labels    now:    ["onboarding"]
+            after:  ["onboarding", "q4"]
+  duedate   now:    2026-12-01
+            after:  2026-12-15
+  priority  now:    "Medium" (id 3)
+            after:  "High" (id 2)
+Nothing else on the story would be sent.
+Jira may email the story's watchers about the change, as it does for any edit.
+
+Permission check, asked of Jira for this story and this identity:
+  may see the story  (BROWSE_PROJECTS): yes
+  may edit the story (EDIT_ISSUES):     yes
+  fields Jira lists as editable here:   labels yes, duedate yes, priority yes
+Duplicate check: an edit sets a field to a value and creates nothing, so there is no second copy to make.
+  What could repeat is the same edit being sent twice. Checked against Jira just now: 0 of the 3
+  fields named already hold the wanted value and would not be sent. Jira's documentation does not say
+  whether sending a value a field already holds adds a history entry, so this workflow never sends one.
+Where Jira cannot check: its edit request has no 'only if the value is still the one I saw' condition.
+  The confirmation reads the story again just before writing and stops if a field has moved.
+
+Snapshot of the whole story as Jira returned it, before the preview: 77c887e4c1e83da2
+Snapshot of the whole story as Jira returned it, after the preview:  77c887e4c1e83da2
+The two are the same. Jira is unchanged.
+Requests sent to Jira: 5. Every one was a GET, which reads and cannot change anything.
+  GET /rest/api/3/issue/SAND-1
+  GET /rest/api/3/myself
+  GET /rest/api/3/mypermissions
+  GET /rest/api/3/issue/30001/editmeta
+  GET /rest/api/3/issue/30001
+
+Fingerprint of this preview: fc564d843083
+Made:    2026-11-19 15:53:56 UTC
+Expires: 2026-11-19 16:08:56 UTC (15 minutes after it was made)
+
+Nothing has been written. To make these changes, a person who has read this preview confirms it by
+its fingerprint.
+------------------------------------------------------------------------------
+exit code: 0
+
+==============================================================================
+3. What the fake Jira holds after the preview.
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake_jira.py show --state STATE --story SAND-1
+------------------------------------------------------------------------------
+FAKE JIRA holds for SAND-1 (issue id 30001): labels ["onboarding"], duedate "2026-12-01", priority "Medium". Changelog entries: 0.
+------------------------------------------------------------------------------
+exit code: 0
+
+  ok   the preview shows the Jira site, the project and the story
+  ok   it shows the value now and the value after for each of the three fields (criterion 1)
+  ok   it records the permission check and the duplicate check, and says where Jira cannot check (criterion 5)
+  ok   it gives a fingerprint and an expiry time (criterion 7)
+  ok   every request was a GET, and the preview says nothing was written (criterion 4)
+  ok   the snapshot of the story before and after the preview is the same
+  ok   the fake Jira holds the same values, and the same number of history entries, before and after
+
+RESULT: ALL CHECKS PASSED. (The checks are on the fake-Jira runs above.)
+
+##############################################################################
+THE SAME ON THE REAL JIRA SANDBOX
+The blocks below were not made by this script. The participant ran each command in their own
+terminal against their real Jira sandbox, and the updater saved its output with the site's
+address replaced by a marker. They are copied here unchanged from the log files named.
+
+The real preview: one label and a due date on the sandbox story.
+(copied from logs/live-preview.txt)
+------------------------------------------------------------------------------
+PREVIEW. Nothing has been written.
+
+Jira site:  [site address removed]  (site fingerprint 4aabe3d08fbad6b1)
+Project:    SCRUM (project id 10000). On the sandbox allowlist: yes.
+Story:      SCRUM-1 (issue id 10000). The id is what identifies it.
+
+Changes that would be made: 2 fields.
+  labels    now:    (none)
+            after:  ["gtq-sandbox"]
+  duedate   now:    2026-11-15
+            after:  2026-12-15
+Nothing else on the story would be sent. Not in this change: priority.
+Jira may email the story's watchers about the change, as it does for any edit.
+
+Permission check, asked of Jira for this story and this identity:
+  may see the story  (BROWSE_PROJECTS): yes
+  may edit the story (EDIT_ISSUES):     yes
+  fields Jira lists as editable here:   labels yes, duedate yes, priority yes
+Duplicate check: an edit sets a field to a value and creates nothing, so there is no second copy to make.
+  What could repeat is the same edit being sent twice. Checked against Jira just now: 0 of the 2
+  fields named already hold the wanted value and would not be sent. Jira's documentation does not say
+  whether sending a value a field already holds adds a history entry, so this workflow never sends one.
+Where Jira cannot check: its edit request has no 'only if the value is still the one I saw' condition.
+  The confirmation reads the story again just before writing and stops if a field has moved.
+
+Snapshot of the whole story as Jira returned it, before the preview: 70dca8f09c2412cd
+Snapshot of the whole story as Jira returned it, after the preview:  70dca8f09c2412cd
+The two are the same. Jira is unchanged.
+Requests sent to Jira: 5. Every one was a GET, which reads and cannot change anything.
+  GET /rest/api/3/issue/SCRUM-1
+  GET /rest/api/3/myself
+  GET /rest/api/3/mypermissions
+  GET /rest/api/3/issue/10000/editmeta
+  GET /rest/api/3/issue/10000
+
+Fingerprint of this preview: 8441425734e1
+Made:    2026-11-19 15:46:21 UTC
+Expires: 2026-11-19 16:01:21 UTC (15 minutes after it was made)
+
+Nothing has been written. To make these changes, a person who has read this preview confirms it by
+its fingerprint.
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.
+------------------------------------------------------------------------------

@@ -1,0 +1,39 @@
+Fields outside the supported list being refused: jira-update-fields, attempt jira-attempt-008
+Recorded by scripts/record_evidence.py. Each block between dashed lines is what a command printed.
+The Jira here is scripts/fake_jira.py, a made-up one. No real Jira was read or written, so nothing is
+redacted: the site, the projects and the stories are invented. STATE stands for a temporary folder.
+
+
+==============================================================================
+1. A change file that asks for a supported field, priority, and also for the assignee.
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/update.py preview --source fake --change participant/evidence/jira-update-fields/jira-attempt-008/scripts/changes/unsupported-assignee.json --allowlist participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake-allowlist.json --state STATE
+------------------------------------------------------------------------------
+
+REFUSED: the field "assignee" is not supported. This workflow changes only labels, duedate, priority, and refuses every other field.
+Nothing has been written.
+------------------------------------------------------------------------------
+exit code: 1
+
+==============================================================================
+2. A change file that asks for the summary.
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/update.py preview --source fake --change participant/evidence/jira-update-fields/jira-attempt-008/scripts/changes/unsupported-summary.json --allowlist participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake-allowlist.json --state STATE
+------------------------------------------------------------------------------
+
+REFUSED: the field "summary" is not supported. This workflow changes only labels, duedate, priority, and refuses every other field.
+Nothing has been written.
+------------------------------------------------------------------------------
+exit code: 1
+
+==============================================================================
+3. What the fake Jira holds afterwards.
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake_jira.py show --state STATE --story SAND-1
+------------------------------------------------------------------------------
+FAKE JIRA holds for SAND-1 (issue id 30001): labels ["onboarding"], duedate "2026-12-01", priority "Medium". Changelog entries: 0.
+------------------------------------------------------------------------------
+exit code: 0
+
+  ok   both were refused with exit code 1, and no fingerprint was issued (criterion 2)
+  ok   each refusal names the field and the three that are supported
+  ok   a supported field in the same file was not changed either: the whole change is refused
+
+RESULT: ALL CHECKS PASSED.

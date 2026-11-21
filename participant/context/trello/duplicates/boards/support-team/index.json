@@ -1,0 +1,137 @@
+{
+ "board": {
+  "id": "70b000000000000000000012",
+  "name": "Made-up support team board"
+ },
+ "cards": [
+  {
+   "closed": false,
+   "due": "2026-12-05T17:00:00.000Z",
+   "due_complete": false,
+   "due_known": true,
+   "file": "72c000000000000000000201.md",
+   "gaps": [],
+   "id": "72c000000000000000000201",
+   "labels": [
+    {
+     "color": "blue",
+     "id": "73e000000000000000000204",
+     "name": "customer-request"
+    },
+    {
+     "color": "blue",
+     "id": "73e000000000000000000274",
+     "name": "export"
+    }
+   ],
+   "list_id": "71a000000000000000000022",
+   "members": [
+    "5f0000000000000000000001",
+    "5f0000000000000000000003"
+   ],
+   "name": "Let admins download their contacts in a spreadsheet",
+   "pos": 100,
+   "short_link": "FIX00201"
+  },
+  {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "due_known": true,
+   "file": "72c000000000000000000202.md",
+   "gaps": [],
+   "id": "72c000000000000000000202",
+   "labels": [
+    {
+     "color": "blue",
+     "id": "73e000000000000000000237",
+     "name": "billing"
+    }
+   ],
+   "list_id": "71a000000000000000000021",
+   "members": [
+    "5f0000000000000000000003"
+   ],
+   "name": "Refund policy wording for annual plans",
+   "pos": 100,
+   "short_link": "FIX00202"
+  },
+  {
+   "closed": false,
+   "due": "2026-11-12T17:00:00.000Z",
+   "due_complete": true,
+   "due_known": true,
+   "file": "72c000000000000000000203.md",
+   "gaps": [],
+   "id": "72c000000000000000000203",
+   "labels": [
+    {
+     "color": "blue",
+     "id": "73e000000000000000000223",
+     "name": "team"
+    }
+   ],
+   "list_id": "71a000000000000000000023",
+   "members": [
+    "5f0000000000000000000003"
+   ],
+   "name": "Macro for login reset replies",
+   "pos": 100,
+   "short_link": "FIX00203"
+  },
+  {
+   "closed": false,
+   "due": "2026-12-20T17:00:00.000Z",
+   "due_complete": false,
+   "due_known": true,
+   "file": "72c000000000000000000204.md",
+   "gaps": [],
+   "id": "72c000000000000000000204",
+   "labels": [
+    {
+     "color": "blue",
+     "id": "73e000000000000000000204",
+     "name": "customer-request"
+    }
+   ],
+   "list_id": "71a000000000000000000021",
+   "members": [
+    "5f0000000000000000000002"
+   ],
+   "name": "Tag tickets about slow dashboards",
+   "pos": 200,
+   "short_link": "FIX00204"
+  }
+ ],
+ "counts": {
+  "files": 4,
+  "indexed": 4,
+  "not_indexed": 0,
+  "repeats": 0
+ },
+ "format": "trello-index/1",
+ "lists": [
+  {
+   "closed": false,
+   "id": "71a000000000000000000021",
+   "name": "Inbox",
+   "pos": 1000
+  },
+  {
+   "closed": false,
+   "id": "71a000000000000000000022",
+   "name": "In progress",
+   "pos": 2000
+  },
+  {
+   "closed": false,
+   "id": "71a000000000000000000023",
+   "name": "Resolved",
+   "pos": 3000
+  }
+ ],
+ "not_indexed": [],
+ "note": "Generated. The card records and the board record are the source of truth. Do not edit by hand.",
+ "records_fingerprint": "9adbf834f089d31ce4a5595f1394f021c2ba797983badbd11dfb685542fff671",
+ "repeats": []
+}

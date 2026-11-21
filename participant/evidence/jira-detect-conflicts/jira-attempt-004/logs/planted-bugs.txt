@@ -1,0 +1,63 @@
+Do the checks in record_evidence.py notice a broken detect.py? jira-detect-conflicts, attempt jira-attempt-004
+
+Each bug below was put into scripts/detect.py by hand, record_evidence.py was run, and the bug was taken out
+again. Only the FAIL and RESULT lines of each run are kept here. The fixture files were restored from a copy
+after each run, because bug C alters one of them.
+
+==============================================================================
+PLANTED BUG A. An agreement is reported as a conflict
+  FAIL both are the same as the committed participant/context/jira/conflicts/report.md
+  FAIL FIX-4 priority  expected: agreement              reported: conflict
+RESULT: 2 CHECK(S) FAILED
+  - both are the same as the committed participant/context/jira/conflicts/report.md
+  - FIX-4 priority  expected: agreement              reported: conflict
+record_evidence.py exit code: 1
+
+==============================================================================
+PLANTED BUG B. A change only in Jira is not noticed when the story also has a local edit
+  FAIL both are the same as the committed participant/context/jira/conflicts/report.md
+  FAIL FIX-2 status    expected: changed only in Jira   reported: nothing
+  FAIL FIX-5 due_date  expected: changed only in Jira   reported: nothing
+  FAIL nothing is reported that fixture.md does not list (7 reported, 9 listed)
+  FAIL fields compared and unchanged: expected 22, reported 5
+RESULT: 5 CHECK(S) FAILED
+  - both are the same as the committed participant/context/jira/conflicts/report.md
+  - FIX-2 status    expected: changed only in Jira   reported: nothing
+  - FIX-5 due_date  expected: changed only in Jira   reported: nothing
+  - nothing is reported that fixture.md does not list (7 reported, 9 listed)
+  - fields compared and unchanged: expected 22, reported 5
+record_evidence.py exit code: 1
+
+==============================================================================
+PLANTED BUG C. Detection 'resolves' a conflict by writing Jira's value over the local edit
+  FAIL run 2 ended with exit code 2
+  FAIL the report from run 1 and the report from run 2 are byte for byte the same
+  FAIL both are the same as the committed participant/context/jira/conflicts/report.md
+  FAIL FIX-3 estimate  expected: conflict               reported: agreement
+  FAIL FIX-5 summary   expected: conflict               reported: agreement
+  FAIL local-edits.json is unchanged
+RESULT: 6 CHECK(S) FAILED
+  - run 2 ended with exit code 2
+  - the report from run 1 and the report from run 2 are byte for byte the same
+  - both are the same as the committed participant/context/jira/conflicts/report.md
+  - FIX-3 estimate  expected: conflict               reported: agreement
+  - FIX-5 summary   expected: conflict               reported: agreement
+  - local-edits.json is unchanged
+record_evidence.py exit code: 1
+
+==============================================================================
+PLANTED BUG D. The report carries the time it was made
+  FAIL the report from run 1 and the report from run 2 are byte for byte the same
+  FAIL both are the same as the committed participant/context/jira/conflicts/report.md
+RESULT: 2 CHECK(S) FAILED
+  - the report from run 1 and the report from run 2 are byte for byte the same
+  - both are the same as the committed participant/context/jira/conflicts/report.md
+record_evidence.py exit code: 1
+
+==============================================================================
+With every bug taken out and the fixture restored, record_evidence.py was run again, which rewrote
+logs/conflict-run.txt:
+
+RESULT: ALL CHECKS PASSED. Two runs gave the same report, every case came out as fixture.md
+says, and neither the local file nor the Jira copy was altered.
+record_evidence.py exit code: 0

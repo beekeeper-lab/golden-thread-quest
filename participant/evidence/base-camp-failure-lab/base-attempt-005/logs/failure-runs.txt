@@ -1,0 +1,244 @@
+Failure runs for base-camp-failure-lab, attempt base-attempt-005
+Recorded by scripts/record_evidence.py on 2026-11-17
+
+Every run is sync.py reading from fake_service.py on 127.0.0.1:8799. No real service
+is contacted. The stories are made up (STORY-001 to STORY-100), so nothing here
+needed redacting. A line with INJECTED is the service failing on purpose.
+The policy the workflow follows is participant/context/failure-policy.md.
+
+==============================================================================
+RUN 0-healthy   (policy control: no failure switched on)
+$ fake_service.py --fail none
+$ sync.py --out work/0-healthy.json
+------------------------------------------------------------------------------
+service: listening on 127.0.0.1:8799, fail=none page=3 times=0
+service: page 1 -> 200 healthy, 20 items
+sync: page 1: read 20 items, 20 received so far, service says total is 100
+service: page 2 -> 200 healthy, 20 items
+sync: page 2: read 20 items, 40 received so far, service says total is 100
+service: page 3 -> 200 healthy, 20 items
+sync: page 3: read 20 items, 60 received so far, service says total is 100
+service: page 4 -> 200 healthy, 20 items
+sync: page 4: read 20 items, 80 received so far, service says total is 100
+service: page 5 -> 200 healthy, 20 items
+sync: page 5: read 20 items, 100 received so far, service says total is 100
+sync: RESULT: COMPLETE 100 of 100 saved to work/0-healthy.json
+------------------------------------------------------------------------------
+sync.py exit code: 0
+
+==============================================================================
+RUN 1a-timeout-lasting   (policy 1. Timeout: page 3 never answers)
+$ fake_service.py --fail timeout
+$ sync.py --out work/1a-timeout-lasting.json
+------------------------------------------------------------------------------
+service: listening on 127.0.0.1:8799, fail=timeout page=3 times=0
+service: page 1 -> 200 healthy, 20 items
+sync: page 1: read 20 items, 20 received so far, service says total is 100
+service: page 2 -> 200 healthy, 20 items
+sync: page 2: read 20 items, 40 received so far, service says total is 100
+service: page 3 -> INJECTED timeout: no answer for 5.0 seconds
+sync: page 3: try 1 of 3: no answer within 2 seconds (timeout)
+sync: page 3: retrying
+service: page 3 -> INJECTED timeout: no answer for 5.0 seconds
+sync: page 3: try 2 of 3: no answer within 2 seconds (timeout)
+sync: page 3: retrying
+service: page 3 -> INJECTED timeout: no answer for 5.0 seconds
+sync: page 3: try 3 of 3: no answer within 2 seconds (timeout)
+sync: nothing written to work/1a-timeout-lasting.json
+sync: items read before the failure: 40 good, 0 rejected (kept in work/1a-timeout-lasting.json.INCOMPLETE.json, marked incomplete)
+sync: RESULT: FAILED timeout: page 3 gave no answer in 3 tries
+------------------------------------------------------------------------------
+sync.py exit code: 1
+
+==============================================================================
+RUN 1b-timeout-recovers   (policy 1. Timeout: page 3 answers on the third try)
+$ fake_service.py --fail timeout --times 2
+$ sync.py --out work/1b-timeout-recovers.json
+------------------------------------------------------------------------------
+service: listening on 127.0.0.1:8799, fail=timeout page=3 times=2
+service: page 1 -> 200 healthy, 20 items
+sync: page 1: read 20 items, 20 received so far, service says total is 100
+service: page 2 -> 200 healthy, 20 items
+sync: page 2: read 20 items, 40 received so far, service says total is 100
+service: page 3 -> INJECTED timeout: no answer for 5.0 seconds
+sync: page 3: try 1 of 3: no answer within 2 seconds (timeout)
+sync: page 3: retrying
+service: page 3 -> INJECTED timeout: no answer for 5.0 seconds
+sync: page 3: try 2 of 3: no answer within 2 seconds (timeout)
+sync: page 3: retrying
+service: page 3 -> 200 healthy, 20 items
+sync: page 3: answered on try 3 of 3
+sync: page 3: read 20 items, 60 received so far, service says total is 100
+service: page 4 -> 200 healthy, 20 items
+sync: page 4: read 20 items, 80 received so far, service says total is 100
+service: page 5 -> 200 healthy, 20 items
+sync: page 5: read 20 items, 100 received so far, service says total is 100
+sync: RESULT: COMPLETE 100 of 100 saved to work/1b-timeout-recovers.json
+------------------------------------------------------------------------------
+sync.py exit code: 0
+
+==============================================================================
+RUN 2-partial   (policy 2. Partial response: page 3 says it is the last page)
+$ fake_service.py --fail partial
+$ sync.py --out work/2-partial.json
+------------------------------------------------------------------------------
+service: listening on 127.0.0.1:8799, fail=partial page=3 times=0
+service: page 1 -> 200 healthy, 20 items
+sync: page 1: read 20 items, 20 received so far, service says total is 100
+service: page 2 -> 200 healthy, 20 items
+sync: page 2: read 20 items, 40 received so far, service says total is 100
+service: page 3 -> INJECTED partial response: 200, says this is the last page
+sync: page 3: read 20 items, 60 received so far, service says total is 100
+sync: nothing written to work/2-partial.json
+sync: items read before the failure: 60 good, 0 rejected (kept in work/2-partial.json.INCOMPLETE.json, marked incomplete)
+sync: RESULT: FAILED partial response: received 60 of 100
+------------------------------------------------------------------------------
+sync.py exit code: 1
+
+==============================================================================
+RUN 3a-rate-limit-recovers   (policy 3. Rate limit: page 3 refused once, wait of 2 seconds asked)
+$ fake_service.py --fail rate-limit --times 1 --retry-after 2
+$ sync.py --out work/3a-rate-limit-recovers.json
+------------------------------------------------------------------------------
+service: listening on 127.0.0.1:8799, fail=rate-limit page=3 times=1
+service: page 1 -> 200 healthy, 20 items
+sync: page 1: read 20 items, 20 received so far, service says total is 100
+service: page 2 -> 200 healthy, 20 items
+sync: page 2: read 20 items, 40 received so far, service says total is 100
+service: page 3 -> INJECTED rate limit: 429, Retry-After 2
+sync: page 3: status 429 (rate limit), service says Retry-After: 2
+sync: page 3: wait 1 of 3: waiting 2 seconds
+sync: page 3: waited 2.0 seconds, asking again
+service: page 3 -> 200 healthy, 20 items
+sync: page 3: answered after 1 wait(s) of 2 seconds
+sync: page 3: read 20 items, 60 received so far, service says total is 100
+service: page 4 -> 200 healthy, 20 items
+sync: page 4: read 20 items, 80 received so far, service says total is 100
+service: page 5 -> 200 healthy, 20 items
+sync: page 5: read 20 items, 100 received so far, service says total is 100
+sync: RESULT: COMPLETE 100 of 100 saved to work/3a-rate-limit-recovers.json
+------------------------------------------------------------------------------
+sync.py exit code: 0
+
+==============================================================================
+RUN 3b-rate-limit-lasting   (policy 3. Rate limit: page 3 refused every time, wait of 1 second asked)
+$ fake_service.py --fail rate-limit --retry-after 1
+$ sync.py --out work/3b-rate-limit-lasting.json
+------------------------------------------------------------------------------
+service: listening on 127.0.0.1:8799, fail=rate-limit page=3 times=0
+service: page 1 -> 200 healthy, 20 items
+sync: page 1: read 20 items, 20 received so far, service says total is 100
+service: page 2 -> 200 healthy, 20 items
+sync: page 2: read 20 items, 40 received so far, service says total is 100
+service: page 3 -> INJECTED rate limit: 429, Retry-After 1
+sync: page 3: status 429 (rate limit), service says Retry-After: 1
+sync: page 3: wait 1 of 3: waiting 1 seconds
+sync: page 3: waited 1.0 seconds, asking again
+service: page 3 -> INJECTED rate limit: 429, Retry-After 1
+sync: page 3: status 429 (rate limit), service says Retry-After: 1
+sync: page 3: wait 2 of 3: waiting 1 seconds
+sync: page 3: waited 1.0 seconds, asking again
+service: page 3 -> INJECTED rate limit: 429, Retry-After 1
+sync: page 3: status 429 (rate limit), service says Retry-After: 1
+sync: page 3: wait 3 of 3: waiting 1 seconds
+sync: page 3: waited 1.0 seconds, asking again
+service: page 3 -> INJECTED rate limit: 429, Retry-After 1
+sync: page 3: status 429 (rate limit), service says Retry-After: 1
+sync: nothing written to work/3b-rate-limit-lasting.json
+sync: items read before the failure: 40 good, 0 rejected (kept in work/3b-rate-limit-lasting.json.INCOMPLETE.json, marked incomplete)
+sync: RESULT: FAILED rate limit: page 3: still limited after 3 waits, service asked for 1 more seconds
+------------------------------------------------------------------------------
+sync.py exit code: 1
+
+==============================================================================
+RUN 3c-rate-limit-too-long   (policy 3. Rate limit: page 3 refused, wait of 60 seconds asked)
+$ fake_service.py --fail rate-limit --retry-after 60
+$ sync.py --out work/3c-rate-limit-too-long.json
+------------------------------------------------------------------------------
+service: listening on 127.0.0.1:8799, fail=rate-limit page=3 times=0
+service: page 1 -> 200 healthy, 20 items
+sync: page 1: read 20 items, 20 received so far, service says total is 100
+service: page 2 -> 200 healthy, 20 items
+sync: page 2: read 20 items, 40 received so far, service says total is 100
+service: page 3 -> INJECTED rate limit: 429, Retry-After 60
+sync: page 3: status 429 (rate limit), service says Retry-After: 60
+sync: nothing written to work/3c-rate-limit-too-long.json
+sync: items read before the failure: 40 good, 0 rejected (kept in work/3c-rate-limit-too-long.json.INCOMPLETE.json, marked incomplete)
+sync: RESULT: FAILED rate limit: page 3: service asked for a 60 second wait, limit is 10
+------------------------------------------------------------------------------
+sync.py exit code: 1
+
+==============================================================================
+RUN 4a-malformed-answer   (policy 4. Malformed data: page 3's answer is cut off part-way)
+$ fake_service.py --fail malformed
+$ sync.py --out work/4a-malformed-answer.json
+------------------------------------------------------------------------------
+service: listening on 127.0.0.1:8799, fail=malformed page=3 times=0
+service: page 1 -> 200 healthy, 20 items
+sync: page 1: read 20 items, 20 received so far, service says total is 100
+service: page 2 -> 200 healthy, 20 items
+sync: page 2: read 20 items, 40 received so far, service says total is 100
+service: page 3 -> INJECTED malformed answer: 200, body cut off part-way
+sync: nothing written to work/4a-malformed-answer.json
+sync: items read before the failure: 40 good, 0 rejected (kept in work/4a-malformed-answer.json.INCOMPLETE.json, marked incomplete)
+sync: RESULT: FAILED malformed answer: page 3: not JSON: Expecting property name enclosed in double quotes: line 1 column 454 (char 453)
+------------------------------------------------------------------------------
+sync.py exit code: 1
+
+==============================================================================
+RUN 4b-malformed-item   (policy 4. Malformed data: one item on page 3 has no id)
+$ fake_service.py --fail malformed-item
+$ sync.py --out work/4b-malformed-item.json
+------------------------------------------------------------------------------
+service: listening on 127.0.0.1:8799, fail=malformed-item page=3 times=0
+service: page 1 -> 200 healthy, 20 items
+sync: page 1: read 20 items, 20 received so far, service says total is 100
+service: page 2 -> 200 healthy, 20 items
+sync: page 2: read 20 items, 40 received so far, service says total is 100
+service: page 3 -> INJECTED malformed item: 200, item 7 on the page has no id
+sync: page 3: rejected item 7 on the page: no id (skipped, not repaired)
+sync: page 3: read 20 items, 60 received so far, service says total is 100
+service: page 4 -> 200 healthy, 20 items
+sync: page 4: read 20 items, 80 received so far, service says total is 100
+service: page 5 -> 200 healthy, 20 items
+sync: page 5: read 20 items, 100 received so far, service says total is 100
+sync: nothing written to work/4b-malformed-item.json
+sync: RESULT: INCOMPLETE 99 of 100 saved, 1 rejected, kept in work/4b-malformed-item.json.INCOMPLETE.json
+------------------------------------------------------------------------------
+sync.py exit code: 2
+
+==============================================================================
+RUN 5-failure-after-earlier-success   (policy 5. After any failure: a healthy run, then a partial response saving to the same name)
+$ fake_service.py --fail none
+$ sync.py --out work/5-failure-after-earlier-success.json
+------------------------------------------------------------------------------
+service: listening on 127.0.0.1:8799, fail=none page=3 times=0
+service: page 1 -> 200 healthy, 20 items
+sync: page 1: read 20 items, 20 received so far, service says total is 100
+service: page 2 -> 200 healthy, 20 items
+sync: page 2: read 20 items, 40 received so far, service says total is 100
+service: page 3 -> 200 healthy, 20 items
+sync: page 3: read 20 items, 60 received so far, service says total is 100
+service: page 4 -> 200 healthy, 20 items
+sync: page 4: read 20 items, 80 received so far, service says total is 100
+service: page 5 -> 200 healthy, 20 items
+sync: page 5: read 20 items, 100 received so far, service says total is 100
+sync: RESULT: COMPLETE 100 of 100 saved to work/5-failure-after-earlier-success.json
+------------------------------------------------------------------------------
+sync.py exit code: 0
+$ fake_service.py --fail partial
+$ sync.py --out work/5-failure-after-earlier-success.json
+------------------------------------------------------------------------------
+service: listening on 127.0.0.1:8799, fail=partial page=3 times=0
+service: page 1 -> 200 healthy, 20 items
+sync: page 1: read 20 items, 20 received so far, service says total is 100
+service: page 2 -> 200 healthy, 20 items
+sync: page 2: read 20 items, 40 received so far, service says total is 100
+service: page 3 -> INJECTED partial response: 200, says this is the last page
+sync: page 3: read 20 items, 60 received so far, service says total is 100
+sync: nothing written to work/5-failure-after-earlier-success.json
+sync: an earlier run's file was at work/5-failure-after-earlier-success.json: renamed to work/5-failure-after-earlier-success.json.EARLIER.json, contents unchanged
+sync: items read before the failure: 60 good, 0 rejected (kept in work/5-failure-after-earlier-success.json.INCOMPLETE.json, marked incomplete)
+sync: RESULT: FAILED partial response: received 60 of 100
+------------------------------------------------------------------------------
+sync.py exit code: 1

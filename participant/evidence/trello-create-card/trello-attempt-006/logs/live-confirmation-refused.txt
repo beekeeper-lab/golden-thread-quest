@@ -1,0 +1,5 @@
+
+REFUSED: a fingerprint is 12 characters, each 0 to 9 or a to f.
+Nothing has been written to Trello.
+
+The output above, and each file written, was searched for the API key and the token: neither found.

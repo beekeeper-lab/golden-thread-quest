@@ -1,0 +1,34 @@
+schema_version: 1
+review_id: review-20261120211822-9b5558
+quest_id: trello-create-card
+quest_version: 1
+attempt_id: trello-attempt-006
+evidence_hash: sha256:5dd3d2fb324199ee746f1202987ec4a8c2b838fd2054888e1c01e647eabd133b
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-20T21:18:22Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/trello/new-card/linked.md
+  digest: sha256:1641e835af3ef250e30dd1b7d29e2ae58575c121c45916eecf368901afbb3351
+- path: participant/context/trello/results/create-card.md
+  digest: sha256:9e8b850cdb2b66ce77fb703348bf0c9f121260b087d6d0fe128d9a0e47f00e8a
+verification_statement: Automated review. I read the real-run logs (live-preview,
+  live-confirmation, live-confirmation-missing, live-confirmation-refused, live-rerun,
+  live-rerun-confirm, live-verify), the recorded logs, the test and planted-bugs output,
+  the scripts, linked.md, the result record and PROOF.md, and checked they agree.
+  The real preview is fingerprint 847183421875, made at 20:51:00 and expiring at 21:06:00.
+  Its 10 requests were all GET and the board snapshot was unchanged (4 lists, 7 cards).
+  The confirmation came 2 minutes later at 20:53:00, ran in the same command as one
+  POST, and created card 6b00b32ea6e47268f6721469 at 20:53:02. The read-back matched
+  every sent field, and the verify at 21:01:47 matched again. linked.md holds the
+  board, list and card ids, and its preview_fingerprint starts with 847183421875.
+  On the real board, the rerun preview and the reuse of the same fingerprint were
+  both refused. The changed-draft, expired-preview and off-allowlist refusals ran
+  only against the made-up Trello, each checking that nothing was written, and PROOF.md
+  says so. A missing confirmation was refused for real as well. The files shown are
+  under trello-attempt-006. The pre-check found the attempt-001 paths present, and
+  PROOF.md says copies are there. No text is addressed to the reviewer, so no injection.
+  Each of the 9 acceptance criteria was matched to text quoted word for word from
+  the evidence.

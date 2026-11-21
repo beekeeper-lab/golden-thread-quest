@@ -1,0 +1,13 @@
+schema_version: 1
+submission_id: submission-20261121011006-70098d
+quest_id: trello-read-assigned-cards
+quest_version: 1
+attempt_id: trello-attempt-007
+content_hash: sha256:bf7e000f8d50f46e5a486353837eaaff36202157624d84addf107f73375c358b
+evidence_hash: sha256:b554ab55b1a9375b2a91cf50a8cb24aaf38ba5b1de3e9e920f6a8d576004526c
+submitted_at: '2026-11-21T01:10:06Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/trello/assigned/index.md
+  digest: sha256:986652968abbd48b493c9ebb35734fc7f71554c4cdaa1ab052a241ec28910378

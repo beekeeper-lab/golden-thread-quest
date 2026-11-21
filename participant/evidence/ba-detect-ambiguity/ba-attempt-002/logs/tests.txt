@@ -1,0 +1,37 @@
+test_a_requirement_may_have_more_than_one_finding (test_check.AGoodReview) ... ok
+test_a_requirement_that_runs_over_two_lines_is_read_whole (test_check.AGoodReview) ... ok
+test_it_is_accepted_and_printed (test_check.AGoodReview) ... ok
+test_it_says_what_it_cannot_check (test_check.AGoodReview) ... ok
+test_it_writes_nothing (test_check.AGoodReview) ... ok
+test_the_review_in_the_repository_keeps_its_rules (test_check.AGoodReview) ... ok
+test_a_missing_or_unusable_file_stops_the_check (test_check.Files) ... ok
+test_the_checker_reads_and_does_nothing_else (test_check.Files) ... ok
+test_a_missing_type_line_is_refused (test_check.Rule1Type) ... ok
+test_a_type_outside_the_four_is_refused (test_check.Rule1Type) ... ok
+test_no_findings_at_all_is_refused (test_check.Rule1Type) ... ok
+test_two_findings_with_one_name_are_refused (test_check.Rule1Type) ... ok
+test_a_quote_split_over_a_line_break_in_the_requirement_still_matches (test_check.Rule2Words) ... ok
+test_a_requirement_that_does_not_exist_is_refused (test_check.Rule2Words) ... ok
+test_words_from_another_requirement_are_refused (test_check.Rule2Words) ... ok
+test_words_not_in_quotes_or_missing_are_refused (test_check.Rule2Words) ... ok
+test_words_that_are_not_in_the_requirement_are_refused (test_check.Rule2Words) ... ok
+test_what_a_tester_could_not_decide_must_be_said (test_check.Rule3Tester) ... ok
+test_what_goes_wrong_if_unanswered_must_be_said (test_check.Rule3Tester) ... ok
+test_a_contradiction_must_name_two_requirements (test_check.Rule4Contradiction) ... ok
+test_a_contradiction_must_quote_both (test_check.Rule4Contradiction) ... ok
+test_each_quote_must_be_in_its_own_requirement (test_check.Rule4Contradiction) ... ok
+test_only_a_contradiction_may_name_two (test_check.Rule4Contradiction) ... ok
+test_a_requirement_both_flagged_and_unflagged_is_refused (test_check.Rule5Accounted) ... ok
+test_a_requirement_with_no_finding_and_not_unflagged_is_refused (test_check.Rule5Accounted) ... ok
+test_an_unflagged_requirement_needs_a_reason (test_check.Rule5Accounted) ... ok
+test_unflagged_lines_must_be_real_and_single (test_check.Rule5Accounted) ... ok
+test_a_finding_about_a_person_is_refused (test_check.Rule6AsksAndDoesNotRewrite) ... ok
+test_a_finding_must_ask_a_question (test_check.Rule6AsksAndDoesNotRewrite) ... ok
+test_a_finding_that_offers_wording_is_refused (test_check.Rule6AsksAndDoesNotRewrite) ... ok
+test_each_type_must_be_defined_in_the_file (test_check.Rule7Definitions) ... ok
+test_the_definitions_must_be_in_the_order_they_are_applied (test_check.Rule7Definitions) ... ok
+
+----------------------------------------------------------------------
+Ran 32 tests in 0.023s
+
+OK

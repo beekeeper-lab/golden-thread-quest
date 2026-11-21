@@ -1,0 +1,366 @@
+# Fifth AI review, run 2026-10-28 (UTC): three independent Claude reviewers, each started fresh, each with its own
+# angle (claims and traceability; attacking the round-4 code changes; privacy, faithfulness and state); every
+# candidate finding checked two ways (does it reproduce; is it real, and how much does it matter); a completeness
+# critic and two follow-up reviewers; and a separate synthesizer. 43 agents in all.
+# The reviewers were given the quest, the files (including PROOF.md and the four earlier review logs) and twelve of
+# the builder's claims to falsify. They were not given the builder's verdict.
+# Everything after the first blank line is the object the review returned, as JSON, with these changes: it is
+# pretty-printed, with a final newline; the transcript's phone number, written with one digit per group, was replaced
+# with the same form of the made-up number 317-555-0198 used in the first three logs, and the number's last four
+# digits, where quoted alone, with [last four digits]; and three example phone numbers in other countries' formats,
+# which could belong to real people, were replaced with UK numbers Ofcom reserves for drama, keeping the parenthesis
+# around or after the plus sign that the finding is about. Each replacement number gives the same redaction result
+# as the number it replaces. One of its characters is a minus sign (U+2212) and one a no-break space, kept as
+# returned. Line numbers in it refer to the files as they were before the changes it led to. What changed after this
+# review is listed in PROOF.md.
+
+{
+  "counts": {
+    "lenses_run": 5,
+    "lenses_without_results": [],
+    "candidate_findings": 18,
+    "survived_verification": 12
+  },
+  "synthesis": {
+    "decision": "FIX FIRST",
+    "decision_reason": "Veto V3 fired. Two lenses independently reproduced false or unsupported claims in PROOF.md and SKILL.md, and the verifiers confirmed them. The four main ones: (1) the claim that damage which would merge or drop a cue is refused, and that the test tries every one-character-damaged form; (2) the F8 row's 'with a test' for the no-break space; (3) the claims checker's 'every claim of a test names a planted bug', where the checker misses 'Test:'/'Tests:' rows and four tests are never shown to fail; (4) SKILL.md section 8's list of redaction misses, which leaves out (+44)/+(44), seven or more short groups, apostrophe/& local parts and letter-glued phones. Smaller false claims: SKILL.md section 7's 'two ways' and section 5's 'unattributed' rule for oversized voice tags. Privacy, faithfulness and scope hold: V1, V2, V4 and V5 did not fire, and K1, K8, K9, K10 and K11 were confirmed. The smallest path is to reword PROOF.md and SKILL.md to match what the code and tests actually do (narrow SKILL.md section 4, PROOF.md line 42 and the AC 11/F1 rows; narrow F8, the F7 row and line 92; add the missing redaction misses and the arrow/WEBVTT-line limitations; fix 'two ways'), and to widen check_claims.py's CLAIM regex or add planted bugs for AC 1, 2, 5, 8 and 10. Any change to ingest.py instead changes skill_sha256 and requires regenerating the record and provenance and rerunning planted_bugs.py, check_claims.py and their logs. After that, Beau's own sentence and his own test run are still required.",
+    "vetoes": [
+      {
+        "id": "V1",
+        "status": "NOT FIRED",
+        "basis": "OBSERVED (privacy lens): no possibly real email or phone number in any of the 22 hand-in files. Every email uses a reserved example domain, and the phone numbers are in fictional ranges. The app's own scanners found 0 findings (gap lens). INFERRED: the meeting people are fictional (the raw NOTE, the meeting.json and the builder session say the AI wrote them). Cannot be checked offline."
+      },
+      {
+        "id": "V2",
+        "status": "NOT FIRED",
+        "basis": "OBSERVED (privacy lens): the raw .vtt and .meeting.json are git-ignored (.gitignore:9) and untracked. The three contact details (two emails and one phone number) appear in none of the hand-in files, including the review-log markers. The log excerpts quote raw lines that hold no contact details."
+      },
+      {
+        "id": "V3",
+        "status": "FIRED",
+        "basis": "OBSERVED by the claims-and-traceability and code-attack lenses, and confirmed by the real verifiers: the F8 row claims a test that does not exist; SKILL.md section 4 line 45 and PROOF.md lines 42, 106 and 171 overstate which damage is refused; check_claims and PROOF.md line 92 and the F7 row overstate planted-bug coverage; SKILL.md section 8's list of misses is incomplete; SKILL.md line 72 says 'two ways'; SKILL.md section 5's unattributed rule. The gap lens marked NOT FIRED only for its two narrow items (the email-search kill and the ai-review-4 header). That is not a disagreement. The claims lens's full V3 text is clipped."
+      },
+      {
+        "id": "V4",
+        "status": "NOT FIRED",
+        "basis": "OBSERVED independently by two lenses: their own WebVTT parsers matched 24 of 24 cues to U-0001..U-0024 on order, times, speaker and exact words. The only differences are the three stated redactions. Re-ingesting gives a byte-identical record (sha 7b8b2607...). The parser's general merge and drop defects do not affect the sample."
+      },
+      {
+        "id": "V5",
+        "status": "NOT FIRED",
+        "basis": "OBSERVED (privacy lens): there are no working-tree changes outside participant/ and nothing is staged. There are no new commits since 2026-10-23. HEAD equals upstream/main outside participant/. git status shows no changes to the evidence of base-camp-repository-safety or jira-read-assigned-stories."
+      }
+    ],
+    "claims": [
+      {
+        "id": "K1",
+        "verdict": "CONFIRMED",
+        "basis": "OBSERVED by 3 lenses: the record's sha is 7b8b2607...f4f4, it matches the provenance record_sha256, skill_sha256 equals sha(ingest.py), and re-ingesting is byte-identical. 'Seven regenerations' is INFERRED from session outputs and was not enumerated. Every logged record hash is the same."
+      },
+      {
+        "id": "K2",
+        "verdict": "CONFIRMED",
+        "basis": "OBSERVED (claims lens): 32 passed. An AST count gives 28 docstrings citing an AC, 1 the safety constraint and 3 SKILL.md. UNPARSEABLE has 30 entries. Every test that expects a refusal asserts the reason, except command_line_exit_codes. Code-attack also reproduced the 32 passes."
+      },
+      {
+        "id": "K3",
+        "verdict": "FALSIFIED",
+        "basis": "OBSERVED: '79 of 79 caught' and '0 problem(s)' both reproduce. But the CLAIM regex misses 'Test:'/'Tests:'/'are now tested', so PROOF.md lines 100, 103 and 105 claim tests yet name no planted bug. Four tests never fail under any planted bug: verbatim_text_survives_the_round_trip, utterances_keep_source_order, zoom_style_prefix_labels_are_read_only_when_they_name_someone and ids_are_stable_and_scoped_to_the_transcript. The gap lens confirmed only the line-140 'email search slow' entry, which is narrower in scope and not a disagreement."
+      },
+      {
+        "id": "K4",
+        "verdict": "FALSIFIED",
+        "basis": "OBSERVED: 36 cited planted bugs each broke their cited behavior. But the no-break-space part of the F8 row has no test behind it, the AC 1 row's 'never reordered' cites no planted bug that reorders, and SKILL.md line 72's 'two ways' is caught one way only. 'email search slow' is caught by the named test at 87 s, under the 120 s cap (gap lens)."
+      },
+      {
+        "id": "K5",
+        "verdict": "FALSIFIED",
+        "basis": "OBSERVED (code-attack, reproduced and judged real): inside a cue's words, a timing line with a substituted arrow ('-.>', '--)', '−->', '--&gt;') is accepted and merged into the previous utterance; 39 of 47 single-character substitutions are accepted. K5's own words say 'with a damaged arrow'. The claims lens and the real verifier noted that section 9's narrow definition ('-->' or arrows such as '->') could make section 9 literally accurate. That narrow reading does not rescue K5's wording. The '10:30.</v>' sub-claim was mostly rejected by its verifier."
+      },
+      {
+        "id": "K6",
+        "verdict": "FALSIFIED",
+        "basis": "OBSERVED (code-attack, verified): '(+44) 20 7946 0958' and '+(44) ...' are not redacted. '+44 2 0 7 9 4 6 0 9 5 8' leaves '0 9 5 8'. \"o'brien@example.com\" leaves \"o'\". A letter or underscore directly before a phone number stops redaction. None of these is in section 8's list of misses. The ordinary numbers section 8 names are left alone, as claimed."
+      },
+      {
+        "id": "K7",
+        "verdict": "FALSIFIED",
+        "basis": "OBSERVED (code-attack, verified): a voice tag over 200 characters or with 21 classes, nested in Ada's cue, gives Ada as the certain speaker; section 5 says such an utterance is marked unattributed. An encoded 'Ben&#32;Example:' line is credited to Ada. The core rules hold: different speakers are refused, both forms of one speaker are accepted, and space, no-break space or nothing after the colon is accepted. The no-break-space case is untested (see F8)."
+      },
+      {
+        "id": "K8",
+        "verdict": "CONFIRMED",
+        "basis": "OBSERVED (code-attack): a reused transcript_id, the same text re-saved with a BOM and CRLF line endings, and another record without a provenance file each stop a new record, with the stated reasons. A related finding was killed: a trailing-newline or header-only difference gets past the check, but that falls outside AC 7 and the claim's wording."
+      },
+      {
+        "id": "K9",
+        "verdict": "CONFIRMED",
+        "basis": "OBSERVED (claims lens, all four logs; gap lens, review 4): each original, with only the header-listed changes applied, is identical to the log body after the header, and the no-break-space counts match. The ai-review-4 header's 'five independent reviewers' matches the original's 5 find lenses."
+      },
+      {
+        "id": "K10",
+        "verdict": "CONFIRMED",
+        "basis": "OBSERVED (privacy lens): the three contact details (also checked digits-only, after NFKC and entity decoding) appear in none of the 22 hand-in files. The only '[last four digits]' is inside an old review_id. Every email uses a reserved domain. The app scanners have no email or phone patterns, so the contact-detail half rests on the privacy lens alone."
+      },
+      {
+        "id": "K11",
+        "verdict": "CONFIRMED",
+        "basis": "OBSERVED (privacy lens): only ACTIVITY.md and progress.yaml are modified (one start line and one attempt entry whose content_hash and timestamps match the manifest), plus three untracked folders. Nothing is staged and there are no commits."
+      },
+      {
+        "id": "K12",
+        "verdict": "FALSIFIED",
+        "basis": "OBSERVED by claims and code-attack: the F8 row, F1 row, AC 11 row, line 42, line 92, the F7 row, SKILL.md section 4 line 45, section 5, section 7 line 72 and the section 8 misses list are inaccurate. The remaining review-table rows, the log headers, redaction-notes and Beau's quoted choices checked out. The gap lens's CONFIRMED covers only the ai-review-4 header, which is narrower in scope and not a disagreement."
+      }
+    ],
+    "findings": [
+      {
+        "title": "A damaged arrow (substituted character) in a timing line that lost its blank line is merged or dropped silently; SKILL.md section 4, PROOF.md line 42 and the AC 11/F1 rows claim such damage is refused and that 'every one-character-damaged form' is tested",
+        "severity": "High",
+        "must_fix_before_submit": true,
+        "root_cause": "is_timing_line's ARROW_PIECE recognizes only '-->' and a few arrow shapes. The sweep test every_cut_short_or_damaged_timing_line_is_refused tries only cut-short forms and single-character deletions, and the documents describe this as every one-character-damaged form.",
+        "reproduction": "OBSERVED. ingest() or parse_vtt with roster {Ada Example, Ben Example} on 'WEBVTT\\n\\n00:00:01.000 --> 00:00:02.000\\nAda Example: First.\\n00:00:03.000 -.> 00:00:04.000\\nAda Example: Second.\\n' -> written, 1 utterance 'First.\\n00:00:03.000 -.> 00:00:04.000\\nAda Example: Second.'. Same result with '00:00:03.O00 -->' and '--&gt;'. 'WEBVTT\\n00:00:01.000 <-- 00:00:02.000\\nAda Example: Dropped?\\n\\n00:00:05.000 --> ...Kept.' -> only 'Kept.'. 39 of 47 single-character arrow substitutions are accepted.",
+        "expected_source": "SKILL.md section 4 line 45; PROOF.md line 42, line 106 (AC 11 row), line 171 (F1 'Fixed'); builder claim K5 ('with a damaged arrow'); quest AC 1 and 11.",
+        "smallest_fix": "Reword SKILL.md section 4 and PROOF.md line 42 to 'damage of the kinds listed in Section 9'. Change the AC 11 and F1 rows to 'every cut-short form and every form missing one character'. Add mistyped arrows and letters in times to the limitations. Optionally widen is_timing_line, with a sweep of substitutions and a planted bug.",
+        "reported_by": [
+          "claims-and-traceability",
+          "code-attack"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/SKILL.md",
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/PROOF.md",
+          "participant/skills/ba-ingest-transcript/ingest.py",
+          "participant/skills/ba-ingest-transcript/tests/test_ingest.py"
+        ]
+      },
+      {
+        "title": "check_claims.py misses some ways of claiming a test, so '0 problems' and 'every claim of a test names a caught planted bug' are false, and four tests are never shown to fail",
+        "severity": "High",
+        "must_fix_before_submit": true,
+        "root_cause": "The CLAIM regex matches only 'with (a) test(s)', 'test(s) added', 'is/are tested' and 'now checked'. It misses 'Test:', 'Tests:', 'are now tested' and 'a test checks'. No planted bug targets ordering, the utterance ID format, anchors, or the rule for unlisted 'Name:' labels.",
+        "reproduction": "OBSERVED. check_claims.py -> '24 line(s) claiming a test, 158 planted-bug reference(s), 79 planted bugs caught in the log, 0 problem(s)'. Yet PROOF.md lines 100 (AC 5 'Tests: ...'), 103 (AC 8 'Test: ...') and 105 (AC 10 'Tests: ...') name no planted bug. verbatim_text_survives_the_round_trip, utterances_keep_source_order, zoom_style_prefix_labels_are_read_only_when_they_name_someone and ids_are_stable_and_scoped_to_the_transcript never appear in logs/planted-bugs.txt.",
+        "expected_source": "Builder claim K3; PROOF.md line 19, line 92 ('the planted bugs that show each test can fail'), F7 row ('covering every behavior these documents claim a test for'), line 199; SKILL.md line 147.",
+        "smallest_fix": "Widen CLAIM to include \\bTests?:, 'are now tested' and \\btests? checks?\\b. Add planted bugs for ordering, the ID format and anchors, and unlisted 'Name:' labels, and cite them in the AC 1, 2, 5, 8 and 10 rows. Or narrow line 92 and the F7 row to say what the checker actually checks. Rerun planted_bugs.py and check_claims.py and refresh their logs.",
+        "reported_by": [
+          "claims-and-traceability"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/tests/check_claims.py",
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/PROOF.md",
+          "participant/skills/ba-ingest-transcript/SKILL.md",
+          "participant/skills/ba-ingest-transcript/tests/planted_bugs.py"
+        ]
+      },
+      {
+        "title": "A country code in parentheses, '(+44) ...' or '+(44) ...', is not redacted, and SKILL.md section 8's misses list does not mention it",
+        "severity": "High",
+        "must_fix_before_submit": true,
+        "root_cause": "The international phone pattern requires '+' to be followed directly by digits and does not accept a parenthesis around or after the '+'.",
+        "reproduction": "OBSERVED. m.redact('call (+44) 20 7946 0958 today', {}) -> unchanged. 'Call at +(44) 20 7946 0958' -> unchanged. '(+44) 20 7946 0123', '(+44) 20 79 46 01 23' and '+(44) 7700 900 123' are also unchanged. '+44 (0) 20 7946 0958' -> '[REDACTED:PHONE]'.",
+        "expected_source": "Builder claim K6 ('misses only what section 8 and PROOF.md list'); SKILL.md section 8 line 84 and the misses list at lines 88-95; PROOF.md line 46 ('lists exactly which ... are caught and which are not').",
+        "smallest_fix": "Add the country-code-in-parentheses forms to SKILL.md section 8's misses and to PROOF.md's limitations. Or accept '(' before '+' and '+(' cc ')' in the pattern, with a test and a planted bug. Changing the code requires regenerating the record. Nothing leaks today: the record holds no '+' number.",
+        "reported_by": [
+          "code-attack"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/ingest.py",
+          "participant/skills/ba-ingest-transcript/SKILL.md",
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/PROOF.md"
+        ]
+      },
+      {
+        "title": "The PROOF.md F8 row claims a test for 'a no-break space after the label colon'; no test covers it",
+        "severity": "Medium",
+        "must_fix_before_submit": true,
+        "root_cause": "The only prefix case in a_cue_with_two_named_speakers_is_refused is 'Ben Example:No space after the colon.'. No case uses a no-break space.",
+        "reproduction": "OBSERVED by the real verifier with a stronger mutant (the reporter's own mutant is equivalent, because .strip() removes the no-break space). The current code reads 'Ben Example: I do not.' as a Ben Example label, so the behavior works. A mutant that stops treating the no-break space as a separator still leaves the suite at 32/32 green. The clipped text does not show the stronger mutant's exact form.",
+        "expected_source": "PROOF.md line 178 (F8 row: 'with a test'); SKILL.md section 5 line 49; claims K4, K7, K12.",
+        "smallest_fix": "Add a 'Ben Example: ...' case to the two-speaker test and a planted bug that removes the no-break space from PREFIX_LABEL. Or reword F8 to 'no space: tested; no-break space: accepted, not tested'.",
+        "reported_by": [
+          "claims-and-traceability"
+        ],
+        "files": [
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/PROOF.md",
+          "participant/skills/ba-ingest-transcript/tests/test_ingest.py"
+        ]
+      },
+      {
+        "title": "International numbers written in seven or more short groups are only partly redacted, and the trailing digits stay; the group-count cap is undocumented",
+        "severity": "Medium",
+        "must_fix_before_submit": true,
+        "root_cause": "The international branch of the phone pattern caps the number of groups at {2,6}, while the lookahead counts up to 15 digits.",
+        "reproduction": "OBSERVED. m.redact('call +44 2 0 7 9 4 6 0 9 5 8 today', {}) -> 'call [REDACTED:PHONE] 0 9 5 8 today'. '+1 3 1 7 5 5 5 0 1 9 8' -> '[REDACTED:PHONE] 0 1 9 8'. Common international forms are fully redacted.",
+        "expected_source": "SKILL.md section 8 line 84 ('8 to 15 digits in all, in groups of 1 to 4', with no limit on the number of groups) and the misses list at lines 88-95; PROOF.md line 190; claim K6.",
+        "smallest_fix": "List 'more than six groups' as a miss in SKILL.md section 8 and PROOF.md. Or raise the cap to {2,14}, with a test and a planted bug.",
+        "reported_by": [
+          "code-attack"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/ingest.py",
+          "participant/skills/ba-ingest-transcript/SKILL.md"
+        ]
+      },
+      {
+        "title": "SKILL.md section 7 says escaping is checked 'two ways', but the read-back test cannot detect removed escaping",
+        "severity": "Low",
+        "must_fix_before_submit": true,
+        "root_cause": "verbatim_text_survives_the_round_trip uses text with no escapes to lose. Only a_markdown_renderer_shows_the_words_exactly catches removed escaping.",
+        "reproduction": "OBSERVED. With the planted bugs 'Markdown escaping removed' and 'line-start escaping removed' applied, only a_markdown_renderer_shows_the_words_exactly fails ('expected 11 quoted utterances, found 6' and 'found 7'). verbatim_text_survives_the_round_trip passes under both.",
+        "expected_source": "SKILL.md line 72; claims K4, K12; V3.",
+        "smallest_fix": "Reword to: 'The rendering test checks this; the read-back test checks that escaping is reversed exactly.'",
+        "reported_by": [
+          "claims-and-traceability"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/SKILL.md"
+        ]
+      },
+      {
+        "title": "More redaction gaps missing from section 8's list: an apostrophe or '&' in an email local part, and a phone number glued to a letter or underscore",
+        "severity": "Low",
+        "must_fix_before_submit": true,
+        "root_cause": "The email local-part class is [\\w.%+-]. The phone lookbehind (?<![\\w+]) blocks a match when a letter or underscore comes directly before the number.",
+        "reproduction": "OBSERVED. \"mail o'brien@example.com now\" -> \"mail o'[REDACTED:EMAIL] now\". 'mail a&b@example.com now' -> 'mail a&[REDACTED:EMAIL] now'. 'x317-555-0100', '_317-555-0100' and 'tel317-555-0100' -> unchanged. Separators U+2212, U+FF0D and U+200B also leave the number unchanged.",
+        "expected_source": "SKILL.md section 8 line 78 and the misses list at lines 88-95; PROOF.md line 46 and the F5 row; claim K6.",
+        "smallest_fix": "Add these forms to section 8's misses and to PROOF.md's limitations. Or widen the local-part class and narrow the lookbehind, with tests.",
+        "reported_by": [
+          "code-attack"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/SKILL.md",
+          "participant/skills/ba-ingest-transcript/ingest.py"
+        ]
+      },
+      {
+        "title": "A second speaker's voice tag that is too long (over 200 characters, or more than 20 classes) inside a listed speaker's cue is credited to that speaker as certain, not marked unattributed",
+        "severity": "Low",
+        "must_fix_before_submit": true,
+        "root_cause": "The bounded VOICE_TAG/VOICE_OPEN (a round-4 change) does not read an oversized tag as a tag, so the cue keeps its first speaker. SKILL.md section 5 says such an utterance is marked unattributed. The class limits are not documented.",
+        "reproduction": "OBSERVED. split_speaker('<v Ada Example>Hi. <v Ben Example' + 200 spaces + '>No, I disagree.</v>', 5, names) -> label 'Ada Example', certain. The '.a'*21-class form gives the same result.",
+        "expected_source": "SKILL.md section 5, last bullet ('A voice tag longer than 200 characters is not read as a tag ... the utterance is marked unattributed'); claim K7.",
+        "smallest_fix": "Reword section 5 to describe the actual behavior and document the class limits. Or refuse a cue that holds an unaccepted '<v' tag opening.",
+        "reported_by": [
+          "code-attack"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/SKILL.md",
+          "participant/skills/ba-ingest-transcript/ingest.py"
+        ]
+      },
+      {
+        "title": "A timing line on the WEBVTT line itself, or a damaged arrow on a NOTE's first line, drops the words that follow without any warning",
+        "severity": "Low",
+        "must_fix_before_submit": false,
+        "root_cause": "The header regex '^WEBVTT(?:[ \\t].*)?$' accepts '-->' on the header line, and the NOTE first-line check looks only for '-->'.",
+        "reproduction": "OBSERVED. 'WEBVTT 00:00:01.000 --> 00:00:02.000\\nAda Example: Dropped?\\n\\n00:00:03.000 --> 00:00:04.000\\nBen Example: Kept.\\n' -> written, only 'Kept.'. 'WEBVTT\\n\\nNOTE 00:00:01.000 -> 00:00:02.000\\nAda Example: Dropped?\\n\\n...' gives the same result.",
+        "expected_source": "SKILL.md section 4 ('a file damaged in a way that would ... drop a cue is refused'). The verifier noted that section 9's named places are honored and that this is a missing line break, not a missing blank line.",
+        "smallest_fix": "Covered by narrowing section 4 (first finding). Optionally refuse '-->' on the header line and apply is_timing_line to the text after 'NOTE '.",
+        "reported_by": [
+          "code-attack"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/ingest.py"
+        ]
+      },
+      {
+        "title": "The speaker-label check runs before entity decoding, so an encoded second speaker's line is credited to the first speaker",
+        "severity": "Low",
+        "must_fix_before_submit": false,
+        "root_cause": "split_speaker runs PREFIX_LABEL and same_speaker before decode_entities.",
+        "reproduction": "OBSERVED. split_speaker('Ada Example: Hi.\\nBen&#32;Example: No.', 5, names) -> ('Ada Example', certain, 'Hi.\\nBen Example: No.'). The same text without the entity is refused as two speakers.",
+        "expected_source": "SKILL.md section 5 (a cue with more than one speaker is refused) read together with section 7 (character references are only how WebVTT writes characters).",
+        "smallest_fix": "Decode entities in the label candidate before is_speaker_label and same_speaker, or list this as a limitation.",
+        "reported_by": [
+          "code-attack"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/ingest.py"
+        ]
+      },
+      {
+        "title": "Some short speech lines that only look like times ('3:2', '9:00 - 10:00', '10:30 re:budget') are refused as timing lines",
+        "severity": "Low",
+        "must_fix_before_submit": false,
+        "root_cause": "is_timing_line treats any 'digits:digits' as a time piece, a lone '-' or en dash as an arrow piece, and 're:budget' as a cue setting.",
+        "reproduction": "OBSERVED. '<v Ada Example>Final score?\\n3:2\\nWe won.</v>', '<v Ada Example>Agenda:\\n9:00 - 10:00\\nplanning</v>' and '<v Ada Example>Meet\\n10:30 re:budget</v>' are each refused: 'line 5: a timing line appears inside a cue's text'. The real verifier rejected the headline '10:30.</v>' case and judged only a small part real. Exactly which part it confirmed is clipped.",
+        "expected_source": "SKILL.md section 9 (a line that starts with a time and goes on in words is speech and is kept); section 8 calls scores ordinary numbers.",
+        "smallest_fix": "Reword section 9 so the refusal rule includes lone digit:digit lines and dash ranges. This refusal does not lose data.",
+        "reported_by": [
+          "code-attack"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/SKILL.md",
+          "participant/skills/ba-ingest-transcript/ingest.py"
+        ]
+      }
+    ],
+    "killed": [
+      {
+        "title": "The F7 row does not say that review 4's two-letter-TLD gap (M25) is still untested",
+        "why": "Reproduced but judged not real: it is a disclosed limitation. SKILL.md line 82 claims no test for it, and the AC 9 row does not claim two-letter TLDs."
+      },
+      {
+        "title": "An ignored __pycache__ appeared in the skill folder",
+        "why": "Judged an environment artifact. The suite run without PYTHONDONTWRITEBYTECODE creates no cache folder, the file most likely came from a concurrent reviewer, and .gitignore:11 keeps it out of hand-in."
+      },
+      {
+        "title": "The duplicate check is bypassed by a trailing-newline or header-only difference",
+        "why": "Judged expected behavior. AC 7 covers re-ingesting the same transcript, and K8's wording is met."
+      },
+      {
+        "title": "A clean app scan says nothing about contact data, and the gate's scope leaves out ingest.py and tests/",
+        "why": "Judged expected behavior. No claim in the attempt relies on the app's scan; K10 rests on PROOF.md's own reading."
+      },
+      {
+        "title": "The 10-second hostile-text limit is checked only after ingest returns",
+        "why": "Judged a suggestion. No quest text or builder claim requires a hard cutoff."
+      },
+      {
+        "title": "The email-search kill depends on a narrow timing margin (87 s against a 120 s cap)",
+        "why": "Judged a suggestion. K3 holds either way, because planted_bugs.py counts a timeout as KILLED."
+      }
+    ],
+    "disagreements": [
+      "Severity of the damaged-arrow overclaim: the claims-lens real verifier said Medium and the code-attack real verifier said High. The synthesis uses High: the false text sits in PROOF.md's AC 11 and F1 'Fixed' rows, which a human reviewer reads as acceptance evidence, and the sweep showed 39 of 47 substitutions accepted. Settling it: a program-owner ruling on whether section 4's '(Section 9)' cross-reference narrows that sentence.",
+      "K5: code-attack says FALSIFIED. The claims lens (incidental) and the code-attack real verifier's 'against' argue that section 9's narrow definition of a damaged timing line makes section 9 literally accurate. K5's own wording ('with a damaged arrow') is falsified either way. Settling it: decide whether '-.>' counts as a 'damaged arrow' under K5, then reword K5 or section 9 to match the code."
+    ],
+    "not_assessed": [
+      {
+        "item": "The exact count of seven regenerations (K1). It is only inferred from session outputs.",
+        "could_change_decision": false
+      },
+      {
+        "item": "PROOF.md line 64 (the history of redaction-rule changes) and the F15 row's 'separate parking-lot note was proposed'. Neither was reconstructed from session history.",
+        "could_change_decision": true
+      },
+      {
+        "item": "Whether the meeting's names belong to real people. Inferred fictional; cannot be checked offline.",
+        "could_change_decision": true
+      },
+      {
+        "item": "How GitHub and the application's reviewer page render PROOF.md and the record. build.py writes output, so it was not run.",
+        "could_change_decision": false
+      },
+      {
+        "item": "readiness_problems and missing_required_proof as a whole, and whether the 'attempt-001' required log paths map to the ba-attempt-001 files at submit time.",
+        "could_change_decision": true
+      },
+      {
+        "item": "Real Teams and Zoom exports, Windows line handling, and other Python versions.",
+        "could_change_decision": false
+      },
+      {
+        "item": "Clipped verifier texts: the exact stronger mutant behind the F8 finding, which part of the '10:30'/'3:2' finding its verifier confirmed, and the claims lens's full V3 list.",
+        "could_change_decision": false
+      }
+    ],
+    "why_confidence_not_higher": "The confirmed findings are all claim-versus-behavior gaps, and this is the fifth review round in which new overclaims surfaced after fixes. Each fix round adds new broad claims ('every', 'with a test', 'misses only'), which the next review then falsifies. Only one gap round ran. Most cited planted bugs (36 of 79) were re-applied by a reviewer; the rest rely on the 79/79 run and its log. The redaction surface was probed adversarially but not exhaustively, so more unlisted misses may exist. Privacy and faithfulness checks were strong: two independent parsers matched 24 of 24 cues, and three contact-detail scans came back clean.",
+    "next_evidence": [
+      "After the rewording, rerun check_claims.py with a widened CLAIM regex (\\bTests?:, 'are now tested', 'tests? checks?') and confirm 0 problems for the right reason, with every test-claiming line naming a caught planted bug.",
+      "If ingest.py changes: regenerate the record, confirm its sha is unchanged (7b8b2607...) and the new skill_sha256 is in provenance, rerun planted_bugs.py and refresh logs/planted-bugs.txt and logs/claims-check.txt.",
+      "A fresh, narrowly scoped independent review of only the changed sentences in PROOF.md and SKILL.md sections 4, 5, 7, 8 and 9, each checked against a reproduced input. It should prefer narrow wording over new 'every/only' claims.",
+      "A redaction sweep of the remaining written phone forms (parenthesized country codes, many-group numbers, glued prefixes), so that section 8's misses list is complete by evidence rather than by assertion.",
+      "Beau's own test run and his own sentence in PROOF.md, after the fixes."
+    ]
+  }
+}

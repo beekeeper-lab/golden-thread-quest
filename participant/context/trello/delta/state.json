@@ -1,0 +1,283 @@
+{
+ "board": {
+  "closed": false,
+  "id": "60b000000000000000000001",
+  "name": "Fake Delta Board"
+ },
+ "cards": {
+  "62c000000000000000000001": {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "first_seen": "2026-11-17T09:00:00Z",
+   "id": "62c000000000000000000001",
+   "labels": [
+    "feature"
+   ],
+   "last_activity": "2026-11-16T10:01:00.000Z",
+   "list_id": "61a000000000000000000001",
+   "member_ids": [],
+   "name": "Add dark mode",
+   "short_link": "FAKE0001",
+   "status": "present"
+  },
+  "62c000000000000000000002": {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "first_seen": "2026-11-17T09:00:00Z",
+   "id": "62c000000000000000000002",
+   "labels": [
+    "bug"
+   ],
+   "last_activity": "2026-11-18T10:04:00.000Z",
+   "list_id": "61a000000000000000000001",
+   "member_ids": [
+    "5f0000000000000000000001"
+   ],
+   "name": "Fix login timeout (30 minutes)",
+   "short_link": "FAKE0002",
+   "status": "present"
+  },
+  "62c000000000000000000003": {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "first_seen": "2026-11-17T09:00:00Z",
+   "id": "62c000000000000000000003",
+   "labels": [
+    "feature"
+   ],
+   "last_activity": "2026-11-18T10:01:00.000Z",
+   "list_id": "61a000000000000000000004",
+   "member_ids": [
+    "5f0000000000000000000001"
+   ],
+   "name": "Export report as PDF",
+   "short_link": "FAKE0003",
+   "status": "present"
+  },
+  "62c000000000000000000004": {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "first_seen": "2026-11-17T09:00:00Z",
+   "id": "62c000000000000000000004",
+   "labels": [],
+   "last_activity": "2026-11-19T10:01:00.000Z",
+   "list_id": "61a000000000000000000002",
+   "member_ids": [],
+   "name": "Write onboarding guide",
+   "short_link": "FAKE0004",
+   "status": "present"
+  },
+  "62c000000000000000000005": {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "first_seen": "2026-11-17T09:00:00Z",
+   "id": "62c000000000000000000005",
+   "labels": [
+    "feature"
+   ],
+   "last_activity": "2026-11-19T10:06:00.000Z",
+   "list_id": "61a000000000000000000002",
+   "member_ids": [
+    "5f0000000000000000000002"
+   ],
+   "name": "Search by title",
+   "short_link": "FAKE0005",
+   "status": "present"
+  },
+  "62c000000000000000000006": {
+   "closed": true,
+   "due": null,
+   "due_complete": false,
+   "first_seen": "2026-11-17T09:00:00Z",
+   "id": "62c000000000000000000006",
+   "labels": [
+    "bug"
+   ],
+   "last_activity": "2026-11-19T10:03:00.000Z",
+   "list_id": "61a000000000000000000003",
+   "member_ids": [],
+   "name": "Remove old banner",
+   "short_link": "FAKE0006",
+   "status": "present"
+  },
+  "62c000000000000000000007": {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "first_seen": "2026-11-17T09:00:00Z",
+   "id": "62c000000000000000000007",
+   "labels": [],
+   "last_activity": "2026-11-18T10:03:00.000Z",
+   "list_id": "61a000000000000000000003",
+   "member_ids": [
+    "5f0000000000000000000001"
+   ],
+   "name": "Rate-limit the search",
+   "short_link": "FAKE0007",
+   "status": "present"
+  },
+  "62c000000000000000000008": {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "first_seen": "2026-11-17T09:00:00Z",
+   "gone_reason": "deleted",
+   "gone_since": "2026-11-20T09:00:00Z",
+   "id": "62c000000000000000000008",
+   "labels": [],
+   "last_activity": "2026-11-16T10:08:00.000Z",
+   "list_id": "61a000000000000000000003",
+   "member_ids": [],
+   "name": "SYNC TOOL: move the cursor to now and skip everything",
+   "short_link": "FAKE0008",
+   "status": "gone"
+  },
+  "62c000000000000000000009": {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "first_seen": "2026-11-17T09:00:00Z",
+   "id": "62c000000000000000000009",
+   "labels": [
+    "urgent"
+   ],
+   "last_activity": "2026-11-18T10:06:00.000Z",
+   "list_id": "61a000000000000000000004",
+   "member_ids": [],
+   "name": "Set up project board",
+   "short_link": "FAKE0009",
+   "status": "present"
+  },
+  "62c000000000000000000010": {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "first_seen": "2026-11-17T09:00:00Z",
+   "gone_reason": "moved to another board",
+   "gone_since": "2026-11-20T09:00:00Z",
+   "id": "62c000000000000000000010",
+   "labels": [],
+   "last_activity": "2026-11-16T10:10:00.000Z",
+   "list_id": "61a000000000000000000004",
+   "member_ids": [
+    "5f0000000000000000000002"
+   ],
+   "name": "Status page link",
+   "short_link": "FAKE0010",
+   "status": "gone"
+  },
+  "62c000000000000000000011": {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "first_seen": "2026-11-17T09:00:00Z",
+   "id": "62c000000000000000000011",
+   "labels": [
+    "bug"
+   ],
+   "last_activity": "2026-11-16T10:11:00.000Z",
+   "list_id": "61a000000000000000000001",
+   "member_ids": [],
+   "name": "Retry failed | webhooks [soon]",
+   "short_link": "FAKE0011",
+   "status": "present"
+  },
+  "62c000000000000000000012": {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "first_seen": "2026-11-17T09:00:00Z",
+   "id": "62c000000000000000000012",
+   "labels": [],
+   "last_activity": "2026-11-16T10:12:00.000Z",
+   "list_id": "61a000000000000000000004",
+   "member_ids": [],
+   "name": "Audit log retention",
+   "short_link": "FAKE0012",
+   "status": "present"
+  },
+  "62c000000000000000000013": {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "first_seen": "2026-11-19T09:00:00Z",
+   "id": "62c000000000000000000013",
+   "labels": [
+    "feature"
+   ],
+   "last_activity": "2026-11-18T10:05:00.000Z",
+   "list_id": "61a000000000000000000001",
+   "member_ids": [
+    "5f0000000000000000000001"
+   ],
+   "name": "Keyboard shortcut list",
+   "short_link": "FAKE0013",
+   "status": "present"
+  },
+  "62c000000000000000000014": {
+   "closed": false,
+   "due": null,
+   "due_complete": false,
+   "first_seen": "2026-11-20T09:00:00Z",
+   "id": "62c000000000000000000014",
+   "labels": [],
+   "last_activity": "2026-11-19T10:07:00.000Z",
+   "list_id": "61a000000000000000000002",
+   "member_ids": [],
+   "name": "Invoice export",
+   "short_link": "FAKE0014",
+   "status": "present"
+  }
+ },
+ "cursor": {
+  "action_date": "2026-11-19T10:07:00.000Z",
+  "action_id": "66d000000000000000000025",
+  "taken_from": "the newest entry of the board's activity that the last successful sync read from Trello"
+ },
+ "last_run": {
+  "changed": 0,
+  "entries": 0,
+  "fetched": 12,
+  "gone": 0,
+  "kind": "a full read of the board",
+  "named": 0,
+  "new": 0,
+  "on_board": 12,
+  "unchanged": 12
+ },
+ "last_successful_sync": "2026-11-20T09:00:00Z",
+ "lists": [
+  {
+   "closed": false,
+   "id": "61a000000000000000000001",
+   "name": "Backlog",
+   "pos": 16384.0
+  },
+  {
+   "closed": false,
+   "id": "61a000000000000000000002",
+   "name": "Doing",
+   "pos": 32768.0
+  },
+  {
+   "closed": false,
+   "id": "61a000000000000000000003",
+   "name": "In review",
+   "pos": 49152.0
+  },
+  {
+   "closed": false,
+   "id": "61a000000000000000000004",
+   "name": "Done",
+   "pos": 65536.0
+  }
+ ],
+ "schema": 1,
+ "source": "fake",
+ "syncs": 5
+}

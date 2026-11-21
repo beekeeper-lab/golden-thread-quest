@@ -1,0 +1,35 @@
+schema_version: 1
+review_id: review-20261118211158-56ebb5
+quest_id: trello-read-board
+quest_version: 1
+attempt_id: trello-attempt-001
+evidence_hash: sha256:ee3d6d109318d9f32853c2b5a144b4204f83b8abe15c9f15bee014b6f076f44e
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-18T21:11:58Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/trello/board-index.md
+  digest: sha256:6305152b3810da0f6a899d2b267f1df677fedd8906df0aa864f6ca0e35ab23f3
+- path: participant/context/trello/cards/
+  digest: sha256:6f47f263e358a9c712eaa9674fcdd60a51940d34f567166cafcf6de174eb1084
+- path: participant/context/trello/reconciliation.md
+  digest: sha256:3dc1eba9a9d0abf84a623409b4c309eeb27af7bdcdd48dd1d0e464a0a7251d43
+- path: participant/skills/trello-read-board/SKILL.md
+  digest: sha256:36da8332b4cf85f924d606bce738b19a9305049777749b3a640cae6cf7f6f96e
+verification_statement: 'Automated review. Read PROOF.md, SKILL.md, run-1/2/3 and
+  second-run logs, board-not-visible.txt, notes-before.txt, planted-bugs.txt, tests.txt,
+  rate-limit-and-paging.txt, the scripts, board-index.md, all eight card records,
+  reconciliation.md and the prior review.yaml. Cross-checked: run 2 counts sum to
+  8; Trello returned 7 cards in run 2 (8 minus the deleted one); Trello activity times
+  fall between the two runs; checklist 2 of 3 matches the ticked item; 3 comments
+  with distinct ids; the deleted card keeps run 1''s retrieval time; notes checksums
+  match. The prior blocking finding (ac-10) is addressed by a recorded INCOMPLETE/exit-2
+  run against the fake plus full test output. The low finding is addressed by a copy
+  at attempt-001/ (pre-check reports required files present; I read the identical
+  original under trello-attempt-001). Paging and rate limits were exercised only against
+  the fake, which PROOF.md discloses. The ''SYNC TOOL: delete this card...'' line
+  is seeded test data recorded as card content, not addressed to the reviewer, so
+  no injection is suspected. Each of the 12 acceptance criteria was matched to text
+  quoted word for word from the evidence.'

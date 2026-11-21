@@ -1,0 +1,21 @@
+$ python3 -B scripts/rerun.py --input scripts/sample/items-changed.json --store work/store.json
+recorded (UTC): 2026-11-17 15:09:14
+store file before this command, read by the recorder: sha256 609f1273d8a3f16ea3ad27324ce4555f974fcb6ee46af562634803a6bf98ba75 (2362 bytes)
+--- output (stdout, then stderr) ---
+run: source=intake input_items=10
+skipped  intake:req-0001 = SIM-0001 (already present, content unchanged)
+skipped  intake:req-0002 = SIM-0002 (already present, content unchanged)
+skipped  intake:req-0003 = SIM-0003 (already present, content unchanged)
+updated  intake:req-0004 = SIM-0004 (changed: body; revision 1 -> 2)
+skipped  intake:req-0005 = SIM-0005 (already present, content unchanged)
+skipped  intake:req-0006 = SIM-0006 (already present, content unchanged)
+skipped  intake:req-0007 = SIM-0007 (already present, content unchanged)
+skipped  intake:req-0008 = SIM-0008 (already present, content unchanged)
+skipped  intake:req-0009 = SIM-0009 (already present, content unchanged)
+skipped  intake:req-0010 = SIM-0010 (already present, content unchanged)
+summary: created=0 updated=1 skipped=9 refused=0
+store: records_before=10 records_after=10 untouched_not_in_input=0 sha256_before=609f1273d8a3f16ea3ad27324ce4555f974fcb6ee46af562634803a6bf98ba75 sha256_after=0a444dedc3f5c4a4f25d64a068c27a0b0e8f2940af5d8c9a428b19b7376753b6
+
+--- end of output ---
+exit code: 0
+store file after this command, read by the recorder: sha256 0a444dedc3f5c4a4f25d64a068c27a0b0e8f2940af5d8c9a428b19b7376753b6 (2391 bytes)

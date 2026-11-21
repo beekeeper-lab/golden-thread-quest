@@ -1,0 +1,46 @@
+$ python3 -B tests/trials.py
+recorded (UTC): 2026-11-17 15:39:01
+input: 600 made-up items. random seed 20261117.
+uninterrupted run: exit 0, 600 records, 0.22 seconds
+
+REAL KILL: 6 trials, up to 4 SIGKILLs each at random moments, then one run left to finish
+trial 1: killed at 0.12s -> 404 records; killed at 0.05s -> 509 records; finished before the kill at 0.07s -> 600 records; finished before the kill at 0.07s -> 600 records
+         finishing run: exit 0, summary: created=0 updated=0 skipped=600 refused=0; store identical to uninterrupted run: yes; left-over files: 0
+trial 2: killed at 0.07s -> 269 records; killed at 0.08s -> 470 records; killed at 0.05s -> 574 records; finished before the kill at 0.12s -> 600 records
+         finishing run: exit 0, summary: created=0 updated=0 skipped=600 refused=0; store identical to uninterrupted run: yes; left-over files: 0
+trial 3: killed at 0.08s -> 290 records; killed at 0.07s -> 471 records; finished before the kill at 0.11s -> 600 records; finished before the kill at 0.12s -> 600 records
+         finishing run: exit 0, summary: created=0 updated=0 skipped=600 refused=0; store identical to uninterrupted run: yes; left-over files: 0
+trial 4: killed at 0.11s -> 380 records; killed at 0.09s -> 585 records; finished before the kill at 0.06s -> 600 records; finished before the kill at 0.10s -> 600 records
+         finishing run: exit 0, summary: created=0 updated=0 skipped=600 refused=0; store identical to uninterrupted run: yes; left-over files: 0
+trial 5: killed at 0.09s -> 352 records; finished before the kill at 0.12s -> 600 records; finished before the kill at 0.13s -> 600 records; finished before the kill at 0.12s -> 600 records
+         finishing run: exit 0, summary: created=0 updated=0 skipped=600 refused=0; store identical to uninterrupted run: yes; left-over files: 0
+trial 6: killed at 0.10s -> 350 records; finished before the kill at 0.12s -> 600 records; finished before the kill at 0.09s -> 600 records; finished before the kill at 0.10s -> 600 records
+         finishing run: exit 0, summary: created=0 updated=0 skipped=600 refused=0; store identical to uninterrupted run: yes; left-over files: 0
+kills that landed while the workflow was running: 11 of 24
+
+MANY AT ONCE: 3 trials, 8 runs started together on one empty store
+trial 1: 1 ran (exit 0), 7 refused because another run held the store (exit 1), 0 other; created in total: 600; store identical to uninterrupted run: yes
+trial 2: 1 ran (exit 0), 7 refused because another run held the store (exit 1), 0 other; created in total: 600; store identical to uninterrupted run: yes
+trial 3: 1 ran (exit 0), 7 refused because another run held the store (exit 1), 0 other; created in total: 600; store identical to uninterrupted run: yes
+
+problems: none
+exit code: 0
+
+CAN THESE TRIALS FAIL? The same trials against two copies of the workflow with a bug planted (problem lines only).
+planted bug: always-create
+problems: 
+  - trial 1: store not usable after a kill (AssertionError)
+  - trial 1: store not usable after a kill (AssertionError)
+  - trial 1: store not usable after a kill (AssertionError)
+  - trial 1: the finishing run exited 1
+  - trial 1: final store differs from the uninterrupted run's store
+  - trial 2: store not usable after a kill (AssertionError)
+  - trial 2: store not usable after a kill (AssertionError)
+planted bug: lock-ignored
+problems: 
+  - parallel trial 1: 7 runs ended in some other way
+  - parallel trial 1: runs reported 564 created in total, expected 600
+  - parallel trial 2: 7 runs ended in some other way
+  - parallel trial 2: runs reported 549 created in total, expected 600
+  - parallel trial 3: 7 runs ended in some other way
+  - parallel trial 3: runs reported 567 created in total, expected 600

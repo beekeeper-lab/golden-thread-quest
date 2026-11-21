@@ -1,0 +1,31 @@
+schema_version: 1
+review_id: review-20261118170929-124754
+quest_id: jira-compare-access-methods
+quest_version: 1
+attempt_id: jira-attempt-003
+evidence_hash: sha256:16820eb73fd152b76e50fe18010d244b8a440e7562499b9e6e8167b0812b64e2
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-18T17:09:29Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/jira/access-comparison.md
+  digest: sha256:b50058bf02e04649d333dd3afcd75f4d70850bfc8eceef8cba8e4d283ede06d4
+- path: participant/context/jira/access-decision.md
+  digest: sha256:38a847378bab83c11d33c5352b3064299fe4d83d2050a95f95e612ffa688036f
+verification_statement: 'Automated review. I read the three files: the comparison,
+  the decision record and PROOF.md. The comparison has one side-by-side table with
+  a column for each of CLI, REST API, MCP and Managed connector. It has rows for authentication,
+  attribution, scope, what is logged and where, rate limits, maintenance, failure
+  behavior and one named risk. Each method also has its own detailed section with
+  sources. The decision record names the purpose (an unattended agent keeping one
+  team''s Jira project up to date) and the method (the REST API with a service account).
+  It gives the reasons and a list headed ''What would change this decision''. PROOF.md
+  explains the method rejected most firmly (the per-person managed connector) and
+  cites the criteria by number. It also states that no connection was made and that
+  no tokens or internal URLs appear. Minor point: PROOF.md was submitted under jira-attempt-003/
+  instead of the attempt-001/ path in the required proof. The pre-check reported the
+  files present, and the numbered criteria concern the comparison and the decision.
+  No text addresses the reviewer, so no injection is suspected. Each of the 7 acceptance
+  criteria was matched to text quoted word for word from the evidence.'

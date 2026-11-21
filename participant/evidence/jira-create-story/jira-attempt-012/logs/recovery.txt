@@ -1,0 +1,191 @@
+A create whose answer is lost, and the recovery: jira-create-story, attempt jira-attempt-012
+Recorded by scripts/record_evidence.py.
+The Jira here is participant/skills/jira-create-story/fake_jira.py, a made-up one. No real Jira was read or written, so nothing is
+redacted: the site, the projects and the stories are invented. STATE stands for a temporary folder.
+This log is recorded inside the recording script, because a lost answer cannot be staged from the
+command line. The workflow's own functions are called with a fake Jira that this script controls.
+Each block between dashed lines is what the workflow said.
+
+==============================================================================
+1. A preview, then its confirmation. The fake Jira is told to create the story and then not answer.
+[preview]
+------------------------------------------------------------------------------
+(a preview, as in logs/preview.txt. Its last lines:)
+Fingerprint of this preview: fe6247df4b17
+Made:    2026-11-19 21:38:43 UTC
+Expires: 2026-11-19 21:53:43 UTC (15 minutes after it was made)
+
+Nothing has been written to Jira. To create this story, a person who has read this preview confirms it
+by its fingerprint.
+------------------------------------------------------------------------------
+exit code: 0
+[confirm]
+------------------------------------------------------------------------------
+CONFIRMATION for preview fe6247df4b17, given by: the participant (the name given with the confirmation).
+
+Jira site:   https://fixture-site.example.invalid  (site fingerprint 738169e667642f09)
+Project:     RPT (project id 30000). On the sandbox allowlist: yes.
+Issue type:  "Story" (issue type id 10001)
+Draft:       participant/context/jira/new-story/fixture-run/recovery/draft.md
+
+Checked in this run, before writing:
+  the preview is 0 minutes old, and the limit is 15: ok
+  the saved preview is unaltered and has not been used: ok
+  the draft file is byte for byte the one that was previewed: ok
+  the payload worked out again now has the SHA-256 of the previewed one, c2f6155edd8bfa5606f7d493c2452d4e8d7c27a16e0a28097a4b16cc217f47a3: ok
+  the project is on the sandbox allowlist for this site: ok
+  Jira says this identity may create stories here: ok
+  this draft has no link file, and no story in Jira carries the marker gtq-96ed5f7e: ok
+
+Written to the link file before sending: a create is being sent, result not yet recorded.
+
+A PERSON NEEDS TO LOOK: the create was sent and no answer came back (TimeoutError). It is NOT KNOWN whether Jira created the story. It was not sent again.
+Do not create this story again. The link file records where things stand.
+------------------------------------------------------------------------------
+exit code: 2
+  ok   exit code 2, and the workflow says it is not known whether the story was created
+  ok   the create was sent once and not retried
+  ok   the story does exist in the fake Jira, 8 stories in RPT, and the workflow was never told its key
+  ok   the link file, written before the create was sent, says so: a create was sent and its result is not recorded
+
+==============================================================================
+2. The next run. This is where the quest's scenario would create the story a second time.
+[preview]
+------------------------------------------------------------------------------
+
+REFUSED: a create for this draft was sent and its result was never recorded. The story may exist in Jira. Run the reconcile command before anything else. Nothing is created.
+Nothing has been written to Jira.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused, exit code 1: a create was sent and never recorded, so nothing is created
+  ok   still one POST in all, and still 8 stories
+
+==============================================================================
+3. Reconcile. The search is made to find nothing the first time, as an index that lags behind.
+[reconcile]
+------------------------------------------------------------------------------
+RECONCILE. Reads Jira and writes nothing to it.
+The link file says a create was sent and its result was never recorded.
+Asked of Jira: stories in project RPT carrying the marker gtq-96ed5f7e. Found: 0.
+
+NOT FOUND. No story carries the marker, so as far as Jira's search shows the story was not created.
+Jira's search can lag a few seconds behind a create, so this is not proof. Nothing has been created or
+changed, and the link file is left as it is. Wait a minute and run reconcile again. If it is still not
+found, a person decides: delete the link file by hand, then make a new preview.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   not found the first time, exit code 1, and it says the search can lag and creates nothing
+[reconcile]
+------------------------------------------------------------------------------
+RECONCILE. Reads Jira and writes nothing to it.
+The link file says a create was sent and its result was never recorded.
+Asked of Jira: stories in project RPT carrying the marker gtq-96ed5f7e. Found: 1.
+FOUND exactly one: RPT-10, issue id 30010. It is linked now.
+
+READ BACK from Jira by issue id 30010, and compared with the payload field for field:
+  components         sent id 31001
+                     read "Reports" (id 31001): the same
+  customfield_10050  sent id 32001
+                     read "Data" (id 32001): the same
+  description        sent 2 block(s) of document
+                     read 2 block(s) of document: the same, identical as sent
+  duedate            sent "2027-01-15"
+                     read "2027-01-15": the same
+  issuetype          sent id 10001
+                     read "Story" (id 10001): the same
+  labels             sent ["gtq-96ed5f7e", "reporting", "revenue"]
+                     read ["gtq-96ed5f7e", "reporting", "revenue"]: the same
+  parent             sent "RPT-1"
+                     read "RPT-1" (id 30001): the same
+  project            sent id 30000
+                     read "RPT" (id 30000): the same
+  summary            sent "Quarterly revenue by plan report for the finance team"
+                     read "Quarterly revenue by plan report for the finance team": the same
+Result: every field the payload sent reads back the same.
+Fields Jira set that the payload did not send:
+  created            Created       "2026-11-19T12:00:01.000+0000"
+  creator            Creator       a person, not shown
+  priority           Priority      "Medium" (id 3)
+  reporter           Reporter      a person, not shown
+  status             Status        "To Do" (id 1)
+  and 1 more that hold a value: updated
+
+The link file participant/context/jira/new-story/fixture-run/recovery/linked.md now holds the key, the issue id and this comparison.
+
+RESULT RECORD
+  Issue key: RPT-10
+  Identifier of what was created: Jira issue id 30010 (this identifies the story; a key can change)
+  Target project: RPT (project id 30000), on the sandbox allowlist
+  Jira site: [site address removed], site fingerprint 738169e667642f09
+  Created at: not recorded: the create's answer was lost. Linked by reconcile at 2026-11-19 21:38:43 UTC
+  Confirmed by: the participant, at 2026-11-19 21:38:43 UTC
+  Preview: fingerprint fe6247df4b17
+  Payload: SHA-256 c2f6155edd8bfa5606f7d493c2452d4e8d7c27a16e0a28097a4b16cc217f47a3
+  Marker label: gtq-96ed5f7e
+  Read back and compared at 2026-11-19 21:38:43 UTC: every field the payload sent reads back the same
+  Local link: participant/context/jira/new-story/fixture-run/recovery/linked.md
+
+Requests sent to Jira: 3. Every one was a GET, which reads and cannot change anything.
+  GET /rest/api/3/search/jql
+  GET /rest/api/3/issue/30010
+  GET /rest/api/3/issue/30010
+------------------------------------------------------------------------------
+exit code: 0
+  ok   found the second time by the marker: exactly one story, RPT-10, issue id 30010, now linked
+  ok   it was read back and every field the payload sent is the same
+  ok   the link file now holds the key and the id
+  ok   through all of it, one POST was sent and one story was created
+
+==============================================================================
+4. The other case: the create is sent, Jira never receives it, and nothing is created.
+[preview]
+------------------------------------------------------------------------------
+(a preview, as in logs/preview.txt. Its last lines:)
+Fingerprint of this preview: d4c48728fba7
+Made:    2026-11-19 21:38:43 UTC
+Expires: 2026-11-19 21:53:43 UTC (15 minutes after it was made)
+
+Nothing has been written to Jira. To create this story, a person who has read this preview confirms it
+by its fingerprint.
+------------------------------------------------------------------------------
+exit code: 0
+[confirm]
+------------------------------------------------------------------------------
+CONFIRMATION for preview d4c48728fba7, given by: the participant (the name given with the confirmation).
+
+Jira site:   https://fixture-site.example.invalid  (site fingerprint 738169e667642f09)
+Project:     RPT (project id 30000). On the sandbox allowlist: yes.
+Issue type:  "Story" (issue type id 10001)
+Draft:       participant/context/jira/new-story/fixture-run/recovery/draft.md
+
+Checked in this run, before writing:
+  the preview is 0 minutes old, and the limit is 15: ok
+  the saved preview is unaltered and has not been used: ok
+  the draft file is byte for byte the one that was previewed: ok
+  the payload worked out again now has the SHA-256 of the previewed one, e5b2b24f68e59cac54d93cc71175ff60bc8d513bf15da5c930caddd9efa104d2: ok
+  the project is on the sandbox allowlist for this site: ok
+  Jira says this identity may create stories here: ok
+  this draft has no link file, and no story in Jira carries the marker gtq-6d8c97bc: ok
+
+Written to the link file before sending: a create is being sent, result not yet recorded.
+
+A PERSON NEEDS TO LOOK: the create was sent and no answer came back (TimeoutError). It is NOT KNOWN whether Jira created the story. It was not sent again.
+Do not create this story again. The link file records where things stand.
+------------------------------------------------------------------------------
+exit code: 2
+[reconcile]
+------------------------------------------------------------------------------
+RECONCILE. Reads Jira and writes nothing to it.
+The link file says a create was sent and its result was never recorded.
+Asked of Jira: stories in project RPT carrying the marker gtq-6d8c97bc. Found: 0.
+
+NOT FOUND. No story carries the marker, so as far as Jira's search shows the story was not created.
+Jira's search can lag a few seconds behind a create, so this is not proof. Nothing has been created or
+changed, and the link file is left as it is. Wait a minute and run reconcile again. If it is still not
+found, a person decides: delete the link file by hand, then make a new preview.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   reconcile reports not found, exit code 1, links nothing and creates nothing: 7 stories, one POST
+  ok   it leaves the decision to a person: delete the link file by hand, then preview again
+
+RESULT: ALL CHECKS PASSED.

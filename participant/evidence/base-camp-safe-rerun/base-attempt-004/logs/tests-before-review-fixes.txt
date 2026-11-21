@@ -1,0 +1,25 @@
+$ python3 -B -m unittest discover -s tests   (new review tests added, workflow not yet changed)
+FAIL: test_collision_with_an_unusable_twin_leaves_the_record_untouched (test_rerun.ReviewFindings.test_collision_with_an_unusable_twin_leaves_the_record_untouched)
+FAIL: test_deeply_nested_input_is_refused_without_a_crash (test_rerun.ReviewFindings.test_deeply_nested_input_is_refused_without_a_crash)
+FAIL: test_hand_edited_store_is_refused (test_rerun.ReviewFindings.test_hand_edited_store_is_refused) [set_number]
+FAIL: test_hand_edited_store_is_refused (test_rerun.ReviewFindings.test_hand_edited_store_is_refused) [same_record_id]
+FAIL: test_hand_edited_store_is_refused (test_rerun.ReviewFindings.test_hand_edited_store_is_refused) [upper_key]
+FAIL: test_hand_edited_store_is_refused (test_rerun.ReviewFindings.test_hand_edited_store_is_refused) [odd_key]
+FAIL: test_hand_edited_store_is_refused (test_rerun.ReviewFindings.test_hand_edited_store_is_refused) [bool_revision]
+FAIL: test_hand_edited_store_is_refused (test_rerun.ReviewFindings.test_hand_edited_store_is_refused) [zero_revision]
+FAIL: test_hand_edited_store_is_refused (test_rerun.ReviewFindings.test_hand_edited_store_is_refused) [odd_record_id]
+FAIL: test_id_longer_than_100_characters_is_refused (test_rerun.ReviewFindings.test_id_longer_than_100_characters_is_refused)
+FAIL: test_input_with_a_repeated_field_name_is_refused (test_rerun.ReviewFindings.test_input_with_a_repeated_field_name_is_refused) [{"source": "intake", "items": [], "items]
+FAIL: test_input_with_a_repeated_field_name_is_refused (test_rerun.ReviewFindings.test_input_with_a_repeated_field_name_is_refused) [{"source": "intake", "items": [{"source_]
+FAIL: test_look_alike_characters_are_refused_not_merged (test_rerun.ReviewFindings.test_look_alike_characters_are_refused_not_merged) ['REQ-\xdf']
+FAIL: test_look_alike_characters_are_refused_not_merged (test_rerun.ReviewFindings.test_look_alike_characters_are_refused_not_merged) ['REQ-\u2460']
+FAIL: test_look_alike_characters_are_refused_not_merged (test_rerun.ReviewFindings.test_look_alike_characters_are_refused_not_merged) ['\u017f1']
+FAIL: test_look_alike_characters_are_refused_not_merged (test_rerun.ReviewFindings.test_look_alike_characters_are_refused_not_merged) ['REQ-\u212a']
+FAIL: test_look_alike_characters_are_refused_not_merged (test_rerun.ReviewFindings.test_look_alike_characters_are_refused_not_merged) ['\uff32EQ-1']
+FAIL: test_refused_keys_are_not_counted_as_absent_from_the_input (test_rerun.ReviewFindings.test_refused_keys_are_not_counted_as_absent_from_the_input)
+FAIL: test_refused_runs_print_no_input_or_store_text (test_rerun.ReviewFindings.test_refused_runs_print_no_input_or_store_text)
+FAIL: test_store_reached_through_a_link_updates_the_real_file (test_rerun.ReviewFindings.test_store_reached_through_a_link_updates_the_real_file)
+FAIL: test_text_that_cannot_be_saved_is_refused_and_the_rest_is_processed (test_rerun.ReviewFindings.test_text_that_cannot_be_saved_is_refused_and_the_rest_is_processed)
+FAIL: test_unexpected_failure_is_reported_without_item_text (test_rerun.ReviewFindings.test_unexpected_failure_is_reported_without_item_text)
+Ran 54 tests in 3.600s
+FAILED (failures=22)

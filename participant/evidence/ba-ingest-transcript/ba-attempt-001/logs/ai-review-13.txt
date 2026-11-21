@@ -1,0 +1,118 @@
+# Thirteenth AI review, run 2026-10-30 (UTC): one Claude reviewer, started fresh, read what changed after the twelfth
+# review (the new test, the planted-bug list, PROOF.md and SKILL.md) against the logs and the earlier versions, read-only.
+# It was given the files, the logs, the earlier versions and the builder's description of what had changed, marked
+# "verify, don't trust", not the builder's verdict. Its line numbers refer to the files as they stood before its findings
+# were fixed.
+# Below the first blank line is its report exactly as returned, with a final newline. It quotes the transcript's phone
+# number only as a masked shape.
+
+**Independent review of the ba-attempt-001 hand-in (read-only; nothing in the repo was changed)**
+
+Most severe first. "Observed" means I ran or read it. "Inferred" means I reasoned it out and did not reproduce it.
+
+**1. HIGH (the rubric's "materially false claim" could make it Blocking). The transcript's phone number is back in handed-in files.**
+- **Where:** PROOF.md:334, 332 and 155, and the decision in PROOF.md:7.
+- **What the files say:** line 334 says "The transcript's three contact details appear in no handed-in file" and "the sixth to twelfth quote none of them". Line 155 says "the test uses a different made-up number".
+- **Observed:** I built a pattern from the raw .vtt's own digits (shape ###-555-01##). It matches:
+  - PROOF.md:308 (new this round, the comma example in the limitations);
+  - SKILL.md:133 and 179;
+  - test_ingest.py lines 548, 562, 4743, 4758, 6969, 6980 and 7754 to 7771. The 32-test version had none, so this came in with the rewrite.
+  - ai-review-7.txt (2 times), ai-review-9.txt (5) and ai-review-10.txt (1).
+- Neither transcript email appears anywhere. The number is in the reserved 555-01xx range, so nothing real is exposed, but the claim and Beau's stated choice after review 3 are not true of the hand-in.
+- **Confidence:** high.
+- **Fix:** swap the number in the tests, SKILL.md and PROOF.md:308 for a different reserved number, and correct line 334 to name logs 7, 9 and 10, or mask them as logs 1 to 5 were.
+
+**2. HIGH (misleading claim). Three of the five removed planted bugs do change what the script writes.**
+- **Where:** PROOF.md:327 and planted_bugs.py:32-33.
+- **What the files say:** "Five changed nothing the script does ... so no test could catch them".
+- **Observed:** I ran a temp copy of escape_md and quote_line, with and without each mutation. Under all three escaping mutants the record text differs. For example `> &#32;&#32;\- an indented dash` becomes `> &#32;&#32;- an indented dash`, and `> &#9;1\. ...` becomes `> &#9;1. ...`. So the record bytes and record_sha256 change.
+- The read-back is identical. I inferred that CommonMark rendering is identical too (a line starting with `&#32;` can't be a list or heading); I did not run a renderer.
+- The other two removals are equivalent, as claimed: checked_label's return value is ignored at ingest.py:560 and 578, and temps is only read after both writes succeed, with clean-up by the run_prefix glob at line 1330.
+- **Confidence:** high.
+- **Fix:** reword to say they change only a backslash that renders and reads back the same, which no rule in SKILL.md section 7 requires; or keep them and add a test of the written text.
+
+**3. HIGH (misleading justification). The reason given for accepting the survivor contradicts PROOF's own numbers.**
+- **Where:** SKILL.md:272 and PROOF.md:303.
+- **What the files say:** "No test drawn from a rule in this file tells the two apart." PROOF.md:303 also says that without that reading the script left "one to six more of those digits visible" in 5 of 30,000 random transcripts.
+- **Inferred:** SKILL.md section 8 (line 146) states the second reading explicitly. It also states that a split detail is replaced in every utterance it touches. If those 5 transcripts exist, a test built from section 8 and using one of them would catch the survivor.
+- **Observed:** I could not reproduce any such case in 100,000 random inputs of my own on a temp copy. Either the "5 of 30,000" is not reproducible, or the survivor can be caught.
+- **Confidence:** medium.
+- **Fix:** save one of the 5 inputs as a test from section 8, or drop the leak numbers and say the survivor is untested.
+
+**4. MEDIUM. Fix rows cite a broader planted bug than the fix they describe.**
+- **Where:** PROOF.md:259 (ninth review P blocking), PROOF.md:289 (eleventh, item 1) and the AC 9 row at PROOF.md:105.
+- **What they say:** each describes the second reading ("read together a second time with the Name: that starts each cue left out" / "back as it was") and cites "no reading leaves out a cue's leading Name:".
+- **Observed:** that planted bug turns off the leading Name: in every reading (kept_parts, ingest.py:749). The planted bug that removes exactly the described reading is the one that SURVIVED (planted-bugs.txt:150).
+- **Confidence:** high.
+- **Fix:** in those rows, say the test catches only removing the leading Name: from every reading, and point to the survivor.
+
+**5. MEDIUM. Numbers presented as fact have no handed-in log behind them.**
+- **Where:**
+  - PROOF.md:118: 1,665 files, 119 emails, 23 phones, 14 places, "In the version handed in";
+  - PROOF.md:303: 30,000 / 12,000 / 11 / 5 random comparisons, and "never shows more digits ... never refuses";
+  - PROOF.md:327: "nine" survivors in the earlier run.
+- **Observed:** none of these numbers is in logs/. The reviews quote 1,665 and 779 only for earlier script versions, and nothing in the logs shows a run of the final script.
+- "Never" claimed from a random sample is overbroad.
+- **Confidence:** high that the numbers are unlogged; I can't judge whether they are true.
+- **Fix:** save those runs as logs, or mark the numbers as not in the evidence and write "in none of 30,000" instead of "never".
+
+**6. MEDIUM. The Python 3.10 claim has no evidence.**
+- **Where:** PROOF.md:14 (new), "the tests pass under Python 3.10 and 3.11", and SKILL.md:266.
+- **Observed:** tests.txt shows only .venv (3.11). The only 3.10 on this machine (~/.local/bin/python3.10) lacks markdown_it, which PROOF.md:321 says the tests need. I found no 3.10 venv.
+- **Confidence:** medium.
+- **Fix:** record a 3.10 run of the 134 tests, or drop the claim.
+
+**7. MEDIUM/LOW. The survivor count disagrees inside PROOF.md.**
+- **Where:** PROOF.md:325 ("One planted bug survives ... so planted_bugs.py ends with exit code 1") and PROOF.md:303 ("One planted bug survives").
+- **Observed:** line 110 says two do not turn the tests red, and planted-bugs.txt:150 and 186 show two SURVIVED. Line 7's "The last full run ... found nine" is also contradicted by the actual last run, which had 2.
+- **Confidence:** high.
+- **Fix:** write "one always survives and a second survived the last run".
+
+**8. LOW. "About two hours" understates the run.**
+- **Where:** PROOF.md:89 and 326, and SKILL.md:272.
+- **Observed:** scratchpad next/planted-run-time.txt shows `real 10168.53`, about 2 h 49 min. Its timestamps match the 11:21Z start of the logged run. The machine is an Apple M4 with 10 cores, as stated.
+- **Confidence:** high, though the timing file is outside the hand-in.
+- **Fix:** write "about three hours".
+
+**9. LOW. Test counts don't add up.**
+- **Where:** PROOF.md:235, 238 and 242.
+- **Observed:** 44 tests plus the six areas (9 + 11 + 13 + 7 + 6 + 30 = 76) gives 120. The eighth review and scratchpad final/test_ingest.py have 121; suite-v2 has 44.
+- **Fix:** find the missing test and correct the number.
+
+**10. LOW. "Without the builder's reasoning" is overbroad.**
+- **Where:** PROOF.md:124, "each by Claude agents started fresh, without the builder's reasoning".
+- **Observed:** the headers of ai-review-11 and ai-review-12 say they were given "the builder's description of what the changes were meant to do".
+- **Fix:** add that exception.
+
+**11. LOW. The new test pins the script's wording without saying so.**
+- **Where:** test_ingest.py:1717 checks "text was already ingested as sample.md", the script's own phrase.
+- PROOF.md:236 says such tests' descriptions say so; this docstring doesn't.
+- **Fix:** add "pins the script's wording" to the docstring.
+
+**12. LOW. SKILL.md size is stale.**
+- PROOF.md:324 says "about 94,000 characters"; the file is 96,416.
+
+**13. LOW. One rule is wider than its test.**
+- SKILL.md:72 says "The text rule holds whatever the meeting file says". The test tries one meeting-file variation. The code does support it: the fingerprint ignores the meeting file (ingest.py:1385-1393).
+
+**14. LOW (a test weakness, already disclosed).**
+- PROOF.md:326 leaves a 10-second limit that the slow mutant runs in about 10 seconds, so it is caught only on some runs.
+
+**Areas where I found no issues**
+- **Counts (observed):**
+  - 134 tests pass (tests.txt);
+  - my docstring parse gives 114 tests naming an AC or safety constraint and 20 naming only SKILL.md, counting 3 that name an AC after a SKILL.md lead;
+  - 1,110 of 1,112 planted bugs caught; 9 self-tests and 38 self-test planted bugs; claims check 0 problems;
+  - finding counts for reviews 8 to 12 match their logs;
+  - the record SHA (449ff…) matches the file and second-run.txt, and the provenance skill_sha256 matches the current ingest.py.
+- **New test (C), observed in code:**
+  - it is not vacuous: the utterance rule compares times, speaker and words (said(), ingest.py:1393), and the test's setup guard compares the same tuple;
+  - the message it checks differs from the utterance rule's message;
+  - planted-bugs.txt:74-75 show both target planted bugs caught only by this test;
+  - its expected result (byte-order mark, Windows and old Mac line endings) comes from SKILL.md section 4.
+- **Re-aimed planted bug, observed:** honest. U+2007 sits in both NO_BREAK_SPACES (ingest.py:50) and the 0x2000-0x200A range at line 99. The mutant removes it from PHONE_SEPARATORS, and two tests catch it.
+- **Added planted bug, observed:** honest. LEADING_NAME is used only in kept_parts, so the name matches what it breaks.
+- **SKILL.md diff (D):** only lines 72, 224, 266 and 272 changed. Apart from findings 3, 8 and 13 they agree with the log.
+- **Writing rules (E):** no em dashes and none of the listed words in PROOF.md, SKILL.md, planted_bugs.py or test_ingest.py.
+
+**Not assessed:** the rendering claim for the escaping mutants (no renderer run), the Apache-2.0 licence and source of the Zoom cache, the 3.10 test pass, and every random-comparison number. I removed my temp folders.

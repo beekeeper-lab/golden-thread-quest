@@ -1,0 +1,156 @@
+PREVIEW OF CREATING ONE STORY. Nothing has been written to Jira.
+
+Jira site:   [site address removed]  (site fingerprint 4aabe3d08fbad6b1)
+Project:     SCRUM (project id 10000). On the sandbox allowlist: yes.
+Issue type:  "Story" (issue type id 10004)
+Draft:       participant/context/jira/new-story/draft-sandbox.md
+Link file:   participant/context/jira/new-story/linked.md (not there yet: this draft has not been created)
+The change:  one new story would be created, with one request: POST /rest/api/3/issue
+
+EVERY FIELD Jira lists for creating a "Story" in SCRUM: 20.
+Set by the draft, and by this preview's marker, 6:
+  project            Project       SCRUM (project id 10000)
+  issuetype          Issue Type    "Story" (issue type id 10004)
+  summary            Summary       "Quarterly revenue by plan report for the finance team"
+  description        Description   2 block(s) of Atlassian Document Format, shown in full in the payload
+  labels             Labels        ["reporting", "revenue", "gtq-57dc5556"]
+  duedate            Due date      2027-01-15
+  The label gtq-57dc5556 is this preview's marker. It is not in the draft. It is how the story is found
+  again if the create is sent and its answer is lost.
+Required by Jira, not in the draft, and LEFT TO JIRA because it has a default, 1:
+  reporter           Reporter      Jira says it has a default and does not say what it is.
+Optional, not in the draft, and not sent, 13:
+  assignee           Assignee      no default reported.
+  attachment         Attachment    no default reported.
+  customfield_10000  Development   no default reported.
+  customfield_10001  Team          no default reported.
+  customfield_10015  Start date    no default reported.
+  customfield_10016  Story point estimate no default reported.
+  customfield_10019  Rank          no default reported.
+  customfield_10020  Sprint        no default reported.
+  customfield_10021  Flagged       no default reported.
+  issuelinks         Linked Issues no default reported.
+  issuerestriction   Restrict to   no default reported.
+  parent             Parent        no default reported.
+  priority           Priority      Jira's default is "Medium".
+
+THE EXACT PAYLOAD. This is the request body, not a summary of it:
+  {
+    "fields": {
+      "description": {
+        "content": [
+          {
+            "content": [
+              {
+                "text": "Finance needs a quarterly report of recognised revenue by subscription plan, split by region.",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "content": [
+              {
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "Source of the figures: the billing warehouse, from the table of invoices.",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "paragraph"
+                  }
+                ],
+                "type": "listItem"
+              },
+              {
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "Format: a spreadsheet, with one sheet per region.",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "paragraph"
+                  }
+                ],
+                "type": "listItem"
+              },
+              {
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "First delivery: the second week of January, covering the fourth quarter.",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "paragraph"
+                  }
+                ],
+                "type": "listItem"
+              }
+            ],
+            "type": "bulletList"
+          }
+        ],
+        "type": "doc",
+        "version": 1
+      },
+      "duedate": "2027-01-15",
+      "issuetype": {
+        "id": "10004"
+      },
+      "labels": [
+        "reporting",
+        "revenue",
+        "gtq-57dc5556"
+      ],
+      "project": {
+        "id": "10000"
+      },
+      "summary": "Quarterly revenue by plan report for the finance team"
+    }
+  }
+As sent it is the same data with no spaces or line breaks and its names in alphabetical order:
+  907 bytes, SHA-256 d044842a49cf189564af35d662d55965e82c98e124751ecab09ed2eabe3ad3a2
+
+Permission check, asked of Jira for this project and this identity:
+  may see the project    (BROWSE_PROJECTS): yes
+  may create stories     (CREATE_ISSUES):   yes
+Duplicate checks:
+  1. This draft's own link file: there is none, so this workflow has not created it before.
+  2. Asked of Jira, stories in SCRUM with this title: 0 with exactly this title; 0 more returned by Jira's
+     text search for these words.
+  3. Duplicate search: the local catalog /tmp/gtq-jira-preview, 1 story, searched with the jira-duplicate-search skill.
+     Coverage: WARNING: the catalog holds 1 of project SCRUM's stories and Jira holds 22. 21 in Jira have NOT been searched. Save them locally and rebuild the catalog for a complete search.
+     Result: NONE. No story in the catalog matches this draft on three or more signals.
+     Overall recommendation: PROCEED. A person decides. The catalog is a local copy: a story created in Jira
+     since the records were saved is not in it.
+Where Jira cannot check: it has no way to refuse a second create of the same story, and no way to try a
+  create without making one. The link file and the marker are this workflow's own protection.
+
+Snapshot of the project's stories in Jira before the preview: 22 stories, 9f0e2178a4b1a789
+Snapshot of the project's stories in Jira after the preview:  22 stories, 9f0e2178a4b1a789
+The two are the same. Jira is unchanged.
+Requests sent to Jira: 8. Every one was a GET, which reads and cannot change anything.
+  GET /rest/api/3/project/SCRUM
+  GET /rest/api/3/myself
+  GET /rest/api/3/mypermissions
+  GET /rest/api/3/issue/createmeta/10000/issuetypes
+  GET /rest/api/3/issue/createmeta/10000/issuetypes/10004
+  GET /rest/api/3/search/jql
+  GET /rest/api/3/search/jql
+  GET /rest/api/3/search/jql
+
+Fingerprint of this preview: c931beb110b0
+Made:    2026-11-19 21:33:51 UTC
+Expires: 2026-11-19 21:48:51 UTC (15 minutes after it was made)
+
+Nothing has been written to Jira. To create this story, a person who has read this preview confirms it
+by its fingerprint.
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.

@@ -1,0 +1,28 @@
+schema_version: 1
+review_id: review-20261119215044-ae2332
+quest_id: jira-create-story
+quest_version: 1
+attempt_id: jira-attempt-012
+evidence_hash: sha256:e27d77df3bb92c03eac289adc62aac95ab30d2b102020dd77918e8b24aaa38b1
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-19T21:50:44Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/jira/new-story/linked.md
+  digest: sha256:a01a97f9d0784186c0e18839f297b24d51cda1ca1959fa2f932a003e18c48079
+- path: participant/context/jira/results/create-story.md
+  digest: sha256:7b6a774d27472d67258d16239989ff44c289863ecbab1a99d91be465535c5ce5
+verification_statement: 'Automated review. I cross-checked the real-sandbox logs (live-preview,
+  live-confirmation, live-rerun-preview, live-verify) against their copies in preview.txt,
+  confirmation.txt and rerun.txt, and against linked.md and create-story.md. The preview
+  fingerprint c931beb110b0 and the payload SHA-256 d044842a…ad3a2 match everywhere.
+  The preview was made at 21:33:51 UTC and confirmed at 21:34:22 UTC, inside the 15-minute
+  limit. The created time 16:34:26-0500 equals 21:34:26 UTC. SCRUM-23 / issue id 10022
+  is consistent in every file. Two differences are explained: the project shows as
+  "Work" and later "SCRUM" because the workflow was changed between runs, and live-rerun-confirm.txt
+  is absent but the recording script only copies logs that exist. Three refusals and
+  the allowlist refusal in this quest were shown only against the fake Jira; PROOF.md
+  says so. No text in the evidence was addressed to the reviewer. Each of the 9 acceptance
+  criteria was matched to text quoted word for word from the evidence.'

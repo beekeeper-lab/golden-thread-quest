@@ -1,0 +1,74 @@
+Recording the base value: jira-detect-conflicts, attempt jira-attempt-004
+Recorded by scripts/record_base.py. Paths are from the repository root. Synthetic data only.
+
+==============================================================================
+1. A copy of the fixture's jira-copy.json is the only input. Its checksum before:
+  3d0d312d5454c49755718d291664980297858a12a26d2c956be962ef528c995e  participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/jira-copy.json
+
+==============================================================================
+2. Make the fixture's seven local edits again, one command each.
+   No base is given on any command line. The tool reads it from Jira's copy.
+$ local_edit.py --copy participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/jira-copy.json --edits participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/local-edits.json --story FIX-1 --field estimate --value 5 --by participant --at 2026-11-05T14:02:00Z
+local_edit: FIX-1 estimate recorded. Local value 5. Base 8 (2026-11-02T09:00:00Z), read from Jira's copy
+(exit code 0)
+$ local_edit.py --copy participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/jira-copy.json --edits participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/local-edits.json --story FIX-2 --field due_date --value '"2026-12-01"' --by participant --at 2026-11-05T14:05:00Z
+local_edit: FIX-2 due_date recorded. Local value "2026-12-01". Base null (2026-11-02T09:00:00Z), read from Jira's copy
+(exit code 0)
+$ local_edit.py --copy participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/jira-copy.json --edits participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/local-edits.json --story FIX-3 --field estimate --value 5 --by participant --at 2026-11-05T14:10:00Z
+local_edit: FIX-3 estimate recorded. Local value 5. Base 8 (2026-11-02T09:00:00Z), read from Jira's copy
+(exit code 0)
+$ local_edit.py --copy participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/jira-copy.json --edits participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/local-edits.json --story FIX-3 --field priority --value '"High"' --by participant --at 2026-11-05T14:11:00Z
+local_edit: FIX-3 priority recorded. Local value "High". Base "Medium" (2026-11-02T09:00:00Z), read from Jira's copy
+(exit code 0)
+$ local_edit.py --copy participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/jira-copy.json --edits participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/local-edits.json --story FIX-4 --field priority --value '"High"' --by participant --at 2026-11-05T16:00:00Z
+local_edit: FIX-4 priority recorded. Local value "High". Base "Medium" (2026-11-02T09:00:00Z), read from Jira's copy
+(exit code 0)
+$ local_edit.py --copy participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/jira-copy.json --edits participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/local-edits.json --story FIX-5 --field summary --value '"Sort the board by most recent update"' --by participant --at 2026-11-05T16:20:00Z
+local_edit: FIX-5 summary recorded. Local value "Sort the board by most recent update". Base "Sort the board by last update" (2026-11-02T09:00:00Z), read from Jira's copy
+(exit code 0)
+$ local_edit.py --copy participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/jira-copy.json --edits participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/local-edits.json --story FIX-7 --field estimate --value 3 --by participant --at 2026-11-05T16:30:00Z
+local_edit: FIX-7 estimate recorded. Local value 3. Base 2 (2026-11-02T09:00:00Z), read from Jira's copy
+(exit code 0)
+
+  ok   the seven edits the tool recorded are the same as the fixture's local-edits.json, bases included
+  ok   every recorded edit has a base value and a base time
+
+==============================================================================
+3. Edit a field a second time. The local value changes. The base does not.
+$ local_edit.py --copy participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/jira-copy.json --edits participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/local-edits.json --story FIX-3 --field estimate --value 4 --by participant --at 2026-11-05T17:00:00Z
+local_edit: FIX-3 estimate edited again. Local value is now 4. Base kept as first recorded: 8 (2026-11-02T09:00:00Z)
+(exit code 0)
+{
+  "story": "FIX-3",
+  "field": "estimate",
+  "base": {
+    "value": 8,
+    "changed_at": "2026-11-02T09:00:00Z"
+  },
+  "local": {
+    "value": 4,
+    "edited_at": "2026-11-05T17:00:00Z",
+    "edited_by": "participant"
+  }
+}
+  ok   the local value is now 4
+  ok   the base is still 8, as first recorded
+
+==============================================================================
+4. An edit that has no base to record is refused.
+$ local_edit.py --copy participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/jira-copy.json --edits participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/local-edits.json --story FIX-99 --field estimate --value 5 --by participant
+local_edit: refused: Jira's copy has no estimate for story FIX-99, so there is no base to record
+(exit code 1)
+  ok   a story that is not in Jira's copy: refused
+$ (the edits file given as the same file as Jira's copy)
+local_edit: refused: the edits file and Jira's copy must be different files
+  ok   writing local edits into Jira's copy: refused
+  ok   the edits file still holds seven edits
+
+==============================================================================
+5. Jira's copy after all of the above:
+  3d0d312d5454c49755718d291664980297858a12a26d2c956be962ef528c995e  participant/evidence/jira-detect-conflicts/jira-attempt-004/work/base-demo/jira-copy.json
+  ok   Jira's copy is unchanged: no local edit was written into it
+  ok   the fixture's own jira-copy.json is the same file, untouched
+
+RESULT: ALL CHECKS PASSED. The base is read from Jira's copy when an edit is made, and kept.

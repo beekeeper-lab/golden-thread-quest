@@ -1,0 +1,470 @@
+Do the tests notice a broken sync? trello-read-assigned-cards, attempt trello-attempt-007
+Recorded by scripts/planted_bugs.py.
+
+Each bug below was put into participant/skills/trello-read-assigned-cards/sync.py, every test was run, and the
+bug was taken out again. Only local files are used.
+
+Before any bug: OK
+
+PLANTED BUG A. The member is written into the skill instead of read from the connection (criterion 1)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    TheMember.test_a_folder_holding_another_members_cards_is_refused
+    TheMember.test_another_member_on_the_connection_gets_their_own_cards
+    TheMember.test_no_member_id_is_written_in_the_skill
+
+PLANTED BUG B. Only open boards are asked for, so a closed board is never searched (criteria 2 and 4)
+  unittest result: FAILED (failures=20, errors=1)
+  tests that failed (21):
+    OnlyReads.test_a_card_name_worded_as_an_order_is_only_a_name
+    Archived.test_a_card_on_a_closed_board_is_archived_by_board
+    CommandLine.test_a_fake_run_from_the_command_line
+    Resync.test_a_newly_assigned_card_is_added_once
+    Resync.test_a_renamed_card_is_the_same_card
+    Resync.test_a_second_sync_at_a_later_time_changes_only_the_time
+    Resync.test_a_second_sync_of_unchanged_data_adds_nothing
+    EveryBoard.test_all_ninety_assigned_cards_are_held_and_no_one_elses
+    TheMember.test_another_member_on_the_connection_gets_their_own_cards
+    Archived.test_archived_cards_are_asked_for
+    EveryBoard.test_cards_from_every_board_are_held
+    ReassignedAway.test_cards_on_a_board_the_member_left_are_flagged_as_not_reachable
+    EveryBoard.test_every_board_the_member_is_on_is_searched_closed_ones_too
+    ReassignedAway.test_it_is_not_deleted_and_keeps_what_was_known
+    ReassignedAway.test_it_stays_flagged_at_the_next_sync_with_the_first_date
+    MoreThanOnePage.test_more_cards_of_the_member_than_trellos_own_list_holds_are_all_kept
+    EveryBoard.test_the_boards_searched_are_printed_and_in_the_index
+    MoreThanOnePage.test_the_counts_are_reported_and_agree
+    ReassignedAway.test_the_counts_include_the_flagged_card
+    Archived.test_the_open_count_leaves_archived_cards_out
+    MoreThanOnePage.test_the_saved_count_is_counted_from_the_text_of_the_index
+
+PLANTED BUG C. Only the first board is searched (criterion 2)
+  unittest result: FAILED (failures=27, errors=25)
+  tests that failed (52):
+    MoreThanOnePage.test_a_board_of_exactly_one_page_is_asked_once_more
+    Archived.test_a_card_archived_between_syncs_moves_section_and_is_not_flagged
+    ReassignedAway.test_a_card_assigned_again_goes_back
+    Archived.test_a_card_in_an_archived_list_is_archived_by_list
+    ReassignedAway.test_a_card_left_with_nobody_is_unassigned
+    OnlyReads.test_a_card_name_cannot_break_the_index_table
+    OnlyReads.test_a_card_name_worded_as_an_order_is_only_a_name
+    Archived.test_a_card_on_a_closed_board_is_archived_by_board
+    ReassignedAway.test_a_card_outside_a_restricted_search_is_not_called_reassigned
+    Stretch.test_a_card_that_is_only_the_members_is_not_listed_as_shared
+    ReassignedAway.test_a_deleted_card_is_flagged_as_deleted
+    CommandLine.test_a_fake_run_from_the_command_line
+    Resync.test_a_folder_from_another_source_is_refused
+    TheMember.test_a_folder_holding_another_members_cards_is_refused
+    Resync.test_a_newly_assigned_card_is_added_once
+    Notes.test_a_note_is_pointed_to_from_its_cards_row
+    Notes.test_a_note_with_no_card_is_listed_and_left
+    ReassignedAway.test_a_rate_limited_run_flags_nothing_and_writes_nothing
+    ReassignedAway.test_a_reassigned_card_is_flagged_with_who_has_it_now
+    Resync.test_a_renamed_card_is_the_same_card
+    Resync.test_a_second_sync_at_a_later_time_changes_only_the_time
+    Resync.test_a_second_sync_of_unchanged_data_adds_nothing
+    ReassignedAway.test_a_short_rate_limit_is_waited_out
+    EveryBoard.test_all_ninety_assigned_cards_are_held_and_no_one_elses
+    Archived.test_an_archived_card_still_assigned_is_included_in_its_own_section
+    TheMember.test_another_member_on_the_connection_gets_their_own_cards
+    Stretch.test_archived_cards_are_not_listed_as_quiet
+    MoreThanOnePage.test_at_trellos_real_limit_a_large_board_is_read_page_by_page
+    Stretch.test_cards_assigned_to_several_members_are_listed_with_the_others
+    EveryBoard.test_cards_from_every_board_are_held
+    ReassignedAway.test_cards_on_a_board_the_member_left_are_flagged_as_not_reachable
+    Stretch.test_cards_quiet_for_thirty_days_are_listed_with_the_days
+    EveryBoard.test_every_board_the_member_is_on_is_searched_closed_ones_too
+    MoreThanOnePage.test_every_card_of_the_large_board_is_held_once
+    Resync.test_first_seen_is_kept
+    ReassignedAway.test_it_is_not_deleted_and_keeps_what_was_known
+    ReassignedAway.test_it_stays_flagged_at_the_next_sync_with_the_first_date
+    ReassignedAway.test_its_notes_are_kept_and_pointed_to
+    MoreThanOnePage.test_more_cards_of_the_member_than_trellos_own_list_holds_are_all_kept
+    Notes.test_no_notes_folder_is_made
+    Notes.test_note_text_is_not_copied_into_the_index_or_the_memory
+    OnlyReads.test_other_peoples_cards_are_not_kept
+    EveryBoard.test_the_boards_searched_are_printed_and_in_the_index
+    Notes.test_the_checksum_printed_is_the_files_own
+    MoreThanOnePage.test_the_counts_are_reported_and_agree
+    ReassignedAway.test_the_counts_include_the_flagged_card
+    CommandLine.test_the_made_up_reassignment_from_the_command_line
+    Archived.test_the_open_count_leaves_archived_cards_out
+    Stretch.test_the_period_can_be_changed
+    Archived.test_the_rule_is_stated_in_the_output_and_in_the_index
+    MoreThanOnePage.test_the_saved_count_is_counted_from_the_text_of_the_index
+    Notes.test_the_sync_runs_with_the_notes_folder_read_only
+
+PLANTED BUG D. Other members' cards are kept as the member's (criterion 2)
+  unittest result: FAILED (failures=24, errors=2)
+  tests that failed (26):
+    ReassignedAway.test_a_card_assigned_again_goes_back
+    ReassignedAway.test_a_card_left_with_nobody_is_unassigned
+    OnlyReads.test_a_card_name_worded_as_an_order_is_only_a_name
+    CommandLine.test_a_fake_run_from_the_command_line
+    Resync.test_a_newly_assigned_card_is_added_once
+    ReassignedAway.test_a_reassigned_card_is_flagged_with_who_has_it_now
+    Resync.test_a_renamed_card_is_the_same_card
+    Resync.test_a_second_sync_at_a_later_time_changes_only_the_time
+    Resync.test_a_second_sync_of_unchanged_data_adds_nothing
+    EveryBoard.test_all_ninety_assigned_cards_are_held_and_no_one_elses
+    TheMember.test_another_member_on_the_connection_gets_their_own_cards
+    Stretch.test_cards_assigned_to_several_members_are_listed_with_the_others
+    ReassignedAway.test_cards_on_a_board_the_member_left_are_flagged_as_not_reachable
+    MoreThanOnePage.test_every_card_of_the_large_board_is_held_once
+    ReassignedAway.test_if_trello_will_not_say_what_became_of_it_nothing_is_written
+    ReassignedAway.test_it_is_not_deleted_and_keeps_what_was_known
+    ReassignedAway.test_it_stays_flagged_at_the_next_sync_with_the_first_date
+    ReassignedAway.test_its_notes_are_kept_and_pointed_to
+    MoreThanOnePage.test_more_cards_of_the_member_than_trellos_own_list_holds_are_all_kept
+    EveryBoard.test_only_boards_restricts_and_says_so
+    OnlyReads.test_other_peoples_cards_are_not_kept
+    MoreThanOnePage.test_the_counts_are_reported_and_agree
+    ReassignedAway.test_the_counts_include_the_flagged_card
+    CommandLine.test_the_made_up_reassignment_from_the_command_line
+    Archived.test_the_open_count_leaves_archived_cards_out
+    MoreThanOnePage.test_the_saved_count_is_counted_from_the_text_of_the_index
+
+PLANTED BUG E. Reading stops after the first page (criterion 3)
+  unittest result: FAILED (failures=27, errors=25)
+  tests that failed (52):
+    MoreThanOnePage.test_a_board_larger_than_the_limit_takes_several_requests
+    MoreThanOnePage.test_a_board_of_exactly_one_page_is_asked_once_more
+    Archived.test_a_card_archived_between_syncs_moves_section_and_is_not_flagged
+    ReassignedAway.test_a_card_assigned_again_goes_back
+    Archived.test_a_card_in_an_archived_list_is_archived_by_list
+    ReassignedAway.test_a_card_left_with_nobody_is_unassigned
+    OnlyReads.test_a_card_name_cannot_break_the_index_table
+    OnlyReads.test_a_card_name_worded_as_an_order_is_only_a_name
+    Archived.test_a_card_on_a_closed_board_is_archived_by_board
+    ReassignedAway.test_a_card_outside_a_restricted_search_is_not_called_reassigned
+    Stretch.test_a_card_that_is_only_the_members_is_not_listed_as_shared
+    ReassignedAway.test_a_deleted_card_is_flagged_as_deleted
+    CommandLine.test_a_fake_run_from_the_command_line
+    Resync.test_a_folder_from_another_source_is_refused
+    TheMember.test_a_folder_holding_another_members_cards_is_refused
+    Resync.test_a_newly_assigned_card_is_added_once
+    Notes.test_a_note_is_pointed_to_from_its_cards_row
+    Notes.test_a_note_with_no_card_is_listed_and_left
+    ReassignedAway.test_a_reassigned_card_is_flagged_with_who_has_it_now
+    Resync.test_a_renamed_card_is_the_same_card
+    Resync.test_a_second_sync_at_a_later_time_changes_only_the_time
+    Resync.test_a_second_sync_of_unchanged_data_adds_nothing
+    ReassignedAway.test_a_short_rate_limit_is_waited_out
+    EveryBoard.test_all_ninety_assigned_cards_are_held_and_no_one_elses
+    Archived.test_an_archived_card_still_assigned_is_included_in_its_own_section
+    TheMember.test_another_member_on_the_connection_gets_their_own_cards
+    Stretch.test_archived_cards_are_not_listed_as_quiet
+    MoreThanOnePage.test_at_trellos_real_limit_a_large_board_is_read_page_by_page
+    Stretch.test_cards_assigned_to_several_members_are_listed_with_the_others
+    EveryBoard.test_cards_from_every_board_are_held
+    ReassignedAway.test_cards_on_a_board_the_member_left_are_flagged_as_not_reachable
+    Stretch.test_cards_quiet_for_thirty_days_are_listed_with_the_days
+    MoreThanOnePage.test_every_card_of_the_large_board_is_held_once
+    Resync.test_first_seen_is_kept
+    MoreThanOnePage.test_if_asking_for_older_cards_does_not_work_the_run_stops
+    ReassignedAway.test_it_is_not_deleted_and_keeps_what_was_known
+    ReassignedAway.test_it_stays_flagged_at_the_next_sync_with_the_first_date
+    ReassignedAway.test_its_notes_are_kept_and_pointed_to
+    MoreThanOnePage.test_more_cards_of_the_member_than_trellos_own_list_holds_are_all_kept
+    Notes.test_no_notes_folder_is_made
+    Notes.test_note_text_is_not_copied_into_the_index_or_the_memory
+    OnlyReads.test_other_peoples_cards_are_not_kept
+    EveryBoard.test_the_boards_searched_are_printed_and_in_the_index
+    Notes.test_the_checksum_printed_is_the_files_own
+    MoreThanOnePage.test_the_counts_are_reported_and_agree
+    ReassignedAway.test_the_counts_include_the_flagged_card
+    CommandLine.test_the_made_up_reassignment_from_the_command_line
+    Archived.test_the_open_count_leaves_archived_cards_out
+    Stretch.test_the_period_can_be_changed
+    Archived.test_the_rule_is_stated_in_the_output_and_in_the_index
+    MoreThanOnePage.test_the_saved_count_is_counted_from_the_text_of_the_index
+    Notes.test_the_sync_runs_with_the_notes_folder_read_only
+
+PLANTED BUG F. The next page is never asked for: `before` is not sent (criterion 3)
+  unittest result: FAILED (failures=30, errors=24)
+  tests that failed (54):
+    MoreThanOnePage.test_a_board_larger_than_the_limit_takes_several_requests
+    MoreThanOnePage.test_a_board_of_exactly_one_page_is_asked_once_more
+    Archived.test_a_card_archived_between_syncs_moves_section_and_is_not_flagged
+    ReassignedAway.test_a_card_assigned_again_goes_back
+    Archived.test_a_card_in_an_archived_list_is_archived_by_list
+    ReassignedAway.test_a_card_left_with_nobody_is_unassigned
+    OnlyReads.test_a_card_name_cannot_break_the_index_table
+    OnlyReads.test_a_card_name_worded_as_an_order_is_only_a_name
+    Archived.test_a_card_on_a_closed_board_is_archived_by_board
+    ReassignedAway.test_a_card_outside_a_restricted_search_is_not_called_reassigned
+    Stretch.test_a_card_that_is_only_the_members_is_not_listed_as_shared
+    ReassignedAway.test_a_deleted_card_is_flagged_as_deleted
+    CommandLine.test_a_fake_run_from_the_command_line
+    Resync.test_a_folder_from_another_source_is_refused
+    TheMember.test_a_folder_holding_another_members_cards_is_refused
+    Resync.test_a_newly_assigned_card_is_added_once
+    Notes.test_a_note_is_pointed_to_from_its_cards_row
+    Notes.test_a_note_with_no_card_is_listed_and_left
+    ReassignedAway.test_a_rate_limited_run_flags_nothing_and_writes_nothing
+    ReassignedAway.test_a_reassigned_card_is_flagged_with_who_has_it_now
+    Resync.test_a_renamed_card_is_the_same_card
+    Resync.test_a_second_sync_at_a_later_time_changes_only_the_time
+    Resync.test_a_second_sync_of_unchanged_data_adds_nothing
+    ReassignedAway.test_a_short_rate_limit_is_waited_out
+    EveryBoard.test_all_ninety_assigned_cards_are_held_and_no_one_elses
+    Archived.test_an_archived_card_still_assigned_is_included_in_its_own_section
+    OnlyReads.test_an_id_that_could_not_name_a_file_stops_the_run
+    TheMember.test_another_member_on_the_connection_gets_their_own_cards
+    Stretch.test_archived_cards_are_not_listed_as_quiet
+    MoreThanOnePage.test_at_trellos_real_limit_a_large_board_is_read_page_by_page
+    Stretch.test_cards_assigned_to_several_members_are_listed_with_the_others
+    EveryBoard.test_cards_from_every_board_are_held
+    ReassignedAway.test_cards_on_a_board_the_member_left_are_flagged_as_not_reachable
+    Stretch.test_cards_quiet_for_thirty_days_are_listed_with_the_days
+    EveryBoard.test_every_board_the_member_is_on_is_searched_closed_ones_too
+    MoreThanOnePage.test_every_card_of_the_large_board_is_held_once
+    Resync.test_first_seen_is_kept
+    ReassignedAway.test_it_is_not_deleted_and_keeps_what_was_known
+    ReassignedAway.test_it_stays_flagged_at_the_next_sync_with_the_first_date
+    ReassignedAway.test_its_notes_are_kept_and_pointed_to
+    MoreThanOnePage.test_more_cards_of_the_member_than_trellos_own_list_holds_are_all_kept
+    Notes.test_no_notes_folder_is_made
+    Notes.test_note_text_is_not_copied_into_the_index_or_the_memory
+    OnlyReads.test_other_peoples_cards_are_not_kept
+    EveryBoard.test_the_boards_searched_are_printed_and_in_the_index
+    Notes.test_the_checksum_printed_is_the_files_own
+    MoreThanOnePage.test_the_counts_are_reported_and_agree
+    ReassignedAway.test_the_counts_include_the_flagged_card
+    CommandLine.test_the_made_up_reassignment_from_the_command_line
+    Archived.test_the_open_count_leaves_archived_cards_out
+    Stretch.test_the_period_can_be_changed
+    Archived.test_the_rule_is_stated_in_the_output_and_in_the_index
+    MoreThanOnePage.test_the_saved_count_is_counted_from_the_text_of_the_index
+    Notes.test_the_sync_runs_with_the_notes_folder_read_only
+
+PLANTED BUG G. A full page with nothing new is taken as the end (criterion 3)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    MoreThanOnePage.test_if_asking_for_older_cards_does_not_work_the_run_stops
+
+PLANTED BUG H. What was found is not compared with Trello's own list of the member's cards (criterion 3)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    MoreThanOnePage.test_a_search_that_missed_cards_is_caught_by_trellos_own_list
+
+PLANTED BUG I. The saved count is not counted from the index: heading rows are counted as cards (criterion 3)
+  unittest result: FAILED (failures=13)
+  tests that failed (13):
+    OnlyReads.test_a_card_name_worded_as_an_order_is_only_a_name
+    CommandLine.test_a_fake_run_from_the_command_line
+    ReassignedAway.test_a_reassigned_card_is_flagged_with_who_has_it_now
+    ReassignedAway.test_a_short_rate_limit_is_waited_out
+    TheMember.test_another_member_on_the_connection_gets_their_own_cards
+    MoreThanOnePage.test_at_trellos_real_limit_a_large_board_is_read_page_by_page
+    MoreThanOnePage.test_more_cards_of_the_member_than_trellos_own_list_holds_are_all_kept
+    EveryBoard.test_only_boards_restricts_and_says_so
+    MoreThanOnePage.test_the_counts_are_reported_and_agree
+    ReassignedAway.test_the_counts_include_the_flagged_card
+    CommandLine.test_the_made_up_reassignment_from_the_command_line
+    MoreThanOnePage.test_the_saved_count_is_counted_from_the_text_of_the_index
+    Notes.test_the_sync_runs_with_the_notes_folder_read_only
+
+PLANTED BUG J. Archived cards are not asked for (criterion 4)
+  unittest result: FAILED (failures=26, errors=25)
+  tests that failed (51):
+    MoreThanOnePage.test_a_board_larger_than_the_limit_takes_several_requests
+    Archived.test_a_card_archived_between_syncs_moves_section_and_is_not_flagged
+    ReassignedAway.test_a_card_assigned_again_goes_back
+    Archived.test_a_card_in_an_archived_list_is_archived_by_list
+    ReassignedAway.test_a_card_left_with_nobody_is_unassigned
+    OnlyReads.test_a_card_name_cannot_break_the_index_table
+    OnlyReads.test_a_card_name_worded_as_an_order_is_only_a_name
+    Archived.test_a_card_on_a_closed_board_is_archived_by_board
+    ReassignedAway.test_a_card_outside_a_restricted_search_is_not_called_reassigned
+    Stretch.test_a_card_that_is_only_the_members_is_not_listed_as_shared
+    ReassignedAway.test_a_deleted_card_is_flagged_as_deleted
+    CommandLine.test_a_fake_run_from_the_command_line
+    Resync.test_a_folder_from_another_source_is_refused
+    TheMember.test_a_folder_holding_another_members_cards_is_refused
+    Resync.test_a_newly_assigned_card_is_added_once
+    Notes.test_a_note_is_pointed_to_from_its_cards_row
+    Notes.test_a_note_with_no_card_is_listed_and_left
+    ReassignedAway.test_a_reassigned_card_is_flagged_with_who_has_it_now
+    Resync.test_a_renamed_card_is_the_same_card
+    Resync.test_a_second_sync_at_a_later_time_changes_only_the_time
+    Resync.test_a_second_sync_of_unchanged_data_adds_nothing
+    ReassignedAway.test_a_short_rate_limit_is_waited_out
+    EveryBoard.test_all_ninety_assigned_cards_are_held_and_no_one_elses
+    Archived.test_an_archived_card_still_assigned_is_included_in_its_own_section
+    TheMember.test_another_member_on_the_connection_gets_their_own_cards
+    Archived.test_archived_cards_are_asked_for
+    Stretch.test_archived_cards_are_not_listed_as_quiet
+    MoreThanOnePage.test_at_trellos_real_limit_a_large_board_is_read_page_by_page
+    Stretch.test_cards_assigned_to_several_members_are_listed_with_the_others
+    EveryBoard.test_cards_from_every_board_are_held
+    ReassignedAway.test_cards_on_a_board_the_member_left_are_flagged_as_not_reachable
+    Stretch.test_cards_quiet_for_thirty_days_are_listed_with_the_days
+    MoreThanOnePage.test_every_card_of_the_large_board_is_held_once
+    Resync.test_first_seen_is_kept
+    ReassignedAway.test_it_is_not_deleted_and_keeps_what_was_known
+    ReassignedAway.test_it_stays_flagged_at_the_next_sync_with_the_first_date
+    ReassignedAway.test_its_notes_are_kept_and_pointed_to
+    MoreThanOnePage.test_more_cards_of_the_member_than_trellos_own_list_holds_are_all_kept
+    Notes.test_no_notes_folder_is_made
+    Notes.test_note_text_is_not_copied_into_the_index_or_the_memory
+    OnlyReads.test_other_peoples_cards_are_not_kept
+    EveryBoard.test_the_boards_searched_are_printed_and_in_the_index
+    Notes.test_the_checksum_printed_is_the_files_own
+    MoreThanOnePage.test_the_counts_are_reported_and_agree
+    ReassignedAway.test_the_counts_include_the_flagged_card
+    CommandLine.test_the_made_up_reassignment_from_the_command_line
+    Archived.test_the_open_count_leaves_archived_cards_out
+    Stretch.test_the_period_can_be_changed
+    Archived.test_the_rule_is_stated_in_the_output_and_in_the_index
+    MoreThanOnePage.test_the_saved_count_is_counted_from_the_text_of_the_index
+    Notes.test_the_sync_runs_with_the_notes_folder_read_only
+
+PLANTED BUG K. A card in an archived list counts as open (criterion 4)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Archived.test_a_card_in_an_archived_list_is_archived_by_list
+    Stretch.test_cards_assigned_to_several_members_are_listed_with_the_others
+    Archived.test_the_open_count_leaves_archived_cards_out
+
+PLANTED BUG L. A card on a closed board counts as open (criterion 4)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Archived.test_a_card_on_a_closed_board_is_archived_by_board
+    Stretch.test_cards_assigned_to_several_members_are_listed_with_the_others
+    Archived.test_the_open_count_leaves_archived_cards_out
+
+PLANTED BUG M. Archived cards are listed and counted with the open ones (criterion 4)
+  unittest result: FAILED (failures=16)
+  tests that failed (16):
+    OnlyReads.test_a_card_name_worded_as_an_order_is_only_a_name
+    CommandLine.test_a_fake_run_from_the_command_line
+    ReassignedAway.test_a_reassigned_card_is_flagged_with_who_has_it_now
+    ReassignedAway.test_a_short_rate_limit_is_waited_out
+    Archived.test_an_archived_card_still_assigned_is_included_in_its_own_section
+    TheMember.test_another_member_on_the_connection_gets_their_own_cards
+    Stretch.test_archived_cards_are_not_listed_as_quiet
+    MoreThanOnePage.test_at_trellos_real_limit_a_large_board_is_read_page_by_page
+    Stretch.test_cards_assigned_to_several_members_are_listed_with_the_others
+    MoreThanOnePage.test_more_cards_of_the_member_than_trellos_own_list_holds_are_all_kept
+    MoreThanOnePage.test_the_counts_are_reported_and_agree
+    ReassignedAway.test_the_counts_include_the_flagged_card
+    CommandLine.test_the_made_up_reassignment_from_the_command_line
+    Archived.test_the_open_count_leaves_archived_cards_out
+    MoreThanOnePage.test_the_saved_count_is_counted_from_the_text_of_the_index
+    Notes.test_the_sync_runs_with_the_notes_folder_read_only
+
+PLANTED BUG N. A renamed card is counted as a new card (criterion 5)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Resync.test_a_renamed_card_is_the_same_card
+
+PLANTED BUG O. The time a card was first seen is replaced at every sync (criterion 5)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Resync.test_first_seen_is_kept
+
+PLANTED BUG P. A card no longer assigned is deleted from the memory (criterion 6)
+  unittest result: FAILED (errors=12)
+  tests that failed (12):
+    ReassignedAway.test_a_card_assigned_again_goes_back
+    ReassignedAway.test_a_card_left_with_nobody_is_unassigned
+    ReassignedAway.test_a_card_outside_a_restricted_search_is_not_called_reassigned
+    ReassignedAway.test_a_deleted_card_is_flagged_as_deleted
+    ReassignedAway.test_a_reassigned_card_is_flagged_with_who_has_it_now
+    ReassignedAway.test_cards_on_a_board_the_member_left_are_flagged_as_not_reachable
+    ReassignedAway.test_it_is_not_deleted_and_keeps_what_was_known
+    ReassignedAway.test_it_stays_flagged_at_the_next_sync_with_the_first_date
+    ReassignedAway.test_its_notes_are_kept_and_pointed_to
+    Notes.test_notes_are_byte_identical_after_first_sync_resync_and_reassignment
+    ReassignedAway.test_the_counts_include_the_flagged_card
+    CommandLine.test_the_made_up_reassignment_from_the_command_line
+
+PLANTED BUG Q. A card no longer assigned is left out of the index (criterion 6)
+  unittest result: FAILED (failures=5)
+  tests that failed (5):
+    ReassignedAway.test_a_reassigned_card_is_flagged_with_who_has_it_now
+    ReassignedAway.test_it_is_not_deleted_and_keeps_what_was_known
+    ReassignedAway.test_its_notes_are_kept_and_pointed_to
+    ReassignedAway.test_the_counts_include_the_flagged_card
+    CommandLine.test_the_made_up_reassignment_from_the_command_line
+
+PLANTED BUG R. A card that is still the member's, on a board not searched, is called reassigned (criterion 6)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    ReassignedAway.test_a_card_outside_a_restricted_search_is_not_called_reassigned
+
+PLANTED BUG S. A deleted card is not recognised (criterion 6)
+  unittest result: FAILED (errors=1)
+  tests that failed (1):
+    ReassignedAway.test_a_deleted_card_is_flagged_as_deleted
+
+PLANTED BUG T. A card assigned again stays flagged (criterion 6)
+  unittest result: FAILED (errors=1)
+  tests that failed (1):
+    ReassignedAway.test_a_card_assigned_again_goes_back
+
+PLANTED BUG U. Reading a notes file adds a line to it (criterion 7)
+  unittest result: FAILED (failures=8, errors=1)
+  tests that failed (9):
+    OnlyReads.test_a_card_name_worded_as_an_order_is_only_a_name
+    ReassignedAway.test_a_rate_limited_run_flags_nothing_and_writes_nothing
+    ReassignedAway.test_a_reassigned_card_is_flagged_with_who_has_it_now
+    ReassignedAway.test_a_short_rate_limit_is_waited_out
+    ReassignedAway.test_if_trello_will_not_say_what_became_of_it_nothing_is_written
+    ReassignedAway.test_its_notes_are_kept_and_pointed_to
+    Notes.test_notes_are_byte_identical_after_first_sync_resync_and_reassignment
+    Notes.test_the_checksum_printed_is_the_files_own
+    Notes.test_the_sync_runs_with_the_notes_folder_read_only
+
+PLANTED BUG V. Writing in the notes folder is no longer refused (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Notes.test_writing_in_the_notes_folder_is_refused
+
+PLANTED BUG W. A folder holding another member's cards is synced into (criterion 1)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    TheMember.test_a_folder_holding_another_members_cards_is_refused
+
+PLANTED BUG X. A folder holding made-up cards may be synced from live Trello (safety)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Resync.test_a_folder_from_another_source_is_refused
+
+PLANTED BUG Y. The key and token are put in the address (safety)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    OnlyReads.test_the_key_and_token_go_in_a_header_and_never_in_the_address
+
+PLANTED BUG Z. The request is not a GET (safety)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    OnlyReads.test_the_skill_has_no_way_to_send_anything_but_a_get
+
+PLANTED BUG AA. A vertical bar in a card name is not escaped in the index (card text is text)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    OnlyReads.test_a_card_name_cannot_break_the_index_table
+
+PLANTED BUG AB. A restricted search does not say so in the index (criterion 2)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    EveryBoard.test_only_boards_restricts_and_says_so
+
+PLANTED BUG AC. A card that is only the member's is listed as shared (the first stretch goal)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Stretch.test_a_card_that_is_only_the_members_is_not_listed_as_shared
+    Stretch.test_cards_assigned_to_several_members_are_listed_with_the_others
+
+PLANTED BUG AD. Archived cards are listed as quiet (the second stretch goal)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Resync.test_a_second_sync_at_a_later_time_changes_only_the_time
+    Resync.test_a_second_sync_of_unchanged_data_adds_nothing
+    Stretch.test_archived_cards_are_not_listed_as_quiet
+
+After the last bug was taken out: sync.py is byte for byte what it was at the start. OK
+
+RESULT: all 30 planted bugs were caught by at least one test, and the file was restored.

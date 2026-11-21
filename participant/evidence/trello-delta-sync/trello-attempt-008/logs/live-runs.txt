@@ -1,0 +1,49 @@
+The real runs: trello-delta-sync, attempt trello-attempt-008
+Run by the participant in their own terminal, against real Trello, read-only, on their sandbox board.
+What each run printed follows, unchanged. The output folders, outside the repository, are shown as SCRATCH and SCRATCH-FULL.
+The sync prints ids, counts and times, and no card, list or board name.
+
+RUN 1. The first sync. No cursor yet, so the whole board is read.
+$ python3 participant/skills/trello-delta-sync/sync.py --source live --board 6afdf376f8b9111df7e27f99 --out SCRATCH
+------------------------------------------------------------------------------
+delta-sync: no cursor yet: this is the first sync of board 6afdf376f8b9111df7e27f99 into SCRATCH. Reading the whole board
+delta-sync: newest activity entry on the board: 6b00b32ea6e47268f6721477, dated 2026-11-20T20:53:02.581Z
+delta-sync: cards on the board: 8. This sync: 8 new, 0 changed, 0 unchanged, 0 no longer on the board
+delta-sync: cursor after this sync: activity entry 6b00b32ea6e47268f6721477, dated 2026-11-20T20:53:02.581Z
+delta-sync: local state digest: fe9b7f740d479bc162ad4fb22cc7055d28928958e218f366f88002de0f46394f (8 cards on the board; 0 more kept that are no longer on it)
+delta-sync: notes: 0 files, opened for reading only. SHA-256 before and after this sync:
+delta-sync: requests made: 4, every one a GET (1 board, 1 activity, 1 lists, 1 all cards)
+delta-sync: written: cards.md, state.json and sync-state.md
+------------------------------------------------------------------------------
+
+Then the participant dragged one card from one list to another in Trello, by hand, and changed nothing else.
+
+RUN 2. The delta sync. The same command.
+------------------------------------------------------------------------------
+delta-sync: cursor before this sync: activity entry 6b00b32ea6e47268f6721477, dated 2026-11-20T20:53:02.581Z
+delta-sync: how stale: the last successful sync was 2026-11-21T01:37:57Z, 0 minutes before now (2026-11-21T01:38:26Z). The cursor's entry is from 2026-11-20T20:53:02.581Z, 4.8 hours before now
+delta-sync: board activity after the cursor: 1 entry, naming 1 card
+delta-sync:   activity: card 6afdf65638df50999c980d80 moved from list 6afdf3957e2f7562515212f7 to list 6afdf3972df276a7f6779970
+delta-sync: cross-check of last-activity times: 8 cards on the board. 0 changed with no activity entry naming them
+delta-sync: fetched in full: 1 card, the ones with new activity. Not fetched: 7
+delta-sync: cards on the board: 8. This sync: 0 new, 1 changed, 7 unchanged, 0 no longer on the board
+delta-sync:   changed: card 6afdf65638df50999c980d80. MOVED to list 6afdf3972df276a7f6779970
+delta-sync: cursor after this sync: activity entry 6b00f60a2539b85786ef5fe1, dated 2026-11-21T01:38:18.552Z
+delta-sync: local state digest: 3593bdce2863ff475a29156b75c8f8506fae5192f80246286a6953237f8e2322 (8 cards on the board; 0 more kept that are no longer on it)
+delta-sync: notes: 0 files, opened for reading only. SHA-256 before and after this sync:
+delta-sync: requests made: 5, every one a GET (1 board, 1 activity, 1 lists, 1 listing, 1 card)
+delta-sync: written: cards.md, state.json and sync-state.md
+------------------------------------------------------------------------------
+
+RUN 3. A full read of the board from nothing, into a second empty folder.
+$ python3 participant/skills/trello-delta-sync/sync.py --source live --board 6afdf376f8b9111df7e27f99 --out SCRATCH-FULL
+------------------------------------------------------------------------------
+delta-sync: no cursor yet: this is the first sync of board 6afdf376f8b9111df7e27f99 into SCRATCH-FULL. Reading the whole board
+delta-sync: newest activity entry on the board: 6b00f60a2539b85786ef5fe1, dated 2026-11-21T01:38:18.552Z
+delta-sync: cards on the board: 8. This sync: 8 new, 0 changed, 0 unchanged, 0 no longer on the board
+delta-sync: cursor after this sync: activity entry 6b00f60a2539b85786ef5fe1, dated 2026-11-21T01:38:18.552Z
+delta-sync: local state digest: 3593bdce2863ff475a29156b75c8f8506fae5192f80246286a6953237f8e2322 (8 cards on the board; 0 more kept that are no longer on it)
+delta-sync: notes: 0 files, opened for reading only. SHA-256 before and after this sync:
+delta-sync: requests made: 4, every one a GET (1 board, 1 activity, 1 lists, 1 all cards)
+delta-sync: written: cards.md, state.json and sync-state.md
+------------------------------------------------------------------------------

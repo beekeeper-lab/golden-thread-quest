@@ -1,0 +1,7 @@
+{
+ "title": "Keyboard shortcut list in the help menu",
+ "description": "People who work without a mouse cannot find out which shortcuts exist. Add a page to the help menu that lists every shortcut, grouped by screen, and open it with the question mark key.",
+ "component": "Help menu",
+ "labels": ["accessibility"],
+ "sources": ["ux-research-2026-10#finding-7"]
+}

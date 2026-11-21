@@ -1,0 +1,132 @@
+Retrieving one card and writing it, then running it again: trello-read-card, attempt trello-attempt-002
+Recorded by scripts/record_evidence.py. Each block between dashed lines is what a script printed.
+The Trello here is participant/skills/trello-read-card/fake_trello.py, a made-up one. No real Trello was read. The card is made up and was
+built to be awkward to save, so nothing is redacted here. What the reader itself removes before saving is
+listed in its output.
+
+==============================================================================
+RUN 1. The file does not exist yet. The card is asked for by its short link.
+$ python3 participant/skills/trello-read-card/card.py --source fake --card FAKEcrd1 --out participant/context/trello/cards/card-sample.md
+------------------------------------------------------------------------------
+CARD READER. Reading only.
+Card: id 62c000000000000000000042, short link FAKEcrd1. The id is what identifies it.
+Fields Trello returned for the card: 34
+  the id, first in the front matter:        1
+  in the front matter, known by name:       15
+  in the body, the description:             1
+  in the preserved section, unchanged:      16
+  not stored, the card's email field:       1 (it held a private address)
+  total accounted for: 34 of 34
+Checklists: 3, with 15 items, 6 complete.
+Comments: 3. Attachments, as references: 2.
+Removed before saving: email addresses removed from text: 2, people reduced to a member id: 2, the card's private email address removed: 1
+File: WRITTEN, 12504 bytes.
+SHA-256 of the file: 527faa06f1cd6de96a45e501aad400d700513d5cc927dfc0f03e0c6480f4eb40
+------------------------------------------------------------------------------
+exit code: 0
+
+  ok   every field Trello returned for the card was accounted for: 34 of 34
+  ok   3 checklists with 15 items, 6 complete, 3 comments and 2 attachments were read
+  ok   the file was written
+  ok   the card is identified by its id, with the short link apart from it (criterion 4)
+  SHA-256 of participant/context/trello/cards/card-sample.md after run 1: 527faa06f1cd6de96a45e501aad400d700513d5cc927dfc0f03e0c6480f4eb40
+
+==============================================================================
+RUN 2. The same card again, with the file now there. This time it is asked for by its id.
+$ python3 participant/skills/trello-read-card/card.py --source fake --card 62c000000000000000000042 --out participant/context/trello/cards/card-sample.md
+------------------------------------------------------------------------------
+CARD READER. Reading only.
+Card: id 62c000000000000000000042, short link FAKEcrd1. The id is what identifies it.
+Fields Trello returned for the card: 34
+  the id, first in the front matter:        1
+  in the front matter, known by name:       15
+  in the body, the description:             1
+  in the preserved section, unchanged:      16
+  not stored, the card's email field:       1 (it held a private address)
+  total accounted for: 34 of 34
+Checklists: 3, with 15 items, 6 complete.
+Comments: 3. Attachments, as references: 2.
+Removed before saving: email addresses removed from text: 2, people reduced to a member id: 2, the card's private email address removed: 1
+File: UNCHANGED. It already holds exactly these 12504 bytes, and was not rewritten.
+SHA-256 of the file: 527faa06f1cd6de96a45e501aad400d700513d5cc927dfc0f03e0c6480f4eb40
+------------------------------------------------------------------------------
+exit code: 0
+
+  SHA-256 of participant/context/trello/cards/card-sample.md after run 2: 527faa06f1cd6de96a45e501aad400d700513d5cc927dfc0f03e0c6480f4eb40
+  ok   the file is byte-identical after the second run: the two SHA-256 values are the same (criterion 6)
+  ok   the reader said the file was unchanged, and did not rewrite it: its modified time has not moved
+  ok   asking by id gave the same file as asking by short link
+
+The first four lines of the file:
+    ---
+    format: "trello-card/1"
+    id: "62c000000000000000000042"
+    shortLink: "FAKEcrd1"
+  ok   the id comes first, and the short link is a separate field after it
+
+The quest's scenario, a checklist of twelve items with five done, as it is in the file:
+    Checklist `64f000000000000000000001`, position `16384`. 5 of 12 items complete.
+    
+    - [x] "Reproduce with the failing file" (item `65a000000000000000000001`, state `complete`, position `16384`)
+    - [x] "Write a failing test" (item `65a000000000000000000002`, state `complete`, position `32768`)
+    - [x] "Fix the quoting" (item `65a000000000000000000003`, state `complete`, position `49152`)
+    - [x] "Run the export tests" (item `65a000000000000000000004`, state `complete`, position `65536`)
+    - [x] "Review" (item `65a000000000000000000005`, state `complete`, position `81920`)
+    - [ ] "Merge" (item `65a000000000000000000006`, state `incomplete`, position `98304`)
+    - [ ] "Build the release candidate" (item `65a000000000000000000007`, state `incomplete`, position `114688`)
+    - [ ] "Smoke test on staging" (item `65a000000000000000000008`, state `incomplete`, position `131072`)
+    - [ ] "Tell the billing team" (item `65a000000000000000000009`, state `incomplete`, position `147456`)
+    - [ ] "Tag the release" (item `65a000000000000000000010`, state `incomplete`, position `163840`)
+    - [ ] "Deploy" (item `65a000000000000000000011`, state `incomplete`, position `180224`)
+    - [ ] "Close the card" (item `65a000000000000000000012`, state `incomplete`, position `196608`)
+  ok   twelve items, five ticked and seven not (criterion 2)
+
+RESULT: ALL CHECKS PASSED. (The checks are on the fake-Trello runs above.)
+
+##############################################################################
+THE SAME ON A REAL TRELLO SANDBOX BOARD
+The blocks below were not made by this script. The participant ran each command in their own
+terminal against a card on their real sandbox board, and saved what it printed. They are copied
+here unchanged from the log files named.
+
+The real card, read for the first time.
+(copied from logs/live-run.txt)
+------------------------------------------------------------------------------
+CARD READER. Reading only.
+Card: id 6afdf65638df50999c980d80, short link p6m0OaAc. The id is what identifies it.
+Fields Trello returned for the card: 61
+  the id, first in the front matter:        1
+  in the front matter, known by name:       15
+  in the body, the description:             1
+  in the preserved section, unchanged:      43
+  not stored, the card's private email:     1
+  total accounted for: 61 of 61
+Checklists: 1, with 3 items, 2 complete.
+Comments: 3. Attachments, as references: 0.
+Removed before saving: nothing
+File: WRITTEN, 9321 bytes.
+SHA-256 of the file: f316b0509c5633c3f61ddc46c3a4a22a78bfe74d51adc24f312089036b1e6474
+
+The file and the output above were searched for the API key and the token: neither found.
+------------------------------------------------------------------------------
+
+The real card, read again.
+(copied from logs/live-run-2.txt)
+------------------------------------------------------------------------------
+CARD READER. Reading only.
+Card: id 6afdf65638df50999c980d80, short link p6m0OaAc. The id is what identifies it.
+Fields Trello returned for the card: 61
+  the id, first in the front matter:        1
+  in the front matter, known by name:       15
+  in the body, the description:             1
+  in the preserved section, unchanged:      43
+  not stored, the card's private email:     1
+  total accounted for: 61 of 61
+Checklists: 1, with 3 items, 2 complete.
+Comments: 3. Attachments, as references: 0.
+Removed before saving: nothing
+File: UNCHANGED. It already holds exactly these 9321 bytes, and was not rewritten.
+SHA-256 of the file: f316b0509c5633c3f61ddc46c3a4a22a78bfe74d51adc24f312089036b1e6474
+
+The file and the output above were searched for the API key and the token: neither found.
+------------------------------------------------------------------------------

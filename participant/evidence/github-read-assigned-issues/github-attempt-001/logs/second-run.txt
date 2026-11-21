@@ -1,0 +1,138 @@
+Two synchronizations in a row. github-read-assigned-issues, attempt github-attempt-001
+Recorded by scripts/record_evidence.py. No request was sent to GitHub. Every repository, issue, comment and login is made up.
+Counted by this script in the made-up GitHub: 149 items assigned to the user, of which 126 issues and 23 pull requests.
+Notes files before the first sync, SHA-256 taken by this script:
+  notes/I_kwFX1010002.md  b063a6db666d0891a2f958e7084f2cad6600e8ec571fc44ee6dfe7c3e005faf3
+  notes/I_kwFX1020012.md  d0db4e472970a85ce33df2a852550535ebbdbf7aff074faf7ebb6f651e44fe8b
+  notes/I_kwFX1050001.md  04061de2cb3ba43aba93ae9a7b1e10d095773c2bce332fde3027a54e5e2c6732
+
+==============================================================================
+PART 1. The first synchronization
+$ python3 participant/skills/github-read-assigned/sync.py --source fake
+------------------------------------------------------------------------------
+github-sync: identity read from the connection: login robin-fixture, user id 9001. GitHub was asked "who am I?". No login is named in the skill or given to it
+github-sync: token scopes GitHub reports: none reported, as for a fine-grained token
+github-sync: scope: every repository GitHub lists an assigned issue in
+github-sync: GitHub's list of items assigned to the user: 149 items in 2 requests (100 + 49). GitHub reported no further page after the last
+github-sync: pull requests left out: 23. Issues: 126. Rule: an item is a pull request when it carries a `pull_request` key, and only then. GitHub's list of assigned items returns issues and pull requests together, and that key is how GitHub marks the pull requests
+github-sync: retrieved 126 issues. GitHub's search declares 126. The totals agree
+github-sync: repositories with an assigned issue: 5
+github-sync:   repository id 101, public: 96 issues, 20 pull requests left out, comments and timelines read in 194 requests
+github-sync:   repository id 102, public: 14 issues, 3 pull requests left out, comments and timelines read in 28 requests
+github-sync:   repository id 103, public: 9 issues, 0 pull requests left out, comments and timelines read in 18 requests
+github-sync:   repository id 104, public: 5 issues, 0 pull requests left out, comments and timelines read in 10 requests
+github-sync:   repository id 105, private: 2 issues, 0 pull requests left out, comments and timelines read in 4 requests
+github-sync: comments read: 135. Added to the local copy: 135, edited: 0, no longer returned and kept: 0
+github-sync: timeline entries read: 145. Kept as material: 8. Added to the local copy: 8
+github-sync: issues held before this sync: 0. This sync: 126 new, 0 changed, 0 unchanged, 0 newly flagged as no longer assigned, 0 assigned again
+github-sync: links held: 2 to pull requests, 2 to commits, 1 to other issues
+github-sync: counts: retrieved 126, of which 0 in unreadable repositories were not recorded or refreshed. Recorded by this sync: 126. Held in all: 126, of which 0 no longer assigned. Rows in the index: 126. Record files: 126. The counts agree
+github-sync: notes: 3 files, opened for reading only. SHA-256 before and after this sync:
+github-sync:   notes/I_kwFX1010002.md  before b063a6db666d0891a2f958e7084f2cad6600e8ec571fc44ee6dfe7c3e005faf3  after b063a6db666d0891a2f958e7084f2cad6600e8ec571fc44ee6dfe7c3e005faf3  same
+github-sync:   notes/I_kwFX1020012.md  before d0db4e472970a85ce33df2a852550535ebbdbf7aff074faf7ebb6f651e44fe8b  after d0db4e472970a85ce33df2a852550535ebbdbf7aff074faf7ebb6f651e44fe8b  same
+github-sync:   notes/I_kwFX1050001.md  before 04061de2cb3ba43aba93ae9a7b1e10d095773c2bce332fde3027a54e5e2c6732  after 04061de2cb3ba43aba93ae9a7b1e10d095773c2bce332fde3027a54e5e2c6732  same
+github-sync: requests made: 258, every one a GET
+github-sync: last successful sync: 2026-11-02T09:00:00Z. Written: participant/context/github/assigned/index.md, 126 records in issues/, delivery-links.md and assigned.json
+------------------------------------------------------------------------------
+exit code: 0
+  ok   exit code 0
+  ok   criterion 1: the identity is the one the made-up GitHub answers with, and the run says so
+  ok   criterion 1: the login is not in sync.py
+  ok   criterion 2: the scope is stated, and all 5 repositories are listed in the index
+  ok   criterion 3: 23 pull requests left out, and none has a record
+  ok   criterion 4: the list took 2 requests, 100 + 49, and GitHub reported no further page
+  ok   criterion 4: retrieved 126, and GitHub's search declared 126
+  ok   the issues this script counted are exactly the ones recorded: 126
+  ok   rows in the index, counted by this script: 126
+  issues numbered 12: I_kwFX1010012 is acme-fixture/platform#12, I_kwFX1020012 is acme-fixture/support#12, I_kwFX1030012 is acme-fixture/design#12
+  ok   criterion 6: three issues are numbered 12, in three repositories, each with its own record file and its own title
+  ok   criterion 7: every comment in the made-up GitHub is held once: 135
+
+==============================================================================
+PART 2. The second synchronization, with nothing changed in the made-up GitHub
+$ python3 participant/skills/github-read-assigned/sync.py --source fake
+------------------------------------------------------------------------------
+github-sync: identity read from the connection: login robin-fixture, user id 9001. GitHub was asked "who am I?". No login is named in the skill or given to it
+github-sync: token scopes GitHub reports: none reported, as for a fine-grained token
+github-sync: scope: every repository GitHub lists an assigned issue in
+github-sync: GitHub's list of items assigned to the user: 149 items in 2 requests (100 + 49). GitHub reported no further page after the last
+github-sync: pull requests left out: 23. Issues: 126. Rule: an item is a pull request when it carries a `pull_request` key, and only then. GitHub's list of assigned items returns issues and pull requests together, and that key is how GitHub marks the pull requests
+github-sync: retrieved 126 issues. GitHub's search declares 126. The totals agree
+github-sync: repositories with an assigned issue: 5
+github-sync:   repository id 101, public: 96 issues, 20 pull requests left out, comments and timelines read in 194 requests
+github-sync:   repository id 102, public: 14 issues, 3 pull requests left out, comments and timelines read in 28 requests
+github-sync:   repository id 103, public: 9 issues, 0 pull requests left out, comments and timelines read in 18 requests
+github-sync:   repository id 104, public: 5 issues, 0 pull requests left out, comments and timelines read in 10 requests
+github-sync:   repository id 105, private: 2 issues, 0 pull requests left out, comments and timelines read in 4 requests
+github-sync: comments read: 135. Added to the local copy: 0, edited: 0, no longer returned and kept: 0
+github-sync: timeline entries read: 145. Kept as material: 8. Added to the local copy: 0
+github-sync: issues held before this sync: 126. This sync: 0 new, 0 changed, 126 unchanged, 0 newly flagged as no longer assigned, 0 assigned again
+github-sync: links held: 2 to pull requests, 2 to commits, 1 to other issues
+github-sync: counts: retrieved 126, of which 0 in unreadable repositories were not recorded or refreshed. Recorded by this sync: 126. Held in all: 126, of which 0 no longer assigned. Rows in the index: 126. Record files: 126. The counts agree
+github-sync: notes: 3 files, opened for reading only. SHA-256 before and after this sync:
+github-sync:   notes/I_kwFX1010002.md  before b063a6db666d0891a2f958e7084f2cad6600e8ec571fc44ee6dfe7c3e005faf3  after b063a6db666d0891a2f958e7084f2cad6600e8ec571fc44ee6dfe7c3e005faf3  same
+github-sync:   notes/I_kwFX1020012.md  before d0db4e472970a85ce33df2a852550535ebbdbf7aff074faf7ebb6f651e44fe8b  after d0db4e472970a85ce33df2a852550535ebbdbf7aff074faf7ebb6f651e44fe8b  same
+github-sync:   notes/I_kwFX1050001.md  before 04061de2cb3ba43aba93ae9a7b1e10d095773c2bce332fde3027a54e5e2c6732  after 04061de2cb3ba43aba93ae9a7b1e10d095773c2bce332fde3027a54e5e2c6732  same
+github-sync: requests made: 258, every one a GET
+github-sync: last successful sync: 2026-11-02T09:00:00Z. Written: participant/context/github/assigned/index.md, 126 records in issues/, delivery-links.md and assigned.json
+------------------------------------------------------------------------------
+exit code: 0
+  ok   exit code 0
+  ok   criterion 4: the same paging summary and the same totals
+  ok   0 new, 0 changed, 126 unchanged
+  ok   criterion 7: 135 comments read, 0 added. No comment or timeline entry is held twice
+  ok   every generated file is byte for byte what the first sync wrote: 129 files, SHA-256 taken by this script
+  ok   criterion 9: every notes file has the SHA-256 it had before the first sync
+  ok   criterion 9: no note text is in the index, the records or the memory
+  ok   criterion 11: the sync time is held for each of 5 repositories and each of 126 issues
+
+==============================================================================
+PART 3. A repository GitHub refuses to show the comments of (criterion 2)
+(inside this script) the made-up GitHub, with repository id 102 answering 403 for comments and timelines
+------------------------------------------------------------------------------
+github-sync: identity read from the connection: login robin-fixture, user id 9001. GitHub was asked "who am I?". No login is named in the skill or given to it
+github-sync: token scopes GitHub reports: none reported, as for a fine-grained token
+github-sync: scope: every repository GitHub lists an assigned issue in
+github-sync: GitHub's list of items assigned to the user: 149 items in 2 requests (100 + 49). GitHub reported no further page after the last
+github-sync: pull requests left out: 23. Issues: 126. Rule: an item is a pull request when it carries a `pull_request` key, and only then. GitHub's list of assigned items returns issues and pull requests together, and that key is how GitHub marks the pull requests
+github-sync: retrieved 126 issues. GitHub's search declares 126. The totals agree
+github-sync: repositories with an assigned issue: 5
+github-sync:   repository id 101, public: 96 issues, 20 pull requests left out, comments and timelines read in 194 requests
+github-sync:   repository id 102, public: COULD NOT BE READ. GitHub refused its comments and timelines (status 403). 14 assigned issues there not recorded or refreshed by this sync
+github-sync:   repository id 103, public: 9 issues, 0 pull requests left out, comments and timelines read in 18 requests
+github-sync:   repository id 104, public: 5 issues, 0 pull requests left out, comments and timelines read in 10 requests
+github-sync:   repository id 105, private: 2 issues, 0 pull requests left out, comments and timelines read in 4 requests
+github-sync: comments read: 135. Added to the local copy: 135, edited: 0, no longer returned and kept: 0
+github-sync: timeline entries read: 145. Kept as material: 8. Added to the local copy: 8
+github-sync: issues held before this sync: 0. This sync: 112 new, 0 changed, 0 unchanged, 0 newly flagged as no longer assigned, 0 assigned again
+github-sync: links held: 2 to pull requests, 2 to commits, 1 to other issues
+github-sync: counts: retrieved 126, of which 14 in unreadable repositories were not recorded or refreshed. Recorded by this sync: 112. Held in all: 112, of which 0 no longer assigned. Rows in the index: 112. Record files: 112. The counts agree
+github-sync: notes: 0 files, opened for reading only. SHA-256 before and after this sync:
+github-sync: requests made: 231, every one a GET
+github-sync: last successful sync: 2026-11-02T09:00:00Z. Written: index.md, 112 records in issues/, delivery-links.md and assigned.json
+------------------------------------------------------------------------------
+exit code: 0
+  | `acme-fixture/support` | `102` | public | 0 | never | **COULD NOT BE READ** (status 403). 14 assigned issues there not refreshed |
+  ok   exit code 0: the other repositories were synchronized
+  ok   the run says the repository could not be read, and how many issues that leaves out
+  ok   the index lists it as not read, with no successful sync
+  ok   126 retrieved, 14 not recorded, 112 recorded
+
+==============================================================================
+PART 4. GitHub's list ends early, and the declared total catches it (criterion 4)
+(inside this script) the made-up GitHub, whose first page of the list says there is no further page
+------------------------------------------------------------------------------
+github-sync: identity read from the connection: login robin-fixture, user id 9001. GitHub was asked "who am I?". No login is named in the skill or given to it
+github-sync: token scopes GitHub reports: none reported, as for a fine-grained token
+github-sync: scope: every repository GitHub lists an assigned issue in
+github-sync: GitHub's list of items assigned to the user: 100 items in 1 request (100). GitHub reported no further page after the last
+github-sync: pull requests left out: 20. Issues: 80. Rule: an item is a pull request when it carries a `pull_request` key, and only then. GitHub's list of assigned items returns issues and pull requests together, and that key is how GitHub marks the pull requests
+github-sync: STOPPED: GitHub's list returned 80 issues assigned to the user, and GitHub's search declares 126. They disagree, so the list cannot be taken as complete.
+github-sync: Nothing was written.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   exit code 1
+  ok   the run says the totals disagree
+  ok   nothing was written
+
+RESULT: ALL CHECKS PASSED. 26 checks.

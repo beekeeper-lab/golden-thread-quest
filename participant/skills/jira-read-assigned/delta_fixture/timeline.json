@@ -1,0 +1,47 @@
+{
+  "about": "Synthetic tickets for the delta-sync quest. No real ticket text. Each moment is what a fake Jira would return at that point in time.",
+  "account_id": "acc-fixture",
+  "moments": [
+    {
+      "name": "moment-0",
+      "what_happened": "Five stories are assigned. Nothing has been synced yet.",
+      "stories": [
+        {"key": "GTQ-201", "summary": "Synthetic story one", "status": "To Do", "updated": "2026-11-01T14:00:00.000+0000", "comments": []},
+        {"key": "GTQ-202", "summary": "Synthetic story two", "status": "To Do", "updated": "2026-11-01T15:30:00.000+0000", "comments": []},
+        {"key": "GTQ-203", "summary": "Synthetic story three", "status": "To Do", "updated": "2026-11-02T08:10:00.000+0000", "comments": []},
+        {"key": "GTQ-204", "summary": "Synthetic story four", "status": "In Progress", "updated": "2026-11-02T08:40:00.000+0000", "comments": ["9001"]},
+        {"key": "GTQ-205", "summary": "Synthetic story five", "status": "To Do", "updated": "2026-11-02T09:00:00.000+0000", "comments": []}
+      ],
+      "others": [{"key": "GTQ-301", "type": "Bug"}]
+    },
+    {
+      "name": "moment-1",
+      "what_happened": "GTQ-202 moved to In Progress. GTQ-204 got a second comment. GTQ-206 was created (its timestamp uses a +1100 offset). GTQ-205 was unassigned.",
+      "stories": [
+        {"key": "GTQ-201", "summary": "Synthetic story one", "status": "To Do", "updated": "2026-11-01T14:00:00.000+0000", "comments": []},
+        {"key": "GTQ-202", "summary": "Synthetic story two", "status": "In Progress", "updated": "2026-11-02T13:20:00.000+0000", "comments": []},
+        {"key": "GTQ-203", "summary": "Synthetic story three", "status": "To Do", "updated": "2026-11-02T08:10:00.000+0000", "comments": []},
+        {"key": "GTQ-204", "summary": "Synthetic story four", "status": "In Progress", "updated": "2026-11-02T13:45:00.000+0000", "comments": ["9001", "9002"]},
+        {"key": "GTQ-206", "summary": "Synthetic story six", "status": "To Do", "updated": "2026-11-03T01:05:00.000+1100", "comments": []}
+      ],
+      "others": [{"key": "GTQ-301", "type": "Bug"}]
+    },
+    {
+      "name": "moment-2",
+      "what_happened": "A late arrival. GTQ-203 was edited at 14:02:30, before the newest timestamp already synced (14:05:00), but Jira's search only shows the edit now.",
+      "stories": [
+        {"key": "GTQ-201", "summary": "Synthetic story one", "status": "To Do", "updated": "2026-11-01T14:00:00.000+0000", "comments": []},
+        {"key": "GTQ-202", "summary": "Synthetic story two", "status": "In Progress", "updated": "2026-11-02T13:20:00.000+0000", "comments": []},
+        {"key": "GTQ-203", "summary": "Synthetic story three, reworded", "status": "To Do", "updated": "2026-11-02T14:02:30.000+0000", "comments": []},
+        {"key": "GTQ-204", "summary": "Synthetic story four", "status": "In Progress", "updated": "2026-11-02T13:45:00.000+0000", "comments": ["9001", "9002"]},
+        {"key": "GTQ-206", "summary": "Synthetic story six", "status": "To Do", "updated": "2026-11-03T01:05:00.000+1100", "comments": []}
+      ],
+      "others": [{"key": "GTQ-301", "type": "Bug"}]
+    },
+    {
+      "name": "moment-3",
+      "what_happened": "Nothing changed since moment-2.",
+      "same_as": "moment-2"
+    }
+  ]
+}

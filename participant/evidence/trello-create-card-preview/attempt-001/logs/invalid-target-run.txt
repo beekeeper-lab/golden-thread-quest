@@ -1,0 +1,79 @@
+Previews that are refused: trello-create-card-preview, attempt trello-attempt-005
+Recorded by scripts/record_evidence.py. A made-up Trello in memory and local files only. No Trello was contacted.
+Each draft below is participant/context/trello/new-card/draft.md with one line changed, made by scripts/make_fixture.py. The draft as it is
+previews as READY: that run is part 2 of logs/preview-run.txt.
+
+==============================================================================
+PART 1. The list exists, on another board. (criteria 1 and 3)
+  Made from draft.md by scripts/make_fixture.py with one line changed: the list is on the support board, not the stated board.
+$ python3 participant/skills/trello-create-card-preview/preview.py --source fake --draft participant/context/trello/new-card/refused/list-on-another-board.md --allowlist participant/context/trello/new-card/sandbox-allowlist.json --boards participant/context/trello/new-card/fixture/boards --state STATE --now 2026-11-20T09:00:00Z --payload-out STATE/payload-refused.md
+------------------------------------------------------------------------------
+REFUSED: the list 81a000000000000000000021 is not on the stated board. The draft says board 80b000000000000000000001, and Trello says the list belongs to board 80b000000000000000000002. The stated board's open lists are: "To do" (81a000000000000000000011), "Doing" (81a000000000000000000012), "Done" (81a000000000000000000013).
+No preview was made, no payload was shown or saved, and nothing has been written to Trello.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   the preview was refused: exit code 1
+  ok   the reason says: is not on the stated board
+  ok   the reason says: Trello says the list belongs to board 80b000000000000000000002
+  ok   the reason names what does exist, so the draft can be put right
+  ok   no payload was shown, none was saved for a write, and no payload file was written
+
+==============================================================================
+PART 2. No list has this id. (criterion 3)
+  Made from draft.md by scripts/make_fixture.py with one line changed: no list has this id.
+$ python3 participant/skills/trello-create-card-preview/preview.py --source fake --draft participant/context/trello/new-card/refused/missing-list.md --allowlist participant/context/trello/new-card/sandbox-allowlist.json --boards participant/context/trello/new-card/fixture/boards --state STATE --now 2026-11-20T09:00:00Z --payload-out STATE/payload-refused.md
+------------------------------------------------------------------------------
+REFUSED: the list 81a000000000000000000099 does not exist (Trello answered 404). The draft must name a list of board 80b000000000000000000001 by its id. The board's open lists are: "To do" (81a000000000000000000011), "Doing" (81a000000000000000000012), "Done" (81a000000000000000000013).
+No preview was made, no payload was shown or saved, and nothing has been written to Trello.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   the preview was refused: exit code 1
+  ok   the reason says: the list 81a000000000000000000099 does not exist (Trello answered 404)
+  ok   the reason names what does exist, so the draft can be put right
+  ok   no payload was shown, none was saved for a write, and no payload file was written
+
+==============================================================================
+PART 3. The list is the archived one, the first on the board by position: the quest's scenario. (criterion 1)
+  Made from draft.md by scripts/make_fixture.py with one line changed: the list is the archived one, which is first by position.
+$ python3 participant/skills/trello-create-card-preview/preview.py --source fake --draft participant/context/trello/new-card/refused/archived-list.md --allowlist participant/context/trello/new-card/sandbox-allowlist.json --boards participant/context/trello/new-card/fixture/boards --state STATE --now 2026-11-20T09:00:00Z --payload-out STATE/payload-refused.md
+------------------------------------------------------------------------------
+REFUSED: the list 81a000000000000000000010, "Old ideas", is archived. A card created there would not be seen on the board. The board's open lists are: "To do" (81a000000000000000000011), "Doing" (81a000000000000000000012), "Done" (81a000000000000000000013).
+No preview was made, no payload was shown or saved, and nothing has been written to Trello.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   the preview was refused: exit code 1
+  ok   the reason says: "Old ideas", is archived
+  ok   the reason says: would not be seen on the board
+  ok   the reason names what does exist, so the draft can be put right
+  ok   no payload was shown, none was saved for a write, and no payload file was written
+
+==============================================================================
+PART 4. A label the board does not have. (criteria 2 and 3)
+  Made from draft.md by scripts/make_fixture.py with one line changed: the board has no label named urgent.
+$ python3 participant/skills/trello-create-card-preview/preview.py --source fake --draft participant/context/trello/new-card/refused/unknown-label.md --allowlist participant/context/trello/new-card/sandbox-allowlist.json --boards participant/context/trello/new-card/fixture/boards --state STATE --now 2026-11-20T09:00:00Z --payload-out STATE/payload-refused.md
+------------------------------------------------------------------------------
+REFUSED: the label "urgent" does not exist on board 80b000000000000000000001. Its named labels are: "bug", "docs", "export", "feature". This preview does not create a label.
+No preview was made, no payload was shown or saved, and nothing has been written to Trello.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   the preview was refused: exit code 1
+  ok   the reason says: the label "urgent" does not exist on board 80b000000000000000000001
+  ok   the reason says: "bug", "docs", "export", "feature"
+  ok   the reason names what does exist, so the draft can be put right
+  ok   no payload was shown, none was saved for a write, and no payload file was written
+
+==============================================================================
+PART 5. A member who is not on the board. (criterion 2)
+  Made from draft.md by scripts/make_fixture.py with one line changed: this member is not on the board.
+$ python3 participant/skills/trello-create-card-preview/preview.py --source fake --draft participant/context/trello/new-card/refused/member-not-on-board.md --allowlist participant/context/trello/new-card/sandbox-allowlist.json --boards participant/context/trello/new-card/fixture/boards --state STATE --now 2026-11-20T09:00:00Z --payload-out STATE/payload-refused.md
+------------------------------------------------------------------------------
+REFUSED: the member 5f0000000000000000000014 is not a member of board 80b000000000000000000001, which has 3. Only a member of the board can be put on its cards.
+No preview was made, no payload was shown or saved, and nothing has been written to Trello.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   the preview was refused: exit code 1
+  ok   the reason says: is not a member of board 80b000000000000000000001
+  ok   the reason names what does exist, so the draft can be put right
+  ok   no payload was shown, none was saved for a write, and no payload file was written
+
+RESULT: ALL CHECKS PASSED. 23 checks.

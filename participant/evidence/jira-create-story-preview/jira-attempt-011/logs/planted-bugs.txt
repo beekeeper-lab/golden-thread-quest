@@ -1,0 +1,184 @@
+Do the tests notice a broken preview? jira-create-story-preview, attempt jira-attempt-011
+Recorded by scripts/planted_bugs.py.
+
+Each bug below was put into participant/skills/jira-create-story-preview/preview.py, every test was run, and the
+bug was taken out again. Only local files are used.
+
+Before any bug: OK
+
+PLANTED BUG A. A missing required field is let through, to be filled by whatever Jira does (criterion 2)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    RequiredFields.test_a_missing_required_field_stops_the_preview_and_is_named
+    RequiredFields.test_every_missing_required_field_is_named
+    RequiredFields.test_nothing_is_written_to_the_payload_file_when_refused
+
+PLANTED BUG B. Only the first missing required field is named (criterion 2)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    RequiredFields.test_every_missing_required_field_is_named
+
+PLANTED BUG C. A required field with a default is not shown as left to Jira (criterion 1)
+  unittest result: FAILED (failures=6)
+  tests that failed (6):
+    RequiredFields.test_a_default_jira_does_not_name_is_said_to_be_unknown
+    ThePreview.test_a_preview_is_saved_with_a_fingerprint_for_a_later_write
+    WhatJiraAllows.test_a_priority_is_sent_by_id_and_must_be_one_jira_offers
+    RequiredFields.test_a_required_field_with_a_default_is_left_to_jira_and_shown
+    ThePreview.test_it_lists_the_project_the_issue_type_and_every_field
+    ThePreview.test_the_payload_file_holds_the_same_payload_field_by_field
+
+PLANTED BUG D. Optional fields that are not sent are left out of the list of every field (criterion 1)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    ThePreview.test_a_draft_with_no_description_sends_none
+    ThePreview.test_it_lists_the_project_the_issue_type_and_every_field
+
+PLANTED BUG E. Only the first page of the field list is read, so later required fields are never checked (criteria 1 and 2)
+  unittest result: FAILED (failures=34)
+  tests that failed (34):
+    Citations.test_a_citation_may_span_lines
+    RequiredFields.test_a_default_jira_does_not_name_is_said_to_be_unknown
+    ThePreview.test_a_draft_with_no_description_sends_none
+    WhatJiraAllows.test_a_field_jira_does_not_take_on_create_is_refused
+    WhatJiraAllows.test_a_field_of_another_kind_than_expected_is_refused
+    Duplicates.test_a_likely_duplicate_is_shown_loudly_and_a_person_still_decides
+    RequiredFields.test_a_missing_required_field_stops_the_preview_and_is_named
+    ThePreview.test_a_preview_is_saved_with_a_fingerprint_for_a_later_write
+    WhatJiraAllows.test_a_priority_is_sent_by_id_and_must_be_one_jira_offers
+    RequiredFields.test_a_required_field_with_a_default_is_left_to_jira_and_shown
+    Duplicates.test_a_stale_catalog_stops_the_preview
+    NothingIsWritten.test_a_story_appearing_during_the_preview_is_refused
+    Citations.test_citations_are_shown_and_counted
+    RequiredFields.test_every_missing_required_field_is_named
+    NothingIsWritten.test_every_request_is_a_get_and_the_snapshot_is_the_same
+    ThePreview.test_it_lists_the_project_the_issue_type_and_every_field
+    Duplicates.test_no_duplicate_says_none
+    CommandLine.test_output_holding_a_credential_is_not_shown_or_saved
+    Duplicates.test_stories_in_jira_that_the_catalog_lacks_are_warned_about
+    Duplicates.test_stories_in_the_catalog_that_jira_lacks_are_said
+    NothingIsWritten.test_story_text_from_jira_is_never_printed
+    Duplicates.test_the_catalog_and_jira_holding_the_same_number_of_stories_is_said
+    Duplicates.test_the_difference_from_the_nearest_story_is_shown
+    Duplicates.test_the_duplicate_search_result_is_shown
+    ThePreview.test_the_field_list_is_read_through_all_its_pages
+    ThePreview.test_the_payload_file_holds_the_same_payload_field_by_field
+    ThePreview.test_the_payload_holds_exactly_the_draft_and_nothing_else
+    ThePreview.test_the_payload_is_built_once_and_turned_into_bytes_in_one_place
+    ThePreview.test_the_payload_shown_is_the_payload_saved_and_hashed
+    PermissionAndAllowlist.test_the_permission_result_is_shown
+    ThePreview.test_the_same_draft_gives_the_same_payload_file
+    Duplicates.test_the_search_leaves_the_catalog_as_it_was
+    CommandLine.test_the_site_is_on_screen_and_not_in_the_saved_log
+    WhatJiraAllows.test_values_jira_does_not_allow_are_refused
+
+PLANTED BUG F. The payload shown is not the payload saved: the saved one gains a field (criterion 5)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    ThePreview.test_the_payload_shown_is_the_payload_saved_and_hashed
+
+PLANTED BUG G. The SHA-256 is taken of something other than the bytes that would be sent (criterion 5)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    ThePreview.test_the_payload_shown_is_the_payload_saved_and_hashed
+
+PLANTED BUG H. The payload is built a second time for the payload file, so the two could differ (criterion 5)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    ThePreview.test_the_payload_is_built_once_and_turned_into_bytes_in_one_place
+
+PLANTED BUG I. A component is sent by name where Jira's example takes an id (criterion 5)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    ThePreview.test_the_payload_holds_exactly_the_draft_and_nothing_else
+
+PLANTED BUG J. A value Jira does not allow is sent anyway (criterion 2 and the schema stretch goal)
+  unittest result: FAILED (errors=2)
+  tests that failed (2):
+    WhatJiraAllows.test_a_priority_is_sent_by_id_and_must_be_one_jira_offers
+    WhatJiraAllows.test_values_jira_does_not_allow_are_refused
+
+PLANTED BUG K. The duplicate search is skipped and reported as none (criterion 3)
+  unittest result: FAILED (failures=4)
+  tests that failed (4):
+    Duplicates.test_a_likely_duplicate_is_shown_loudly_and_a_person_still_decides
+    Duplicates.test_a_stale_catalog_stops_the_preview
+    Duplicates.test_the_difference_from_the_nearest_story_is_shown
+    Duplicates.test_the_duplicate_search_result_is_shown
+
+PLANTED BUG L. A stale catalog is searched without a word (criterion 3)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Duplicates.test_a_stale_catalog_stops_the_preview
+
+PLANTED BUG M. The permission check's answer is ignored (criterion 4)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    PermissionAndAllowlist.test_no_permission_to_create_is_refused
+
+PLANTED BUG N. The allowlist is not applied (safety: sandbox only)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    PermissionAndAllowlist.test_a_project_not_on_the_allowlist_is_refused_after_one_request
+    PermissionAndAllowlist.test_the_same_project_id_on_another_site_is_refused
+
+PLANTED BUG O. The snapshot after the preview is not compared with the one before (criterion 6)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    NothingIsWritten.test_a_story_appearing_during_the_preview_is_refused
+
+PLANTED BUG P. The preview is given a request that is not a GET (criterion 6)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    NothingIsWritten.test_the_preview_has_no_code_that_writes_to_jira
+
+PLANTED BUG Q. Content with no citation is accepted (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Citations.test_content_without_a_citation_is_refused
+
+PLANTED BUG R. A citation is not checked against the file it names (criterion 7)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Citations.test_a_citation_that_is_not_true_is_refused
+    Citations.test_a_source_changed_after_the_draft_was_written_is_caught
+
+PLANTED BUG S. A citation may point at any file on the machine (criterion 7 and safety)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Citations.test_a_citation_that_is_not_true_is_refused
+
+PLANTED BUG T. A refused preview still writes a payload file (criterion 2)
+  unittest result: FAILED (failures=1, errors=1)
+  tests that failed (2):
+    RequiredFields.test_nothing_is_written_to_the_payload_file_when_refused
+    ThePreview.test_the_payload_file_holds_the_same_payload_field_by_field
+
+PLANTED BUG U. The saved log keeps the site's address (safety: redacted records)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    CommandLine.test_the_site_is_on_screen_and_not_in_the_saved_log
+
+PLANTED BUG V. Output is not searched for credentials (safety: no credential in a log)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    CommandLine.test_output_holding_a_credential_is_not_shown_or_saved
+
+PLANTED BUG W. A parent in another project is accepted (schema stretch goal)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    WhatJiraAllows.test_values_jira_does_not_allow_are_refused
+
+PLANTED BUG Y. Stories in Jira that the local catalog lacks are not warned about (criterion 3)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Duplicates.test_stories_in_jira_that_the_catalog_lacks_are_warned_about
+
+PLANTED BUG X. A draft field the preview does not support is ignored without a word (criterion 1)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    WhatJiraAllows.test_a_field_the_preview_does_not_support_is_refused
+
+After the last bug was taken out: preview.py is byte for byte what it was at the start. OK
+
+RESULT: all 25 planted bugs were caught by at least one test, and the file was restored.

@@ -1,0 +1,21 @@
+[Pasted from Beau's terminal, 2026-11-11. The shell prompt on the first line (account, computer name and folder) was replaced with "$" at his request. Nothing else was changed.]
+$ python3 participant/evidence/base-camp-audit-log/base-attempt-002/scripts/run_workflow.py
+Audit log: participant/context/audit-log-all-events.md
+Pretend tracker: a temporary file, removed when this run ends.
+  logged row 1: read
+
+PREVIEW: this is the exact write that would happen:
+  ticket SIM-101: assignee user-a -> user-b
+  logged row 2: preview
+
+Type yes to make this change, anything else to cancel: yes
+Answer received: 'yes'
+  logged row 3: failure
+The write failed: the pretend tracker did not answer in time (code SIM_TIMEOUT).
+  logged row 4: recovery
+The ticket is unchanged (assignee user-a).
+Type yes to try the same change again, anything else to stop: yes
+Answer received: 'yes'
+  logged row 5: confirmed write
+  logged row 6: read
+Finished. Assignee is now user-b.

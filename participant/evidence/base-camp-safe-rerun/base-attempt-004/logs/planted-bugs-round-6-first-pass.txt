@@ -1,0 +1,92 @@
+control  unmodified copy: 72 tests ran, 0 failed
+caught   key-from-title                 key built from the title -> 61 test(s) failed: test_a_single_relabelled_item_among_new_ones_stops_the_run, test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched and 58 more
+caught   key-from-filename              input filename mixed into the key -> 42 test(s) failed: test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched, test_collision_with_an_unusable_twin_leaves_the_record_untouched and 39 more
+caught   key-from-folder                input folder name mixed into the key -> 22 test(s) failed: test_changed_body_updates_in_place, test_collision_with_an_unusable_twin_leaves_the_record_untouched, test_different_ids_stay_different_keys and 19 more
+caught   key-from-position              key built from the item's place in the file -> 32 test(s) failed: test_a_single_relabelled_item_among_new_ones_stops_the_run, test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched and 29 more
+caught   key-has-run-second             run time (seconds) mixed into the key -> 22 test(s) failed: test_changed_body_updates_in_place, test_collision_with_an_unusable_twin_leaves_the_record_untouched, test_different_ids_stay_different_keys and 19 more
+caught   key-has-run-year-time          run year (time.strftime) mixed into the key -> 22 test(s) failed: test_changed_body_updates_in_place, test_collision_with_an_unusable_twin_leaves_the_record_untouched, test_different_ids_stay_different_keys and 19 more
+caught   key-has-run-date-datetime      run date (datetime.now) mixed into the key -> 22 test(s) failed: test_changed_body_updates_in_place, test_collision_with_an_unusable_twin_leaves_the_record_untouched, test_different_ids_stay_different_keys and 19 more
+caught   key-has-run-date-today         run date (date.today) mixed into the key -> 22 test(s) failed: test_changed_body_updates_in_place, test_collision_with_an_unusable_twin_leaves_the_record_untouched, test_different_ids_stay_different_keys and 19 more
+caught   lookup-depends-on-year         keys look right, but existing records are only recognised in the year 2026 -> 1 test(s) failed: test_run_time
+caught   always-create                  no lookup before creating -> 28 test(s) failed: test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched, test_collision_with_an_unusable_twin_leaves_the_record_untouched and 25 more
+caught   changed-item-appended          a changed item is added as a new record -> 8 test(s) failed: test_changed_body_updates_in_place, test_killed_during_an_update_then_rerun, test_mixed_run_counts_match_store and 5 more
+caught   unchanged-item-rewritten       an unchanged item is updated anyway -> 27 test(s) failed: test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched, test_collision_with_an_unusable_twin_leaves_the_record_untouched and 24 more
+caught   unchanged-store-rewritten      the store file is rewritten with the same content on a skip -> 2 test(s) failed: test_killed_during_an_update_then_rerun, test_second_run_changes_nothing
+caught   body-change-missed             only the title is compared, so a body change is skipped -> 7 test(s) failed: test_changed_body_updates_in_place, test_half_written_file_is_cleared_even_when_the_rerun_writes_nothing, test_killed_during_an_update_then_rerun and 4 more
+caught   update-gets-new-record-id      an update gives the record a new record ID -> 2 test(s) failed: test_changed_body_updates_in_place, test_title
+caught   skipped-count-wrong            skipped count is doubled -> 23 test(s) failed: test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched, test_collision_with_an_unusable_twin_leaves_the_record_untouched and 20 more
+caught   created-count-off-by-one       created count starts at one -> 60 test(s) failed: test_a_single_relabelled_item_among_new_ones_stops_the_run, test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched and 57 more
+caught   update-reported-as-skip        an update is reported as a skip -> 7 test(s) failed: test_changed_body_updates_in_place, test_killed_during_an_update_then_rerun, test_mixed_run_counts_match_store and 4 more
+caught   skip-reason-missing            skip lines give no reason -> 1 test(s) failed: test_skip_lines_say_why
+caught   update-fields-missing          update lines name the wrong field -> 1 test(s) failed: test_update_line_names_changed_fields
+caught   untouched-count-wrong          count of records not in the input is inverted -> 2 test(s) failed: test_mixed_run_counts_match_store, test_refused_keys_are_not_counted_as_absent_from_the_input
+caught   sha-before-wrong               the report's fingerprint of the store before the run is made up -> 17 test(s) failed: test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched, test_collision_with_an_unusable_twin_leaves_the_record_untouched and 14 more
+caught   body-in-log-on-create          body text printed when a record is created -> 1 test(s) failed: test_no_title_or_body_text_in_output
+caught   title-in-log-on-update         old title printed when a record is updated -> 1 test(s) failed: test_no_title_or_body_text_in_output
+caught   body-in-log-on-refusal         body text printed when an item is refused -> 1 test(s) failed: test_no_title_or_body_text_in_output
+caught   raw-id-echoed                  a refused ID is printed as it arrived -> 1 test(s) failed: test_id_with_line_break_or_colon_is_refused_and_not_echoed
+caught   case-not-folded                upper and lower case IDs are different keys -> 48 test(s) failed: test_a_single_relabelled_item_among_new_ones_stops_the_run, test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched and 45 more
+caught   spaces-not-trimmed             surrounding spaces are kept in IDs -> 3 test(s) failed: test_near_duplicate_spelling_counts_as_the_same_key, test_sample_collision_file, test_spelling_of_the_id
+caught   id-pattern-not-checked         any characters are allowed in an ID -> 2 test(s) failed: test_id_with_line_break_or_colon_is_refused_and_not_echoed, test_look_alike_characters_are_refused_not_merged
+caught   source-pattern-not-checked     any characters are allowed in a source name -> 2 test(s) failed: test_refused_runs_print_no_input_or_store_text, test_source_name_that_could_blur_keys_stops_the_run
+caught   missing-id-gets-invented-key   an item without an ID gets a made-up key -> 2 test(s) failed: test_item_without_usable_id_is_refused_and_no_key_is_invented, test_sample_collision_file
+caught   number-id-accepted             a number is accepted as an ID -> 1 test(s) failed: test_item_without_usable_id_is_refused_and_no_key_is_invented
+caught   collision-first-wins           of two different items with one key, the first is kept -> 7 test(s) failed: test_collision_on_existing_record_leaves_it_untouched, test_near_duplicate_spelling_counts_as_the_same_key, test_refusal_lines_give_positions and 4 more
+caught   collision-not-detected         two different items with one key are both processed -> 8 test(s) failed: test_collision_on_existing_record_leaves_it_untouched, test_collision_with_an_unusable_twin_leaves_the_record_untouched, test_near_duplicate_spelling_counts_as_the_same_key and 5 more
+caught   non-text-content-accepted      an item whose title is not text is processed -> 2 test(s) failed: test_collision_with_an_unusable_twin_leaves_the_record_untouched, test_item_with_non_text_content_is_refused
+caught   ids-merged-dots-dropped        dots are dropped from IDs, so a.b and ab share a key -> 1 test(s) failed: test_different_ids_stay_different_keys
+caught   ids-merged-underscore-dash     underscore is turned into dash in IDs -> 1 test(s) failed: test_different_ids_stay_different_keys
+caught   ids-merged-cut-to-12           IDs are cut to 12 characters -> 2 test(s) failed: test_different_ids_stay_different_keys, test_id_longer_than_100_characters_is_refused
+caught   ids-merged-cut-to-60           IDs are cut to 60 characters -> 2 test(s) failed: test_different_ids_stay_different_keys, test_id_longer_than_100_characters_is_refused
+caught   ids-merged-zeros-collapsed     runs of zeros in IDs are collapsed -> 19 test(s) failed: test_changed_body_updates_in_place, test_collision_with_an_unusable_twin_leaves_the_record_untouched, test_different_ids_stay_different_keys and 16 more
+caught   ids-merged-leading-zeros       leading zeros in numbers are dropped -> 19 test(s) failed: test_changed_body_updates_in_place, test_collision_with_an_unusable_twin_leaves_the_record_untouched, test_different_ids_stay_different_keys and 16 more
+caught   ids-merged-unicode-folding     Unicode folding (NFKC and casefold) merges look-alike IDs -> 1 test(s) failed: test_look_alike_characters_are_refused_not_merged
+caught   ids-unicode-letters-allowed    letters outside a to z are allowed in IDs -> 1 test(s) failed: test_look_alike_characters_are_refused_not_merged
+caught   id-length-not-checked          an ID of any length is accepted -> 1 test(s) failed: test_id_longer_than_100_characters_is_refused
+caught   collision-compares-body-only   two items with one key and one body but different titles count as a repeat -> 1 test(s) failed: test_same_key_same_body_different_title_is_a_collision
+caught   collision-checks-first-pair-only of three items with one key, only the first two are compared -> 1 test(s) failed: test_three_items_one_key_two_alike_one_different_all_refused
+caught   collision-ignores-unusable-twin an unusable item does not count as a rival for its key -> 1 test(s) failed: test_collision_with_an_unusable_twin_leaves_the_record_untouched
+caught   revision-not-raised            an update does not raise the revision -> 1 test(s) failed: test_update_raises_revision_by_one
+caught   unsaveable-text-not-checked    text that cannot be saved is not refused, so the run fails part-way -> 1 test(s) failed: test_text_that_cannot_be_saved_is_refused_and_the_rest_is_processed
+caught   refused-keys-counted-absent    refused keys are counted as not in the input -> 1 test(s) failed: test_refused_keys_are_not_counted_as_absent_from_the_input
+caught   run-refused-echoes-source      a refused run prints the source name as it arrived -> 1 test(s) failed: test_refused_runs_print_no_input_or_store_text
+caught   run-stopped-prints-error-text  an unexpected failure prints the error's own text -> 1 test(s) failed: test_unexpected_failure_is_reported_without_item_text
+caught   unexpected-failure-not-caught  an unexpected failure ends in a traceback -> 1 test(s) failed: test_unexpected_failure_is_reported_without_item_text
+caught   deep-input-crashes             a very deeply nested input ends in a traceback -> 1 test(s) failed: test_deeply_nested_input_is_refused_without_a_crash
+caught   repeated-field-names-accepted  a field name given twice in the input is accepted (last one wins) -> 1 test(s) failed: test_input_with_a_repeated_field_name_is_refused
+caught   store-record-id-clash-not-checked a store with two records sharing a record ID is used anyway -> 1 test(s) failed: test_hand_edited_store_is_refused
+caught   store-next-number-not-checked  a store whose next record number was set back is used anyway -> 1 test(s) failed: test_hand_edited_store_is_refused
+caught   store-key-pattern-not-checked  a store record with a key of the wrong form is used anyway -> 2 test(s) failed: test_hand_edited_store_is_refused, test_refused_runs_print_no_input_or_store_text
+caught   store-record-id-pattern-not-checked a store record with an odd record ID is used anyway -> 1 test(s) failed: test_hand_edited_store_is_refused
+caught   store-revision-not-checked     a store record with a revision of true or zero is used anyway -> 1 test(s) failed: test_hand_edited_store_is_refused
+caught   source-guard-removed           an unknown source name is accepted without being asked for -> 1 test(s) failed: test_unknown_source_name_is_refused_and_nothing_is_created
+caught   source-guard-ignores-flag      a new source is refused even when asked for -> 10 test(s) failed: test_a_single_relabelled_item_among_new_ones_stops_the_run, test_items_relabelled_to_another_known_source_are_not_created_again, test_new_source_flag_alone_does_not_let_the_same_items_in_again and 7 more
+caught   source-guard-blocks-first-use  a store with no records refuses its first source -> 62 test(s) failed: test_a_single_relabelled_item_among_new_ones_stops_the_run, test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched and 59 more
+caught   source-guard-prefix-match      a source name that starts like a known one counts as known -> 1 test(s) failed: test_unknown_source_name_is_refused_and_nothing_is_created
+caught   source-guard-flag-always-on    the new-source flag is treated as always given -> 1 test(s) failed: test_unknown_source_name_is_refused_and_nothing_is_created
+caught   source-guard-no-hint           the refusal does not say how to allow a new source -> 1 test(s) failed: test_unknown_source_name_is_refused_and_nothing_is_created
+caught   twin-guard-removed             items relabelled to another known source are created again -> 4 test(s) failed: test_a_single_relabelled_item_among_new_ones_stops_the_run, test_items_relabelled_to_another_known_source_are_not_created_again, test_new_source_flag_alone_does_not_let_the_same_items_in_again and 1 more
+caught   twin-guard-ignores-flag        matching items under another source are refused even when asked for -> 2 test(s) failed: test_new_source_flag_alone_does_not_let_the_same_items_in_again, test_relabelled_items_are_allowed_when_asked_for
+caught   twin-guard-flag-always-on      the same-item flag is treated as always given -> 4 test(s) failed: test_a_single_relabelled_item_among_new_ones_stops_the_run, test_items_relabelled_to_another_known_source_are_not_created_again, test_new_source_flag_alone_does_not_let_the_same_items_in_again and 1 more
+caught   twin-guard-matches-id-only     any shared ID under another source stops the run, whatever the content -> 2 test(s) failed: test_new_source_is_allowed_when_asked_for, test_same_ids_with_different_content_under_another_source_are_not_blocked
+caught   twin-guard-matches-content-only any shared title and body under another source stops the run, whatever the ID -> 1 test(s) failed: test_same_title_and_body_under_a_different_id_is_not_blocked
+caught   twin-guard-needs-all-items     the run is stopped only when every item matches -> 2 test(s) failed: test_a_single_relabelled_item_among_new_ones_stops_the_run, test_one_edited_item_among_the_relabelled_ones_is_not_created_either
+SURVIVED twin-guard-checks-own-source   the run's own records count as another source, so a plain rerun is refused -> all 72 tests passed
+caught   twin-guard-prints-content      the refusal prints the matching item's title -> 1 test(s) failed: test_refusal_prints_no_item_content
+caught   twin-guard-no-hint             the refusal does not say how to allow it -> 1 test(s) failed: test_items_relabelled_to_another_known_source_are_not_created_again
+caught   store-repeated-field-names-accepted a store file that gives a field name twice is used (last one wins) -> 1 test(s) failed: test_store_file_with_a_repeated_field_name_is_refused
+caught   link-not-followed              a store given as a link is replaced by a file, and the real store is not updated -> 1 test(s) failed: test_store_reached_through_a_link_updates_the_real_file
+caught   refusal-exit-code-zero         a run with refused items exits 0 -> 12 test(s) failed: test_collision_on_existing_record_leaves_it_untouched, test_collision_with_an_unusable_twin_leaves_the_record_untouched, test_id_with_line_break_or_colon_is_refused_and_not_echoed and 9 more
+caught   store-reset-at-start           the store is emptied at the start of each run -> 38 test(s) failed: test_a_single_relabelled_item_among_new_ones_stops_the_run, test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched and 35 more
+caught   records-not-in-input-deleted   records missing from the input are deleted -> 12 test(s) failed: test_a_single_relabelled_item_among_new_ones_stops_the_run, test_items_relabelled_to_another_known_source_are_not_created_again, test_mixed_run_counts_match_store and 9 more
+Traceback (most recent call last):
+  File "/Users/beaubrown/golden-thread-quest/participant/evidence/base-camp-safe-rerun/base-attempt-004/tests/planted_bugs.py", line 269, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/beaubrown/golden-thread-quest/participant/evidence/base-camp-safe-rerun/base-attempt-004/tests/planted_bugs.py", line 253, in main
+    f.write(apply(source, name, old, new))
+            ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/beaubrown/golden-thread-quest/participant/evidence/base-camp-safe-rerun/base-attempt-004/tests/planted_bugs.py", line 223, in apply
+    assert source.count(old) == 1, "%s: text found %d times, expected once" % (name, source.count(old))
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: damaged-store-overwritten: text found 0 times, expected once

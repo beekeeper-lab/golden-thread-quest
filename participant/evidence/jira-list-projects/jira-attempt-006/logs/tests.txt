@@ -1,0 +1,44 @@
+All tests of the Jira project list: jira-list-projects, attempt jira-attempt-006
+Run from the attempt folder. They use scripts/fake_jira.py and no network.
+
+$ python3 -m unittest discover -s tests -v
+test_a_first_page_that_wrongly_claims_to_be_the_last_stops_the_run (test_projects.EveryProjectAcrossPages) ... ok
+test_exactly_a_full_page_and_exact_multiples_are_read_whole (test_projects.EveryProjectAcrossPages) ... ok
+test_no_projects_at_all_is_an_empty_list_and_not_an_error (test_projects.EveryProjectAcrossPages) ... ok
+test_one_more_than_a_page_is_not_lost (test_projects.EveryProjectAcrossPages) ... ok
+test_pages_that_do_not_move_forward_stop_the_run (test_projects.EveryProjectAcrossPages) ... ok
+test_pages_with_no_count_are_read_to_the_last_page (test_projects.EveryProjectAcrossPages) ... ok
+test_pages_with_no_last_marker_are_read_to_jiras_count (test_projects.EveryProjectAcrossPages) ... ok
+test_projects_past_the_first_page_are_retrieved_and_the_page_count_is_shown (test_projects.EveryProjectAcrossPages) ... ok
+test_when_jira_gives_fewer_to_a_page_than_asked_none_is_skipped (test_projects.EveryProjectAcrossPages) ... ok
+test_a_former_key_and_a_former_name_still_lead_to_the_project (test_projects.FindableByAnyLabel) ... ok
+test_each_lookup_is_sorted_by_its_own_label (test_projects.FindableByAnyLabel) ... ok
+test_every_project_is_in_all_three_lookups_with_its_other_two_labels (test_projects.FindableByAnyLabel) ... ok
+test_a_changed_key_is_matched_to_the_existing_record_and_file (test_projects.Renames) ... ok
+test_a_changed_name_and_a_change_of_both_are_matched_too (test_projects.Renames) ... ok
+test_a_new_project_given_another_projects_old_key_is_a_separate_record (test_projects.Renames) ... ok
+test_an_unchanged_second_run_changes_nothing (test_projects.Renames) ... ok
+test_two_projects_that_swap_keys_stay_the_right_way_round (test_projects.Renames) ... ok
+test_two_projects_with_the_same_name_stay_two (test_projects.Renames) ... ok
+test_a_failed_second_run_leaves_the_first_runs_files_as_they_were (test_projects.Safety) ... ok
+test_a_folder_from_a_fake_run_is_refused_by_a_live_run (test_projects.Safety) ... ok
+test_a_live_run_prints_no_credential_and_no_site_address_even_when_it_fails (test_projects.Safety) ... ok
+test_a_live_run_with_a_missing_variable_stops_and_names_it (test_projects.Safety) ... ok
+test_a_name_cannot_add_structure_to_the_list (test_projects.Safety) ... ok
+test_output_holding_any_one_of_them_is_withheld (test_projects.Safety) ... ok
+test_rejected_credentials_stop_the_run_and_nothing_is_written (test_projects.Safety) ... ok
+test_the_skill_can_only_send_get_requests (test_projects.Safety) ... ok
+test_the_things_searched_for_are_the_token_the_email_the_encoded_pair_and_the_sites_address (test_projects.Safety) ... ok
+test_a_project_id_that_could_not_name_a_file_stops_the_run_before_anything_is_written (test_projects.ThreeFieldsAndFilesById) ... ok
+test_each_record_stores_the_id_the_key_and_the_name_as_separate_fields (test_projects.ThreeFieldsAndFilesById) ... ok
+test_every_link_in_the_list_points_to_a_file_named_by_id (test_projects.ThreeFieldsAndFilesById) ... ok
+test_files_are_named_by_the_id_and_by_nothing_else (test_projects.ThreeFieldsAndFilesById) ... ok
+test_a_project_that_disappears_is_flagged_and_kept_with_its_last_labels (test_projects.Vanished) ... ok
+test_it_is_reported_once_and_is_cleared_if_the_project_comes_back (test_projects.Vanished) ... ok
+test_the_list_does_not_claim_to_know_why_a_project_is_missing (test_projects.Vanished) ... ok
+
+----------------------------------------------------------------------
+Ran 34 tests in 0.186s
+
+OK
+(exit code 0)

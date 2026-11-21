@@ -1,0 +1,271 @@
+Do the tests notice a broken reader or converter? jira-read-story, attempt jira-attempt-007
+Recorded by scripts/planted_bugs.py.
+
+Each bug below was put into scripts/story.py or scripts/adf.py, every test was run, and the bug was
+taken out again. No network is used.
+
+Before any bug: OK
+
+PLANTED BUG A. A custom field whose value is zero or empty is left out of the file  (in story.py)
+  unittest result: FAILED (failures=3, errors=28)
+  tests that failed (31):
+    Formatting.test_a_block_the_converter_does_not_know_is_carried_along_whole
+    IdentityAndSameBytes.test_a_changed_key_changes_one_line_and_not_the_identity
+    TheCheckCanFail.test_a_changed_line_of_code_and_a_lost_sentence_are_noticed
+    IdentityAndSameBytes.test_a_changed_story_is_rewritten
+    Formatting.test_a_code_block_keeps_its_language_and_its_exact_text_even_with_fences_inside
+    EveryField.test_a_custom_field_is_kept_in_the_preserved_section_with_jiras_name_for_it
+    TextStaysText.test_a_description_cannot_fake_the_preserved_section
+    TheCheckCanFail.test_a_dropped_field_is_noticed
+    EveryField.test_a_field_nobody_has_heard_of_is_preserved_and_not_dropped
+    Formatting.test_a_list_inside_a_list_a_start_number_and_a_checklist_survive
+    TheCheckCanFail.test_a_name_or_an_email_address_left_in_is_noticed
+    NothingPrivate.test_a_person_is_an_account_id_wherever_they_turn_up
+    Formatting.test_a_quotation_a_panel_a_rule_a_line_break_and_an_image_survive
+    IdentityAndSameBytes.test_a_second_run_leaves_the_file_byte_identical_and_does_not_rewrite_it
+    EveryField.test_a_story_with_no_description_and_a_plain_text_description
+    TextStaysText.test_a_summary_cannot_add_a_front_matter_line_or_end_the_front_matter
+    TheCheckCanFail.test_a_table_flattened_into_paragraphs_is_noticed
+    Formatting.test_a_table_stays_a_table_with_its_rows_and_a_pipe_does_not_split_a_cell
+    TheCheckCanFail.test_a_wrong_identity_is_noticed
+    NothingPrivate.test_an_email_address_typed_into_text_is_replaced_in_the_body_and_in_a_preserved_field
+    IdentityAndSameBytes.test_asking_by_id_or_by_key_gives_the_same_file
+    EveryField.test_every_field_jira_returned_is_placed_and_the_fidelity_check_passes
+    Formatting.test_headings_bold_italic_code_and_a_link_survive
+    NothingPrivate.test_no_name_email_address_picture_or_site_address_is_in_the_file
+    TextStaysText.test_plain_text_that_looks_like_markdown_does_not_become_structure
+    TheCheckCanFail.test_text_that_became_a_heading_is_noticed
+    IdentityAndSameBytes.test_the_file_holds_nothing_about_when_it_was_made
+    IdentityAndSameBytes.test_the_issue_id_is_the_first_field_and_the_key_is_separate
+    NothingPrivate.test_what_was_removed_is_counted_in_the_file
+    EveryField.test_zero_empty_and_null_stay_what_they_were
+    TheCheckCanFail.test_zero_turned_into_null_is_noticed
+
+PLANTED BUG B. Only custom fields are preserved, so other unfamiliar fields are dropped  (in story.py)
+  unittest result: FAILED (failures=3, errors=28)
+  tests that failed (31):
+    Formatting.test_a_block_the_converter_does_not_know_is_carried_along_whole
+    IdentityAndSameBytes.test_a_changed_key_changes_one_line_and_not_the_identity
+    TheCheckCanFail.test_a_changed_line_of_code_and_a_lost_sentence_are_noticed
+    IdentityAndSameBytes.test_a_changed_story_is_rewritten
+    Formatting.test_a_code_block_keeps_its_language_and_its_exact_text_even_with_fences_inside
+    EveryField.test_a_custom_field_is_kept_in_the_preserved_section_with_jiras_name_for_it
+    TextStaysText.test_a_description_cannot_fake_the_preserved_section
+    TheCheckCanFail.test_a_dropped_field_is_noticed
+    EveryField.test_a_field_nobody_has_heard_of_is_preserved_and_not_dropped
+    Formatting.test_a_list_inside_a_list_a_start_number_and_a_checklist_survive
+    TheCheckCanFail.test_a_name_or_an_email_address_left_in_is_noticed
+    NothingPrivate.test_a_person_is_an_account_id_wherever_they_turn_up
+    Formatting.test_a_quotation_a_panel_a_rule_a_line_break_and_an_image_survive
+    IdentityAndSameBytes.test_a_second_run_leaves_the_file_byte_identical_and_does_not_rewrite_it
+    EveryField.test_a_story_with_no_description_and_a_plain_text_description
+    TextStaysText.test_a_summary_cannot_add_a_front_matter_line_or_end_the_front_matter
+    TheCheckCanFail.test_a_table_flattened_into_paragraphs_is_noticed
+    Formatting.test_a_table_stays_a_table_with_its_rows_and_a_pipe_does_not_split_a_cell
+    TheCheckCanFail.test_a_wrong_identity_is_noticed
+    NothingPrivate.test_an_email_address_typed_into_text_is_replaced_in_the_body_and_in_a_preserved_field
+    IdentityAndSameBytes.test_asking_by_id_or_by_key_gives_the_same_file
+    EveryField.test_every_field_jira_returned_is_placed_and_the_fidelity_check_passes
+    Formatting.test_headings_bold_italic_code_and_a_link_survive
+    NothingPrivate.test_no_name_email_address_picture_or_site_address_is_in_the_file
+    TextStaysText.test_plain_text_that_looks_like_markdown_does_not_become_structure
+    TheCheckCanFail.test_text_that_became_a_heading_is_noticed
+    IdentityAndSameBytes.test_the_file_holds_nothing_about_when_it_was_made
+    IdentityAndSameBytes.test_the_issue_id_is_the_first_field_and_the_key_is_separate
+    NothingPrivate.test_what_was_removed_is_counted_in_the_file
+    EveryField.test_zero_empty_and_null_stay_what_they_were
+    TheCheckCanFail.test_zero_turned_into_null_is_noticed
+
+PLANTED BUG C. The count of fields placed is not checked, and unfamiliar fields are dropped without a word  (in story.py)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Safety.test_a_field_that_could_not_be_placed_stops_the_run
+
+PLANTED BUG D. A person is saved whole, with name, email address and pictures  (in story.py)
+  unittest result: FAILED (failures=7)
+  tests that failed (7):
+    TextStaysText.test_a_description_cannot_fake_the_preserved_section
+    EveryField.test_a_field_nobody_has_heard_of_is_preserved_and_not_dropped
+    NothingPrivate.test_a_person_is_an_account_id_wherever_they_turn_up
+    TextStaysText.test_a_summary_cannot_add_a_front_matter_line_or_end_the_front_matter
+    TextStaysText.test_an_instruction_in_the_story_is_stored_as_content_and_nothing_is_done
+    EveryField.test_every_field_jira_returned_is_placed_and_the_fidelity_check_passes
+    NothingPrivate.test_no_name_email_address_picture_or_site_address_is_in_the_file
+
+PLANTED BUG E. Email addresses typed into text are left in  (in story.py)
+  unittest result: FAILED (failures=6)
+  tests that failed (6):
+    TextStaysText.test_a_description_cannot_fake_the_preserved_section
+    EveryField.test_a_field_nobody_has_heard_of_is_preserved_and_not_dropped
+    TextStaysText.test_a_summary_cannot_add_a_front_matter_line_or_end_the_front_matter
+    NothingPrivate.test_an_email_address_typed_into_text_is_replaced_in_the_body_and_in_a_preserved_field
+    EveryField.test_every_field_jira_returned_is_placed_and_the_fidelity_check_passes
+    NothingPrivate.test_no_name_email_address_picture_or_site_address_is_in_the_file
+
+PLANTED BUG F. Links holding the site's address are left in  (in story.py)
+  unittest result: FAILED (failures=5, errors=1)
+  tests that failed (6):
+    TextStaysText.test_a_description_cannot_fake_the_preserved_section
+    EveryField.test_a_field_nobody_has_heard_of_is_preserved_and_not_dropped
+    TextStaysText.test_a_summary_cannot_add_a_front_matter_line_or_end_the_front_matter
+    TextStaysText.test_an_instruction_in_the_story_is_stored_as_content_and_nothing_is_done
+    EveryField.test_every_field_jira_returned_is_placed_and_the_fidelity_check_passes
+    NothingPrivate.test_what_was_removed_is_counted_in_the_file
+
+PLANTED BUG G. The file records when it was made  (in story.py)
+  unittest result: FAILED (failures=10)
+  tests that failed (10):
+    IdentityAndSameBytes.test_a_changed_key_changes_one_line_and_not_the_identity
+    TextStaysText.test_a_description_cannot_fake_the_preserved_section
+    EveryField.test_a_field_nobody_has_heard_of_is_preserved_and_not_dropped
+    IdentityAndSameBytes.test_a_second_run_leaves_the_file_byte_identical_and_does_not_rewrite_it
+    TextStaysText.test_a_summary_cannot_add_a_front_matter_line_or_end_the_front_matter
+    TextStaysText.test_an_instruction_in_the_story_is_stored_as_content_and_nothing_is_done
+    IdentityAndSameBytes.test_asking_by_id_or_by_key_gives_the_same_file
+    EveryField.test_every_field_jira_returned_is_placed_and_the_fidelity_check_passes
+    IdentityAndSameBytes.test_the_file_holds_nothing_about_when_it_was_made
+    IdentityAndSameBytes.test_the_issue_id_is_the_first_field_and_the_key_is_separate
+
+PLANTED BUG H. The summary is written into the front matter without quotes  (in story.py)
+  unittest result: FAILED (failures=9, errors=15)
+  tests that failed (24):
+    Formatting.test_a_block_the_converter_does_not_know_is_carried_along_whole
+    TheCheckCanFail.test_a_changed_line_of_code_and_a_lost_sentence_are_noticed
+    Formatting.test_a_code_block_keeps_its_language_and_its_exact_text_even_with_fences_inside
+    EveryField.test_a_custom_field_is_kept_in_the_preserved_section_with_jiras_name_for_it
+    TextStaysText.test_a_description_cannot_fake_the_preserved_section
+    TheCheckCanFail.test_a_dropped_field_is_noticed
+    EveryField.test_a_field_nobody_has_heard_of_is_preserved_and_not_dropped
+    Formatting.test_a_list_inside_a_list_a_start_number_and_a_checklist_survive
+    TheCheckCanFail.test_a_name_or_an_email_address_left_in_is_noticed
+    NothingPrivate.test_a_person_is_an_account_id_wherever_they_turn_up
+    Formatting.test_a_quotation_a_panel_a_rule_a_line_break_and_an_image_survive
+    TextStaysText.test_a_summary_cannot_add_a_front_matter_line_or_end_the_front_matter
+    TheCheckCanFail.test_a_table_flattened_into_paragraphs_is_noticed
+    Formatting.test_a_table_stays_a_table_with_its_rows_and_a_pipe_does_not_split_a_cell
+    TheCheckCanFail.test_a_wrong_identity_is_noticed
+    NothingPrivate.test_an_email_address_typed_into_text_is_replaced_in_the_body_and_in_a_preserved_field
+    TextStaysText.test_an_instruction_in_the_story_is_stored_as_content_and_nothing_is_done
+    EveryField.test_every_field_jira_returned_is_placed_and_the_fidelity_check_passes
+    Formatting.test_headings_bold_italic_code_and_a_link_survive
+    TextStaysText.test_plain_text_that_looks_like_markdown_does_not_become_structure
+    TheCheckCanFail.test_text_that_became_a_heading_is_noticed
+    NothingPrivate.test_what_was_removed_is_counted_in_the_file
+    EveryField.test_zero_empty_and_null_stay_what_they_were
+    TheCheckCanFail.test_zero_turned_into_null_is_noticed
+
+PLANTED BUG I. The key is written where the issue id belongs  (in story.py)
+  unittest result: FAILED (failures=8)
+  tests that failed (8):
+    IdentityAndSameBytes.test_a_changed_key_changes_one_line_and_not_the_identity
+    TextStaysText.test_a_description_cannot_fake_the_preserved_section
+    EveryField.test_a_field_nobody_has_heard_of_is_preserved_and_not_dropped
+    TextStaysText.test_a_summary_cannot_add_a_front_matter_line_or_end_the_front_matter
+    TheCheckCanFail.test_a_wrong_identity_is_noticed
+    TextStaysText.test_an_instruction_in_the_story_is_stored_as_content_and_nothing_is_done
+    EveryField.test_every_field_jira_returned_is_placed_and_the_fidelity_check_passes
+    IdentityAndSameBytes.test_the_issue_id_is_the_first_field_and_the_key_is_separate
+
+PLANTED BUG J. An unchanged file is rewritten on every run  (in story.py)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    IdentityAndSameBytes.test_a_second_run_leaves_the_file_byte_identical_and_does_not_rewrite_it
+
+PLANTED BUG K. The reader is given a way to send a write  (in story.py)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Safety.test_the_reader_can_only_send_get_requests_and_sends_one
+
+PLANTED BUG L. A table is flattened into separate paragraphs. This is the quest's scenario  (in adf.py)
+  unittest result: FAILED (failures=5, errors=1)
+  tests that failed (6):
+    EveryField.test_a_field_nobody_has_heard_of_is_preserved_and_not_dropped
+    TextStaysText.test_a_summary_cannot_add_a_front_matter_line_or_end_the_front_matter
+    TheCheckCanFail.test_a_table_flattened_into_paragraphs_is_noticed
+    Formatting.test_a_table_stays_a_table_with_its_rows_and_a_pipe_does_not_split_a_cell
+    Formatting.test_a_table_with_no_header_row_gets_an_empty_one
+    EveryField.test_every_field_jira_returned_is_placed_and_the_fidelity_check_passes
+
+PLANTED BUG M. Typed text is not escaped, so it can become Markdown  (in adf.py)
+  unittest result: FAILED (failures=5)
+  tests that failed (5):
+    EveryField.test_a_story_with_no_description_and_a_plain_text_description
+    Formatting.test_a_table_stays_a_table_with_its_rows_and_a_pipe_does_not_split_a_cell
+    NothingPrivate.test_an_email_address_typed_into_text_is_replaced_in_the_body_and_in_a_preserved_field
+    TextStaysText.test_line_starts_that_would_begin_a_block_are_all_guarded
+    TextStaysText.test_plain_text_that_looks_like_markdown_does_not_become_structure
+
+PLANTED BUG N. A line of typed text that starts like a heading or a list is not guarded  (in adf.py)
+  unittest result: FAILED (failures=7)
+  tests that failed (7):
+    EveryField.test_a_field_nobody_has_heard_of_is_preserved_and_not_dropped
+    EveryField.test_a_story_with_no_description_and_a_plain_text_description
+    TextStaysText.test_a_summary_cannot_add_a_front_matter_line_or_end_the_front_matter
+    EveryField.test_every_field_jira_returned_is_placed_and_the_fidelity_check_passes
+    TextStaysText.test_line_starts_that_would_begin_a_block_are_all_guarded
+    TextStaysText.test_plain_text_that_looks_like_markdown_does_not_become_structure
+    TheCheckCanFail.test_text_that_became_a_heading_is_noticed
+
+PLANTED BUG O. A code block is always fenced with three backticks, whatever it contains  (in adf.py)
+  unittest result: FAILED (failures=4)
+  tests that failed (4):
+    Formatting.test_a_code_block_keeps_its_language_and_its_exact_text_even_with_fences_inside
+    EveryField.test_a_field_nobody_has_heard_of_is_preserved_and_not_dropped
+    TextStaysText.test_a_summary_cannot_add_a_front_matter_line_or_end_the_front_matter
+    EveryField.test_every_field_jira_returned_is_placed_and_the_fidelity_check_passes
+
+PLANTED BUG P. A code block loses its language  (in adf.py)
+  unittest result: FAILED (failures=5)
+  tests that failed (5):
+    Formatting.test_a_code_block_keeps_its_language_and_its_exact_text_even_with_fences_inside
+    TextStaysText.test_a_description_cannot_fake_the_preserved_section
+    EveryField.test_a_field_nobody_has_heard_of_is_preserved_and_not_dropped
+    TextStaysText.test_a_summary_cannot_add_a_front_matter_line_or_end_the_front_matter
+    EveryField.test_every_field_jira_returned_is_placed_and_the_fidelity_check_passes
+
+PLANTED BUG Q. A block the converter does not know is dropped  (in adf.py)
+  unittest result: FAILED (failures=3, errors=1)
+  tests that failed (4):
+    Formatting.test_a_block_the_converter_does_not_know_is_carried_along_whole
+    EveryField.test_a_field_nobody_has_heard_of_is_preserved_and_not_dropped
+    TextStaysText.test_a_summary_cannot_add_a_front_matter_line_or_end_the_front_matter
+    EveryField.test_every_field_jira_returned_is_placed_and_the_fidelity_check_passes
+
+PLANTED BUG R. Only the first paragraph of a list item is kept, so a list inside a list is lost  (in adf.py)
+  unittest result: FAILED (failures=4)
+  tests that failed (4):
+    EveryField.test_a_field_nobody_has_heard_of_is_preserved_and_not_dropped
+    Formatting.test_a_list_inside_a_list_a_start_number_and_a_checklist_survive
+    TextStaysText.test_a_summary_cannot_add_a_front_matter_line_or_end_the_front_matter
+    EveryField.test_every_field_jira_returned_is_placed_and_the_fidelity_check_passes
+
+PLANTED BUG S. A link keeps its text and loses its address  (in adf.py)
+  unittest result: FAILED (failures=5)
+  tests that failed (5):
+    EveryField.test_a_field_nobody_has_heard_of_is_preserved_and_not_dropped
+    TextStaysText.test_a_summary_cannot_add_a_front_matter_line_or_end_the_front_matter
+    EveryField.test_every_field_jira_returned_is_placed_and_the_fidelity_check_passes
+    Formatting.test_headings_bold_italic_code_and_a_link_survive
+    Formatting.test_inline_code_holding_backticks_and_a_link_holding_an_angle_bracket
+
+PLANTED BUG T. A numbered list always starts at 1  (in adf.py)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Formatting.test_a_list_inside_a_list_a_start_number_and_a_checklist_survive
+
+PLANTED BUG U. A pipe character inside a table cell is not escaped  (in adf.py)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Formatting.test_a_table_stays_a_table_with_its_rows_and_a_pipe_does_not_split_a_cell
+
+PLANTED BUG V. An image in the description is dropped  (in adf.py)
+  unittest result: FAILED (failures=4)
+  tests that failed (4):
+    EveryField.test_a_field_nobody_has_heard_of_is_preserved_and_not_dropped
+    Formatting.test_a_quotation_a_panel_a_rule_a_line_break_and_an_image_survive
+    TextStaysText.test_a_summary_cannot_add_a_front_matter_line_or_end_the_front_matter
+    EveryField.test_every_field_jira_returned_is_placed_and_the_fidelity_check_passes
+
+After the last bug was taken out: story.py and adf.py are byte for byte what they were at the start. OK
+
+RESULT: all 22 planted bugs were caught by at least one test, and both files were restored.

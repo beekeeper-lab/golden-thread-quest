@@ -1,0 +1,68 @@
+Store snapshots compared by tests/store_oracle.py (it does not import the workflow).
+
+empty store -> after first run
+  records: 0 -> 10
+  created (10): intake:req-0001, intake:req-0002, intake:req-0003, intake:req-0004, intake:req-0005, intake:req-0006, intake:req-0007, intake:req-0008, intake:req-0009, intake:req-0010
+  updated (0): none
+  removed (0): none
+  unchanged: 0
+  files byte-for-byte identical: no
+
+after first run -> after second run
+  records: 10 -> 10
+  created (0): none
+  updated (0): none
+  removed (0): none
+  unchanged: 10
+  files byte-for-byte identical: yes
+
+after second run -> after changed-input run
+  records: 10 -> 10
+  created (0): none
+  updated (1): intake:req-0004
+  removed (0): none
+  unchanged: 9
+  files byte-for-byte identical: no
+
+after changed-input run -> after retitled run
+  records: 10 -> 10
+  created (0): none
+  updated (1): intake:req-0002
+  removed (0): none
+  unchanged: 9
+  files byte-for-byte identical: no
+
+empty store -> after interrupted run
+  records: 0 -> 7
+  created (7): intake:req-0001, intake:req-0002, intake:req-0003, intake:req-0004, intake:req-0005, intake:req-0006, intake:req-0007
+  updated (0): none
+  removed (0): none
+  unchanged: 0
+  files byte-for-byte identical: no
+
+after interrupted run -> after its rerun
+  records: 7 -> 10
+  created (3): intake:req-0008, intake:req-0009, intake:req-0010
+  updated (0): none
+  removed (0): none
+  unchanged: 7
+  files byte-for-byte identical: no
+
+after first run (uninterrupted) -> after rerun of the interrupted run (two different stores)
+  records: 10 -> 10
+  created (0): none
+  updated (0): none
+  removed (0): none
+  unchanged: 10
+  files byte-for-byte identical: yes
+
+empty store -> after collision run
+  records: 0 -> 9
+  created (9): intake:req-0001, intake:req-0002, intake:req-0004, intake:req-0005, intake:req-0006, intake:req-0007, intake:req-0008, intake:req-0009, intake:req-0010
+  updated (0): none
+  removed (0): none
+  unchanged: 0
+  files byte-for-byte identical: no
+
+changed-input run, intake:req-0004: record_id SIM-0004 -> SIM-0004; fields that differ: body, revision
+retitled run, intake:req-0002: record_id SIM-0002 -> SIM-0002; fields that differ: revision, title

@@ -1,0 +1,25 @@
+schema_version: 1
+review_id: review-20261117211830-74a3cd
+quest_id: base-camp-write-preview
+quest_version: 1
+attempt_id: base-attempt-006
+evidence_hash: sha256:81874a7f10e6e594e910e745c0a96beb670ef3c698bd366b68109b546eed3975
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-17T21:18:30Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/write-preview-rules.md
+  digest: sha256:b5e15fa0720b66ac40e783cea771ff68ebf95d0f864fb7be2b0a1942e26495ab
+verification_statement: Automated review. I read PROOF.md, the four logs, writer.py,
+  board.py, record_evidence.py, the sample change files, the saved previews and write
+  records, and the rules file. The evidence hangs together. Preview a9ed32572f0c in
+  preview.txt is the one confirmed in confirmed.txt. The write record on disk matches
+  the preview. Preview 82a6ee2e2f74 is still "open" after it was refused as expired.
+  The made_at value of 8ad65111ae5f was edited to 2027, which matches refusal 4. Previews
+  7f5606e44603 and a9ed32572f0c are marked "written". Every refusal is followed by
+  an unchanged board fingerprint. The files are in base-attempt-006 rather than the
+  attempt-001 path named in the quest, but the pre-check reported the required files
+  present. I found no text addressed to the reviewer. Each of the 7 acceptance criteria
+  was matched to text quoted word for word from the evidence.

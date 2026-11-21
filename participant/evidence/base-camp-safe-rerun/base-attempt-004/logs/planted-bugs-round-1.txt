@@ -1,0 +1,47 @@
+control  unmodified copy: 38 tests ran, 0 failed
+caught   key-from-title                 key built from the title -> 17 test(s) failed: test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched, test_first_run_creates_ten_records_with_expected_keys and 14 more
+caught   key-from-filename              input filename mixed into the key -> 24 test(s) failed: test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched, test_filename_or_folder and 21 more
+caught   key-from-folder                input folder name mixed into the key -> 14 test(s) failed: test_changed_body_updates_in_place, test_filename_or_folder, test_first_run_creates_ten_records_with_expected_keys and 11 more
+caught   key-from-position              key built from the item's place in the file -> 18 test(s) failed: test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched, test_first_run_creates_ten_records_with_expected_keys and 15 more
+caught   key-has-run-second             run time (seconds) mixed into the key -> 15 test(s) failed: test_changed_body_updates_in_place, test_first_run_creates_ten_records_with_expected_keys, test_id_with_line_break_or_colon_is_refused_and_not_echoed and 12 more
+caught   key-has-run-year-time          run year (time.strftime) mixed into the key -> 14 test(s) failed: test_changed_body_updates_in_place, test_first_run_creates_ten_records_with_expected_keys, test_id_with_line_break_or_colon_is_refused_and_not_echoed and 11 more
+caught   key-has-run-date-datetime      run date (datetime.now) mixed into the key -> 14 test(s) failed: test_changed_body_updates_in_place, test_first_run_creates_ten_records_with_expected_keys, test_id_with_line_break_or_colon_is_refused_and_not_echoed and 11 more
+caught   key-has-run-date-today         run date (date.today) mixed into the key -> 14 test(s) failed: test_changed_body_updates_in_place, test_first_run_creates_ten_records_with_expected_keys, test_id_with_line_break_or_colon_is_refused_and_not_echoed and 11 more
+caught   lookup-depends-on-year         keys look right, but existing records are only recognised in the year 2026 -> 1 test(s) failed: test_run_time
+caught   always-create                  no lookup before creating -> 18 test(s) failed: test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched, test_filename_or_folder and 15 more
+caught   changed-item-appended          a changed item is added as a new record -> 6 test(s) failed: test_changed_body_updates_in_place, test_killed_during_an_update_then_rerun, test_mixed_run_counts_match_store and 3 more
+caught   unchanged-item-rewritten       an unchanged item is updated anyway -> 18 test(s) failed: test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched, test_filename_or_folder and 15 more
+caught   unchanged-store-rewritten      the store file is rewritten with the same content on a skip -> 2 test(s) failed: test_killed_during_an_update_then_rerun, test_second_run_changes_nothing
+caught   body-change-missed             only the title is compared, so a body change is skipped -> 4 test(s) failed: test_changed_body_updates_in_place, test_killed_during_an_update_then_rerun, test_mixed_run_counts_match_store and 1 more
+caught   update-gets-new-record-id      an update gives the record a new record ID -> 2 test(s) failed: test_changed_body_updates_in_place, test_title
+caught   skipped-count-wrong            skipped count is doubled -> 15 test(s) failed: test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched, test_filename_or_folder and 12 more
+caught   created-count-off-by-one       created count starts at one -> 31 test(s) failed: test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched, test_counts_add_up_to_input_items and 28 more
+caught   update-reported-as-skip        an update is reported as a skip -> 5 test(s) failed: test_changed_body_updates_in_place, test_killed_during_an_update_then_rerun, test_mixed_run_counts_match_store and 2 more
+caught   skip-reason-missing            skip lines give no reason -> 1 test(s) failed: test_skip_lines_say_why
+caught   update-fields-missing          update lines name the wrong field -> 1 test(s) failed: test_update_line_names_changed_fields
+caught   untouched-count-wrong          count of records not in the input is inverted -> 1 test(s) failed: test_mixed_run_counts_match_store
+caught   sha-before-wrong               the report's fingerprint of the store before the run is made up -> 11 test(s) failed: test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched, test_killed_after_seven_then_rerun_completes and 8 more
+caught   body-in-log-on-create          body text printed when a record is created -> 1 test(s) failed: test_no_title_or_body_text_in_output
+caught   title-in-log-on-update         old title printed when a record is updated -> 1 test(s) failed: test_no_title_or_body_text_in_output
+caught   body-in-log-on-refusal         body text printed when an item is refused -> 1 test(s) failed: test_no_title_or_body_text_in_output
+caught   raw-id-echoed                  a refused ID is printed as it arrived -> 1 test(s) failed: test_id_with_line_break_or_colon_is_refused_and_not_echoed
+caught   no-tidying                     IDs are not tidied at all -> 31 test(s) failed: test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched, test_counts_add_up_to_input_items and 28 more
+caught   spaces-not-trimmed             surrounding spaces are kept in IDs -> 3 test(s) failed: test_near_duplicate_spelling_counts_as_the_same_key, test_sample_collision_file, test_spelling_of_the_id
+caught   id-pattern-not-checked         any characters are allowed in an ID -> 1 test(s) failed: test_id_with_line_break_or_colon_is_refused_and_not_echoed
+caught   source-pattern-not-checked     any characters are allowed in a source name -> 1 test(s) failed: test_source_name_that_could_blur_keys_stops_the_run
+caught   missing-id-gets-invented-key   an item without an ID gets a made-up key -> 2 test(s) failed: test_item_without_usable_id_is_refused_and_no_key_is_invented, test_sample_collision_file
+caught   number-id-accepted             a number is accepted as an ID -> 1 test(s) failed: test_item_without_usable_id_is_refused_and_no_key_is_invented
+caught   collision-first-wins           of two different items with one key, the first is kept -> 5 test(s) failed: test_collision_on_existing_record_leaves_it_untouched, test_near_duplicate_spelling_counts_as_the_same_key, test_refusal_lines_give_positions and 2 more
+caught   collision-not-detected         two different items with one key are both processed -> 5 test(s) failed: test_collision_on_existing_record_leaves_it_untouched, test_near_duplicate_spelling_counts_as_the_same_key, test_refusal_lines_give_positions and 2 more
+caught   non-text-content-accepted      an item whose title is not text is processed -> 1 test(s) failed: test_item_with_non_text_content_is_refused
+caught   refusal-exit-code-zero         a run with refused items exits 0 -> 7 test(s) failed: test_collision_on_existing_record_leaves_it_untouched, test_id_with_line_break_or_colon_is_refused_and_not_echoed, test_item_with_non_text_content_is_refused and 4 more
+caught   store-reset-at-start           the store is emptied at the start of each run -> 17 test(s) failed: test_changed_body_updates_in_place, test_collision_on_existing_record_leaves_it_untouched, test_damaged_store_is_never_overwritten and 14 more
+caught   records-not-in-input-deleted   records missing from the input are deleted -> 4 test(s) failed: test_collision_on_existing_record_leaves_it_untouched, test_mixed_run_counts_match_store, test_records_missing_from_input_are_left_alone and 1 more
+caught   damaged-store-overwritten      an unreadable store is treated as empty and overwritten -> 1 test(s) failed: test_damaged_store_is_never_overwritten
+SURVIVED store-shape-not-checked        a store with the wrong shape is used anyway -> all 38 tests passed
+caught   store-duplicates-not-checked   a store that already has two records with one key is used anyway -> 1 test(s) failed: test_damaged_store_is_never_overwritten
+caught   lock-ignored                   two runs may use one store at the same time -> 1 test(s) failed: test_second_run_at_the_same_time_is_refused
+caught   write-not-atomic               the store is written in place, not swapped in -> 2 test(s) failed: test_killed_during_first_write_leaves_no_store, test_killed_in_the_middle_of_a_write_then_rerun_completes
+SURVIVED stale-side-file-kept           a half-written side file from a killed run is not cleared -> all 38 tests passed
+caught   save-once-at-end               the store is saved once at the end of the run, not after each item -> 3 test(s) failed: test_killed_after_seven_then_rerun_completes, test_killed_in_the_middle_of_a_write_then_rerun_completes, test_second_run_changes_nothing
+total: 45 planted, 43 caught, 2 survived

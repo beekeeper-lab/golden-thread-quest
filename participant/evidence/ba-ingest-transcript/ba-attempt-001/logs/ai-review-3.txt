@@ -1,0 +1,693 @@
+# Third AI review, the multi-lens re-review, run 2026-10-28 (UTC): eight independent Claude reviewers, each started
+# fresh; every candidate finding checked three ways (does it reproduce, is it real, how much does it matter); a
+# completeness critic and one follow-up round; and a separate synthesizer. 285 agents in all.
+# The reviewers were given the quest, the files (including PROOF.md and the first two review logs) and twelve of
+# the builder's claims to falsify. They were not given the builder's verdict.
+# Everything after the first blank line is the object the review returned, as JSON, with these changes: it is
+# pretty-printed, with a final newline; the transcript's phone number was replaced as in the other logs (with
+# 317-555-0198); internal agent and session IDs were replaced with <agent id> and <session id>; four example phone
+# numbers in other countries' formats, which could belong to real people, were replaced with UK numbers Ofcom
+# reserves for drama, written with similar groupings; and one example address at a domain anyone can register was
+# moved to the reserved .example domain. Line numbers in it refer to the files as they were before the fixes it led
+# to. What changed after this review is listed in PROOF.md.
+
+{
+  "counts": {
+    "lenses_run": 10,
+    "lenses_without_results": [],
+    "candidate_findings": 91,
+    "survived_verification": 63
+  },
+  "synthesis": {
+    "decision": "FIX FIRST",
+    "decision_reason": "Every lens that checked V3 found it fired, and the false statements are confirmed. PROOF.md has false statements at lines 57, 112, 96-97, 97 and 38/103. SKILL.md has false statements in sections 4, 5, 8, 9 and 11. Both review-log headers are false, and K8 is falsified. One confirmed code defect also breaks AC 11. A cue glued to a NOTE, STYLE or REGION block, or a damaged arrow glued to the header or inside cue text, is silently dropped or merged, and the record is still written as complete. PROOF.md:97 says this class was fixed. V2 fires on its wording, but the lenses disagree about it because the value is fictional. Nothing confirmed touches the committed record itself: V4 did not fire, and K1 and K2 hold.\n\nFix before submitting:\n(1) Rewrite PROOF.md:57 to say what happened. The assistant did not act on U-0016. It deleted and regenerated the record and provenance file several times, and it changed the redaction patterns in response to the reviews. Add a note to untrusted-input.txt that its run started from a deliberately cleared folder.\n(2) Remove 317-555-0198 and its variants from untrusted-input.txt:51, test_ingest.py:351, ai-review-1.txt and ai-review-2.txt, or get a waiver from the program owner. Then rewrite PROOF.md:112 to match a grep.\n(3) Make parse_vtt refuse any line containing '-->' or shaped like a timing line when it sits inside a NOTE/STYLE/REGION block, the header block or cue text. Add UNPARSEABLE cases and a planted bug for each new check. The fallback is to narrow SKILL.md:35/:79/:82 and PROOF.md:38/:89/:97.\n(4) Make ai-review-2.txt byte-exact, or reword its header and PROOF.md:31/:94.\n(5) Correct the fix claims in both log headers and PROOF.md:96-97. Fix '317-555-0143ext' with (?!\\d) and a test, or disclose it. Correct the line about what reviewer 2 saw.\n(6) Make SKILL.md §8, PROOF.md:42/:102 and redaction-notes.md:13 match what the redaction code actually catches, or widen the code.\n(7) Refuse cues with two 'Name:' speakers, or narrow SKILL.md:43/:84.\n(8) Fix PROOF.md:38/:103 and SKILL.md §7 on re-ingesting under a new name.\n(9) Correct the wording in SKILL.md §7, §9 and §11 and in PROOF.md:17.\n(10) Make redaction-notes.md:23 agree with the provenance file's capture_source.\n\nAfter any change to ingest.py, regenerate the provenance file so skill_sha256 matches again. A plain re-ingest only reports 'unchanged'. Disclose the regeneration, rerun the suite, and get a fresh independent review of every changed sentence. Beau's own sentence and his own test run are still required after that.",
+    "vetoes": [
+      {
+        "id": "V1",
+        "status": "NOT FIRED",
+        "basis": "Four lenses checked this (redaction-privacy, program-rules, gap-V2, reader-reproducibility), and all OBSERVED the same thing. Emails appear only as example.com, example.org and example.co.uk test fixtures. Phone numbers are in the 555-01xx fiction range, the placeholder 123-456-7890, or the +44 20 7946 drama range. INFERRED, not proven: the names are fictional."
+      },
+      {
+        "id": "V2",
+        "status": "DISAGREEMENT",
+        "basis": "spec-faithfulness, redaction-privacy, program-rules and gap-V2 say it FIRED. fix-regression says NOT FIRED, and parser-attack and reader-reproducibility did not assess it. All agree on the facts (OBSERVED): 317-555-0198, which the record redacts at U-0015, appears in 4 files that 'git add -- participant' would stage. The value is fictional and the meeting is synthetic. The severity verifiers range from Low to Blocking. To settle it, the program owner should rule whether a fictional value redacted from the raw transcript counts as 'unredacted content from it'. Removing the value makes the question moot, and the fix is required anyway because of PROOF.md:112 (V3)."
+      },
+      {
+        "id": "V3",
+        "status": "FIRED",
+        "basis": "Every lens that assessed V3 found it fired, each with reproduced evidence. Key cases: PROOF.md:57 (files deleted, redaction rules changed); PROOF.md:112 (the logs hold about 14 phone-shaped strings); PROOF.md:97, SKILL.md:35/:79 and the ai-review-2 header (cues still silently dropped); ai-review-2.txt:3 and PROOF.md:94 ('exactly as returned', but 3 U+00A0 characters were lost); the review-log headers and PROOF.md:96 ('fixed with tests'); SKILL.md §8 (redaction coverage); SKILL.md:43/:84 (two-speaker Zoom cue attributed with certainty)."
+      },
+      {
+        "id": "V4",
+        "status": "NOT FIRED",
+        "basis": "Three lenses (spec-faithfulness, parser-attack, reader-reproducibility) each compared the record with their own WebVTT parser, not ingest.py. All OBSERVED 24 raw cues against 24 utterances with matching ID order, start, end, speaker, uncertainty flag and words. The only differences are the 3 stated redactions (U-0005, U-0015, U-0022). The raw file has no NOTE block glued to a cue and no '->' lines, so the parser defect does not touch this record."
+      },
+      {
+        "id": "V5",
+        "status": "NOT FIRED",
+        "basis": "parser-attack, program-rules, fix-regression and reader-reproducibility all OBSERVED the same state. Only participant/progress.yaml and participant/ACTIVITY.md are modified, and the only untracked files are in 3 quest folders. The base-camp and jira review.yaml evidence_hash values equal the current hashes, and diff upstream/main...HEAD stays under participant/."
+      }
+    ],
+    "claims": [
+      {
+        "id": "K1",
+        "verdict": "CONFIRMED",
+        "basis": "OBSERVED by every lens: the record's sha256 is 7b8b2607…f4f4, which equals the provenance record_sha256 and the hash both earlier reviews quote. Re-ingesting with the current ingest.py in a temp layout gave a byte-identical record. Note that the file itself was deleted and regenerated with identical bytes (see the PROOF.md:57 finding)."
+      },
+      {
+        "id": "K2",
+        "verdict": "CONFIRMED",
+        "basis": "OBSERVED: ingest.py hashes to 32828b4e…da617, which equals skill_sha256, and a fresh ingest at 01:07:46Z reproduces the provenance file byte for byte. Caveat (program-rules): any code fix will leave this stale, because a re-ingest only reports 'unchanged'."
+      },
+      {
+        "id": "K3",
+        "verdict": "CONFIRMED",
+        "basis": "OBSERVED: .venv/bin/python (3.11) gives 23 passed, 0 failed, exit 0, and an AST count finds 16 UNPARSEABLE entries. Python 3.10 or later and markdown_it are needed: under 3.9 all 23 tests fail, and under system python3 3.15 one test fails with ModuleNotFoundError."
+      },
+      {
+        "id": "K4",
+        "verdict": "CONFIRMED",
+        "basis": "The literal wording holds (OBSERVED by five lenses and the gap-K4 follow-up). A '-->' cue glued to the header is refused at line 2, and a '-->' line inside cue text is refused at line 5, each with exit 2 and nothing written. parser-attack marked K4 FALSIFIED using damaged-arrow ('->') variants. The gap-K4 round showed those variants fall outside K4's wording, so they falsify SKILL.md and PROOF.md (K12) rather than K4."
+      },
+      {
+        "id": "K5",
+        "verdict": "CONFIRMED",
+        "basis": "OBSERVED: x12, ext. 4, EXT 55, U+00A0 and &nbsp; forms are redacted, and '+2 13 21' and '+1 5' are left alone. Outside the claim's wording, '317-555-0143ext', line-wrapped numbers and U+202F separators still leak (see the findings)."
+      },
+      {
+        "id": "K6",
+        "verdict": "CONFIRMED",
+        "basis": "OBSERVED: a_markdown_renderer_shows_the_words_exactly renders with MarkdownIt('commonmark'), compares html.unescape of each blockquote with its input, and fails when escaping is removed. It checks only the quoted text under CommonMark (see the renderer-oracle finding)."
+      },
+      {
+        "id": "K7",
+        "verdict": "CONFIRMED",
+        "basis": "OBSERVED by five lenses: each of the 7 named planted bugs gives 22 passed, 1 failed (exit 1). Other mutants survive (see the test-gap findings)."
+      },
+      {
+        "id": "K8",
+        "verdict": "FALSIFIED",
+        "basis": "claims-audit and reader-reproducibility each extracted the SubagentHandback message from subagents/agent-<agent id>.jsonl and diffed it against the log (OBSERVED). ai-review-2.txt lost 3 U+00A0 characters on lines 52 and 54 and gained a blank line. ai-review-1.txt matches its handback apart from the trailing newline. The other lenses did not assess K8. program-rules killed a related finding as a misreading, but that finding concerned the literal '&nbsp;' text, not the handback diff."
+      },
+      {
+        "id": "K9",
+        "verdict": "CONFIRMED",
+        "basis": "OBSERVED (redaction-privacy, claims-audit, program-rules): detect_proof reports all 7 items detected, and scan_evidence and scan_declared_proof both return []. Caveat: the scan looks for secrets, not contact data, and ingest.py and test_ingest.py are not declared proof, so they are not scanned."
+      },
+      {
+        "id": "K10",
+        "verdict": "CONFIRMED",
+        "basis": "OBSERVED: git diff shows only progress.yaml (one new ba-attempt-001 entry) and one ACTIVITY.md line, both stamped 00:23:26Z. The builder session ran 'gtq action start-quest' at 00:23:24Z. Nothing is staged, and everything else is in the 3 untracked folders."
+      },
+      {
+        "id": "K11",
+        "verdict": "CONFIRMED",
+        "basis": "OBSERVED: git check-ignore -v matches all 6 local-data/transcripts files to .gitignore:9 /local-data/, and git ls-files local-data is empty. INFERRED from reading handin.py:246, which was not run: hand-in stages participant/ only. Caveat: a value redacted from the raw file is copied into staged logs (see the V2 finding)."
+      },
+      {
+        "id": "K12",
+        "verdict": "FALSIFIED",
+        "basis": "OBSERVED false statements in PROOF.md (57, 112, 96-97, 97, 38/103, 17, 94), SKILL.md (§4:35, §5:43, §8:66-73, §9:79/:82/:84/:91, §11:105) and redaction-notes.md (13, 23). See the findings."
+      },
+      {
+        "id": "AC11",
+        "verdict": "FALSIFIED",
+        "basis": "OBSERVED at the skill level: a NOTE-glued cue in a copy of the real raw file with one blank line removed produces a 23-utterance record with status 'written' and exit 0. The committed record is not affected."
+      },
+      {
+        "id": "AC1-AC10, AC12 (committed record)",
+        "verdict": "CONFIRMED",
+        "basis": "spec-faithfulness confirmed each one for the committed record (OBSERVED). The skill-level gaps it and other lenses found (AC 2 attribution, AC 5/7 re-ingest under a new name, AC 12 merged guest labels) are listed as findings."
+      }
+    ],
+    "findings": [
+      {
+        "title": "PROOF.md:57 says the assistant 'did not change the redaction rules or delete any file'; both happened",
+        "severity": "Blocking",
+        "must_fix_before_submit": true,
+        "root_cause": "The sentence is written as an absolute statement about the whole attempt. PROOF.md:96-97 in the same file describe changes to the redaction rules. The record and provenance file were deleted and regenerated (provenance hash 5080c961… → 45ed12… → 47012bc5…). untrusted-input.txt presents the 01:07:46Z run as a first ingest ('Before: no record yet') and does not say the folder had just been cleared.",
+        "reproduction": "OBSERVED: nl -ba PROOF.md shows line 57. grep -n -E '5080c9|45ed12' logs/ai-review-*.txt matches ai-review-1.txt:17 and ai-review-2.txt:25. shasum -a 256 sample-meeting.provenance.yaml gives 47012bc5…. The builder session JSONL <session id>.jsonl has Bash 'rm …sample-meeting.md …sample-meeting.provenance.yaml' at 00:34:58Z, 00:35:22Z, 00:41:32Z and 01:07:45.980Z, the last immediately before the logged run.",
+        "expected_source": "Quest content/quests/ba-ruins/ingest-transcript.md:92 (PROOF.md must explain exactly what the run did with the embedded instruction), AC 8; V3; K12.",
+        "smallest_fix": "Reword the sentence: the assistant did not act on U-0016; during development it deleted and regenerated the record and provenance file to re-record the logs; it changed the redaction patterns only in response to the AI reviews. Add a header line to untrusted-input.txt saying the run started from a deliberately cleared folder.",
+        "reported_by": [
+          "spec-faithfulness",
+          "claims-audit",
+          "program-rules",
+          "fix-regression",
+          "reader-reproducibility"
+        ],
+        "files": [
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/PROOF.md",
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/logs/untrusted-input.txt"
+        ]
+      },
+      {
+        "title": "PROOF.md:112 says the only phone number in the logs is the search term; the logs hold about 14 phone-shaped strings",
+        "severity": "Blocking",
+        "must_fix_before_submit": true,
+        "root_cause": "The sentence was written before the two AI review logs were added to logs/. It repeats ai-review-1.txt:26, which was true at that time.",
+        "reproduction": "OBSERVED: run from the evidence folder, grep -n -o -E '[0-9]{3}[-. –][0-9]{3}[-. –][0-9]{4}|555-01[0-9]{2}|3175550198' logs/*.txt gives 14 matches. untrusted-input.txt:51; ai-review-1.txt:26/40/41 (317-555-0198, 3175550198, 555-0198, (317) 555-0198, 317–555–0198), :43 (123-456-7890) and :26 (+44 20 7946); ai-review-2.txt:10/51/52 (555-0198, 317-555-0198x12, 317-555-0143, 317 555 0148). No '@' appears in any log, so the email half of the sentence holds.",
+        "expected_source": "PROOF.md:112 text; K12; V3.",
+        "smallest_fix": "After the next finding's fix, rewrite the sentence to match a grep. For example: the logs contain no email address and no phone number from the transcript, and the AI review logs quote made-up test numbers. Rerun the grep and record it.",
+        "reported_by": [
+          "spec-faithfulness",
+          "parser-attack",
+          "redaction-privacy",
+          "claims-audit",
+          "program-rules",
+          "fix-regression",
+          "reader-reproducibility",
+          "gap-V2"
+        ],
+        "files": [
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/PROOF.md"
+        ]
+      },
+      {
+        "title": "The raw transcript's redacted phone value 317-555-0198 is in 4 files that hand-in would stage",
+        "severity": "Blocking",
+        "must_fix_before_submit": true,
+        "root_cause": "untrusted-input.txt proves the number is absent by grepping for the literal value. The test fixture reuses the transcript's number. Both AI review logs quote it and variants of it.",
+        "reproduction": "OBSERVED: git status --porcelain --untracked-files=all -- participant | cut -c4- | xargs grep -nF -- '317-555-0198' matches ai-review-1.txt:26, ai-review-2.txt:51, untrusted-input.txt:51 and test_ingest.py:351. The source is local-data/transcripts/2026-10-21-checkout-refinement.vtt:64, which is git-ignored, and the record shows \\[REDACTED:PHONE\\] at U-0015. git check-ignore exits 1 on all four files, and handin.py:246 runs git add -- participant.",
+        "expected_source": "V2 wording; quest proof item injection-record ('Save the redacted record…'); PILOT.md:90 ('write [REDACTED] where the value was'). Severity follows the program-rules verifier: V2 fires as written, and only the owner can waive it. Other verifiers rated it Medium or Low because the value is fictional (DISAGREEMENT).",
+        "smallest_fix": "Count with a pattern instead of the literal (grep -cE '[0-9]{3}[-. ][0-9]{3}[-. ][0-9]{4}' on the record and provenance file, expecting 0). Use a different 555-01xx number at test_ingest.py:351. Replace the value in both review logs with a marker and say so in each header; this conflicts with 'exactly as returned' (K8). The alternative is an explicit waiver from the program owner.",
+        "reported_by": [
+          "spec-faithfulness",
+          "parser-attack",
+          "redaction-privacy",
+          "program-rules",
+          "fix-regression",
+          "gap-V2",
+          "reader-reproducibility"
+        ],
+        "files": [
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/logs/untrusted-input.txt",
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/logs/ai-review-1.txt",
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/logs/ai-review-2.txt",
+          "participant/skills/ba-ingest-transcript/tests/test_ingest.py"
+        ]
+      },
+      {
+        "title": "Cues glued to a NOTE, STYLE or REGION block, or behind a damaged arrow, are silently dropped or merged and the record is written as complete",
+        "severity": "Blocking",
+        "must_fix_before_submit": true,
+        "root_cause": "ingest.py:177-178 skips a NOTE/STYLE/REGION block with 'continue' and checks none of its lines. The header-block check (lines 170-173) and the cue-text check (lines 194-197) test only for the literal '-->'. LOOKS_LIKE_TIMING is applied only at the start of a block.",
+        "reproduction": "OBSERVED on byte-identical copies (sha 32828b4e…). (1) sed '5d' of the real raw .vtt removes the blank line after its NOTE; the run reports 'written', 'utterances 23', exit 0, and U-0001 becomes 00:00:07.300, so Priya's opening line is gone and every later ID shifts. (2) 'WEBVTT\\n\\nNOTE a comment\\n00:00:01.000 --> 00:00:02.000\\n<v Ada Example>…' drops that cue and writes the record; STYLE and REGION behave the same. (3) 'WEBVTT\\n00:00:01.000 -> 00:00:02.000\\n<v Ann>First cue text\\n\\n00:00:03.000 --> …' writes 1 utterance, and the first cue is gone. (4) A '->' timing line inside cue text merges two cues; in the 'Name:' form, Ben's words are recorded under Ada as certain.",
+        "expected_source": "Quest AC 11 (no partial record that appears complete) and AC 1. SKILL.md:35 'Cues are never merged or split'. SKILL.md:79 'If any part fails, it reports UNPARSEABLE… writes nothing'. SKILL.md:82 'a timing line or timestamp it cannot read'. PROOF.md:38, :89 and :97 ('reproduced and fixed'). ai-review-2.txt header line 4. The severity verifiers split between High and Blocking; Blocking is used because PROOF.md:97 fires V3. gap-K4 rated the damaged-arrow-only variant Medium.",
+        "smallest_fix": "In parse_vtt, raise Unparseable at any line inside a NOTE/STYLE/REGION block, the header block or cue text that contains '-->' or matches LOOKS_LIKE_TIMING. Add inputs (1) to (4) to UNPARSEABLE, with a planted bug for each new check. Then regenerate the provenance so skill_sha256 matches; the record bytes should stay 7b8b2607…. Disclose the regeneration.",
+        "reported_by": [
+          "spec-faithfulness",
+          "parser-attack",
+          "claims-audit",
+          "test-quality",
+          "fix-regression",
+          "reader-reproducibility",
+          "gap-K4"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/ingest.py",
+          "participant/skills/ba-ingest-transcript/SKILL.md",
+          "participant/skills/ba-ingest-transcript/tests/test_ingest.py",
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/PROOF.md",
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/logs/ai-review-2.txt"
+        ]
+      },
+      {
+        "title": "ai-review-2.txt is not 'exactly as it was returned': 3 non-breaking spaces became ordinary spaces",
+        "severity": "Blocking",
+        "must_fix_before_submit": true,
+        "root_cause": "Writing the report to disk turned U+00A0 into U+0020 and added a blank line. A shell heredoc is the likely cause (INFERRED). The change alters what review finding 4's first example shows.",
+        "reproduction": "OBSERVED: the SubagentHandback input.message was extracted from subagents/agent-<agent id>.jsonl row 208 (01:04:16.879Z). diff r2.txt <(tail -n +6 logs/ai-review-2.txt) | cat -v shows an added blank line, and lines 52 and 54 have 'M-BM- ' (U+00A0) in the handback where the log has plain spaces. LC_ALL=C grep -c $'\\xc2\\xa0' finds U+00A0 on 2 lines of the handback and 0 in the log.",
+        "expected_source": "ai-review-2.txt:3; PROOF.md:31 and :94; K8; V3.",
+        "smallest_fix": "Write the handback bytes exactly: restore the 3 U+00A0 characters and drop the added blank line. Otherwise state in the header and in PROOF.md:94 that the non-breaking spaces were normalized. If the phone-value fix redacts this log, the header must say that instead.",
+        "reported_by": [
+          "claims-audit",
+          "reader-reproducibility"
+        ],
+        "files": [
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/logs/ai-review-2.txt",
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/PROOF.md"
+        ]
+      },
+      {
+        "title": "Log headers and PROOF.md:96-97 overstate how the earlier review findings were fixed, including review 2's still-leaking example",
+        "severity": "Blocking",
+        "must_fix_before_submit": true,
+        "root_cause": "The handling is summarized as 'fixed with tests'. In fact some fixes were partial, some have no test, and one missed the reviewer's own example: the trailing (?!\\w) at ingest.py:58 still blocks 'ext' with no digits. The independence line also misstates what reviewer 2 saw.",
+        "reproduction": "OBSERVED: redact('317-555-0143ext',{}) returns it unchanged, and that is review 2 finding 4's second example. 3175550198, 555-0198 and 317–555–0198 are unchanged, and 123-456-7890 is still redacted, so review 1 Medium 2 was fixed only for '+2 13 21'. Reverting first.strip() in ('STYLE','REGION') still gives 23 passed. Review 2 finding 5 was a docstring change only. Review 2's prompt contained the builder's claim, and the review quotes PROOF.md's 'It approved' paragraph at ai-review-2.txt:47.",
+        "expected_source": "ai-review-1.txt:3; ai-review-2.txt:3-4; PROOF.md:96-97; V3; K12.",
+        "smallest_fix": "Change (?!\\w) to (?!\\d) after the last digit group and add '317-555-0143ext' to the redaction test. Reword the headers and PROOF.md:96-97 to name which items were fixed, which have tests, and which became listed limitations. Say reviewer 2 saw the claim and PROOF.md's summary of review 1.",
+        "reported_by": [
+          "claims-audit",
+          "test-quality",
+          "program-rules",
+          "fix-regression",
+          "reader-reproducibility"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/ingest.py",
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/logs/ai-review-1.txt",
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/logs/ai-review-2.txt",
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/PROOF.md"
+        ]
+      },
+      {
+        "title": "SKILL.md §8, PROOF.md:42/:102 and redaction-notes.md:13 overstate what redaction catches",
+        "severity": "Blocking",
+        "must_fix_before_submit": true,
+        "root_cause": "The '+' alternative requires 2-4 digit groups and has no '(0)'. The separator class has no newline and no Unicode spaces other than U+00A0. The email pattern is ASCII only. transcript_id is never redacted.",
+        "reproduction": "OBSERVED: redact(x,{}) leaves these unchanged: '+44 7 70 09 00 12 3', '+44 2 0794 6095 8', '+44 7 700 900 045', '+44 (0)20 7946 0958', '+44 7-7009-0006-7', 'josé@example.com', 'jane@exämple.example', '317 555 0150'. End to end, a cue wrapping '317 555' / '0198' across lines gives 'redacted 0 … phone number(s)'. transcript_id 'tr-call-317-555-0177' passes the ID pattern and appears unredacted at record lines 3 and 20 and provenance line 2.",
+        "expected_source": "SKILL.md §8 (:66 'wherever they appear… every value copied into the provenance file'; :69 'international numbers written with a leading +'; 'ordinary or non-breaking spaces'; :71 the 8-digit rule; :73 the miss list). PROOF.md:42 and :102. redaction-notes.md:13. AC 9. The wrapped-number and transcript_id verifiers rated those parts Medium and Low.",
+        "smallest_fix": "Either widen the patterns (allow 1-digit groups while keeping the 8-digit floor, an optional '(0)', newline and Unicode spaces as separators, and refuse a transcript_id that matches a redaction pattern) and add tests, or list every one of these misses in SKILL.md §8, PROOF.md:102 and redaction-notes.md.",
+        "reported_by": [
+          "redaction-privacy",
+          "fix-regression",
+          "reader-reproducibility",
+          "claims-audit",
+          "spec-faithfulness"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/SKILL.md",
+          "participant/skills/ba-ingest-transcript/ingest.py",
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/PROOF.md",
+          "participant/context/transcripts/redaction-notes.md"
+        ]
+      },
+      {
+        "title": "A Zoom-style cue with two 'Name:' speakers is attributed with certainty to the first speaker",
+        "severity": "Blocking",
+        "must_fix_before_submit": true,
+        "root_cause": "split_speaker matches PREFIX_LABEL only at the start of the cue body. The multi-speaker refusal covers voice tags only, and text outside a voice span is attributed to that voice.",
+        "reproduction": "OBSERVED: 'WEBVTT\\n\\n00:00:01.000 --> 00:00:02.000\\nAda Example: I will take the story.\\nBen Example: No, I will.\\n' is written as 1 utterance by Ada Example, marked certain, and its text includes 'Ben Example: No, I will.' The voice-tag form of the same cue is refused at line 3. '<v Ada Example>Hi</v>\\nBen Example: No' is also attributed to Ada as certain.",
+        "expected_source": "AC 2 (uncertain speakers marked, not guessed); SKILL.md:43 'never guesses'; SKILL.md:84 refuses a cue 'with two different speakers'. The reporter rated it Medium; the severity verifier rated it Blocking via V3.",
+        "smallest_fix": "Raise Unparseable when a later line of a cue starts with a different listed or generic 'Name: ' label, or when a voice tag appears together with a prefix label or text outside its span, and add a test. Or narrow SKILL.md:84 to voice tags and list this case as a limitation.",
+        "reported_by": [
+          "parser-attack"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/ingest.py",
+          "participant/skills/ba-ingest-transcript/SKILL.md"
+        ]
+      },
+      {
+        "title": "Re-ingesting under another --out name duplicates the transcript, and a corrected transcript reuses the same citation keys",
+        "severity": "High",
+        "must_fix_before_submit": true,
+        "root_cause": "Duplicates are checked only at the --out path. transcript_id comes from the meeting file, and SKILL.md §7 tells the user to ingest a changed transcript 'under a new name' without saying the ID must change too.",
+        "reproduction": "OBSERVED in a temp layout holding the committed record. Ingesting the same raw file to checkout-refinement.md reports 'written' with 24 utterances, a second full copy. A transcript with one word changed, ingested to sample-meeting-v2.md, also reports 'written'. All three records then say transcript_id tr-2026-10-21-checkout-refinement, so #U-0003 resolves to two different texts.",
+        "expected_source": "AC 5 (cite without relying on filenames); AC 7 (no duplicate utterances); PROOF.md:38 'A citation never depends on… a filename'; PROOF.md:103 'its IDs are a new series'; SKILL.md:62.",
+        "smallest_fix": "Refuse when another record in participant/context/transcripts/ already has the same transcript_id or source_sha256. Say in SKILL.md §7 that a corrected transcript needs a new transcript_id. Correct PROOF.md:103.",
+        "reported_by": [
+          "spec-faithfulness"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/ingest.py",
+          "participant/skills/ba-ingest-transcript/SKILL.md",
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/PROOF.md"
+        ]
+      },
+      {
+        "title": "Other false wording in SKILL.md §7, §9 and §11 and in PROOF.md:17",
+        "severity": "Medium",
+        "must_fix_before_submit": true,
+        "root_cause": "These sentences describe intended behavior more broadly than the code and tests deliver. Each item has low impact on its own and the fix is wording only. It is still required because V3 names SKILL.md and PROOF.md. One verifier rated the group Blocking under the veto rule; Medium follows the test-quality and reader-reproducibility verifiers.",
+        "reproduction": "OBSERVED. (a) '<v Ada Example>   indented start' is recorded as 'indented start', against §7's 'three exceptions, all stated here'. (b) A non-UTF-8 file and a file with no cues give UNPARSEABLE without a line number, against §9's 'the line number'. (c) Patching os.replace to send SIGTERM leaves .ingest-*.tmp files that git does not ignore, against §9's 'temporary files are always deleted'. (d) An AST pass finds 3 of 23 tests citing no AC, against §11's 'which each test cites' and PROOF.md:17. (e) A normal run creates an ignored __pycache__/ingest.cpython-311.pyc, against §11's 'write only to temporary folders'. (f) verbatim_text_survives_markdown_rendering renders nothing, but PROOF.md's AC 1 row cites it as rendering evidence.",
+        "expected_source": "K12; V3 (literal).",
+        "smallest_fix": "Reword: 'leading and trailing spaces are dropped'; 'the line number where there is one'; 'deleted unless the process is killed', with that case added to PROOF.md's limitations; '20 tests cite ACs, 3 check SKILL.md behavior, and refusal checks use the script's wording'. Set sys.dont_write_bytecode or mention the cache. Rename the read-back test or drop it from the AC 1 rendering evidence.",
+        "reported_by": [
+          "claims-audit",
+          "test-quality",
+          "redaction-privacy",
+          "program-rules",
+          "fix-regression",
+          "reader-reproducibility"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/SKILL.md",
+          "participant/skills/ba-ingest-transcript/tests/test_ingest.py",
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/PROOF.md"
+        ]
+      },
+      {
+        "title": "The provenance file's capture_source describes a recording that redaction-notes.md says does not exist",
+        "severity": "Medium",
+        "must_fix_before_submit": true,
+        "root_cause": "The meeting file describes a synthetic 'recording' written 'by hand', while the notes and PROOF.md:7 describe an AI-written transcript with no recording. redaction-notes.md:11 also gives Jordan's lack of consent as the reason for a redaction, while :17 keeps Jordan's name in the record.",
+        "reproduction": "OBSERVED: sample-meeting.provenance.yaml:15 'Recording of a fictional video meeting. The meeting and recording are synthetic…'; :16 '(simulated: written by hand in that format)'; redaction-notes.md:23 'Because the meeting is synthetic, there is no recording.'",
+        "expected_source": "AC 4 (the provenance names the capture source and tool); K12. program-rules rated this Medium, must fix; reader-reproducibility rated it Low, not must fix (DISAGREEMENT).",
+        "smallest_fix": "Reword redaction-notes.md:23 to say the recording is notional and the WebVTT text was written by the AI at Beau's direction, and reconcile :11 with :17. This needs no regeneration. Changing the meeting file instead would force a regenerated provenance file, which would have to be disclosed.",
+        "reported_by": [
+          "program-rules",
+          "reader-reproducibility",
+          "spec-faithfulness"
+        ],
+        "files": [
+          "participant/context/transcripts/sample-meeting.provenance.yaml",
+          "participant/context/transcripts/redaction-notes.md"
+        ]
+      },
+      {
+        "title": "Two guests with email voice labels both become '[REDACTED:EMAIL]' and cannot be told apart",
+        "severity": "Medium",
+        "must_fix_before_submit": false,
+        "root_cause": "A redacted label collapses to a single string, and the Speakers list keys on that string.",
+        "reproduction": "OBSERVED: cues '<v guest.one@example.org>I approve the change.</v>' and '<v guest.two@example.net>I do not approve it.</v>' produce one Speakers entry and two headings both ending in '· \\[REDACTED:EMAIL\\]'.",
+        "expected_source": "AC 12 and AC 2; the quest's Scenario ('loses which of two people said the ambiguous sentence').",
+        "smallest_fix": "Number each distinct redacted label ('[REDACTED:EMAIL] speaker 1', '… speaker 2') and add a test. Until then, disclose it in PROOF.md's limitations. The committed record is not affected.",
+        "reported_by": [
+          "spec-faithfulness"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/ingest.py"
+        ]
+      },
+      {
+        "title": "A label shared by two listed participants is attributed with certainty to whoever is listed last",
+        "severity": "Medium",
+        "must_fix_before_submit": false,
+        "root_cause": "roster() at ingest.py:267-272 overwrites the mapping for a repeated label.",
+        "reproduction": "OBSERVED: participants Dana Whitfield and Dana Okafor both have the label 'Dana'. The cue '<v Dana>Which Dana said this?</v>' is recorded as Dana Okafor with no uncertainty line.",
+        "expected_source": "AC 2.",
+        "smallest_fix": "Report INVALID INPUT in load_meeting when a casefolded name or label maps to two people, and add a test. Disclose until fixed. The committed record is not affected.",
+        "reported_by": [
+          "spec-faithfulness"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/ingest.py"
+        ]
+      },
+      {
+        "title": "The voice-tag regex backtracks exponentially, so one 82-character line hangs ingestion",
+        "severity": "Medium",
+        "must_fix_before_submit": false,
+        "root_cause": "In VOICE_OPEN at ingest.py:45, '<v(?:\\.[^\\s>]+)*[ \\t]+', the class [^\\s>] also matches '.', so the dotted run can be split in exponentially many ways.",
+        "reproduction": "OBSERVED: the CLI on '<v' followed by '.a' repeated 40 times was killed after 30 s with nothing written. findall time grows about 4x per 2 segments (0.026 s at N=20, 1.687 s at N=26).",
+        "expected_source": "The quest treats transcript text as untrusted input; SKILL.md §9 promises a reported reason.",
+        "smallest_fix": "Use '<v(?:\\.[^\\s.>]+)*[ \\t]+([^>]*)>' and add a timing test. Disclose until fixed.",
+        "reported_by": [
+          "redaction-privacy"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/ingest.py"
+        ]
+      },
+      {
+        "title": "A whitespace-only line ends a block, which either refuses valid text or silently drops words",
+        "severity": "Medium",
+        "must_fix_before_submit": false,
+        "root_cause": "Blocks are split with 'if line.strip()' rather than on empty lines (ingest.py:162).",
+        "reproduction": "OBSERVED: 'Ada Example: Line one.\\n \\nLine two, still Ada.\\n00:00:03.000 --> …' is written as 2 utterances, and 'Line two, still Ada.' disappears because it is taken as the next cue's identifier.",
+        "expected_source": "AC 1 and AC 11. Reported Low; the severity verifier raised it to Medium.",
+        "smallest_fix": "Split blocks on truly empty lines, or refuse when an identifier line follows a whitespace-only line. Disclose until fixed.",
+        "reported_by": [
+          "parser-attack"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/ingest.py"
+        ]
+      },
+      {
+        "title": "The documented 'python3 …/ingest.py' command crashes on macOS's Python 3.9, and no minimum Python is stated",
+        "severity": "Medium",
+        "must_fix_before_submit": false,
+        "root_cause": "ingest.py:98 uses the 'str | None' annotation, which needs Python 3.10, and SKILL.md and PROOF.md use bare python3.",
+        "reproduction": "OBSERVED: /usr/bin/python3 (3.9.6) gives TypeError at line 98, exit 1, and the suite gives 0 passed, 23 failed. It works under .venv (3.11) and under Beau's /opt/homebrew python3 (3.15).",
+        "expected_source": "REVIEWER.md (reproduce from a clean clone); pyproject.toml:6 requires-python >=3.10. DISAGREEMENT: claims-audit and program-rules killed equivalent findings as environment artifacts, because the documented setup activates .venv.",
+        "smallest_fix": "Write '.venv/bin/python' in SKILL.md §2 and PROOF.md, or state 'Python 3.10 or later'.",
+        "reported_by": [
+          "reader-reproducibility"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/SKILL.md",
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/PROOF.md"
+        ]
+      },
+      {
+        "title": "The redaction tests skip entity-encoded spaces end to end, and skip the meeting-file fields",
+        "severity": "Medium",
+        "must_fix_before_submit": false,
+        "root_cause": "No test cue contains '&nbsp;' between digits, and no test meeting puts contact details in role, transcription_tool or original_location.",
+        "reproduction": "OBSERVED: four mutants all still give 23 passed: removing '|nbsp' from ENTITY, building the Speakers list without redact(), writing provenance roles without clean(), and writing transcription_tool unredacted.",
+        "expected_source": "SKILL.md §8 ('wherever they appear… every value copied into the provenance file').",
+        "smallest_fix": "Add a '317&nbsp;555&nbsp;0149' cue and contact details in those meeting fields to the redaction test.",
+        "reported_by": [
+          "test-quality"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/tests/test_ingest.py"
+        ]
+      },
+      {
+        "title": "The rendering checks cover only quoted text under CommonMark, so many escape rules can be removed with the suite still green",
+        "severity": "Medium",
+        "must_fix_before_submit": false,
+        "root_cause": "Only blockquote text is compared, under CommonMark only. Speaker headings, the Speakers list and GFM-only syntax are never rendered.",
+        "reproduction": "OBSERVED: each of these mutants still gives 23 passed: dropping '~', '|', '\\\\', '[', ']', '<' or '>' from MD_SPECIAL; dropping '=' from the line-start rule; leaving speakers in the heading or Speakers list unescaped. With '~' dropped, '~~not struck~~' renders as <s> under gfm-like. With '=' dropped, '> Total…\\n> ==' renders as an <h1>.",
+        "expected_source": "SKILL.md:60 and :105 ('so the page shows the words exactly'); AC 12. The reviewer reads the hand-in on GitHub.",
+        "smallest_fix": "Also render with MarkdownIt('gfm-like', {'linkify': False}), check the h3 speaker text and the Speakers list, and add the probe inputs.",
+        "reported_by": [
+          "test-quality",
+          "fix-regression"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/tests/test_ingest.py"
+        ]
+      },
+      {
+        "title": "Control characters and over-long character references break the record or crash the script",
+        "severity": "Low",
+        "must_fix_before_submit": false,
+        "root_cause": "decode_entities accepts any code point and any number of digits, and nothing refuses CR, NUL or LF in labels.",
+        "reproduction": "OBSERVED: '&#13;' in a cue writes a CR, the quote renders split under markdown-it, and a second unchanged ingest is REFUSED (against AC 7). '<v Ben&#10;Example>' splits the heading. A raw NUL reaches the record, and git treats the file as binary. '&#' followed by 4301 nines gives a ValueError traceback with exit 1 (nothing is written).",
+        "expected_source": "AC 7 and AC 12; SKILL.md §7 and §9 (unreadable references are UNPARSEABLE, exit 2).",
+        "smallest_fix": "Cap the digits (&#\\d{1,8};), turn ValueError into Unparseable, refuse C0 controls except LF (and LF in labels), and compare existing records with read_bytes.",
+        "reported_by": [
+          "parser-attack",
+          "fix-regression"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/ingest.py"
+        ]
+      },
+      {
+        "title": "A meeting-file 'labels' value that is not a list crashes the script or turns each character into an alias",
+        "severity": "Low",
+        "must_fix_before_submit": false,
+        "root_cause": "load_meeting does not check the type of 'labels'.",
+        "reproduction": "OBSERVED: 'labels': 'Ada E.' with cue '<v E>' attributes the cue to Ada Example as certain. 'labels': null or 5 gives a TypeError traceback with exit 1.",
+        "expected_source": "SKILL.md §9 (an invalid meeting file is INVALID INPUT, exit 2); AC 2.",
+        "smallest_fix": "Require isinstance(labels, list) in load_meeting.",
+        "reported_by": [
+          "parser-attack"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/ingest.py"
+        ]
+      },
+      {
+        "title": "Two simultaneous ingests of different transcripts to one name both report 'written'",
+        "severity": "Low",
+        "must_fix_before_submit": false,
+        "root_cause": "There is a window between the check and the replace before any record exists.",
+        "reproduction": "OBSERVED: in 40 trials behind a multiprocessing Barrier, both runs returned 'written' every time, and the last writer won.",
+        "expected_source": "SKILL.md §7 ('never rewritten'; 'If they differ, it refuses').",
+        "smallest_fix": "Create the record with O_CREAT|O_EXCL or os.link, or document that ingests must not run concurrently.",
+        "reported_by": [
+          "parser-attack"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/ingest.py"
+        ]
+      },
+      {
+        "title": "Provenance values are only checked for presence",
+        "severity": "Low",
+        "must_fix_before_submit": false,
+        "root_cause": "No test checks record_sha256, the UTC clock, uncertain_speakers or utterance_count.",
+        "reproduction": "OBSERVED: each of these mutants still gives 23 passed: hashing b'' for record_sha256, using the naive datetime.now(), writing uncertain_speakers: [], and writing utterance_count + 1.",
+        "expected_source": "AC 4.",
+        "smallest_fix": "Assert that record_sha256 equals the written file's hash, check the counts and uncertain_speakers, and run one ingest without now=.",
+        "reported_by": [
+          "test-quality"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/tests/test_ingest.py"
+        ]
+      },
+      {
+        "title": "Failure and refusal edge cases are untested",
+        "severity": "Low",
+        "must_fix_before_submit": false,
+        "root_cause": "No tests cover a failure on the second temp file, a KeyboardInterrupt between the moves, a lone provenance file, a same-length changed transcript, or a missing raw file.",
+        "reproduction": "OBSERVED: five mutants (W09, W10, W11, W12, X05) each still give 23 passed. The shipped code handles all five cases correctly.",
+        "expected_source": "SKILL.md §9; AC 7 and AC 11.",
+        "smallest_fix": "Add the 5 cases, and use a same-length edit in the changed-transcript test.",
+        "reported_by": [
+          "test-quality"
+        ],
+        "files": [
+          "participant/skills/ba-ingest-transcript/tests/test_ingest.py"
+        ]
+      },
+      {
+        "title": "second-run.txt's modification-time check cannot show 'nothing was rewritten'",
+        "severity": "Low",
+        "must_fix_before_submit": false,
+        "root_cause": "stat -f '%m' has one-second resolution, and both runs happened at 01:07:46Z.",
+        "reproduction": "OBSERVED: date -u -r 1793149666 gives 01:07:46 UTC, the same second as the first ingest.",
+        "expected_source": "The log's own comment. AC 7 itself asks only for an identical record, which the hashes show.",
+        "smallest_fix": "Record stat -f '%Fm %i', or wait one second before the second run.",
+        "reported_by": [
+          "program-rules"
+        ],
+        "files": [
+          "participant/evidence/ba-ingest-transcript/ba-attempt-001/logs/second-run.txt"
+        ]
+      }
+    ],
+    "killed": [
+      {
+        "title": "The record file itself does not state where the original is (only its provenance link does)",
+        "why": "Judged not real (suggestion). AC 10 says 'the record', and the quest uses 'record' for the provenance file too."
+      },
+      {
+        "title": "Files written in Beau's first person are missing from PROOF.md's list of what the AI wrote (raised by spec-faithfulness, claims-audit and reader-reproducibility)",
+        "why": "Judged not real (suggestion). No quest or program text requires a per-file authorship list. program-rules OBSERVED in the session transcript that Beau made the approach choices through AskUserQuestion, so 'I chose the approach' is true."
+      },
+      {
+        "title": "A human reviewer cannot check faithfulness from the hand-in alone (spec-faithfulness, program-rules, reader-reproducibility)",
+        "why": "Disclosed limitation. AC 10 and the safety constraints require the raw file to stay out of the hand-in."
+      },
+      {
+        "title": "At 10,000 or more cues the IDs break the U-NNNN format",
+        "why": "Out of scope. No requirement or claim sets a cue-count limit."
+      },
+      {
+        "title": "Valid identifiers are refused, and a literal '-->' in speech gets a misleading reason",
+        "why": "Judged not real (suggestion). The expected behavior comes from the full WebVTT spec, which SKILL.md does not claim to follow."
+      },
+      {
+        "title": "A hard link to a file inside participant/ passes the raw-location guard",
+        "why": "Expected behavior. SKILL.md states only a check on the path the user passes in."
+      },
+      {
+        "title": "UNPARSEABLE messages print raw transcript text",
+        "why": "Judged not real (suggestion). AC 9 concerns the record, and no source requires error output to be redacted."
+      },
+      {
+        "title": "The meeting file is accepted from inside participant/",
+        "why": "Judged not real (suggestion). SKILL.md promises the guard only for the raw transcript."
+      },
+      {
+        "title": "redaction-notes.md misdescribes the U-0005 address as 'Dana's test email address' (claims-audit, gap-V2)",
+        "why": "Misreading per two lenses: it is fair shorthand for raw cue 5. spec-faithfulness's verifier kept a version of it (DISAGREEMENT, low stakes)."
+      },
+      {
+        "title": "The reproduction commands assume Python 3.10 or later (claims-audit, program-rules)",
+        "why": "Environment artifact. pyproject requires 3.10 or later and the setup activates .venv. reader-reproducibility's equivalent finding survived (DISAGREEMENT)."
+      },
+      {
+        "title": "Several SKILL.md promises have no test / stated behaviors have surviving mutants (claims-audit, test-quality)",
+        "why": "Test gap with no false claim. The current code behaves as stated, and no claim says every behavior is tested."
+      },
+      {
+        "title": "The 'identical: True' fidelity check uses the code under test on both sides",
+        "why": "Judged not real (suggestion). The log and PROOF.md do not claim more than the check shows."
+      },
+      {
+        "title": "Under system python3 the suite fails with a bare ModuleNotFoundError",
+        "why": "Disclosed limitation. No source requires a friendlier failure message."
+      },
+      {
+        "title": "The script and tests are not fingerprinted at submission",
+        "why": "Judged not real (suggestion). REVIEWER.md promises change detection only for the evidence package and declared proof files."
+      },
+      {
+        "title": "ai-review-2.txt cannot be read on its own, and its non-breaking-space example looks altered (program-rules)",
+        "why": "Misreading of the literal '&nbsp;' text. This does not contradict the K8 finding, which rests on a diff against the handback."
+      },
+      {
+        "title": "ai-review-2.txt may not be byte-exact (fix-regression)",
+        "why": "Not reproduced by this lens. It is superseded by the reproduced K8 finding from claims-audit and reader-reproducibility."
+      },
+      {
+        "title": "A git-ignored __pycache__ appeared during the review window",
+        "why": "Environment artifact. The related false sentence in SKILL.md §11 is kept in the SKILL.md wording finding."
+      },
+      {
+        "title": "Review 2 finding 6: the AI wrote the transcript, while PILOT.md asks for one you wrote yourself",
+        "why": "Disclosed limitation. The clause exists to protect privacy, and PROOF.md:7 discloses that the AI wrote the transcript."
+      },
+      {
+        "title": "The test name verbatim_text_survives_markdown_rendering is misleading (reader-reproducibility)",
+        "why": "Judged not real (no naming rule). PROOF.md's citation of it as rendering evidence survives in the SKILL.md wording finding."
+      },
+      {
+        "title": "On a clean clone a reviewer can reproduce only the tests",
+        "why": "Disclosed limitation. PROOF.md says this accurately."
+      },
+      {
+        "title": "PILOT.md says to write [REDACTED], but the record uses typed markers",
+        "why": "Judged not real (suggestion). The quest sets no marker format, and SKILL.md states the markers."
+      }
+    ],
+    "disagreements": [
+      "V2: spec-faithfulness, redaction-privacy, program-rules and gap-V2 say FIRED; fix-regression says NOT FIRED; the severity verifiers range from Low to Blocking. All agree on the facts: a fictional 555-01xx value appears in 4 staged files. To settle it, the program owner should rule whether a fictional value redacted from the raw transcript counts as 'unredacted content'. Removing the value makes the question moot.",
+      "K4: parser-attack marked it FALSIFIED; five lenses marked it CONFIRMED. The gap-K4 round settled it: the literal cases hold, and the damaged-arrow variants falsify SKILL.md and PROOF.md (K12), not K4.",
+      "Severity of the cue drop/merge defect: the verifiers split between High and Blocking. gap-K4 rated the damaged-arrow-only variant Medium and not must-fix, because it needs two faults at once. The decision does not change, because PROOF.md:97 fires V3 either way.",
+      "Python 3.9 crash: it survived in reader-reproducibility (Medium) and was killed in claims-audit and program-rules as an environment artifact. To settle it, check whether SKILL.md and PROOF.md tell the reader to activate .venv before running python3.",
+      "Provenance capture_source against redaction-notes.md: program-rules rated it Medium and must-fix, reader-reproducibility Low and not must-fix, spec-faithfulness Low and must-fix. The owner should decide whether a mismatch between provenance and notes is acceptable; the fix is one sentence.",
+      "redaction-notes.md:9 'Dana's test email address': spec-faithfulness's verifier judged it inaccurate; claims-audit and gap-V2 judged it fair shorthand. To settle it, a reader can compare raw cue 5's wording with the note.",
+      "Whether V3 covers narrow wording slips (the __pycache__ sentence, the transcript_id 'every value'): some severity verifiers applied V3 literally, others said no veto in substance. The owner should decide whether V3 has a materiality threshold."
+    ],
+    "not_assessed": [
+      {
+        "item": "Beau's own reading of the work, his sentence in PROOF.md and his own test run (expected to be pending)",
+        "could_change_decision": false
+      },
+      {
+        "item": "The real gtq hand-in, Submit and get-review flows (not run, per the rules); staging scope was inferred from handin.py:246",
+        "could_change_decision": true
+      },
+      {
+        "item": "How GitHub's GFM renderer shows the record, its anchors and the front-matter table; only markdown-it CommonMark and gfm-like ran",
+        "could_change_decision": true
+      },
+      {
+        "item": "Real Microsoft Teams or Zoom WebVTT exports; all inputs were hand-written",
+        "could_change_decision": false
+      },
+      {
+        "item": "The state of the code and documents after the required fixes, including the regenerated provenance file and skill_sha256",
+        "could_change_decision": true
+      },
+      {
+        "item": "Python 3.10 (the declared floor), Windows/WSL, case-sensitive file systems, and a kill between the two os.replace calls in the real repository",
+        "could_change_decision": false
+      },
+      {
+        "item": "Whether the fictional names coincide with real people (V1 rests on inference)",
+        "could_change_decision": false
+      },
+      {
+        "item": "The state of GitHub PR #26 and whether upstream main has moved since the local fetch",
+        "could_change_decision": false
+      },
+      {
+        "item": "Full reviewer and verifier texts that were clipped in this synthesis; the verdicts were taken as given",
+        "could_change_decision": false
+      }
+    ],
+    "why_confidence_not_higher": "Confidence that FIX FIRST is the right call is high. Several lenses independently reproduced the same false statements: PROOF.md:57, PROOF.md:112, the cue drop and K8. Confidence in individual severities is lower. Several severity verifiers judged priority without reproducing, and they applied the 'any veto is Blocking' rule inconsistently. Only one gap round ran, and no second critic looked for new gaps. GitHub rendering, real exports and the hand-in flow were not exercised. K8 depends on the subagent JSONL being the original handback. The V2 verdict depends on an owner ruling. This synthesis worked from clipped texts. Finally, the required fixes will change ingest.py and the documents, so the post-fix state is entirely unassessed.",
+    "next_evidence": [
+      "After the fixes, grep every staged file under participant/ for phone shapes and '@'. Confirm 317-555-0198 and its variants are absent, and confirm that every sentence in PROOF.md:112 matches the grep output.",
+      "Diff logs/ai-review-2.txt (and ai-review-1.txt) byte for byte against the SubagentHandback messages, and confirm each header describes any difference.",
+      "Run the new UNPARSEABLE cases: NOTE/STYLE/REGION-glued cues, a damaged arrow glued to the header, and a damaged arrow inside text. Run each new check's planted bug and confirm it turns the suite red.",
+      "Run redact('317-555-0143ext') and the international, wrapped and Unicode-space cases, and compare each result line by line with SKILL.md §8's stated coverage and miss list.",
+      "Regenerate the provenance after the code change. Confirm the record still hashes to 7b8b2607…f4f4 and that skill_sha256 equals the new ingest.py hash, and confirm PROOF.md discloses the regeneration.",
+      "Get the program owner's ruling on V2 for fictional values that remain anywhere.",
+      "Run a fresh independent review, with no builder framing, that checks every changed sentence in PROOF.md, SKILL.md, redaction-notes.md and the log headers against reproduced evidence.",
+      "Render the record in a real GitHub PR view to close the GFM gap."
+    ]
+  }
+}

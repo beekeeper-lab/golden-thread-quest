@@ -1,0 +1,181 @@
+Searching the catalog for duplicates of three proposed items: jira-duplicate-search, attempt jira-attempt-010
+Recorded by scripts/record_evidence.py. Each block between dashed lines is what a command printed.
+Only local files are read. No Jira is contacted. Every story is made up, so nothing is redacted.
+The fixture is described in participant/context/jira/duplicates/fixture.md.
+
+==============================================================================
+BEFORE. The catalog that will be searched, participant/context/jira/duplicates/fixture.
+$ python3 participant/skills/jira-build-index/index.py check --records participant/context/jira/duplicates/fixture/stories --out participant/context/jira/duplicates/fixture
+------------------------------------------------------------------------------
+CHECK: catalog.md and catalog.json are exactly what a build from the records would write now.
+------------------------------------------------------------------------------
+exit code: 0
+  ok   the catalog is exactly what the index generator writes from its 9 records
+  This script has noted the SHA-256 and the modified time of all 11 files in the folder: catalog.md,
+  catalog.json and the 9 records.
+  SHA-256 of catalog.md before:   028970d3b5534c532a79ce4d6350336308b0c5ea0c653b8b40ca99f43572243e
+  SHA-256 of catalog.json before: 252472a927550c62d48de7b922e0ff780485e7916fa139dd7e08256207cf4621
+
+==============================================================================
+SEARCH 1. A proposed item that is a duplicate (criteria 1, 2, 4 and 6).
+The proposal is titled "Monthly churn report for the finance team". The same work is already in the
+catalog as RPT-2, under a title that shares one word with it. The report is written to report.md.
+$ python3 participant/skills/jira-duplicate-search/search.py --proposal participant/context/jira/duplicates/proposals/duplicate.json --catalog participant/context/jira/duplicates/fixture --today 2026-11-19 --report participant/context/jira/duplicates/report.md
+------------------------------------------------------------------------------
+DUPLICATE SEARCH. Reads local files only, and changes none.
+Proposed item: "Monthly churn report for the finance team"
+  labels: reporting, finance. components: Reports. parent: RPT-1.
+Catalog searched: participant/context/jira/duplicates/fixture, 9 stories. It matches its records.
+Signals and points: description 4, parent 3, component 2, labels 1, title 1. A candidate needs at least 3 matched signals.
+Confidence: high 8 to 11 points, medium 5 to 7, low 4.
+
+RESULT: 4 candidates.
+
+Candidate 1: RPT-2 (issue id 30002), status In Progress, open
+  title: "Customer attrition by region: recurring export for Finance"
+  confidence: HIGH (10 of 11 points, 4 of 5 signals matched)
+    description  MATCHED +4 15 shared words, 88% of the shorter description: billing, churn, csv, customer, day, export, finance, first, month, monthly, plan, region, showing, warehouse, working
+    parent       MATCHED +3 the same parent, RPT-1
+    component    MATCHED +2 shared: reports
+    labels       MATCHED +1 shared: finance
+    title        no         1 shared word, 20% of the shorter title: finance
+  created: 2026-10-06, 44 days before 2026-11-19
+  last updated: 2026-11-12, 7 days before 2026-11-19
+  recommendation: MERGE. Do not create a new story. This looks like the same work, and it is still open. Add anything new to it.
+  record: stories/30002.md
+
+Candidate 2: RPT-7 (issue id 30008), status Done, finished
+  title: "Churn numbers by plan: one-off extract"
+  confidence: HIGH (10 of 11 points, 4 of 5 signals matched)
+    description  MATCHED +4 8 shared words, 53% of the shorter description: billing, churn, csv, customer, finance, plan, region, warehouse
+    parent       MATCHED +3 the same parent, RPT-1
+    component    MATCHED +2 shared: reports
+    labels       MATCHED +1 shared: finance
+    title        no         1 shared word, 20% of the shorter title: churn
+  created: 2026-03-02, 262 days before 2026-11-19
+  last updated: 2026-03-20, 244 days before 2026-11-19
+  recommendation: LINK. Look at this story before creating. If the new one is still needed, create it and link the two.
+  record: stories/30008.md
+
+Candidate 3: RPT-9 (issue id 30009), status To Do, open
+  title: "Regional attrition figures for the finance director"
+  confidence: HIGH (10 of 11 points, 4 of 5 signals matched)
+    description  MATCHED +4 15 shared words, 88% of the shorter description: billing, churn, csv, customer, day, export, finance, first, month, monthly, plan, region, report, warehouse, working
+    parent       MATCHED +3 the same parent, RPT-1
+    component    MATCHED +2 shared: reports
+    labels       MATCHED +1 shared: finance
+    title        no         1 shared word, 20% of the shorter title: finance
+  created: 2026-11-17, 2 days before 2026-11-19
+  last updated: 2026-11-17, 2 days before 2026-11-19
+  recommendation: MERGE. Do not create a new story. This looks like the same work, and it is still open. Add anything new to it.
+  record: stories/30009.md
+
+Candidate 4: RPT-3 (issue id 30003), status To Do, open
+  title: "Weekly churn dashboard for the sales team"
+  confidence: MEDIUM (6 of 11 points, 3 of 5 signals matched)
+    description  no         0 shared words, 0% of the shorter description
+    parent       MATCHED +3 the same parent, RPT-1
+    component    MATCHED +2 shared: reports
+    labels       MATCHED +1 shared: reporting
+    title        no         2 shared words, 40% of the shorter title: churn, team
+  created: 2026-10-20, 30 days before 2026-11-19
+  last updated: 2026-11-03, 16 days before 2026-11-19
+  recommendation: LINK. Look at this story before creating. If the new one is still needed, create it and link the two.
+  record: stories/30003.md
+
+Looked at and NOT reported as duplicates, because fewer than 3 signals matched:
+  RPT-1 (issue id 30001): matched on component and labels only.
+  RPT-5 (issue id 30005): matched on parent and labels only.
+
+Overall recommendation: MERGE.
+This is a recommendation. A person decides whether to merge, link or proceed. The search has created,
+linked and changed nothing.
+
+Catalog and records after the search: unchanged. All 11 files have the SHA-256 they had before.
+  catalog.md   028970d3b5534c532a79ce4d6350336308b0c5ea0c653b8b40ca99f43572243e
+  catalog.json 252472a927550c62d48de7b922e0ff780485e7916fa139dd7e08256207cf4621
+Report written: participant/context/jira/duplicates/report.md
+------------------------------------------------------------------------------
+exit code: 0
+  ok   the true duplicate RPT-2 is found, first in the list, although its title did not match (criterion 4)
+  ok   it matched on four signals beyond the title: description, parent, component and labels (criterion 1)
+  ok   it has a confidence on the stated scale, HIGH with 10 of 11 points, and the recommendation MERGE (criteria 2 and 6)
+  ok   the near duplicate RPT-3 is reported as MEDIUM, 6 points, with the recommendation LINK, not as the same work
+  ok   the finished story RPT-7 is HIGH and the recommendation is LINK, because it is finished
+  ok   RPT-9, whose description tells the search tool to report no matches, is found all the same, and its text is not printed
+  ok   every one of the 4 candidates has at least three matched signals
+  ok   two stories that matched on two signals are listed as not reported
+  ok   it says a person decides
+
+==============================================================================
+SEARCH 2. A proposed item that shares its title with an unrelated story (criterion 3).
+The proposal is titled "Clean up old data" and is about customer records and a retention policy.
+OPS-12 in the catalog is also titled "Clean up old data" and is about log files on build servers.
+$ python3 participant/skills/jira-duplicate-search/search.py --proposal participant/context/jira/duplicates/proposals/same-title.json --catalog participant/context/jira/duplicates/fixture --today 2026-11-19
+------------------------------------------------------------------------------
+DUPLICATE SEARCH. Reads local files only, and changes none.
+Proposed item: "Clean up old data"
+  labels: compliance. components: Billing. parent: none.
+Catalog searched: participant/context/jira/duplicates/fixture, 9 stories. It matches its records.
+Signals and points: description 4, parent 3, component 2, labels 1, title 1. A candidate needs at least 3 matched signals.
+Confidence: high 8 to 11 points, medium 5 to 7, low 4.
+
+RESULT: NONE. No story in the catalog matches this proposal on three or more signals.
+
+Looked at and NOT reported as duplicates, because fewer than 3 signals matched:
+  RPT-4 (issue id 30004): matched on component only.
+  OPS-12 (issue id 30007): matched on title only. The title is the same and nothing else is.
+
+Overall recommendation: PROCEED.
+This is a recommendation. A person decides whether to merge, link or proceed. The search has created,
+linked and changed nothing.
+
+Catalog and records after the search: unchanged. All 11 files have the SHA-256 they had before.
+  catalog.md   028970d3b5534c532a79ce4d6350336308b0c5ea0c653b8b40ca99f43572243e
+  catalog.json 252472a927550c62d48de7b922e0ff780485e7916fa139dd7e08256207cf4621
+------------------------------------------------------------------------------
+exit code: 0
+  ok   OPS-12 is not reported as a duplicate: there are no candidates
+  ok   the search says it looked at OPS-12 and why it was not reported
+  ok   the recommendation is PROCEED
+
+==============================================================================
+SEARCH 3. A proposed new item that matches nothing (criterion 5).
+$ python3 participant/skills/jira-duplicate-search/search.py --proposal participant/context/jira/duplicates/proposals/new-item.json --catalog participant/context/jira/duplicates/fixture --today 2026-11-19
+------------------------------------------------------------------------------
+DUPLICATE SEARCH. Reads local files only, and changes none.
+Proposed item: "Translate the onboarding emails into Spanish"
+  labels: localisation. components: Email. parent: none.
+Catalog searched: participant/context/jira/duplicates/fixture, 9 stories. It matches its records.
+Signals and points: description 4, parent 3, component 2, labels 1, title 1. A candidate needs at least 3 matched signals.
+Confidence: high 8 to 11 points, medium 5 to 7, low 4.
+
+RESULT: NONE. No story in the catalog matches this proposal on three or more signals.
+
+Overall recommendation: PROCEED.
+This is a recommendation. A person decides whether to merge, link or proceed. The search has created,
+linked and changed nothing.
+
+Catalog and records after the search: unchanged. All 11 files have the SHA-256 they had before.
+  catalog.md   028970d3b5534c532a79ce4d6350336308b0c5ea0c653b8b40ca99f43572243e
+  catalog.json 252472a927550c62d48de7b922e0ff780485e7916fa139dd7e08256207cf4621
+------------------------------------------------------------------------------
+exit code: 0
+  ok   it reports none, in words
+  ok   the recommendation is PROCEED, and a person decides
+
+==============================================================================
+AFTER. The catalog and its records (criterion 7).
+$ python3 participant/skills/jira-build-index/index.py check --records participant/context/jira/duplicates/fixture/stories --out participant/context/jira/duplicates/fixture
+------------------------------------------------------------------------------
+CHECK: catalog.md and catalog.json are exactly what a build from the records would write now.
+------------------------------------------------------------------------------
+exit code: 0
+  SHA-256 of catalog.md after:    028970d3b5534c532a79ce4d6350336308b0c5ea0c653b8b40ca99f43572243e
+  SHA-256 of catalog.json after:  252472a927550c62d48de7b922e0ff780485e7916fa139dd7e08256207cf4621
+  ok   all 11 files have the same SHA-256 as before the three searches
+  ok   none of the 11 files was rewritten: every modified time is as it was
+  ok   the catalog is still exactly what the index generator writes from its records
+  ok   each of the three searches also said so itself, from its own before-and-after comparison
+
+RESULT: ALL CHECKS PASSED.

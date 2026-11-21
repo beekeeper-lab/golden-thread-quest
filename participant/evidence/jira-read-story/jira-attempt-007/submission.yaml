@@ -1,0 +1,13 @@
+schema_version: 1
+submission_id: submission-20261119125536-9bc9dc
+quest_id: jira-read-story
+quest_version: 1
+attempt_id: jira-attempt-007
+content_hash: sha256:0549ccdee0f4acc04c78aef47afcb14a7449c9de22d042a208f9d793620aae47
+evidence_hash: sha256:494c7d98aaadb43f15acb7526a2770d0fac0a82de8cd851e93c94efec5cca9c7
+submitted_at: '2026-11-19T12:55:36Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/jira/stories/story-sample.md
+  digest: sha256:0d8b9679dbe6ebe045dd3750b02b2d0f6e1df68372494d7886bc818a5bd18ee1

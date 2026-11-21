@@ -1,0 +1,50 @@
+test_a_card_with_no_checklists_comments_or_attachments_says_none (test_card.Checklists) ... ok
+test_a_checklist_with_no_items_is_kept (test_card.Checklists) ... ok
+test_a_state_the_reader_does_not_know_is_kept_as_trello_sent_it (test_card.Checklists) ... ok
+test_changing_one_items_state_changes_exactly_that_line (test_card.Checklists) ... ok
+test_items_are_in_the_order_of_their_positions_whatever_order_trello_sent_them_in (test_card.Checklists) ... ok
+test_the_box_comes_from_the_state_and_not_from_the_items_name (test_card.Checklists) ... ok
+test_twelve_items_five_complete_keep_their_states (test_card.Checklists) ... ok
+test_a_date_in_another_zone_or_form_is_not_reformatted (test_card.DatesAndLabels) ... ok
+test_closed_state_and_position_are_kept (test_card.DatesAndLabels) ... ok
+test_dates_are_kept_exactly_with_their_time_zone (test_card.DatesAndLabels) ... ok
+test_due_complete_is_a_separate_field_from_the_date (test_card.DatesAndLabels) ... ok
+test_each_label_keeps_its_colour_name_and_id (test_card.DatesAndLabels) ... ok
+test_no_due_date_is_null_and_not_left_out (test_card.DatesAndLabels) ... ok
+test_all_comments_are_read_when_they_come_in_pages (test_card.EveryPart) ... ok
+test_an_unknown_field_is_kept_in_the_preserved_section_exactly (test_card.EveryPart) ... ok
+test_asking_by_short_link_or_by_id_gives_the_same_file (test_card.EveryPart) ... ok
+test_attachments_and_the_cover_are_kept_as_references_and_nothing_is_downloaded (test_card.EveryPart) ... ok
+test_comments_keep_text_time_and_author_and_come_in_order_of_time (test_card.EveryPart) ... ok
+test_every_field_trello_returned_is_accounted_for (test_card.EveryPart) ... ok
+test_the_card_is_identified_by_its_id_with_the_short_link_separate (test_card.EveryPart) ... ok
+test_unknown_fields_of_items_comments_and_attachments_are_kept (test_card.EveryPart) ... ok
+test_unknown_fields_that_are_empty_false_or_null_are_still_kept (test_card.EveryPart) ... ok
+test_a_file_that_would_hold_the_key_or_token_is_not_written (test_card.NothingPrivate) ... ok
+test_an_empty_email_field_is_said_to_be_empty_and_is_not_counted_as_removed (test_card.NothingPrivate) ... ok
+test_email_addresses_typed_into_text_are_replaced (test_card.NothingPrivate) ... ok
+test_people_are_kept_as_member_ids_only (test_card.NothingPrivate) ... ok
+test_the_cards_private_email_address_is_not_stored_and_is_counted (test_card.NothingPrivate) ... ok
+test_trello_is_asked_not_to_send_peoples_details (test_card.NothingPrivate) ... ok
+test_a_401_is_explained_by_what_trello_said_and_only_in_known_words (test_card.ReadingOnly) ... ok
+test_a_card_that_cannot_be_seen_or_a_failed_read_writes_nothing (test_card.ReadingOnly) ... ok
+test_a_live_run_needs_both_variables (test_card.ReadingOnly) ... ok
+test_it_sends_four_gets_and_nothing_else (test_card.ReadingOnly) ... ok
+test_the_key_and_token_go_in_a_header_and_never_in_the_address (test_card.ReadingOnly) ... ok
+test_the_reader_has_no_code_that_writes_to_trello (test_card.ReadingOnly) ... ok
+test_a_changed_card_rewrites_the_file (test_card.SameCardSameBytes) ... ok
+test_a_second_run_leaves_the_file_byte_identical_and_does_not_rewrite_it (test_card.SameCardSameBytes) ... ok
+test_nothing_about_the_run_is_in_the_file (test_card.SameCardSameBytes) ... ok
+test_the_order_trello_sends_things_in_does_not_change_the_file (test_card.SameCardSameBytes) ... ok
+test_an_empty_description_says_so (test_card.TextIsContent) ... ok
+test_instruction_like_text_is_stored_and_nothing_it_says_is_done (test_card.TextIsContent) ... ok
+test_text_cannot_add_a_heading_a_section_or_front_matter_to_the_file (test_card.TextIsContent) ... ok
+test_the_description_is_fenced_with_a_fence_longer_than_any_inside_it (test_card.TextIsContent) ... ok
+test_it_notices_a_file_that_has_lost_or_changed_something (test_card.TheFidelityCheck) ... ok
+test_it_notices_instruction_text_left_as_a_bare_line (test_card.TheFidelityCheck) ... ok
+test_it_passes_on_the_file_the_reader_writes (test_card.TheFidelityCheck) ... ok
+
+----------------------------------------------------------------------
+Ran 45 tests in 0.517s
+
+OK

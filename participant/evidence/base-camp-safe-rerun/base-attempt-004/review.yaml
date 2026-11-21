@@ -1,0 +1,30 @@
+schema_version: 1
+review_id: review-20261117173745-b1d5b5
+quest_id: base-camp-safe-rerun
+quest_version: 1
+attempt_id: base-attempt-004
+evidence_hash: sha256:3e0984f73e85641afc27ee52eb9d28563100201b9be243bc4c88315d1bda7e96
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-17T17:37:45Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/rerun-key-rules.md
+  digest: sha256:5c5848fbe370e7db17d3917e0dfc90cb08b28d1496805f3f183ad9e167bd0f76
+verification_statement: 'Automated review. I checked the three required command records
+  (first-run, second-run, changed-input) and the key rules file against all six criteria.
+  The extra logs (retitled, later, store-check) back them up. The recorder''s fingerprints
+  link the runs: the store''s hash before the second run (609f1273...) equals its
+  hash after the first run, so the store was not reset. The second run ends with the
+  same hash and reports 10 skipped. The changed-input run updates one record in place:
+  still 10 records, and SIM-0004 keeps its record ID. The key rules file explains
+  the source-plus-ID key and why it leaves out title, filename and run time. The logs
+  contain keys and record IDs only, no titles or bodies. One minor inconsistency:
+  the key rules file says the later run came "30 minutes" after the others, but the
+  timestamps (15:09 to 16:07) and PROOF.md give 58 minutes. The PROOF.md phrases flagged
+  by the pre-check describe the builder''s own process and are not addressed to the
+  reviewer, so I found no prompt injection. The attempt folder is base-attempt-004
+  rather than attempt-001; the automatic pre-check reported all required files present,
+  so I accepted it. Each of the 6 acceptance criteria was matched to text quoted word
+  for word from the evidence.'

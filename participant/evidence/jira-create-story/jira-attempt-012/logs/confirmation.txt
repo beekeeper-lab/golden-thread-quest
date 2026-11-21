@@ -1,0 +1,267 @@
+Four refusals and the approved run: jira-create-story, attempt jira-attempt-012
+Recorded by scripts/record_evidence.py.
+The Jira here is participant/skills/jira-create-story/fake_jira.py, a made-up one. No real Jira was read or written, so nothing is
+redacted: the site, the projects and the stories are invented. STATE stands for a temporary folder.
+This carries on from the preview recorded in logs/preview.txt, in the same STATE folder.
+The fingerprint of that preview is df64d2e7a98a.
+
+==============================================================================
+REFUSAL 1. A missing confirmation: the confirm command with no fingerprint and no name.
+$ python3 participant/skills/jira-create-story/create.py confirm --source fake --link participant/context/jira/new-story/fixture-run/linked.md --state STATE --draft participant/context/jira/new-story/fixture-run/draft.md --allowlist participant/skills/jira-create-story/fake-allowlist.json --catalog participant/context/jira/duplicates/fixture --today 2026-11-19
+------------------------------------------------------------------------------
+
+REFUSED: no confirmation was given. A confirmation names the fingerprint of the preview it approves, and there is no way to create without one.
+Nothing has been written to Jira.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused, exit code 1, nothing written
+And with the fingerprint but no name of a person confirming:
+$ python3 participant/skills/jira-create-story/create.py confirm --source fake --link participant/context/jira/new-story/fixture-run/linked.md --state STATE --draft participant/context/jira/new-story/fixture-run/draft.md --allowlist participant/skills/jira-create-story/fake-allowlist.json --catalog participant/context/jira/duplicates/fixture --today 2026-11-19 --fingerprint df64d2e7a98a
+------------------------------------------------------------------------------
+
+REFUSED: no confirmation was given. A confirmation gives the name of the person confirming.
+Nothing has been written to Jira.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused, exit code 1, nothing written
+
+==============================================================================
+REFUSAL 2. A change that differs from the preview. The fingerprint is the right one, and the draft
+has been edited since: the due date is now 2027-01-14 where the preview showed 2027-01-15.
+$ python3 participant/skills/jira-create-story/create.py confirm --source fake --link participant/context/jira/new-story/fixture-run/linked.md --state STATE --draft participant/context/jira/new-story/fixture-run/draft.md --allowlist participant/skills/jira-create-story/fake-allowlist.json --catalog participant/context/jira/duplicates/fixture --today 2026-11-19 --fingerprint df64d2e7a98a --confirmed-by "the participant"
+------------------------------------------------------------------------------
+
+REFUSED: the change is not the one that was previewed: the payload now differs in duedate. Make a new preview and read it.
+Nothing has been written to Jira.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused, exit code 1, nothing written, and the field that differs is named
+The draft was then put back as it was.
+
+==============================================================================
+REFUSAL 3. A preview older than the limit of 15 minutes. The test clock is moved 16 minutes on.
+$ python3 participant/skills/jira-create-story/create.py confirm --source fake --link participant/context/jira/new-story/fixture-run/linked.md --state STATE --draft participant/context/jira/new-story/fixture-run/draft.md --allowlist participant/skills/jira-create-story/fake-allowlist.json --catalog participant/context/jira/duplicates/fixture --today 2026-11-19 --fingerprint df64d2e7a98a --confirmed-by "the participant" --pretend-minutes-later 16
+------------------------------------------------------------------------------
+TEST CLOCK: pretending it is 16 minutes later than it is.
+
+REFUSED: this preview is too old. It was made 16 minutes ago and the limit is 15. Make a new preview and read it.
+Nothing has been written to Jira.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused, exit code 1, nothing written
+
+==============================================================================
+REFUSAL 4. A project that is not on the sandbox allowlist. The same draft aimed at project OPS, where
+the identity is permitted to create, so the allowlist is the only thing that stops it.
+$ python3 participant/skills/jira-create-story/create.py preview --source fake --link participant/context/jira/new-story/fixture-run/linked-ops.md --state STATE --draft participant/context/jira/new-story/fixture-run/draft-ops.md --allowlist participant/skills/jira-create-story/fake-allowlist.json --catalog participant/context/jira/duplicates/fixture --today 2026-11-19
+------------------------------------------------------------------------------
+
+REFUSED: project OPS (project id 30100) on the Jira site with fingerprint 738169e667642f09 is not on the sandbox allowlist (participant/skills/jira-create-story/fake-allowlist.json). This workflow writes only to projects listed there.
+Nothing has been written to Jira.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused at the preview, exit code 1, and no fingerprint was issued, so there is nothing to confirm
+The allowlist is checked again at confirmation. Here the good preview is confirmed against an allowlist
+that no longer lists RPT:
+$ python3 participant/skills/jira-create-story/create.py confirm --source fake --link participant/context/jira/new-story/fixture-run/linked.md --state STATE --draft participant/context/jira/new-story/fixture-run/draft.md --allowlist participant/context/jira/new-story/fixture-run/allowlist-without-rpt.json --catalog participant/context/jira/duplicates/fixture --today 2026-11-19 --fingerprint df64d2e7a98a --confirmed-by "the participant"
+------------------------------------------------------------------------------
+
+REFUSED: project RPT (project id 30000) on the Jira site with fingerprint 738169e667642f09 is not on the sandbox allowlist (participant/context/jira/new-story/fixture-run/allowlist-without-rpt.json). This workflow writes only to projects listed there.
+Nothing has been written to Jira.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused, exit code 1, nothing written
+
+==============================================================================
+After the refusals, what the fake Jira holds.
+$ python3 participant/skills/jira-create-story/fake_jira.py show --state STATE
+------------------------------------------------------------------------------
+FAKE JIRA holds 7 stories in project RPT: RPT-1 (id 30001), RPT-2 (id 30002), RPT-3 (id 30003), RPT-4 (id 30004), RPT-5 (id 30005), RPT-7 (id 30008), RPT-9 (id 30009).
+------------------------------------------------------------------------------
+exit code: 0
+  ok   still 7 stories in RPT, and there is still no link file
+
+==============================================================================
+THE APPROVED RUN. The same preview, confirmed by its fingerprint, with the confirming person's name,
+the draft as it was previewed, and inside the time limit. In this recording the command is started by
+the recording script, which stands in for the person. In a real run a person types it.
+$ python3 participant/skills/jira-create-story/create.py confirm --source fake --link participant/context/jira/new-story/fixture-run/linked.md --state STATE --draft participant/context/jira/new-story/fixture-run/draft.md --allowlist participant/skills/jira-create-story/fake-allowlist.json --catalog participant/context/jira/duplicates/fixture --today 2026-11-19 --fingerprint df64d2e7a98a --confirmed-by "the participant" --result participant/context/jira/new-story/fixture-run/result.md
+------------------------------------------------------------------------------
+CONFIRMATION for preview df64d2e7a98a, given by: the participant (the name given with the confirmation).
+
+Jira site:   https://fixture-site.example.invalid  (site fingerprint 738169e667642f09)
+Project:     RPT (project id 30000). On the sandbox allowlist: yes.
+Issue type:  "Story" (issue type id 10001)
+Draft:       participant/context/jira/new-story/fixture-run/draft.md
+
+Checked in this run, before writing:
+  the preview is 0 minutes old, and the limit is 15: ok
+  the saved preview is unaltered and has not been used: ok
+  the draft file is byte for byte the one that was previewed: ok
+  the payload worked out again now has the SHA-256 of the previewed one, 9039d788799b8fdbead7bebcdd68d627b174890b185a50fd2b70da9d3e5ee4a0: ok
+  the project is on the sandbox allowlist for this site: ok
+  Jira says this identity may create stories here: ok
+  this draft has no link file, and no story in Jira carries the marker gtq-3d2f86e9: ok
+
+Written to the link file before sending: a create is being sent, result not yet recorded.
+CREATED in Jira: one story. Jira answered 201 with the key RPT-10 and the issue id 30010.
+The confirmation and the write happened in this one run of the command.
+Written to the link file: the key RPT-10 and the issue id 30010.
+
+READ BACK from Jira by issue id 30010, and compared with the payload field for field:
+  project            sent id 30000
+                     read "RPT" (id 30000): the same
+  issuetype          sent id 10001
+                     read "Story" (id 10001): the same
+  summary            sent "Quarterly revenue by plan report for the finance team"
+                     read "Quarterly revenue by plan report for the finance team": the same
+  description        sent 2 block(s) of document
+                     read 2 block(s) of document: the same, identical as sent
+  labels             sent ["gtq-3d2f86e9", "reporting", "revenue"]
+                     read ["gtq-3d2f86e9", "reporting", "revenue"]: the same
+  components         sent id 31001
+                     read "Reports" (id 31001): the same
+  parent             sent "RPT-1"
+                     read "RPT-1" (id 30001): the same
+  duedate            sent "2027-01-15"
+                     read "2027-01-15": the same
+  customfield_10050  sent id 32001
+                     read "Data" (id 32001): the same
+Result: every field the payload sent reads back the same.
+Fields Jira set that the payload did not send:
+  created            Created       "2026-11-19T12:00:01.000+0000"
+  creator            Creator       a person, not shown
+  priority           Priority      "Medium" (id 3)
+  reporter           Reporter      a person, not shown
+  status             Status        "To Do" (id 1)
+  and 1 more that hold a value: updated
+
+The link file participant/context/jira/new-story/fixture-run/linked.md now holds the key, the issue id and this comparison.
+
+RESULT RECORD
+  Issue key: RPT-10
+  Identifier of what was created: Jira issue id 30010 (this identifies the story; a key can change)
+  Target project: RPT (project id 30000), on the sandbox allowlist
+  Jira site: [site address removed], site fingerprint 738169e667642f09
+  Created at: 2026-11-19 21:38:42 UTC
+  Confirmed by: the participant, at 2026-11-19 21:38:42 UTC
+  Preview: fingerprint df64d2e7a98a
+  Payload: SHA-256 9039d788799b8fdbead7bebcdd68d627b174890b185a50fd2b70da9d3e5ee4a0
+  Marker label: gtq-3d2f86e9
+  Read back and compared at 2026-11-19 21:38:42 UTC: every field the payload sent reads back the same
+  Local link: participant/context/jira/new-story/fixture-run/linked.md
+
+The result record was also saved as Markdown where --result said.
+
+Requests sent to Jira: 11. 10 GET and 1 POST. The POST is the one create.
+  GET /rest/api/3/project/RPT
+  GET /rest/api/3/myself
+  GET /rest/api/3/mypermissions
+  GET /rest/api/3/issue/createmeta/30000/issuetypes
+  GET /rest/api/3/issue/createmeta/30000/issuetypes/10001
+  GET /rest/api/3/issue/createmeta/30000/issuetypes/10001
+  GET /rest/api/3/issue/createmeta/30000/issuetypes/10001
+  GET /rest/api/3/issue/RPT-1
+  GET /rest/api/3/search/jql
+  POST /rest/api/3/issue
+  GET /rest/api/3/issue/30010
+------------------------------------------------------------------------------
+exit code: 0
+  ok   created, exit code 0: Jira answered 201 with the key RPT-10 and the issue id 30010
+  ok   the confirmation names the preview's fingerprint and who confirmed, in the same run as the write (criterion 7)
+  ok   the link file was written before sending, and the key and id after (criterion 2)
+  ok   the story was read back by its id and all 9 fields the payload sent are the same (criterion 1)
+  ok   what Jira set itself is listed, with people not shown
+  ok   the result record has the key, the issue id, the project, the time and the confirmer (criterion 8)
+  ok   exactly one POST was sent
+$ python3 participant/skills/jira-create-story/fake_jira.py show --state STATE
+------------------------------------------------------------------------------
+FAKE JIRA holds 8 stories in project RPT: RPT-1 (id 30001), RPT-2 (id 30002), RPT-3 (id 30003), RPT-4 (id 30004), RPT-5 (id 30005), RPT-7 (id 30008), RPT-9 (id 30009), RPT-10 (id 30010).
+------------------------------------------------------------------------------
+exit code: 0
+  ok   the fake Jira now holds 8 stories in RPT, the new one being RPT-10 (id 30010)
+
+RESULT: ALL CHECKS PASSED. (The checks are on the fake-Jira runs above.)
+
+##############################################################################
+THE SAME ON THE REAL JIRA SANDBOX
+The blocks below were not made by this script. The participant ran each command in their own
+terminal against their real Jira sandbox, and the workflow saved its output with the site's
+address replaced by a marker. They are copied here unchanged from the log files named.
+
+The real approved run: the participant confirming the real preview by its fingerprint.
+(copied from logs/live-confirmation.txt)
+------------------------------------------------------------------------------
+CONFIRMATION for preview c931beb110b0, given by: the participant (the name given with the confirmation).
+
+Jira site:   [site address removed]  (site fingerprint 4aabe3d08fbad6b1)
+Project:     SCRUM (project id 10000). On the sandbox allowlist: yes.
+Issue type:  "Story" (issue type id 10004)
+Draft:       participant/context/jira/new-story/draft-sandbox.md
+
+Checked in this run, before writing:
+  the preview is 0 minutes old, and the limit is 15: ok
+  the saved preview is unaltered and has not been used: ok
+  the draft file is byte for byte the one that was previewed: ok
+  the payload worked out again now has the SHA-256 of the previewed one, d044842a49cf189564af35d662d55965e82c98e124751ecab09ed2eabe3ad3a2: ok
+  the project is on the sandbox allowlist for this site: ok
+  Jira says this identity may create stories here: ok
+  this draft has no link file, and no story in Jira carries the marker gtq-57dc5556: ok
+
+Written to the link file before sending: a create is being sent, result not yet recorded.
+CREATED in Jira: one story. Jira answered 201 with the key SCRUM-23 and the issue id 10022.
+The confirmation and the write happened in this one run of the command.
+Written to the link file: the key SCRUM-23 and the issue id 10022.
+
+READ BACK from Jira by issue id 10022, and compared with the payload field for field:
+  project            sent id 10000
+                     read "Work" (id 10000): the same
+  issuetype          sent id 10004
+                     read "Story" (id 10004): the same
+  summary            sent "Quarterly revenue by plan report for the finance team"
+                     read "Quarterly revenue by plan report for the finance team": the same
+  description        sent 2 block(s) of document
+                     read 2 block(s) of document: the same, identical as sent
+  labels             sent ["gtq-57dc5556", "reporting", "revenue"]
+                     read ["gtq-57dc5556", "reporting", "revenue"]: the same
+  duedate            sent "2027-01-15"
+                     read "2027-01-15": the same
+Result: every field the payload sent reads back the same.
+Fields Jira set that the payload did not send:
+  created            Created       "2026-11-19T16:34:26.044-0500"
+  creator            Creator       a person, not shown
+  priority           Priority      "Medium" (id 3)
+  reporter           Reporter      a person, not shown
+  status             Status        "To Do" (id 10000)
+  and 12 more that hold a value: aggregateprogress, comment, customfield_10019, issuerestriction, progress, statusCategory, statuscategorychangedate, updated, votes, watches, worklog, workratio
+
+The link file participant/context/jira/new-story/linked.md now holds the key, the issue id and this comparison.
+
+RESULT RECORD
+  Issue key: SCRUM-23
+  Identifier of what was created: Jira issue id 10022 (this identifies the story; a key can change)
+  Target project: SCRUM (project id 10000), on the sandbox allowlist
+  Jira site: [site address removed], site fingerprint 4aabe3d08fbad6b1
+  Created at: 2026-11-19 21:34:26 UTC
+  Confirmed by: the participant, at 2026-11-19 21:34:22 UTC
+  Preview: fingerprint c931beb110b0
+  Payload: SHA-256 d044842a49cf189564af35d662d55965e82c98e124751ecab09ed2eabe3ad3a2
+  Marker label: gtq-57dc5556
+  Read back and compared at 2026-11-19 21:34:27 UTC: every field the payload sent reads back the same
+  Local link: participant/context/jira/new-story/linked.md
+
+The result record was also saved as Markdown where --result said.
+
+Requests sent to Jira: 8. 7 GET and 1 POST. The POST is the one create.
+  GET /rest/api/3/project/SCRUM
+  GET /rest/api/3/myself
+  GET /rest/api/3/mypermissions
+  GET /rest/api/3/issue/createmeta/10000/issuetypes
+  GET /rest/api/3/issue/createmeta/10000/issuetypes/10004
+  GET /rest/api/3/search/jql
+  POST /rest/api/3/issue
+  GET /rest/api/3/issue/10022
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.
+------------------------------------------------------------------------------

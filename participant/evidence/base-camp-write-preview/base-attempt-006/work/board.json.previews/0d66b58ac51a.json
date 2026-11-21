@@ -1,0 +1,35 @@
+{
+  "fingerprint": "0d66b58ac51a3468781a819af4b44b26a4a0293210b2fce23acd6f409a492425",
+  "made_at": "2026-11-17 21:02:16 UTC",
+  "expires_at": "2026-11-17 21:17:16 UTC",
+  "board_fingerprint": "6846ec85b92d9b9521c357e3cc092692b6c379a539dc703c5c4508fa8f46accc",
+  "proposal": {
+    "board": "DEMO",
+    "stories_now": 7,
+    "steps": [
+      {
+        "action": "update",
+        "id": "DEMO-4",
+        "title_now": "Warn before closing an unsaved story",
+        "fields": {
+          "title": {
+            "now": "Warn before closing an unsaved story",
+            "after": "Warn before closing a story with unsaved edits"
+          }
+        }
+      },
+      {
+        "action": "update",
+        "id": "DEMO-5",
+        "title_now": "Sort the board by last update",
+        "fields": {
+          "status": {
+            "now": "todo",
+            "after": "doing"
+          }
+        }
+      }
+    ]
+  },
+  "state": "open"
+}

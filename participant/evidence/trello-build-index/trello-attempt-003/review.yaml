@@ -1,0 +1,28 @@
+schema_version: 1
+review_id: review-20261120170443-6feea4
+quest_id: trello-build-index
+quest_version: 1
+attempt_id: trello-attempt-003
+evidence_hash: sha256:1d8dbe369107518e1cc0bd7e10c964fbe1b2fec3efd9572d5e6d5da515e70d05
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-20T17:04:43Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/trello/index.md
+  digest: sha256:26cf40d9c221585f1c5ee8d7d3e60b80222e09ea98bd7bd19587fbce9fbaaa67
+- path: participant/skills/trello-build-index/SKILL.md
+  digest: sha256:22b6ef9ab9e3e8e6f6f332ad343988cadde57ceb447bf29720d27da81c2cb124
+verification_statement: 'Automated review. I read the generator SKILL.md, the generated
+  index.md, logs/index-run.txt, tests.txt, planted-bugs.txt, both real-run logs, the
+  scripts and PROOF.md. I checked the logs against each other. The same records give
+  the same SHA-256 in Part 1, at the start of Part 4 and at the end of Part 7 (c563c6d2…).
+  Part 6 and the rebuild after the Part 7 hand edit both give 464639ef…. The script''s
+  own row counts match the generator''s counts. The headings and rows in index.md
+  match what Part 2 checks. The real-run lookups add up to 7 of 7. I found nothing
+  inconsistent. The files shown are under trello-attempt-003; PROOF.md says copies
+  were placed at attempt-001, and the pre-check found the required files. The card
+  named "INDEX TOOL: …" is deliberate fixture data aimed at the index tool, not at
+  the reviewer, so this is not a prompt injection. Each of the 7 acceptance criteria
+  was matched to text quoted word for word from the evidence.'

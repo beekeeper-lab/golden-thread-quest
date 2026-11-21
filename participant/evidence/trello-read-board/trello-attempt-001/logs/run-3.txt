@@ -1,0 +1,9 @@
+trello-sync: signed-in member resolved from Trello: 559966706fa3a2b338bfd681
+trello-sync: board resolved from configuration: 'GTQ Sandbox' (id 6afdf376f8b9111df7e27f99)
+trello-sync: read from Trello: 4 lists, 7 cards (2 archived), 1 checklists, 3 comments
+trello-sync: cards held: 8. This run: 0 new, 7 unchanged, 0 renamed, 0 moved, 0 reordered, 0 updated, 0 archived, 0 not returned
+trello-sync: card records written: 8, in participant/context/trello/cards
+trello-sync: index written: participant/context/trello/board-index.md
+trello-sync: reconciliation written: participant/context/trello/reconciliation.md
+trello-sync: last successful sync before this run: 2026-11-18T20:13:01Z. Now: 2026-11-18T20:29:47Z
+trello-sync: written: participant/context/trello/board.json

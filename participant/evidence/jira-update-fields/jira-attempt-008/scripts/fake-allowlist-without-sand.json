@@ -1,0 +1,6 @@
+{
+  "about": "The fake allowlist with SAND taken off, to show the allowlist being checked again at confirmation.",
+  "sandbox_projects": [
+    {"site_fingerprint": "738169e667642f09", "project_id": "20003", "note": "RO on the fake Jira"}
+  ]
+}

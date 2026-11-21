@@ -1,0 +1,13 @@
+{
+  "board": "DEMO",
+  "changes": [
+    {
+      "action": "create",
+      "fields": {
+        "title": "Remember the last search",
+        "description": "When the board is opened again, show the words last searched for.",
+        "status": "todo"
+      }
+    }
+  ]
+}

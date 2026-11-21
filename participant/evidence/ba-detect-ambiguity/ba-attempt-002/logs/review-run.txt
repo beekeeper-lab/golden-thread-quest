@@ -1,0 +1,182 @@
+Running the review, and the requirements it left unflagged: ba-detect-ambiguity, attempt ba-attempt-002
+Recorded by scripts/record_evidence.py. Each block between dashed lines is what the checker printed.
+Only local files are read. The requirements set is made up, so nothing is redacted.
+The judgments in the review were made by an assistant reading the requirements. No script made them.
+
+==============================================================================
+PART 1. The review as it stands: every finding, and every requirement left unflagged with why it is sound.
+$ python3 participant/skills/requirements-review/check.py 
+------------------------------------------------------------------------------
+REQUIREMENTS REVIEW. Reads two local files and writes none.
+Requirements: participant/context/ambiguity/requirements.md, 20 requirements.
+Findings:     participant/context/ambiguity/findings.md, 9 findings.
+
+FINDINGS, 9, on 10 requirements:
+  F-01  REQ-04 and REQ-12 contradictory  words: REQ-04 "at any time before the booking's start time"; REQ-12 "shall not accept a cancellation from a member less than two hours before the booking's start time"
+        asks: In the two hours before a booking starts, may the member cancel it or not?
+  F-02  REQ-14 and NFR-04 contradictory  words: REQ-14 "complete booking history for the previous 24 months"; NFR-04 "permanently deleted 12 months after the date of the booking"
+        asks: For how long are booking records kept, and is that the period a staff user's history must cover?
+  F-03  REQ-11            untestable     words: "genuinely intend to use them"
+        asks: What that the system can observe would count as a member not intending to use a room, and what is the system to do when it sees it?
+  F-04  NFR-05            untestable     words: "No fault in the system shall ever"
+        asks: Which faults must a confirmed booking survive, and how is its survival to be checked after each?
+  F-05  REQ-06            vague          words: "shortly before"
+        asks: How long before a booking's start time is the reminder email to be sent?
+  F-06  NFR-03            vague          words: "recent versions of popular desktop and mobile browsers" "work correctly"
+        asks: Which browsers and which versions must the website support, and which of its functions must work in each?
+  F-07  REQ-08            incomplete     words: "accumulates three no-shows"
+        asks: Over what period are no-shows counted, and how does a member who has been prevented from booking become able to book again?
+  F-08  REQ-13            incomplete     words: "shall refuse new bookings for them"
+        asks: When a room is marked out of service for dates on which it already has bookings, what is to happen to those bookings and to the members who hold them?
+  F-09  REQ-13            vague          words: "as unavailable"
+        asks: Is an out-of-service slot shown with a marking of its own, or as "booked", and if it has its own, is that a third marking beside the two in REQ-02?
+By type: contradictory 2, untestable 2, incomplete 2, vague 3.
+
+UNFLAGGED, 10 requirements left alone, each with the reason it is sound:
+  REQ-01  the credentials, the count of five consecutive failures and the 15-minute rejection are all stated, so the sixth attempt and the first after 15 minutes each have one expected result.
+  REQ-02  what is shown for each room and the two markings a slot can have are stated, and "any date on which bookings are accepted" is fixed by REQ-05.
+  REQ-03  the limits of one to four consecutive slots, one room and one day are stated, and "slot" and "opening hours" are both defined in the glossary.
+  REQ-05  the first and last accepted dates and the exact message for a later date are stated, so day 14 and day 15 each have one expected result.
+  REQ-07  the five things on the confirmation page are listed, and "promptly" is defined in the glossary as within 60 seconds.
+  REQ-09  the way to check in and both ends of the period in which it is accepted are stated in minutes.
+  REQ-10  the trigger is the glossary's "no-show", "promptly" is defined, and which slots become available is stated.
+  NFR-01  the number of members, where the time is measured, the limit, the share of requests and the length of the run are all stated as numbers. A finding on how often each member makes a request was raised and withdrawn, as set out below.
+  NFR-02  how a PIN is stored and the three places it must never appear are stated, and each can be inspected.
+  NFR-06  the backup interval, how often the restore is tested and its time limit are all stated as numbers.
+
+ACCOUNTED FOR: 10 with a finding + 10 unflagged = 20 of 20 requirements.
+
+Rules checked: one type from four for each finding; quoted words found in the requirement named, character for
+character; what a tester could not decide and what goes wrong if unanswered both stated; a contradiction names
+two requirements and quotes both; every requirement accounted for once; each finding asks a question and offers
+no wording; the definitions are in the file, in the order they are applied.
+This script checks the form of the review. Whether each judgment is right is not something it can check.
+
+RESULT: THE REVIEW KEEPS ALL ITS RULES.
+------------------------------------------------------------------------------
+exit code: 0
+  ok   the review keeps all seven of its rules, exit code 0
+  ok   each of the 9 findings names one of the four types (criterion 1)
+  ok   all four types are used: contradictory 2, untestable 2, incomplete 2, vague 3
+  ok   the two contradictions each cite two requirements, and one of them spans the two documents (criterion 4)
+  ok   10 requirements are listed as unflagged, each with a reason (criterion 5)
+  ok   every one of the 20 requirements is accounted for exactly once
+  ok   every finding asks a question
+
+==============================================================================
+PART 2. The checker refusing a review that breaks a rule.
+Each time, one thing is changed in a copy of the findings in a temporary folder, shown as COPY.
+
+Changed: a quoted word is changed, so the words quoted are no longer in the requirement.
+    rule 2: F-05 quotes words that are not in REQ-06: "soon before"
+    exit code: 1
+  ok   refused, naming the rule
+
+Changed: a finding's question is replaced by wording for the requirement.
+    rule 6: F-05 offers wording in place of a question: it says 'should read'
+    exit code: 1
+  ok   refused, naming the rule
+
+Changed: a sound requirement is dropped from the unflagged list.
+    rule 5: a line under Unflagged could not be read: - the five things on the confirmation page are lis
+    rule 5: REQ-07 has no finding and is not listed as unflagged, so it is not accounted for
+    exit code: 1
+  ok   refused, naming the rule
+
+Changed: a contradiction names only one of its two requirements.
+    rule 4: F-02 is a contradiction and names 1 requirement, where it must name two
+    rule 2: F-02 quotes words from NFR-04, which it does not name as its requirement
+    rule 5: NFR-04 has no finding and is not listed as unflagged, so it is not accounted for
+    exit code: 1
+  ok   refused, naming the rule
+
+Changed: a finding is given two types at once.
+    rule 1: F-05 does not name one of the four types: it says 'vague or incomplete'
+    exit code: 1
+  ok   refused, naming the rule
+
+==============================================================================
+PART 3. The findings beside the author's answer key.
+The requirements were written by a separate assistant, which also wrote a key saying which it meant to be
+sound and which defective. The reviewer wrote down a first pass and a second look before opening it.
+The key is in review/answer-key.md. This table is worked out by this script from the two files.
+          the author meant           the review
+  REQ-01  sound                      unflagged
+  REQ-02  sound, a trap              unflagged
+  REQ-03  sound, a trap              unflagged
+  REQ-04  defective, contradictory   F-01 contradictory
+  REQ-05  sound                      unflagged
+  REQ-06  defective, vague           F-05 vague
+  REQ-07  sound, a trap              unflagged
+  REQ-08  defective, incomplete      F-07 incomplete
+  REQ-09  sound                      unflagged
+  REQ-10  sound, a trap              unflagged
+  REQ-11  defective, untestable      F-03 untestable
+  REQ-12  defective, contradictory   F-01 contradictory
+  REQ-13  defective, incomplete      F-08 incomplete; F-09 vague
+  REQ-14  defective, contradictory   F-02 contradictory
+  NFR-01  sound                      unflagged
+  NFR-02  sound                      unflagged
+  NFR-03  defective, vague           F-06 vague
+  NFR-04  defective, contradictory   F-02 contradictory
+  NFR-05  defective, untestable      F-04 untestable
+  NFR-06  sound                      unflagged
+
+  ok   the key covers all 20 requirements: 10 meant as defective and 10 as sound
+  ok   every requirement the author meant as defective has a finding of the same type: 10 of 10
+  ok   every trap, a sound requirement made to look suspicious, was left unflagged: 4 of 4
+  Findings the author did not plant: F-09 on REQ-13 (vague).
+  ok   there is one, F-09 on REQ-13, and it is listed and not hidden
+  ok   every requirement the author meant as sound is unflagged: 10 of 10
+  The review as first handed in had a second finding the author did not plant: F-11 on NFR-01, which the
+  author meant as sound. It was withdrawn after review, because its type could not be reproduced. Part 4
+  has the record of that.
+  The author, the reviewer and the independent readers are assistants of the same kind. Agreement between
+  them shows the review is consistent. It does not show the review is right.
+
+==============================================================================
+PART 4. The types given by independent readers (criterion 7).
+Each was a fresh assistant given the requirements and the findings with the Type, Also considered and
+Effort lines removed, and nothing else. Their reports, and the file each was given, are in review/.
+This table is worked out by this script from those reports and from findings.md.
+  s = settled by the written words alone. a = reached by assuming something unwritten. n = not settled.
+         the review               reader 1       reader 2          reader 3          reader 4          reader 5
+  F-01   contradictory            contradictory  contradictory, s  contradictory, s  contradictory, s  contradictory, s
+  F-02   contradictory            contradictory  contradictory, a  contradictory, a  contradictory, a  contradictory, a
+  F-03   untestable               untestable     untestable, s     untestable, s     untestable, s     untestable, s
+  F-04   untestable               untestable     untestable, s     untestable, s     untestable, s     untestable, s
+  F-05   vague                    vague          vague, s          vague, s          vague, s          vague, s
+  F-06   vague                    vague          vague, s          vague, a          not settled       vague, a
+  F-07   incomplete               incomplete     incomplete, a     incomplete, s     incomplete, s     incomplete, a
+  F-08   incomplete               incomplete     incomplete, s     incomplete, s     incomplete, s     incomplete, s
+  F-09   vague                    vague          vague, a          vague, s          vague, s          vague, s
+  F-11   incomplete, withdrawn    incomplete     not settled       not settled       incomplete, a     not given
+
+  Reader 1 had the definitions as first agreed and was free to fill gaps. It matched all ten, and said five
+  were close calls settled by three assumptions of its own. Those were written into the definitions.
+  Readers 2 to 5 were told to assume nothing and to say so when the written words did not decide a case.
+
+  Reader 2. Given the three clarifications.
+  It gave 9 of 10 findings the review's type: 6 settled, 3 by an assumption, 1 not settled.
+  NOT REPRODUCED by reader 2: F-11. The review says incomplete. The reader says: not settled: incomplete or vague.
+  ok   reader 2's report has a row for every finding it was given, and the rows are compared as written
+
+  Reader 3. Given two more sentences, added to settle F-11. They did not settle it.
+  It gave 9 of 10 findings the review's type: 7 settled, 2 by an assumption, 1 not settled.
+  NOT REPRODUCED by reader 3: F-11. The review says incomplete. The reader says: not settled: incomplete or vague.
+  ok   reader 3's report has a row for every finding it was given, and the rows are compared as written
+
+  Reader 4. Given a rule the reviewer of the first hand-in suggested. F-11 matched, by an assumption, and F-06 came unsettled.
+  It gave 9 of 10 findings the review's type: 7 settled, 2 by an assumption, 1 not settled.
+  NOT REPRODUCED by reader 4: F-06. The review says vague. The reader says: not settled: incomplete or vague (leaning vague).
+  ok   reader 4's report has a row for every finding it was given, and the rows are compared as written
+
+  Reader 5. Given the definitions reader 3 had, and nine findings: the rule was taken out again and F-11 withdrawn.
+  It gave 9 of 9 findings the review's type: 6 settled, 3 by an assumption, 0 not settled.
+  ok   reader 5's report has a row for every finding it was given, and the rows are compared as written
+
+  ok   reader 5 was given the findings file as it now stands, nine findings, and gave every one the review's type: 9 of 9
+  Of those, 6 were settled by the written words alone and 3 by an assumption, which the findings file names
+  as a judgment the definitions leave open.
+
+RESULT: ALL CHECKS PASSED.

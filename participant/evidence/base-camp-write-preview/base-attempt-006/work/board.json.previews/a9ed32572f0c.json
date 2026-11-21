@@ -1,0 +1,42 @@
+{
+  "fingerprint": "a9ed32572f0cb0f6779655c85fef68e9a6b43adfc4a1ffd9e9d8c5b73b1a21a3",
+  "made_at": "2026-11-17 21:02:16 UTC",
+  "expires_at": "2026-11-17 21:17:16 UTC",
+  "board_fingerprint": "72c344ea47e65b3ee9202baa2ddf43e14ee8acbdfc00038027d4662c9749178b",
+  "proposal": {
+    "board": "DEMO",
+    "stories_now": 5,
+    "steps": [
+      {
+        "action": "create",
+        "id": "DEMO-6",
+        "fields": {
+          "title": "Search stories by description",
+          "description": "Extend the search box so it also finds stories whose description holds the words typed.\nFollow-up to DEMO-3.",
+          "status": "todo"
+        }
+      },
+      {
+        "action": "create",
+        "id": "DEMO-7",
+        "fields": {
+          "title": "Show how many stories a search found",
+          "description": "Above the search results, show the number of stories found.",
+          "status": "todo"
+        }
+      },
+      {
+        "action": "update",
+        "id": "DEMO-3",
+        "title_now": "Search stories by title",
+        "fields": {
+          "status": {
+            "now": "todo",
+            "after": "doing"
+          }
+        }
+      }
+    ]
+  },
+  "state": "written"
+}

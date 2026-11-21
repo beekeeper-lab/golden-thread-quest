@@ -1,0 +1,9 @@
+A run against a board the member cannot see: trello-read-board, attempt trello-attempt-001
+
+Run by the participant in their own terminal, against real Trello, with the read-only token. The board code given
+does not belong to any board. The output is as they pasted it. It wrote to a scratch folder.
+
+$ TRELLO_BOARD=zzzzzzzz python3 participant/skills/trello-read-board/sync.py --source live --out /tmp/trello-nosuch
+trello-sync: signed-in member resolved from Trello: 559966706fa3a2b338bfd681
+trello-sync: STOPPED: the board 'zzzzzzzz' is not visible to the signed-in member (Trello answered 404). Check TRELLO_BOARD, and that the board belongs to or is shared with the account the token was made for.
+trello-sync: Nothing was written.

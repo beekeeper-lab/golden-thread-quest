@@ -1,0 +1,34 @@
+schema_version: 1
+review_id: review-20261120184939-981888
+quest_id: trello-duplicate-search
+quest_version: 1
+attempt_id: trello-attempt-004
+evidence_hash: sha256:0598f8a8e1a6abe24ee07c3c0ea8c9989c02f3d51ac3e6650d4b332c54689abe
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-20T18:49:39Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/trello/duplicates/fixture.md
+  digest: sha256:9e4a2b19c41653a133a5f0fb5b66629ab37a434275cbba602623b8f8d70ea6d3
+- path: participant/context/trello/duplicates/report.md
+  digest: sha256:ea52af73284be0e83289bd69a88da8fa7aae1c26d9a09706e496a784eeee73b8
+verification_statement: 'Automated review. I read PROOF.md, the run log, the test
+  and planted-bug logs, the scripts, fixture.md and report.md. - **Fixture:** It covers
+  two boards. It plants a true duplicate with a different name (…201, on the support
+  board), a near duplicate (…101) and an unrelated card with the same name (…103).
+  - **Run log, part 2:** …201 is found on another board with all six signals listed
+  and HIGH, 12 of 13. - **Run log, part 3:** The same-name card …103 is not reported
+  (RESULT: NONE, "matched on name only"). - **Run log, part 4:** The no-match proposal
+  reports "RESULT: NONE." - **Run log, part 5:** All three recommendation words appear.
+  - **Run log, part 6:** The SHA-256 of all 16 files is the same before and after.
+  - **report.md:** It records the person''s decision, link, and each candidate has
+  at least three signals beyond the name marked yes. - **Consistency:** The hashes
+  printed in parts 2 to 5 match part 6. The changed hashes in part 7 belong only to
+  the temporary copy that was rebuilt. Card …105''s text, which gives orders to the
+  search tool, is planted test data aimed at the participant''s tool, not at me. It
+  is not a prompt injection. The files shown are in the trello-attempt-004 folder,
+  while the quest names attempt-001. PROOF.md explains this and says copies are in
+  attempt-001, and the automatic pre-check found the required files. Each of the 7
+  acceptance criteria was matched to text quoted word for word from the evidence.'

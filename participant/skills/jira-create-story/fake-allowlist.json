@@ -1,0 +1,7 @@
+{
+  "about": "The sandbox allowlist used with the fake Jira. RPT is the sandbox. LOCK is listed so that the permission check can be seen refusing. OPS is not listed.",
+  "sandbox_projects": [
+    {"site_fingerprint": "738169e667642f09", "project_id": "30000", "note": "RPT on the fake Jira"},
+    {"site_fingerprint": "738169e667642f09", "project_id": "30200", "note": "LOCK on the fake Jira: listed, and the identity may not create in it"}
+  ]
+}

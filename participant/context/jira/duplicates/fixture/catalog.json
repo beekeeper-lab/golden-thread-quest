@@ -1,0 +1,106 @@
+{
+ "counts": {
+  "files": 9,
+  "indexed": 9,
+  "not_indexed": 0,
+  "repeats": 0
+ },
+ "entries": [
+  {
+   "assignee": "5b10a0000000000000000ada",
+   "file": "30001.md",
+   "gaps": [],
+   "id": "30001",
+   "key": "RPT-1",
+   "status": "In Progress",
+   "title": "Finance reporting",
+   "updated": "2026-11-10T15:00:00.000+0000"
+  },
+  {
+   "assignee": "5b10a0000000000000000ada",
+   "file": "30002.md",
+   "gaps": [],
+   "id": "30002",
+   "key": "RPT-2",
+   "status": "In Progress",
+   "title": "Customer attrition by region: recurring export for Finance",
+   "updated": "2026-11-12T15:00:00.000+0000"
+  },
+  {
+   "assignee": "5b10a0000000000000000ada",
+   "file": "30003.md",
+   "gaps": [],
+   "id": "30003",
+   "key": "RPT-3",
+   "status": "To Do",
+   "title": "Weekly churn dashboard for the sales team",
+   "updated": "2026-11-03T15:00:00.000+0000"
+  },
+  {
+   "assignee": "5b10a0000000000000000ada",
+   "file": "30004.md",
+   "gaps": [],
+   "id": "30004",
+   "key": "RPT-4",
+   "status": "To Do",
+   "title": "Add a plan filter to the invoices page",
+   "updated": "2026-10-22T15:00:00.000+0000"
+  },
+  {
+   "assignee": "5b10a0000000000000000ada",
+   "file": "30005.md",
+   "gaps": [],
+   "id": "30005",
+   "key": "RPT-5",
+   "status": "Done",
+   "title": "Month-end close checklist for finance",
+   "updated": "2026-10-01T15:00:00.000+0000"
+  },
+  {
+   "assignee": "5b10a0000000000000000ada",
+   "file": "30006.md",
+   "gaps": [],
+   "id": "30006",
+   "key": "OPS-2",
+   "status": "In Progress",
+   "title": "Server housekeeping",
+   "updated": "2026-11-01T15:00:00.000+0000"
+  },
+  {
+   "assignee": "5b10a0000000000000000ada",
+   "file": "30007.md",
+   "gaps": [],
+   "id": "30007",
+   "key": "OPS-12",
+   "status": "To Do",
+   "title": "Clean up old data",
+   "updated": "2026-11-04T15:00:00.000+0000"
+  },
+  {
+   "assignee": "5b10a0000000000000000ada",
+   "file": "30008.md",
+   "gaps": [],
+   "id": "30008",
+   "key": "RPT-7",
+   "status": "Done",
+   "title": "Churn numbers by plan: one-off extract",
+   "updated": "2026-03-20T15:00:00.000+0000"
+  },
+  {
+   "assignee": "5b10a0000000000000000ada",
+   "file": "30009.md",
+   "gaps": [],
+   "id": "30009",
+   "key": "RPT-9",
+   "status": "To Do",
+   "title": "Regional attrition figures for the finance director",
+   "updated": "2026-11-17T15:00:00.000+0000"
+  }
+ ],
+ "format": "jira-catalog/1",
+ "newest_update": "2026-11-17T15:00:00.000+0000",
+ "not_indexed": [],
+ "note": "Generated. The story records are the source of truth. Do not edit by hand.",
+ "records_fingerprint": "ac32bbd668c14b6c6a5f8c7f15e042515958a6e573e5f337d0dfbf54998a57d1",
+ "repeats": []
+}

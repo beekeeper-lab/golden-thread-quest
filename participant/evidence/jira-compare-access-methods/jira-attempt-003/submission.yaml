@@ -1,0 +1,15 @@
+schema_version: 1
+submission_id: submission-20261118165822-063856
+quest_id: jira-compare-access-methods
+quest_version: 1
+attempt_id: jira-attempt-003
+content_hash: sha256:f0c582788dbe8b29c9597bb351797862ac5daafa64726852f49cbb59eaffaeeb
+evidence_hash: sha256:16820eb73fd152b76e50fe18010d244b8a440e7562499b9e6e8167b0812b64e2
+submitted_at: '2026-11-18T16:58:22Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/jira/access-comparison.md
+  digest: sha256:b50058bf02e04649d333dd3afcd75f4d70850bfc8eceef8cba8e4d283ede06d4
+- path: participant/context/jira/access-decision.md
+  digest: sha256:38a847378bab83c11d33c5352b3064299fe4d83d2050a95f95e612ffa688036f

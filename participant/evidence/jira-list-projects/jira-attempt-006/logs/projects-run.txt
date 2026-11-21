@@ -1,0 +1,207 @@
+Retrieving projects, and retrieving them again after a rename: jira-list-projects, attempt jira-attempt-006
+Recorded by scripts/record_evidence.py. Each block between dashed lines is what the skill printed.
+Everything here runs against scripts/fake_jira.py, a made-up Jira. No real Jira was read or changed,
+so that a project could be renamed and removed. Every project is synthetic, so nothing is redacted.
+
+==============================================================================
+PART 1. THE TWO RUNS. Eleven made-up projects, 5 to a page, written to participant/context/jira/.
+
+RUN 1. Nothing is held yet.
+$ projects.py --source fake --out participant/context/jira --page-size 5      (the fake holding 11 projects)
+------------------------------------------------------------------------------
+PROJECT LIST. Reading only.
+Retrieving the visible projects, 5 to a page:
+  page 1: asked for 5 from position 0, received 5
+  page 2: asked for 5 from position 5, received 5
+  page 3: asked for 5 from position 10, received 1
+  11 project(s) received over 3 page(s). Jira's own count: 11.
+
+Compared with what was held, matching on the project id:
+  held now: 11. new: 11, unchanged: 0, renamed: 0, not returned: 0, returned again: 0
+
+Last successful sync before this run: never. Now: 2026-11-19T01:54:44Z.
+Written: projects.md, projects.json and 11 file(s) in projects/, each named by project id.
+------------------------------------------------------------------------------
+exit code: 0
+
+  ok   all 11 projects were retrieved, over 3 pages of 5, 5 and 1
+  ok   11 files, each named by a project id: 10001.md ... 10011.md
+
+BETWEEN THE RUNS, on the fake Jira:
+  1. Project id 10003: its KEY is changed from DPAT to DATA. This is the quest's scenario.
+  2. Project id 10005: its NAME is changed from 'Mobile app' to 'Mobile apps'.
+  3. Project id 10006 (key ONB) is removed, so Jira no longer returns it.
+  4. A new project is added with the key BIL2 and the name 'Billing', a name another project already has.
+
+RUN 2. The same command again.
+$ projects.py --source fake --out participant/context/jira --page-size 5
+------------------------------------------------------------------------------
+PROJECT LIST. Reading only.
+Retrieving the visible projects, 5 to a page:
+  page 1: asked for 5 from position 0, received 5
+  page 2: asked for 5 from position 5, received 5
+  page 3: asked for 5 from position 10, received 1
+  11 project(s) received over 3 page(s). Jira's own count: 11.
+
+Compared with what was held, matching on the project id:
+  held now: 12. new: 1, unchanged: 8, renamed: 2, not returned: 1, returned again: 0
+  RENAMED: project id 10003, key was 'DPAT' and is now 'DATA'. Same id, same record, same file.
+  RENAMED: project id 10005, name was 'Mobile app' and is now 'Mobile apps'. Same id, same record, same file.
+  NOT RETURNED: project id 10006 (key 'ONB', name 'Onboarding'). Kept and flagged, not deleted.
+
+Last successful sync before this run: 2026-11-19T01:54:44Z. Now: 2026-11-19T01:54:44Z.
+Written: projects.md, projects.json and 12 file(s) in projects/, each named by project id.
+------------------------------------------------------------------------------
+exit code: 0
+
+  ok   the project whose key changed was matched to its existing record
+  ok   the project whose name changed was matched too
+  ok   the removed project was flagged and kept, not deleted
+  ok   the only new file is for the new project (10012.md); no file was renamed or removed
+  ok   no file is named by a key: there is no DATA.md, DPAT.md or BIL2.md
+  ok   12 projects are held: the 11 from run 1, the removed one among them, and the new one
+
+FINDING THE RENAMED PROJECT in participant/context/jira/projects.md, by each of its labels
+  by its new key, in the table 'By key':
+    | `DATA` | Data platform | [`10003`](projects/10003.md) |  |
+  ok   found by its new key, and the row leads to projects/10003.md
+  by its OLD key, in the table 'By key':
+    | `DPAT` *(former key)* | now Data platform | [`10003`](projects/10003.md) | until 2026-11-19T01:54:44Z |
+  ok   found by its OLD key, and the row leads to projects/10003.md
+  by its name, in the table 'By name':
+    | Data platform | `DATA` | [`10003`](projects/10003.md) |  |
+  ok   found by its name, and the row leads to projects/10003.md
+  by its project id, in the table 'By project id':
+    | [`10003`](projects/10003.md) | `DATA` | Data platform | Returned by Jira at the last sync |
+  ok   found by its project id, and the row leads to projects/10003.md
+
+THE REMOVED PROJECT, as the list now shows it:
+    | Onboarding **(not returned)** | `ONB` | [`10006`](projects/10006.md) |  |
+    | `ONB` **(not returned)** | Onboarding | [`10006`](projects/10006.md) |  |
+    | [`10006`](projects/10006.md) | `ONB` | Onboarding | NOT RETURNED by Jira since 2026-11-19T01:54:44Z |
+    | [`10006`](projects/10006.md) | `ONB` | Onboarding | 2026-11-19T01:54:44Z | 2026-11-19T01:54:44Z |
+  ok   it is in the list four times, flagged, and under 'Not returned by Jira (1)'
+
+THE RECORD OF THE RENAMED PROJECT, participant/context/jira/projects/10003.md:
+    # Data platform
+    
+    Generated by the project list. Do not edit this file: the next run replaces it.
+    
+    | | |
+    |---|---|
+    | Project id | `10003` |
+    | Key | `DATA` |
+    | Name | Data platform |
+    | State | Returned by Jira at the last sync |
+    | First seen | 2026-11-19T01:54:44Z |
+    | Last returned by Jira | 2026-11-19T01:54:44Z |
+    
+    The project id is what identifies this project. It is the name of this file, and it does not
+    change. The key and the name are labels, and either can be changed in Jira.
+    
+    ## Former keys and names
+    
+    | Noticed at | Label | Was | Became |
+    |---|---|---|---|
+    | 2026-11-19T01:54:44Z | key | DPAT | DATA |
+
+==============================================================================
+PART 2. PAGE BOUNDARIES, at Jira's ordinary page size of 50. Each run is in a temporary folder.
+
+49 projects: one fewer than a page.
+------------------------------------------------------------------------------
+PROJECT LIST. Reading only.
+Retrieving the visible projects, 50 to a page:
+  page 1: asked for 50 from position 0, received 49
+  49 project(s) received over 1 page(s). Jira's own count: 49.
+
+Compared with what was held, matching on the project id:
+  held now: 49. new: 49, unchanged: 0, renamed: 0, not returned: 0, returned again: 0
+
+Last successful sync before this run: never. Now: 2026-11-19T01:54:44Z.
+Written: projects.md, projects.json and 49 file(s) in projects/, each named by project id.
+------------------------------------------------------------------------------
+exit code: 0
+  ok   49 received and 49 files written, over 1 page(s)
+
+50 projects: exactly a page.
+------------------------------------------------------------------------------
+PROJECT LIST. Reading only.
+Retrieving the visible projects, 50 to a page:
+  page 1: asked for 50 from position 0, received 50
+  50 project(s) received over 1 page(s). Jira's own count: 50.
+
+Compared with what was held, matching on the project id:
+  held now: 50. new: 50, unchanged: 0, renamed: 0, not returned: 0, returned again: 0
+
+Last successful sync before this run: never. Now: 2026-11-19T01:54:44Z.
+Written: projects.md, projects.json and 50 file(s) in projects/, each named by project id.
+------------------------------------------------------------------------------
+exit code: 0
+  ok   50 received and 50 files written, over 1 page(s)
+
+51 projects: one more than a page: the case the quest's hint names.
+------------------------------------------------------------------------------
+PROJECT LIST. Reading only.
+Retrieving the visible projects, 50 to a page:
+  page 1: asked for 50 from position 0, received 50
+  page 2: asked for 50 from position 50, received 1
+  51 project(s) received over 2 page(s). Jira's own count: 51.
+
+Compared with what was held, matching on the project id:
+  held now: 51. new: 51, unchanged: 0, renamed: 0, not returned: 0, returned again: 0
+
+Last successful sync before this run: never. Now: 2026-11-19T01:54:44Z.
+Written: projects.md, projects.json and 51 file(s) in projects/, each named by project id.
+------------------------------------------------------------------------------
+exit code: 0
+  ok   51 received and 51 files written, over 2 page(s)
+
+100 projects: exactly two pages.
+------------------------------------------------------------------------------
+PROJECT LIST. Reading only.
+Retrieving the visible projects, 50 to a page:
+  page 1: asked for 50 from position 0, received 50
+  page 2: asked for 50 from position 50, received 50
+  100 project(s) received over 2 page(s). Jira's own count: 100.
+
+Compared with what was held, matching on the project id:
+  held now: 100. new: 100, unchanged: 0, renamed: 0, not returned: 0, returned again: 0
+
+Last successful sync before this run: never. Now: 2026-11-19T01:54:44Z.
+Written: projects.md, projects.json and 100 file(s) in projects/, each named by project id.
+------------------------------------------------------------------------------
+exit code: 0
+  ok   100 received and 100 files written, over 2 page(s)
+
+101 projects: one more than two pages.
+------------------------------------------------------------------------------
+PROJECT LIST. Reading only.
+Retrieving the visible projects, 50 to a page:
+  page 1: asked for 50 from position 0, received 50
+  page 2: asked for 50 from position 50, received 50
+  page 3: asked for 50 from position 100, received 1
+  101 project(s) received over 3 page(s). Jira's own count: 101.
+
+Compared with what was held, matching on the project id:
+  held now: 101. new: 101, unchanged: 0, renamed: 0, not returned: 0, returned again: 0
+
+Last successful sync before this run: never. Now: 2026-11-19T01:54:44Z.
+Written: projects.md, projects.json and 101 file(s) in projects/, each named by project id.
+------------------------------------------------------------------------------
+exit code: 0
+  ok   101 received and 101 files written, over 3 page(s)
+
+A Jira whose first page wrongly says it is the last, with 51 projects:
+------------------------------------------------------------------------------
+PROJECT LIST. Reading only.
+Retrieving the visible projects, 50 to a page:
+  page 1: asked for 50 from position 0, received 50
+
+STOPPED: Jira said there are 51 projects and 50 were received over 1 page(s). The list is not whole.
+Nothing was written.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   the run stopped, because 50 were received and Jira's own count was 51, and nothing was written
+
+RESULT: ALL CHECKS PASSED.

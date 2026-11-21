@@ -1,0 +1,108 @@
+Do the tests notice a broken sync.py? trello-read-board, attempt trello-attempt-001
+Recorded by scripts/planted_bugs.py.
+
+Each bug below was put into participant/skills/trello-read-board/sync.py, every test was run, and
+the bug was taken out again. No network is used.
+
+Before any bug: OK
+
+PLANTED BUG A. Cards are matched by name, not by Trello id
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    SecondRun.test_a_renamed_card_updates_its_record_and_makes_no_second_one
+
+PLANTED BUG B. Archived cards are not asked for
+  unittest result: FAILED (failures=10, errors=1)
+  tests that failed (11):
+    PagingThatDoesNotAdvance.test_a_board_with_exactly_one_full_page_is_read_whole
+    SecondRun.test_a_card_trello_stops_returning_is_reported_and_kept_with_its_last_state
+    SecondRun.test_a_renamed_card_updates_its_record_and_makes_no_second_one
+    SecondRun.test_an_archived_card_is_reported_and_kept
+    Safety.test_an_instruction_in_a_description_is_recorded_as_text_and_not_followed
+    SecondRun.test_an_unchanged_board_changes_nothing_and_duplicates_nothing
+    BoardStructure.test_archived_cards_are_read_too
+    RateLimits.test_limited_once_then_it_waits_and_completes
+    BoardStructure.test_paging_collects_every_card_and_comment_once
+    SecondRun.test_the_reconciliation_file_lists_archived_and_not_returned_cards_and_nothing_else
+    SecondRun.test_two_cards_given_the_same_name_stay_two_cards
+
+PLANTED BUG C. A comment already held is added again
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    SecondRun.test_a_second_sync_adds_no_duplicate_comment
+    SecondRun.test_an_unchanged_board_changes_nothing_and_duplicates_nothing
+
+PLANTED BUG D. A card Trello stops returning is deleted from the local copy
+  unittest result: FAILED (failures=4)
+  tests that failed (4):
+    SecondRun.test_a_card_trello_stops_returning_is_reported_and_kept_with_its_last_state
+    SecondRun.test_a_quiet_sync_says_nothing_changed_and_a_card_that_comes_back_leaves_the_list
+    SecondRun.test_the_reconciliation_file_does_not_claim_to_know_why_a_card_is_missing
+    SecondRun.test_the_reconciliation_file_lists_archived_and_not_returned_cards_and_nothing_else
+
+PLANTED BUG E. Lists are put in name order, not board order
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    BoardStructure.test_a_list_dragged_to_the_front_comes_first_and_keeps_its_id
+    BoardStructure.test_every_list_has_its_id_name_and_position_and_the_index_is_in_board_order
+
+PLANTED BUG F. Checklist items are added to the card's description
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    BoardStructure.test_checklists_are_recorded_with_items_and_state_and_stay_out_of_the_description
+
+PLANTED BUG G. Text from Trello is put in a fixed three-backtick block
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Safety.test_text_from_trello_cannot_break_out_of_its_block_or_add_structure
+
+PLANTED BUG H. A rate-limited run carries on and writes what it has
+  unittest result: FAILED (failures=3, errors=1)
+  tests that failed (4):
+    RateLimits.test_a_first_run_that_is_limited_writes_no_file_at_all
+    RateLimits.test_a_limited_second_run_leaves_every_file_as_it_was
+    RateLimits.test_a_wait_longer_than_the_limit_is_refused_without_waiting
+    RateLimits.test_limited_every_time_it_stops_after_three_waits
+
+PLANTED BUG I. The author's name is asked for with each comment
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Safety.test_no_persons_name_is_asked_for_or_stored
+
+PLANTED BUG J. The skill is given a way to send a write
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Safety.test_the_skill_can_only_send_get_requests
+
+PLANTED BUG K. A full page holding nothing new is taken as the end of the board
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    PagingThatDoesNotAdvance.test_if_asking_for_older_cards_returns_the_same_page_the_run_stops
+
+PLANTED BUG L. A rate limit is waited on with no limit on the number of waits (stopped here at 50)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    RateLimits.test_limited_every_time_it_stops_after_three_waits
+
+PLANTED BUG M. The wait is a fixed 10 seconds, whatever Trello's answer says
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    RateLimits.test_a_wait_longer_than_the_limit_is_refused_without_waiting
+    RateLimits.test_the_wait_comes_from_trellos_answer
+
+PLANTED BUG N. The reconciliation file leaves out cards Trello did not return
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    SecondRun.test_a_quiet_sync_says_nothing_changed_and_a_card_that_comes_back_leaves_the_list
+    SecondRun.test_the_reconciliation_file_does_not_claim_to_know_why_a_card_is_missing
+    SecondRun.test_the_reconciliation_file_lists_archived_and_not_returned_cards_and_nothing_else
+
+PLANTED BUG O. A card that was not returned is reported again on every later run
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    SecondRun.test_a_card_trello_stops_returning_is_reported_and_kept_with_its_last_state
+    SecondRun.test_a_quiet_sync_says_nothing_changed_and_a_card_that_comes_back_leaves_the_list
+
+After the last bug was taken out: sync.py is byte for byte what it was at the start. OK
+
+RESULT: all 15 planted bugs were caught by at least one test, and sync.py was restored.

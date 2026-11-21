@@ -1,0 +1,6 @@
+
+REFUSED: the preview 8441425734e1 has already been confirmed and written. A fingerprint is used once.
+Nothing has been written.
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.

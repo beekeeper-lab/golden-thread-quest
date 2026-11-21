@@ -1,0 +1,17 @@
+{
+ "board": "70b000000000000000000012",
+ "name": "Update the onboarding checklist",
+ "desc": "New support agents follow a first-week onboarding checklist. Add the phone system training and the refund policy quiz to it, and remove the retired chat tool.",
+ "labels": [
+  "team"
+ ],
+ "members": [
+  "5f0000000000000000000003"
+ ],
+ "checklist": [
+  "Add the phone system training",
+  "Add the refund policy quiz",
+  "Remove the retired chat tool"
+ ],
+ "due": "2026-12-01"
+}

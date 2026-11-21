@@ -1,0 +1,134 @@
+Running the approved workflow a second time: jira-update-fields, attempt jira-attempt-008
+Recorded by scripts/record_evidence.py. Each block between dashed lines is what a command printed.
+The Jira here is scripts/fake_jira.py, a made-up one. No real Jira was read or written, so nothing is
+redacted: the site, the projects and the stories are invented. STATE stands for a temporary folder.
+
+This carries on from the approved run recorded in logs/confirmation.txt, in the same STATE folder.
+The fingerprint of that run's preview was fc564d843083.
+
+==============================================================================
+1. What the fake Jira holds after the approved run.
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake_jira.py show --state STATE --story SAND-1
+------------------------------------------------------------------------------
+FAKE JIRA holds for SAND-1 (issue id 30001): labels ["onboarding", "q4"], duedate "2026-12-15", priority "High". Changelog entries: 1.
+------------------------------------------------------------------------------
+exit code: 0
+
+==============================================================================
+2. The same preview command again, with the same change file.
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/update.py preview --source fake --change participant/evidence/jira-update-fields/jira-attempt-008/scripts/changes/wanted.json --allowlist participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake-allowlist.json --state STATE
+------------------------------------------------------------------------------
+NOTHING TO CHANGE. Nothing has been written.
+
+Jira site:  https://fixture-site.example.invalid  (site fingerprint 738169e667642f09)
+Project:    SAND (project id 20001). On the sandbox allowlist: yes.
+Story:      SAND-1 (issue id 30001). The id is what identifies it.
+
+Already as wanted, so not sent: labels, which holds ["onboarding", "q4"].
+Already as wanted, so not sent: duedate, which holds 2026-12-15.
+Already as wanted, so not sent: priority, which holds "High" (id 2).
+
+Permission check, asked of Jira for this story and this identity:
+  may see the story  (BROWSE_PROJECTS): yes
+  may edit the story (EDIT_ISSUES):     yes
+  fields Jira lists as editable here:   labels yes, duedate yes, priority yes
+Duplicate check: an edit sets a field to a value and creates nothing, so there is no second copy to make.
+  What could repeat is the same edit being sent twice. Checked against Jira just now: 3 of the 3
+  fields named already hold the wanted value and would not be sent. Jira's documentation does not say
+  whether sending a value a field already holds adds a history entry, so this workflow never sends one.
+Where Jira cannot check: its edit request has no 'only if the value is still the one I saw' condition.
+  The confirmation reads the story again just before writing and stops if a field has moved.
+
+Snapshot of the whole story as Jira returned it, before the preview: c7bcc03b9f11e1bd
+Snapshot of the whole story as Jira returned it, after the preview:  c7bcc03b9f11e1bd
+The two are the same. Jira is unchanged.
+Requests sent to Jira: 5. Every one was a GET, which reads and cannot change anything.
+  GET /rest/api/3/issue/SAND-1
+  GET /rest/api/3/myself
+  GET /rest/api/3/mypermissions
+  GET /rest/api/3/issue/30001/editmeta
+  GET /rest/api/3/issue/30001
+
+The story already holds every value asked for. No fingerprint is issued, because there is nothing
+to confirm, and nothing was sent.
+------------------------------------------------------------------------------
+exit code: 0
+  ok   it reports nothing to change, issues no fingerprint, and sent only GETs (criterion 9)
+
+==============================================================================
+3. The same confirm command again, with the fingerprint that was already used.
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/update.py confirm --source fake --change participant/evidence/jira-update-fields/jira-attempt-008/scripts/changes/wanted.json --allowlist participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake-allowlist.json --state STATE --fingerprint fc564d843083 --confirmed-by "the participant"
+------------------------------------------------------------------------------
+
+REFUSED: the preview fc564d843083 has already been confirmed and written. A fingerprint is used once.
+Nothing has been written.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   refused, exit code 1: a fingerprint is used once
+
+==============================================================================
+4. What the fake Jira holds after both.
+$ python3 participant/evidence/jira-update-fields/jira-attempt-008/scripts/fake_jira.py show --state STATE --story SAND-1
+------------------------------------------------------------------------------
+FAKE JIRA holds for SAND-1 (issue id 30001): labels ["onboarding", "q4"], duedate "2026-12-15", priority "High". Changelog entries: 1.
+------------------------------------------------------------------------------
+exit code: 0
+  ok   the values are the same, and there is still exactly one history entry: no repeated change
+
+RESULT: ALL CHECKS PASSED. (The checks are on the fake-Jira runs above.)
+
+##############################################################################
+THE SAME ON THE REAL JIRA SANDBOX
+The blocks below were not made by this script. The participant ran each command in their own
+terminal against their real Jira sandbox, and the updater saved its output with the site's
+address replaced by a marker. They are copied here unchanged from the log files named.
+
+The real preview command run again after the real write.
+(copied from logs/live-rerun-preview.txt)
+------------------------------------------------------------------------------
+NOTHING TO CHANGE. Nothing has been written.
+
+Jira site:  [site address removed]  (site fingerprint 4aabe3d08fbad6b1)
+Project:    SCRUM (project id 10000). On the sandbox allowlist: yes.
+Story:      SCRUM-1 (issue id 10000). The id is what identifies it.
+
+Already as wanted, so not sent: labels, which holds ["gtq-sandbox"].
+Already as wanted, so not sent: duedate, which holds 2026-12-15.
+
+Permission check, asked of Jira for this story and this identity:
+  may see the story  (BROWSE_PROJECTS): yes
+  may edit the story (EDIT_ISSUES):     yes
+  fields Jira lists as editable here:   labels yes, duedate yes, priority yes
+Duplicate check: an edit sets a field to a value and creates nothing, so there is no second copy to make.
+  What could repeat is the same edit being sent twice. Checked against Jira just now: 2 of the 2
+  fields named already hold the wanted value and would not be sent. Jira's documentation does not say
+  whether sending a value a field already holds adds a history entry, so this workflow never sends one.
+Where Jira cannot check: its edit request has no 'only if the value is still the one I saw' condition.
+  The confirmation reads the story again just before writing and stops if a field has moved.
+
+Snapshot of the whole story as Jira returned it, before the preview: 0202ca76b1bb31d8
+Snapshot of the whole story as Jira returned it, after the preview:  0202ca76b1bb31d8
+The two are the same. Jira is unchanged.
+Requests sent to Jira: 5. Every one was a GET, which reads and cannot change anything.
+  GET /rest/api/3/issue/SCRUM-1
+  GET /rest/api/3/myself
+  GET /rest/api/3/mypermissions
+  GET /rest/api/3/issue/10000/editmeta
+  GET /rest/api/3/issue/10000
+
+The story already holds every value asked for. No fingerprint is issued, because there is nothing
+to confirm, and nothing was sent.
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.
+------------------------------------------------------------------------------
+
+The real confirm command run again with the fingerprint already used.
+(copied from logs/live-rerun-confirm.txt)
+------------------------------------------------------------------------------
+REFUSED: the preview 8441425734e1 has already been confirmed and written. A fingerprint is used once.
+Nothing has been written.
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.
+------------------------------------------------------------------------------

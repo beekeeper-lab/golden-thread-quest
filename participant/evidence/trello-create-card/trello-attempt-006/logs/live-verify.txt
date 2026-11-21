@@ -1,0 +1,48 @@
+VERIFY. Reads Trello and writes nothing to it.
+Link file: participant/context/trello/new-card/linked.md
+Matched to Trello by card id 6b00b32ea6e47268f6721469: found. The card is identified by its id, not by its name or its place.
+
+READ BACK from Trello by card id 6b00b32ea6e47268f6721469, and compared with the payload field for field:
+  idList     sent 6afdf3911014b50669965df7
+             read 6afdf3911014b50669965df7: the same
+  pos        sent "bottom"
+             read position number 140737488388096, number 3 of 3 open cards in the list: the same: it is last in the list
+  name       sent "Made-up card to check the create workflow"
+             read "Made-up card to check the create workflow": the same
+  desc       sent 97 characters, starting "A made-up card. It checks that a card is"
+             read 97 characters, starting "A made-up card. It checks that a card is": the same, character for character
+  due        sent 2026-12-18T17:00:00.000Z
+             read 2026-12-18T17:00:00.000Z: the same
+  idBoard    sent not sent: it follows from the list
+             read 6afdf376f8b9111df7e27f99: the same as the board that was previewed
+Result: every field the payload sent reads back the same.
+What Trello set that the payload did not send:
+  card id:                         6b00b32ea6e47268f6721469
+  short link:                      9hsNtGfm
+  number on the board:             9
+  position number:                 140737488388096
+  archived:                        no
+  due marked complete:             no
+  created, read from the card id:  2026-11-20 20:53:02 UTC
+  last activity:                   2026-11-20T20:53:02.530Z
+
+The link file participant/context/trello/new-card/linked.md now holds the board, list and card ids and this comparison.
+
+RESULT RECORD
+  Board id: 6afdf376f8b9111df7e27f99, on the sandbox allowlist
+  List id: 6afdf3911014b50669965df7
+  Card id: 6b00b32ea6e47268f6721469
+  Identifier of what was created: the card, Trello card id 6b00b32ea6e47268f6721469 (short link 9hsNtGfm)
+  Created at: 2026-11-20 20:53:02 UTC by this workflow's clock; 2026-11-20 20:53:02 UTC by Trello's, read from the card id
+  Confirmed by: the participant, at 2026-11-20 20:53:00 UTC
+  Preview: fingerprint 847183421875
+  Payload: SHA-256 c7eac8dfd8742d465d0a7c7d1354770828862f6530a3fa7aecbd1104a939c10b
+  Read back and compared at 2026-11-20 21:01:47 UTC: every field the payload sent reads back the same
+  Local link: participant/context/trello/new-card/linked.md
+
+Requests sent to Trello: 3. Every one was a GET, which reads and cannot change anything.
+  GET /cards/6b00b32ea6e47268f6721469
+  GET /cards/6b00b32ea6e47268f6721469
+  GET /boards/6afdf376f8b9111df7e27f99/cards
+
+The output above, and each file written, was searched for the API key and the token: neither found.

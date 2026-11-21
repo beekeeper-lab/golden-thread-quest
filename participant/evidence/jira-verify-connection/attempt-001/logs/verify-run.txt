@@ -1,0 +1,40 @@
+JIRA CONNECTION CHECK. Reading only.
+
+1. WHO THE CONNECTION IS (read from Jira, not typed in)
+   account id:    557058:1f5fe395-5d44-48fa-ab21-1cab988fb7ec
+   account type:  atlassian
+   active:        yes
+   The account's name and email address were not printed.
+
+2. PROJECTS THE CONNECTION CAN SEE (by key; names are not printed)
+   1 visible: SCRUM
+
+3. PROJECTS THE CONNECTION IS EXPECTED TO SEE: SCRUM
+   SCRUM: VISIBLE, WITH ISSUES. Jira returned the project (listed in section 2).
+     permissions Jira reports for this connection in SCRUM:
+     BROWSE_PROJECTS      yes
+     CREATE_ISSUES        yes
+     EDIT_ISSUES          yes
+     DELETE_ISSUES        yes
+     ADMINISTER_PROJECTS  yes
+
+4. ONE SAFE READ
+   Read one item from SCRUM: SCRUM-1, status 'To Do', summary of 6 characters (not printed).
+   The read succeeded.
+
+REQUESTS ISSUED, in order. Every one is a GET, which reads and changes nothing.
+   GET /rest/api/3/myself  -> 200
+   GET /rest/api/3/project/search?startAt=0&maxResults=50&orderBy=key  -> 200
+   GET /rest/api/3/project/SCRUM  -> 200
+   GET /rest/api/3/search/jql?jql=project = "SCRUM" ORDER BY key ASC&maxResults=1&fields=summary,status  -> 200
+   GET /rest/api/3/mypermissions?projectKey=SCRUM&permissions=BROWSE_PROJECTS  -> 200
+   GET /rest/api/3/mypermissions?projectKey=SCRUM&permissions=CREATE_ISSUES  -> 200
+   GET /rest/api/3/mypermissions?projectKey=SCRUM&permissions=EDIT_ISSUES  -> 200
+   GET /rest/api/3/mypermissions?projectKey=SCRUM&permissions=DELETE_ISSUES  -> 200
+   GET /rest/api/3/mypermissions?projectKey=SCRUM&permissions=ADMINISTER_PROJECTS  -> 200
+   9 requests, all GET. No write operation was attempted. This check has no code that sends one.
+
+CREDENTIAL SCAN. The output above was searched for the API token, the account's email address
+   and the encoded pair that is sent to Jira: 0 found.
+
+RESULT: OK. All 1 expected project(s) visible, and one item was read.

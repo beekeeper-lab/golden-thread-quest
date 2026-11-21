@@ -1,0 +1,119 @@
+The preview on the real sandbox board: trello-create-card-preview, attempt trello-attempt-005
+Recorded by scripts/live_run.py, started by the participant in their own terminal.
+Trello was contacted by the approved card reader and by the preview, with GET requests only. Nothing was written to Trello.
+The local index is in a scratch folder outside the repository, shown here as SCRATCH.
+
+STEP 1. A local index of the sandbox board, for the duplicate search.
+  The approved card reader reads each of the 7 cards the board record, participant/context/trello/board.json, holds as on the board (1 left out: marked not_returned).
+  card 6afdf6548fe01fabfda31f8c: reader exit code 0
+  card 6afdf6556fec70bd2959905f: reader exit code 0
+  card 6afdf655971ad373884d985b: reader exit code 0
+  card 6afdf656247d17022a5c57a8: reader exit code 0
+  card 6afdf65638df50999c980d80: reader exit code 0
+  card 6afdf6592253e548ed311415: reader exit code 0
+  card 6afdf65a3f4459240c50778b: reader exit code 0
+  ok   the reader wrote a record for all 7 cards
+  ok   the index was built beside the records: exit code 0
+
+STEP 2. The preview of participant/context/trello/new-card/draft-sandbox.md against the real board.
+$ python3 participant/skills/trello-create-card-preview/preview.py --source live --draft participant/context/trello/new-card/draft-sandbox.md --allowlist participant/context/trello/new-card/sandbox-allowlist.json --boards SCRATCH/boards --state SCRATCH/state
+------------------------------------------------------------------------------
+PREVIEW OF A NEW CARD. Nothing has been written to Trello.
+
+Board:  "GTQ Sandbox" (board id 6afdf376f8b9111df7e27f99). On the sandbox allowlist: yes.
+List:   "Backlog" (list id 6afdf3911014b50669965df7). Chosen by id. Trello says it belongs to board 6afdf376f8b9111df7e27f99, the stated board: yes. Archived: no.
+        The board's lists by position: "Backlog", "Doing", "Review", "Done".
+Draft:  participant/context/trello/new-card/draft-sandbox.md
+Would be sent, by a later write and not by this preview: POST https://api.trello.com/1/cards
+
+FIELD BY FIELD, 4 fields in the payload:
+  idList     6afdf3911014b50669965df7
+  pos        "bottom"
+  name       "Made-up card to check the preview"
+  desc       86 characters, shown in full in the payload
+Labels and members were each found on the board before being put in the payload: 0 labels, 0 members.
+Not in the payload, so decided by Trello and not by this draft: the card's id, its short link and its number on
+the board; who it is created by, which is the token's member; and, for "top" or "bottom", the position number.
+
+WHERE IN THE LIST. Position "bottom":
+  number 3 of 3 open cards, counting the new one.
+  after:  card 6afdf6556fec70bd2959905f, at position 140737488371712
+  before: nothing. It would be last.
+  This is the list as it is now. A card added or moved before the write changes it.
+
+THE EXACT PAYLOAD. This is the request body, not a summary of it:
+  {
+    "desc": "A made-up card. It checks that the card preview reads a real board. It can be deleted.",
+    "idList": "6afdf3911014b50669965df7",
+    "name": "Made-up card to check the preview",
+    "pos": "bottom"
+  }
+As sent it is the same data with no spaces or line breaks and its names in alphabetical order:
+  191 bytes, SHA-256 af0fb6e3d8d84af9d7fe97fb9be0dfd01684da523d637520a14369b898512b53
+
+SOURCES for the content, each checked against the file: 2 citations, all true.
+  name         sources/notes.md line 23: "put one made-up card on the sandbox board to check that the preview reads a real board"
+  description  sources/notes.md lines 23-24: "can be deleted afterwards"
+
+PERMISSION CHECK, asked of Trello for this board and this token:
+  the token's member is on the board as: admin. That role may add cards: yes
+  the token's own permissions for boards: read yes, write NO
+  the token expires: 2026-11-21T12:58:31.095Z
+
+DUPLICATE SEARCH:
+  the local indexes in SCRATCH/boards, 7 cards on 1 board, searched with the trello-duplicate-search skill.
+  the index of this board holds 7 cards and Trello holds 7: the counts agree.
+  Result: NONE. No card on any board searched matches this draft on three or more signals beyond the name.
+  The search's overall recommendation: PROCEED. A person decides.
+  The indexes are a local copy: a card created in Trello since the records were saved is not in them.
+
+What Trello cannot be asked: it has no way to try a create without making one, so this preview cannot
+promise the create would be accepted.
+
+Snapshot of the board in Trello before the preview: 4 lists, 7 cards, 6cdcd14cd70c2c06
+Snapshot of the board in Trello after the preview:  4 lists, 7 cards, 6cdcd14cd70c2c06
+The two are the same. The board is unchanged.
+Requests sent to Trello: 9. Every one was a GET, which reads and cannot change anything.
+  GET /members/me
+  GET /boards/6afdf376f8b9111df7e27f99
+  GET /boards/6afdf376f8b9111df7e27f99/lists
+  GET /boards/6afdf376f8b9111df7e27f99/cards
+  GET /lists/6afdf3911014b50669965df7
+  GET /boards/6afdf376f8b9111df7e27f99/memberships
+  GET /tokens/[the token]
+  GET /boards/6afdf376f8b9111df7e27f99/lists
+  GET /boards/6afdf376f8b9111df7e27f99/cards
+
+VERDICT: NOT READY TO WRITE. 1 reason:
+  1. This token may read boards and may not write to them. A create sent with it would be refused by Trello. A write needs a token made with write scope.
+Nothing was saved for a later write. The payload above is what would be sent once the reasons are dealt with.
+
+Nothing has been written to Trello. This preview creates nothing, and has no way to.
+
+The output above, and each file written, was searched for the API key and the token: neither found.
+------------------------------------------------------------------------------
+exit code: 3
+  ok   a preview was made: NOT READY TO WRITE
+  ok   the list is named by id and Trello says it belongs to the stated board
+  ok   the exact payload is shown, with the list and the position
+  ok   the permission check is shown, with Trello's own answers
+  ok   the duplicate result is shown
+  ok   the board snapshot is the same before and after: 4 lists, 7 cards, 6cdcd14cd70c2c06
+  ok   all 9 requests the preview sent were GET
+  ok   the request that holds the token is listed without it
+  ok   the output was searched for the key and the token
+  ok   a preview was saved for a later write only if the verdict is READY: 0 saved
+
+STEP 3. The same draft with a list id that no list has, 6afdf3910000000000000000. It should be refused.
+------------------------------------------------------------------------------
+REFUSED: the list 6afdf3910000000000000000 does not exist (Trello answered 404). The draft must name a list of board 6afdf376f8b9111df7e27f99 by its id. The board's open lists are: "Backlog" (6afdf3911014b50669965df7), "Doing" (6afdf3957e2f7562515212f7), "Review" (6afdf3972df276a7f6779970), "Done" (6afdf3997e1fced74c8bfb57).
+No preview was made, no payload was shown or saved, and nothing has been written to Trello.
+
+The output above, and each file written, was searched for the API key and the token: neither found.
+------------------------------------------------------------------------------
+exit code: 1
+  ok   the preview was refused: exit code 1
+  ok   the reason is about the list
+  ok   no payload was shown
+
+RESULT OF THE REAL RUN: ALL CHECKS PASSED. 15 checks.

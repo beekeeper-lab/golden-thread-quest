@@ -1,0 +1,13 @@
+schema_version: 1
+submission_id: submission-20261117194028-db7815
+quest_id: base-camp-failure-lab
+quest_version: 1
+attempt_id: base-attempt-005
+content_hash: sha256:9f6c6d8f29158544ff26d96e595d16934a825627bd5033441d4f78bf43ff2a53
+evidence_hash: sha256:fcdb7a12a7513d29e5092f8fbac1dbc04268c1fed524167f1b2295671e0f5897
+submitted_at: '2026-11-17T19:40:28Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/failure-policy.md
+  digest: sha256:b131f119244189adf0073e0110087a78e13079051788798e422f8940aa42545e

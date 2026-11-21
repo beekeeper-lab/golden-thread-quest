@@ -1,0 +1,15 @@
+schema_version: 1
+submission_id: submission-20261120184711-101c75
+quest_id: trello-duplicate-search
+quest_version: 1
+attempt_id: trello-attempt-004
+content_hash: sha256:5dd40795512287bd7c86101c1c2311c1de59736705aac02608db6d2b6919c436
+evidence_hash: sha256:0598f8a8e1a6abe24ee07c3c0ea8c9989c02f3d51ac3e6650d4b332c54689abe
+submitted_at: '2026-11-20T18:47:11Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/trello/duplicates/fixture.md
+  digest: sha256:9e4a2b19c41653a133a5f0fb5b66629ab37a434275cbba602623b8f8d70ea6d3
+- path: participant/context/trello/duplicates/report.md
+  digest: sha256:ea52af73284be0e83289bd69a88da8fa7aae1c26d9a09706e496a784eeee73b8

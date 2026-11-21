@@ -1,0 +1,13 @@
+schema_version: 1
+submission_id: submission-20261121015413-9df447
+quest_id: trello-delta-sync
+quest_version: 1
+attempt_id: trello-attempt-008
+content_hash: sha256:da293b1c9b0b8705a76cecf5e600d5049295c972964c5da9a49ada7cd645fada
+evidence_hash: sha256:3f0984a8d403e4a6b7d55180d195611a9612a30ce53fe1619fc3fe2c4b59367f
+submitted_at: '2026-11-21T01:54:13Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/trello/sync-state.md
+  digest: sha256:0c8aeee26f80e132d464dcfaf982b7141d66460c9cc5137e1ca4e07c99b4034d

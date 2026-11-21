@@ -1,0 +1,15 @@
+schema_version: 1
+submission_id: submission-20261120192310-91507e
+quest_id: trello-create-card-preview
+quest_version: 1
+attempt_id: trello-attempt-005
+content_hash: sha256:fa9a7f5ed328b2e2b353c23973e600910f4c1db24c29ca8790e5d66699206c24
+evidence_hash: sha256:efa9bfa97de9e955247ba24ef426dcf8e1c5db3d78b3cabc07464a62e500aa10
+submitted_at: '2026-11-20T19:23:10Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/trello/new-card/draft.md
+  digest: sha256:59ce3c296a9627c9c62f496b44992b61e587f23117b2019d05cfa176717eb6df
+- path: participant/context/trello/new-card/payload.md
+  digest: sha256:c40fdbe615b3257cfe57a6eb9a2e118a12b37ac1760fed3d9dde2be82d847584

@@ -1,0 +1,51 @@
+{
+  "attempt_id": "jira-attempt-001",
+  "checks": [
+    {
+      "evidence": "4 story/stories accounted for.",
+      "id": "pagination-handled",
+      "outcome": "pass",
+      "summary": "Every assigned story in the fixture appears in the output."
+    },
+    {
+      "evidence": "4 record(s) carry key, source_url, status, summary, retrieved_at. The optional fields criterion 4 names are for the reviewer to judge.",
+      "id": "records-are-normalized",
+      "outcome": "pass",
+      "summary": "Every record carries the fields this check requires."
+    },
+    {
+      "evidence": "source_url present and absolute on every record.",
+      "id": "records-trace-to-source",
+      "outcome": "pass",
+      "summary": "Every record links back to its source."
+    },
+    {
+      "evidence": "Re-running should update in place rather than append.",
+      "id": "no-duplicate-records",
+      "outcome": "pass",
+      "summary": "Each story appears exactly once."
+    },
+    {
+      "evidence": "Only normalized records were found.",
+      "id": "raw-responses-not-committed",
+      "outcome": "pass",
+      "summary": "No raw API response is in committed context."
+    }
+  ],
+  "completed_at": "2026-10-22T19:59:21Z",
+  "duration_ms": 37,
+  "environment": {
+    "network": "denied",
+    "parameter_fixture_set": "pagination",
+    "validator_version": 2
+  },
+  "outcome": "pass",
+  "quest_id": "jira-read-assigned-stories",
+  "redaction_applied": false,
+  "result_path": "participant/evidence/jira-read-assigned-stories/jira-attempt-001/validation/validate-jira-read-assigned-20261022195921541139-6996af.json",
+  "run_id": "validate-jira-read-assigned-20261022195921541139-6996af",
+  "schema_version": 1,
+  "started_at": "2026-10-22T19:59:21Z",
+  "validator_id": "validate-jira-read-assigned",
+  "validator_version": 2
+}

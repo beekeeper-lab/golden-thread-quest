@@ -1,0 +1,15 @@
+schema_version: 1
+submission_id: submission-20261120211434-727896
+quest_id: trello-create-card
+quest_version: 1
+attempt_id: trello-attempt-006
+content_hash: sha256:bef4685d5298f07873d81781d3c5413da4e20ce29a2b82c15957e4a437da158c
+evidence_hash: sha256:5dd3d2fb324199ee746f1202987ec4a8c2b838fd2054888e1c01e647eabd133b
+submitted_at: '2026-11-20T21:14:34Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/trello/new-card/linked.md
+  digest: sha256:1641e835af3ef250e30dd1b7d29e2ae58575c121c45916eecf368901afbb3351
+- path: participant/context/trello/results/create-card.md
+  digest: sha256:9e8b850cdb2b66ce77fb703348bf0c9f121260b087d6d0fe128d9a0e47f00e8a

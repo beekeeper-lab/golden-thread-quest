@@ -1,0 +1,19 @@
+schema_version: 1
+submission_id: submission-20261121172930-16258e
+quest_id: github-read-assigned-issues
+quest_version: 2
+attempt_id: github-attempt-001
+content_hash: sha256:68a888e3d237ce220c739aa1d60cf46c4e26bbc5ab0b71c03efdf2431c80c396
+evidence_hash: sha256:7c844c72a13b34e9b6883722e0f18f62ae7aca4dc99282849142925574417bde
+submitted_at: '2026-11-21T17:29:30Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/github/assigned/delivery-links.md
+  digest: sha256:6887344c068b01839babc0b750276fe83cd67ba70ae52632256b3ba00ae9ec33
+- path: participant/context/github/assigned/index.md
+  digest: sha256:86127d3539810dd8d6af68ad59224e13839bd71332b93beda4f51a88108cd52b
+- path: participant/context/github/assigned/issues/
+  digest: sha256:aaa6624642423d266839176c54a7496f937ee3aa69612fcec960d3ee1ec4a0bd
+- path: participant/skills/github-read-assigned/SKILL.md
+  digest: sha256:f223431084a468a98a8f287df1e8dd41a859341555b6db6335898db928288bfc

@@ -1,0 +1,72 @@
+CONFIRMATION for preview c931beb110b0, given by: the participant (the name given with the confirmation).
+
+Jira site:   [site address removed]  (site fingerprint 4aabe3d08fbad6b1)
+Project:     SCRUM (project id 10000). On the sandbox allowlist: yes.
+Issue type:  "Story" (issue type id 10004)
+Draft:       participant/context/jira/new-story/draft-sandbox.md
+
+Checked in this run, before writing:
+  the preview is 0 minutes old, and the limit is 15: ok
+  the saved preview is unaltered and has not been used: ok
+  the draft file is byte for byte the one that was previewed: ok
+  the payload worked out again now has the SHA-256 of the previewed one, d044842a49cf189564af35d662d55965e82c98e124751ecab09ed2eabe3ad3a2: ok
+  the project is on the sandbox allowlist for this site: ok
+  Jira says this identity may create stories here: ok
+  this draft has no link file, and no story in Jira carries the marker gtq-57dc5556: ok
+
+Written to the link file before sending: a create is being sent, result not yet recorded.
+CREATED in Jira: one story. Jira answered 201 with the key SCRUM-23 and the issue id 10022.
+The confirmation and the write happened in this one run of the command.
+Written to the link file: the key SCRUM-23 and the issue id 10022.
+
+READ BACK from Jira by issue id 10022, and compared with the payload field for field:
+  project            sent id 10000
+                     read "Work" (id 10000): the same
+  issuetype          sent id 10004
+                     read "Story" (id 10004): the same
+  summary            sent "Quarterly revenue by plan report for the finance team"
+                     read "Quarterly revenue by plan report for the finance team": the same
+  description        sent 2 block(s) of document
+                     read 2 block(s) of document: the same, identical as sent
+  labels             sent ["gtq-57dc5556", "reporting", "revenue"]
+                     read ["gtq-57dc5556", "reporting", "revenue"]: the same
+  duedate            sent "2027-01-15"
+                     read "2027-01-15": the same
+Result: every field the payload sent reads back the same.
+Fields Jira set that the payload did not send:
+  created            Created       "2026-11-19T16:34:26.044-0500"
+  creator            Creator       a person, not shown
+  priority           Priority      "Medium" (id 3)
+  reporter           Reporter      a person, not shown
+  status             Status        "To Do" (id 10000)
+  and 12 more that hold a value: aggregateprogress, comment, customfield_10019, issuerestriction, progress, statusCategory, statuscategorychangedate, updated, votes, watches, worklog, workratio
+
+The link file participant/context/jira/new-story/linked.md now holds the key, the issue id and this comparison.
+
+RESULT RECORD
+  Issue key: SCRUM-23
+  Identifier of what was created: Jira issue id 10022 (this identifies the story; a key can change)
+  Target project: SCRUM (project id 10000), on the sandbox allowlist
+  Jira site: [site address removed], site fingerprint 4aabe3d08fbad6b1
+  Created at: 2026-11-19 21:34:26 UTC
+  Confirmed by: the participant, at 2026-11-19 21:34:22 UTC
+  Preview: fingerprint c931beb110b0
+  Payload: SHA-256 d044842a49cf189564af35d662d55965e82c98e124751ecab09ed2eabe3ad3a2
+  Marker label: gtq-57dc5556
+  Read back and compared at 2026-11-19 21:34:27 UTC: every field the payload sent reads back the same
+  Local link: participant/context/jira/new-story/linked.md
+
+The result record was also saved as Markdown where --result said.
+
+Requests sent to Jira: 8. 7 GET and 1 POST. The POST is the one create.
+  GET /rest/api/3/project/SCRUM
+  GET /rest/api/3/myself
+  GET /rest/api/3/mypermissions
+  GET /rest/api/3/issue/createmeta/10000/issuetypes
+  GET /rest/api/3/issue/createmeta/10000/issuetypes/10004
+  GET /rest/api/3/search/jql
+  POST /rest/api/3/issue
+  GET /rest/api/3/issue/10022
+
+The output above was searched for the API token, the account's email address and their encoded
+form: none found.

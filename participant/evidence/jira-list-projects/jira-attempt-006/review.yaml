@@ -1,0 +1,30 @@
+schema_version: 1
+review_id: review-20261119020534-e37926
+quest_id: jira-list-projects
+quest_version: 1
+attempt_id: jira-attempt-006
+evidence_hash: sha256:6df2e144db3dd6dc24eccf906c712b6b12202b134e57decd9574ecc2190b5543
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-19T02:05:34Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/jira/projects.md
+  digest: sha256:cd69ed57c31135a3da9ad9744fc1d90dabc6dc0bf217eb8a58c67e9dbb75cf19
+verification_statement: Automated review. I read PROOF.md, projects-run.txt, the two
+  live-run logs, tests.txt, planted-bugs.txt, the scripts and participant/context/jira/projects.md,
+  all from the jira-attempt-006 folder. The run log shows pagination (3 pages of 5,
+  5 and 1, plus boundary runs at 49, 50, 51, 100 and 101 projects). It also shows
+  the key rename DPAT to DATA matched to id 10003 on run 2, and the vanished project
+  10006 flagged and kept. projects.md has a lookup by name, by key and by project
+  id, and every link goes to projects/<id>.md. The scenarios come from a synthetic
+  fixture, which the quest allows. The live runs against the real sandbox show one
+  page with one project and no credentials in the output. Timestamps are 2026-11-19
+  UTC, one day after the local date. That is consistent with an evening run in a US
+  time zone, so I don't treat it as an inconsistency. PROOF.md cites the criteria
+  by number. The evidence shown sits under jira-attempt-006, not the attempt-001 paths
+  the quest names. PROOF.md says a copy of the log is at the attempt-001 path, and
+  the pre-check reports the required files present. I found no text addressed to the
+  reviewer. Each of the 7 acceptance criteria was matched to text quoted word for
+  word from the evidence.

@@ -1,0 +1,19 @@
+schema_version: 1
+submission_id: submission-20261118210026-782b46
+quest_id: trello-read-board
+quest_version: 1
+attempt_id: trello-attempt-001
+content_hash: sha256:34de41afdd2b7fdbea30fe9a93ad54f7dbcf2e0d45bb4641cccaf056fdc44ddd
+evidence_hash: sha256:ee3d6d109318d9f32853c2b5a144b4204f83b8abe15c9f15bee014b6f076f44e
+submitted_at: '2026-11-18T21:00:26Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/trello/board-index.md
+  digest: sha256:6305152b3810da0f6a899d2b267f1df677fedd8906df0aa864f6ca0e35ab23f3
+- path: participant/context/trello/cards/
+  digest: sha256:6f47f263e358a9c712eaa9674fcdd60a51940d34f567166cafcf6de174eb1084
+- path: participant/context/trello/reconciliation.md
+  digest: sha256:3dc1eba9a9d0abf84a623409b4c309eeb27af7bdcdd48dd1d0e464a0a7251d43
+- path: participant/skills/trello-read-board/SKILL.md
+  digest: sha256:36da8332b4cf85f924d606bce738b19a9305049777749b3a640cae6cf7f6f96e

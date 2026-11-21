@@ -1,0 +1,13 @@
+schema_version: 1
+submission_id: submission-20261120130711-268abb
+quest_id: trello-read-card
+quest_version: 1
+attempt_id: trello-attempt-002
+content_hash: sha256:5428764f62eea3c742fa81180d241da494baf98f05517a3bdab98405f9963222
+evidence_hash: sha256:10b3d6b318e79ecedb25a8bd3da36e93e61b7c94d6264ecdf4a0c4df7d4a9bdd
+submitted_at: '2026-11-20T13:07:11Z'
+submitted_by: beaubrown
+secret_scan_clean: true
+proof_files:
+- path: participant/context/trello/cards/card-sample.md
+  digest: sha256:dd4004fd023d162ca6ed896a687694f0c29876ffa65a35868f20f1a10a0fb26a

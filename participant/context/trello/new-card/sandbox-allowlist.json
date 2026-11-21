@@ -1,0 +1,7 @@
+{
+  "note": "Boards a card may be previewed for. The first is the made-up platform board of the fixture. The second is the participant's own sandbox board. The made-up support board is left off on purpose.",
+  "sandbox_boards": [
+    "80b000000000000000000001",
+    "6afdf376f8b9111df7e27f99"
+  ]
+}

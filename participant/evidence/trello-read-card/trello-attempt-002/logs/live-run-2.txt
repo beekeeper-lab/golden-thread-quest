@@ -1,0 +1,16 @@
+CARD READER. Reading only.
+Card: id 6afdf65638df50999c980d80, short link p6m0OaAc. The id is what identifies it.
+Fields Trello returned for the card: 61
+  the id, first in the front matter:        1
+  in the front matter, known by name:       15
+  in the body, the description:             1
+  in the preserved section, unchanged:      43
+  not stored, the card's private email:     1
+  total accounted for: 61 of 61
+Checklists: 1, with 3 items, 2 complete.
+Comments: 3. Attachments, as references: 0.
+Removed before saving: nothing
+File: UNCHANGED. It already holds exactly these 9321 bytes, and was not rewritten.
+SHA-256 of the file: f316b0509c5633c3f61ddc46c3a4a22a78bfe74d51adc24f312089036b1e6474
+
+The file and the output above were searched for the API key and the token: neither found.

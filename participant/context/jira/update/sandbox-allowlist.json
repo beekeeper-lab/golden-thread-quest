@@ -1,0 +1,6 @@
+{
+  "about": "The sandbox allowlist for real runs. The updater writes only to a project listed here, on the Jira site whose fingerprint is given. A site fingerprint is the first 16 characters of the SHA-256 of the site's address, so the address itself is not stored. Entries are added by a person.",
+  "sandbox_projects": [
+    {"site_fingerprint": "4aabe3d08fbad6b1", "project_id": "10000", "note": "SCRUM, the participant's sandbox project. Added on 2026-11-19 after the participant confirmed it is a sandbox they may change."}
+  ]
+}

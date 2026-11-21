@@ -1,0 +1,121 @@
+Append-only check started 2026-11-11 16:09:45 UTC
+Log:    participant/context/audit-log-all-events.md
+Anchor: participant/context/audit-log-all-events.anchor
+SHA-256 of the log before:    9407aad2e834ca1d649db13ccd0a433da4d7e8b6e8d08aa0239aa0f08e349319
+SHA-256 of the anchor before: 991d63bd5da5f9b4a427ee8baad4150b0511115ce9e47eb020813fca76f84b98
+
+Step 0. The untouched log passes its check:
+      CHECK PASSED: 6 row(s), chain intact, matches the anchor file.
+    exit code: 0
+
+Part A. Attacks on a copy of the log (the anchor copy is left as it was):
+  A1. Edit the outcome of row 2
+      PROBLEM: row 2: chain value does not match its contents and the row before it (this row was changed, or a row before it was removed or moved)
+      CHECK FAILED: 1 problem(s) in 6 row(s).
+    exit code: 1
+    Result: DETECTED
+  A2. Delete row 2
+      PROBLEM: row 2: sequence number is '3', expected 2 (a row was removed, added or moved)
+      PROBLEM: row 2: chain value does not match its contents and the row before it (this row was changed, or a row before it was removed or moved)
+      PROBLEM: row 2: Ref does not name an earlier row
+      PROBLEM: row 3: sequence number is '4', expected 3 (a row was removed, added or moved)
+      PROBLEM: row 3: a recovery must name an earlier failure row in Ref
+      PROBLEM: row 4: sequence number is '5', expected 4 (a row was removed, added or moved)
+      PROBLEM: row 4: a confirmed write must name an earlier preview row in Ref
+      PROBLEM: row 5: sequence number is '6', expected 5 (a row was removed, added or moved)
+      PROBLEM: anchor file records 6 rows but the log has 5 (rows were removed from the end)
+      CHECK FAILED: 9 problem(s) in 5 row(s).
+    exit code: 1
+    Result: DETECTED
+  A3. Swap rows 2 and 3
+      PROBLEM: row 2: sequence number is '3', expected 2 (a row was removed, added or moved)
+      PROBLEM: row 2: chain value does not match its contents and the row before it (this row was changed, or a row before it was removed or moved)
+      PROBLEM: row 2: Ref does not name an earlier row
+      PROBLEM: row 3: sequence number is '2', expected 3 (a row was removed, added or moved)
+      PROBLEM: row 3: chain value does not match its contents and the row before it (this row was changed, or a row before it was removed or moved)
+      PROBLEM: row 3: time is earlier than the row before it
+      PROBLEM: row 4: chain value does not match its contents and the row before it (this row was changed, or a row before it was removed or moved)
+      PROBLEM: row 4: a recovery must name an earlier failure row in Ref
+      PROBLEM: row 5: a confirmed write must name an earlier preview row in Ref
+      CHECK FAILED: 9 problem(s) in 6 row(s).
+    exit code: 1
+    Result: DETECTED
+  A4. Cut off the last row
+      PROBLEM: anchor file records 6 rows but the log has 5 (rows were removed from the end)
+      CHECK FAILED: 1 problem(s) in 5 row(s).
+    exit code: 1
+    Result: DETECTED
+  A5. Edit row 1, then recompute every chain value to cover it
+      PROBLEM: anchor file does not match row 6's chain value (earlier rows were rewritten)
+      CHECK FAILED: 1 problem(s) in 6 row(s).
+    exit code: 1
+    Result: DETECTED
+  A6. Delete row 2, then renumber and recompute every chain value
+      PROBLEM: row 2: Ref does not name an earlier row
+      PROBLEM: row 3: a recovery must name an earlier failure row in Ref
+      PROBLEM: row 4: a confirmed write must name an earlier preview row in Ref
+      PROBLEM: anchor file records 6 rows but the log has 5 (rows were removed from the end)
+      CHECK FAILED: 4 problem(s) in 5 row(s).
+    exit code: 1
+    Result: DETECTED
+  A7. Put a made-up table above the real one (rows and chain values untouched)
+      PROBLEM: the text above the rows is not the tool's fixed heading (it was changed, or something was put above the table)
+      PROBLEM: anchor file records 6 rows but the log has 0 (rows were removed from the end)
+      CHECK FAILED: 2 problem(s) in 0 row(s).
+    exit code: 1
+    Result: DETECTED
+  A8. Put a made-up table above the real one and hide the real one in a comment (rows and chain values untouched)
+      PROBLEM: the text above the rows is not the tool's fixed heading (it was changed, or something was put above the table)
+      PROBLEM: anchor file records 6 rows but the log has 0 (rows were removed from the end)
+      CHECK FAILED: 2 problem(s) in 0 row(s).
+    exit code: 1
+    Result: DETECTED
+  A9. Replace a sentence in the heading with a false statement (rows and chain values untouched)
+      PROBLEM: the text above the rows is not the tool's fixed heading (it was changed, or something was put above the table)
+      PROBLEM: anchor file records 6 rows but the log has 0 (rows were removed from the end)
+      CHECK FAILED: 2 problem(s) in 0 row(s).
+    exit code: 1
+    Result: DETECTED
+  A10. Add a note under the table (rows and chain values untouched)
+      PROBLEM: line 7 after the heading is not a log row with 10 cells
+      CHECK FAILED: 1 problem(s) in 6 row(s).
+    exit code: 1
+    Result: DETECTED
+
+Part B. Asking the tool itself to edit or delete (on the real log). This shows only
+that the tool offers no such command. It does not stop a text editor; catching what
+an editor does is Part A.
+  B1. auditlog.py edit <log> --row 1
+      usage: auditlog.py [-h] {append,check} ...
+      auditlog.py: error: argument command: invalid choice: 'edit' (choose from 'append', 'check')
+    exit code: 2
+    Result: REFUSED (the tool has no such command)
+  B2. auditlog.py delete <log> --row 1
+      usage: auditlog.py [-h] {append,check} ...
+      auditlog.py: error: argument command: invalid choice: 'delete' (choose from 'append', 'check')
+    exit code: 2
+    Result: REFUSED (the tool has no such command)
+
+Part C. The known limit, and what covers it. Someone who rewrites the log AND the
+anchor file together gets past the plain check. A copy of the anchor in a Git commit
+cannot be changed by editing files, so the check is repeated against a commit.
+  A temporary Git repository now holds a commit of the log copy and its anchor.
+  C1. Edit row 1, recompute every chain value, and rewrite the anchor file
+    Plain check:
+      CHECK PASSED: 6 row(s), chain intact, matches the anchor file.
+    exit code: 0
+    Result of the plain check: passes, as expected. This is the known limit.
+    Check against the committed anchor (--anchor-git-ref HEAD):
+      PROBLEM: anchor committed at HEAD does not match row 6's chain value (earlier rows were rewritten)
+      CHECK FAILED: 1 problem(s) in 6 row(s).
+    exit code: 1
+    Result: DETECTED
+
+SHA-256 of the log after:    9407aad2e834ca1d649db13ccd0a433da4d7e8b6e8d08aa0239aa0f08e349319
+SHA-256 of the anchor after: 991d63bd5da5f9b4a427ee8baad4150b0511115ce9e47eb020813fca76f84b98
+The real log and anchor are UNCHANGED (same SHA-256 before and after).
+Final check of the real log:
+      CHECK PASSED: 6 row(s), chain intact, matches the anchor file.
+    exit code: 0
+
+OVERALL: each attack listed above was detected or refused, and the real log is unchanged.

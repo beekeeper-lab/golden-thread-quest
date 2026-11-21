@@ -1,0 +1,90 @@
+Notes intact, and a full resync against the deltas: trello-delta-sync, attempt trello-attempt-008
+Recorded by scripts/record_evidence.py. No request was sent to Trello. Every card and member is made up.
+
+==============================================================================
+PART 1. The notes, before any sync. (criterion 6)
+  3 notes files in participant/context/trello/delta/notes. They stand in for what a person would write beside a card.
+  They are for card 62c000000000000000000003, which was moved, card 62c000000000000000000005, which was archived and restored,
+  and card 62c000000000000000000008, which was deleted from the board.
+  SHA-256 taken by this script before the first sync in delta-run.txt:
+    67eb89605bcec91934e52b046f351eb40b2d1ca144bfcf004028edf25b45aa46  62c000000000000000000003.md
+    b4a65e0816ab7f02f0ac6b9ff268b167b2285e105a00cdd3ab1307e945adbc0e  62c000000000000000000005.md
+    fb92cec48e8cac8be232152b4c0ab26e5b14103c5f40d845976a4c589d985c2d  62c000000000000000000008.md
+  Since then: a first sync, a delta, a failed sync, the sync that recovered, and a sync with nothing new.
+  Those are recorded in delta-run.txt and failed-sync-run.txt.
+  ok   after those five syncs every notes file has the SHA-256 it had before
+
+==============================================================================
+PART 2. A full resync from nothing, compared with the accumulated deltas. (criterion 7)
+  The local copy in participant/context/trello/delta was built by one full read at step 0 and deltas at steps 1 and 2.
+  Its digest, as this script computes it from state.json: ba83a20aa616f721f112b181416ca5b55c5f3fdc91112a754cf15d0de6024ee8
+  Now the board at step 2 is read whole into an empty temporary folder, COPY/full.
+$ python3 participant/skills/trello-delta-sync/sync.py --source fake --fake-step 2 --out COPY/full
+------------------------------------------------------------------------------
+delta-sync: no cursor yet: this is the first sync of board 60b000000000000000000001 into full. Reading the whole board
+delta-sync: newest activity entry on the board: 66d000000000000000000025, dated 2026-11-19T10:07:00.000Z
+delta-sync: cards on the board: 12. This sync: 12 new, 0 changed, 0 unchanged, 0 no longer on the board
+delta-sync: cursor after this sync: activity entry 66d000000000000000000025, dated 2026-11-19T10:07:00.000Z
+delta-sync: local state digest: ba83a20aa616f721f112b181416ca5b55c5f3fdc91112a754cf15d0de6024ee8 (12 cards on the board; 0 more kept that are no longer on it)
+delta-sync: notes: 0 files, opened for reading only. SHA-256 before and after this sync:
+delta-sync: requests made: 4, every one a GET (1 board, 1 activity, 1 lists, 1 all cards)
+delta-sync: written: cards.md, state.json and sync-state.md
+------------------------------------------------------------------------------
+exit code: 0
+  Its digest, as this script computes it from its state.json:  ba83a20aa616f721f112b181416ca5b55c5f3fdc91112a754cf15d0de6024ee8
+  ok   the full resync ran, with no cursor and no activity to follow
+  ok   criterion 7: the two digests are the same
+  ok   criterion 7: the same 12 cards are on the board in both
+  ok   criterion 7: compared field by field by this script, not by digest: 108 fields of 12 cards, and the 4 lists, all equal
+  ok   both end on the same cursor, entry 66d000000000000000000025
+  One difference, and it is meant: the deltas also keep 2 cards that are no longer on the board, 62c000000000000000000008 and 62c000000000000000000010.
+  A read from nothing cannot know they ever existed. The digest covers the cards on the board.
+  ok   the deltas keep those 2, flagged, and the full resync from nothing holds neither
+
+==============================================================================
+PART 3. A full resync in place, over the deltas. (criteria 6 and 7)
+$ python3 participant/skills/trello-delta-sync/sync.py --source fake --fake-step 2 --full
+------------------------------------------------------------------------------
+delta-sync: cursor before this sync: activity entry 66d000000000000000000025, dated 2026-11-19T10:07:00.000Z
+delta-sync: how stale: the last successful sync was 2026-11-20T09:00:00Z, 0 minutes before now (2026-11-20T09:00:00Z). The cursor's entry is from 2026-11-19T10:07:00.000Z, 22.9 hours before now
+delta-sync: --full: reading the whole board, not only what the activity names
+delta-sync: newest activity entry on the board: 66d000000000000000000025, dated 2026-11-19T10:07:00.000Z
+delta-sync: cards on the board: 12. This sync: 0 new, 0 changed, 12 unchanged, 0 no longer on the board
+delta-sync: cursor after this sync: activity entry 66d000000000000000000025, dated 2026-11-19T10:07:00.000Z
+delta-sync: local state digest: ba83a20aa616f721f112b181416ca5b55c5f3fdc91112a754cf15d0de6024ee8 (12 cards on the board; 2 more kept that are no longer on it)
+delta-sync: notes: 3 files, opened for reading only. SHA-256 before and after this sync:
+delta-sync:   notes/62c000000000000000000003.md  before 67eb89605bcec91934e52b046f351eb40b2d1ca144bfcf004028edf25b45aa46  after 67eb89605bcec91934e52b046f351eb40b2d1ca144bfcf004028edf25b45aa46  same
+delta-sync:   notes/62c000000000000000000005.md  before b4a65e0816ab7f02f0ac6b9ff268b167b2285e105a00cdd3ab1307e945adbc0e  after b4a65e0816ab7f02f0ac6b9ff268b167b2285e105a00cdd3ab1307e945adbc0e  same
+delta-sync:   notes/62c000000000000000000008.md  before fb92cec48e8cac8be232152b4c0ab26e5b14103c5f40d845976a4c589d985c2d  after fb92cec48e8cac8be232152b4c0ab26e5b14103c5f40d845976a4c589d985c2d  same
+delta-sync: requests made: 4, every one a GET (1 board, 1 activity, 1 lists, 1 all cards)
+delta-sync: written: participant/context/trello/delta/cards.md, participant/context/trello/delta/state.json and participant/context/trello/sync-state.md
+------------------------------------------------------------------------------
+exit code: 0
+  ok   reading the whole board again found nothing the deltas had wrong: 0 new, 0 changed, 12 unchanged
+  ok   the digest is the same after it, and the 2 flagged cards are still kept
+
+==============================================================================
+PART 4. The notes, after every sync. (criterion 6)
+    62c000000000000000000003.md  before 67eb89605bcec91934e52b046f351eb40b2d1ca144bfcf004028edf25b45aa46
+                                 after  67eb89605bcec91934e52b046f351eb40b2d1ca144bfcf004028edf25b45aa46
+    62c000000000000000000005.md  before b4a65e0816ab7f02f0ac6b9ff268b167b2285e105a00cdd3ab1307e945adbc0e
+                                 after  b4a65e0816ab7f02f0ac6b9ff268b167b2285e105a00cdd3ab1307e945adbc0e
+    62c000000000000000000008.md  before fb92cec48e8cac8be232152b4c0ab26e5b14103c5f40d845976a4c589d985c2d
+                                 after  fb92cec48e8cac8be232152b4c0ab26e5b14103c5f40d845976a4c589d985c2d
+  ok   all 3 notes files are byte-identical after 6 syncs into this folder, one of which failed
+  ok   no notes file was added, removed or renamed, the deleted card's included
+  ok   sync.py has one function that writes files, and it refuses any path in the notes folder
+
+==============================================================================
+PART 5. Where the cursor is now, without contacting Trello. (the second stretch goal)
+$ python3 participant/skills/trello-delta-sync/sync.py --status --source fake --fake-step 2
+------------------------------------------------------------------------------
+delta-sync: board 60b000000000000000000001. Successful syncs so far: 5
+delta-sync: cursor: activity entry 66d000000000000000000025, dated 2026-11-19T10:07:00.000Z
+delta-sync: how stale: the last successful sync was 2026-11-20T09:00:00Z, 0 minutes before now (2026-11-20T09:00:00Z). The cursor's entry is from 2026-11-19T10:07:00.000Z, 22.9 hours before now
+delta-sync: Trello was not contacted. Rewritten: participant/context/trello/sync-state.md
+------------------------------------------------------------------------------
+exit code: 0
+  ok   --status reports the cursor and how stale it is
+
+RESULT: ALL CHECKS PASSED. 13 checks.

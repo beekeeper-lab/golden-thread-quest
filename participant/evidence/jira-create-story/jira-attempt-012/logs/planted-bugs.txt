@@ -1,0 +1,196 @@
+Do the tests notice a broken create workflow? jira-create-story, attempt jira-attempt-012
+Recorded by scripts/planted_bugs.py.
+
+Each bug below was put into participant/skills/jira-create-story/create.py, every test was run, and the
+bug was taken out again. Only local files are used.
+
+Before any bug: OK
+
+PLANTED BUG A. The bytes sent are not the bytes that were previewed (criterion 1)
+  unittest result: FAILED (failures=22)
+  tests that failed (22):
+    Verify.test_a_changed_key_is_matched_by_id_and_recorded
+    Verify.test_a_deleted_story_or_no_link_or_another_site_is_refused
+    Refusals.test_a_draft_changed_after_the_preview_is_refused
+    RunningAgain.test_a_link_file_for_another_draft_is_not_reused
+    Refusals.test_a_preview_older_than_the_limit_is_refused
+    RunningAgain.test_a_second_run_creates_nothing
+    Verify.test_a_story_changed_in_jira_since_is_reported
+    Compare.test_a_story_stored_differently_from_what_was_sent_is_reported
+    RunningAgain.test_an_earlier_unused_preview_cannot_make_a_second_story
+    RecordingTheKeyFails.test_if_the_key_cannot_be_written_it_is_printed_and_the_earlier_link_still_stops_the_next_run
+    ApprovedRun.test_it_creates_exactly_one_story_and_sends_exactly_the_previewed_bytes
+    Compare.test_jiras_own_bookkeeping_in_the_description_is_not_a_difference_and_is_said
+    CommandLine.test_preview_confirm_rerun_and_verify_through_the_command_line
+    WhenTheCreateGoesWrong.test_reconcile_after_a_lost_answer_finds_the_story_by_its_marker_and_links_it
+    WhenTheCreateGoesWrong.test_reconcile_copes_with_a_search_that_lags
+    ApprovedRun.test_the_key_and_the_id_are_written_to_the_link_file
+    ApprovedRun.test_the_key_is_recorded_before_the_read_back_so_a_failed_read_back_loses_nothing
+    ApprovedRun.test_the_link_file_says_a_create_is_being_sent_before_it_is_sent
+    ApprovedRun.test_the_story_is_read_back_by_id_and_compared_field_for_field
+    Verify.test_verify_matches_by_id_and_compares_again
+    Verify.test_verify_says_when_the_marker_no_longer_leads_to_the_story
+    ApprovedRun.test_what_jira_set_itself_is_listed_and_people_are_not_shown
+
+PLANTED BUG B. The read-back comparison passes whatever came back (criterion 1)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Verify.test_a_story_changed_in_jira_since_is_reported
+    Compare.test_a_story_stored_differently_from_what_was_sent_is_reported
+    Verify.test_verify_says_when_the_marker_no_longer_leads_to_the_story
+
+PLANTED BUG C. Labels are not compared in the read-back (criterion 1)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Compare.test_a_story_stored_differently_from_what_was_sent_is_reported
+    Verify.test_verify_says_when_the_marker_no_longer_leads_to_the_story
+
+PLANTED BUG D. The key that came back is not written to the link file (criterion 2)
+  unittest result: FAILED (failures=2)
+  tests that failed (2):
+    Verify.test_a_changed_key_is_matched_by_id_and_recorded
+    ApprovedRun.test_the_key_is_recorded_before_the_read_back_so_a_failed_read_back_loses_nothing
+
+PLANTED BUG E. The link is matched to Jira by its key where it should be by its id (criterion 3)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Verify.test_a_changed_key_is_matched_by_id_and_recorded
+
+PLANTED BUG F. A key changed in Jira is not recorded locally (criterion 3)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Verify.test_a_changed_key_is_matched_by_id_and_recorded
+
+PLANTED BUG G. A preview is able to send a create (criterion 4)
+  unittest result: FAILED (errors=1)
+  tests that failed (1):
+    Preview.test_a_preview_has_no_way_to_write
+
+PLANTED BUG H. The marker is left out of the payload, so a lost create cannot be found again (criteria 5 and 9)
+  unittest result: FAILED (failures=8)
+  tests that failed (8):
+    WhenTheCreateGoesWrong.test_a_refusal_from_jira_that_nevertheless_made_a_story_is_not_called_nothing
+    RecordingTheKeyFails.test_if_the_key_cannot_be_written_it_is_printed_and_the_earlier_link_still_stops_the_next_run
+    WhenTheCreateGoesWrong.test_reconcile_after_a_lost_answer_finds_the_story_by_its_marker_and_links_it
+    WhenTheCreateGoesWrong.test_reconcile_copes_with_a_search_that_lags
+    WhenTheCreateGoesWrong.test_reconcile_links_nothing_when_two_stories_carry_the_marker
+    Preview.test_the_payload_shown_carries_the_marker_and_is_the_one_saved
+    Verify.test_verify_matches_by_id_and_compares_again
+    Verify.test_verify_says_when_the_marker_no_longer_leads_to_the_story
+
+PLANTED BUG I. The allowlist is not applied (criterion 6)
+  unittest result: FAILED (failures=3)
+  tests that failed (3):
+    Refusals.test_a_project_not_on_the_allowlist_is_refused
+    Refusals.test_another_site_is_refused
+    Refusals.test_the_allowlist_is_checked_again_at_confirmation
+
+PLANTED BUG J. A confirmation with no name is accepted (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Refusals.test_a_missing_confirmation_is_refused
+
+PLANTED BUG K. A draft changed after the preview is created anyway (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Refusals.test_a_draft_changed_after_the_preview_is_refused
+
+PLANTED BUG L. An edit to the draft file that leaves the payload the same goes unnoticed (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Refusals.test_a_draft_changed_after_the_preview_is_refused
+
+PLANTED BUG M. A preview never expires (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Refusals.test_a_preview_older_than_the_limit_is_refused
+
+PLANTED BUG N. An altered saved preview is accepted (criterion 7)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Refusals.test_an_altered_saved_preview_is_refused
+
+PLANTED BUG O. A draft that is already linked can be created again: the quest's scenario (criterion 9)
+  unittest result: FAILED (failures=7)
+  tests that failed (7):
+    RunningAgain.test_a_link_file_for_another_draft_is_not_reused
+    RunningAgain.test_a_second_run_creates_nothing
+    RunningAgain.test_an_earlier_unused_preview_cannot_make_a_second_story
+    RecordingTheKeyFails.test_if_the_key_cannot_be_written_it_is_printed_and_the_earlier_link_still_stops_the_next_run
+    WhenTheCreateGoesWrong.test_no_answer_means_unknown_no_retry_and_a_link_that_says_so
+    CommandLine.test_preview_confirm_rerun_and_verify_through_the_command_line
+    WhenTheCreateGoesWrong.test_reconcile_after_a_lost_answer_finds_the_story_by_its_marker_and_links_it
+
+PLANTED BUG P. The link file is not written before the create is sent, so a lost answer leaves no trace (criterion 9)
+  unittest result: FAILED (failures=6, errors=6)
+  tests that failed (12):
+    WhenTheCreateGoesWrong.test_a_refusal_from_jira_that_nevertheless_made_a_story_is_not_called_nothing
+    WhenTheCreateGoesWrong.test_an_unclear_answer_from_jira_is_not_treated_as_a_refusal
+    RecordingTheKeyFails.test_if_the_key_cannot_be_written_it_is_printed_and_the_earlier_link_still_stops_the_next_run
+    RecordingTheKeyFails.test_if_the_link_file_cannot_be_written_first_the_create_is_not_sent
+    WhenTheCreateGoesWrong.test_jira_naming_the_fields_at_fault_is_passed_on
+    WhenTheCreateGoesWrong.test_jira_refusing_creates_nothing_and_removes_the_link
+    WhenTheCreateGoesWrong.test_no_answer_means_unknown_no_retry_and_a_link_that_says_so
+    WhenTheCreateGoesWrong.test_reconcile_after_a_lost_answer_finds_the_story_by_its_marker_and_links_it
+    WhenTheCreateGoesWrong.test_reconcile_copes_with_a_search_that_lags
+    WhenTheCreateGoesWrong.test_reconcile_links_nothing_when_two_stories_carry_the_marker
+    WhenTheCreateGoesWrong.test_reconcile_when_nothing_was_created_says_not_found_and_creates_nothing
+    ApprovedRun.test_the_link_file_says_a_create_is_being_sent_before_it_is_sent
+
+PLANTED BUG Q. A create that gets no answer is sent a second time (criterion 9)
+  unittest result: FAILED (errors=5)
+  tests that failed (5):
+    WhenTheCreateGoesWrong.test_no_answer_means_unknown_no_retry_and_a_link_that_says_so
+    WhenTheCreateGoesWrong.test_reconcile_after_a_lost_answer_finds_the_story_by_its_marker_and_links_it
+    WhenTheCreateGoesWrong.test_reconcile_copes_with_a_search_that_lags
+    WhenTheCreateGoesWrong.test_reconcile_links_nothing_when_two_stories_carry_the_marker
+    WhenTheCreateGoesWrong.test_reconcile_when_nothing_was_created_says_not_found_and_creates_nothing
+
+PLANTED BUG R. A story already carrying the marker does not stop the create (criterion 9)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Refusals.test_a_marker_already_in_jira_stops_the_create
+
+PLANTED BUG S. A refusal from Jira is believed without looking for the marker (criterion 9)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    WhenTheCreateGoesWrong.test_a_refusal_from_jira_that_nevertheless_made_a_story_is_not_called_nothing
+
+PLANTED BUG T. A server error is treated as a plain refusal and the link is removed (criterion 9)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    WhenTheCreateGoesWrong.test_an_unclear_answer_from_jira_is_not_treated_as_a_refusal
+
+PLANTED BUG U. Reconcile links the first story when two carry the marker (criterion 9)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    WhenTheCreateGoesWrong.test_reconcile_links_nothing_when_two_stories_carry_the_marker
+
+PLANTED BUG V. One run can send more than one create (criterion 9)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    CommandLine.test_one_run_sends_at_most_one_create
+
+PLANTED BUG Z. Verify reports that the marker leads to the story without having asked Jira (criterion 9)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    Verify.test_verify_says_when_the_marker_no_longer_leads_to_the_story
+
+PLANTED BUG W. A person's name from Jira is shown in the comparison (safety rule: redacted records)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    ApprovedRun.test_what_jira_set_itself_is_listed_and_people_are_not_shown
+
+PLANTED BUG X. The saved log keeps the site's address (safety rule: redacted records)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    CommandLine.test_preview_confirm_rerun_and_verify_through_the_command_line
+
+PLANTED BUG Y. Output is not searched for credentials (safety rule: no credential in a log)
+  unittest result: FAILED (failures=1)
+  tests that failed (1):
+    CommandLine.test_output_holding_a_credential_is_not_shown_or_saved
+
+After the last bug was taken out: create.py is byte for byte what it was at the start. OK
+
+RESULT: all 26 planted bugs were caught by at least one test, and the file was restored.

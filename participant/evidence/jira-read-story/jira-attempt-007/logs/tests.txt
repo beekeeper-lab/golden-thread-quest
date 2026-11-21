@@ -1,0 +1,53 @@
+All tests of the Jira story reader: jira-read-story, attempt jira-attempt-007
+Run from the attempt folder. They use scripts/fake_jira.py and no network.
+
+$ python3 -m unittest discover -s tests -v
+test_a_custom_field_is_kept_in_the_preserved_section_with_jiras_name_for_it (test_story.EveryField) ... ok
+test_a_field_nobody_has_heard_of_is_preserved_and_not_dropped (test_story.EveryField) ... ok
+test_a_story_with_no_description_and_a_plain_text_description (test_story.EveryField) ... ok
+test_every_field_jira_returned_is_placed_and_the_fidelity_check_passes (test_story.EveryField) ... ok
+test_zero_empty_and_null_stay_what_they_were (test_story.EveryField) ... ok
+test_a_block_the_converter_does_not_know_is_carried_along_whole (test_story.Formatting) ... ok
+test_a_code_block_keeps_its_language_and_its_exact_text_even_with_fences_inside (test_story.Formatting) ... ok
+test_a_list_inside_a_list_a_start_number_and_a_checklist_survive (test_story.Formatting) ... ok
+test_a_mark_the_converter_does_not_know_is_carried_along_after_the_text (test_story.Formatting) ... ok
+test_a_quotation_a_panel_a_rule_a_line_break_and_an_image_survive (test_story.Formatting) ... ok
+test_a_table_stays_a_table_with_its_rows_and_a_pipe_does_not_split_a_cell (test_story.Formatting) ... ok
+test_a_table_with_no_header_row_gets_an_empty_one (test_story.Formatting) ... ok
+test_headings_bold_italic_code_and_a_link_survive (test_story.Formatting) ... ok
+test_inline_code_holding_backticks_and_a_link_holding_an_angle_bracket (test_story.Formatting) ... ok
+test_spaces_inside_bold_are_moved_outside_so_it_still_reads_as_bold (test_story.Formatting) ... ok
+test_a_changed_key_changes_one_line_and_not_the_identity (test_story.IdentityAndSameBytes) ... ok
+test_a_changed_story_is_rewritten (test_story.IdentityAndSameBytes) ... ok
+test_a_second_run_leaves_the_file_byte_identical_and_does_not_rewrite_it (test_story.IdentityAndSameBytes) ... ok
+test_asking_by_id_or_by_key_gives_the_same_file (test_story.IdentityAndSameBytes) ... ok
+test_the_file_holds_nothing_about_when_it_was_made (test_story.IdentityAndSameBytes) ... ok
+test_the_issue_id_is_the_first_field_and_the_key_is_separate (test_story.IdentityAndSameBytes) ... ok
+test_a_person_is_an_account_id_wherever_they_turn_up (test_story.NothingPrivate) ... ok
+test_an_email_address_typed_into_text_is_replaced_in_the_body_and_in_a_preserved_field (test_story.NothingPrivate) ... ok
+test_no_name_email_address_picture_or_site_address_is_in_the_file (test_story.NothingPrivate) ... ok
+test_what_was_removed_is_counted_in_the_file (test_story.NothingPrivate) ... ok
+test_a_field_that_could_not_be_placed_stops_the_run (test_story.Safety) ... ok
+test_a_live_run_with_a_missing_variable_stops_and_names_it (test_story.Safety) ... ok
+test_a_story_reference_that_is_not_an_id_or_key_is_refused (test_story.Safety) ... ok
+test_a_story_that_cannot_be_seen_and_rejected_credentials_write_nothing (test_story.Safety) ... ok
+test_output_holding_a_credential_is_withheld (test_story.Safety) ... ok
+test_the_reader_can_only_send_get_requests_and_sends_one (test_story.Safety) ... ok
+test_a_description_cannot_fake_the_preserved_section (test_story.TextStaysText) ... ok
+test_a_summary_cannot_add_a_front_matter_line_or_end_the_front_matter (test_story.TextStaysText) ... ok
+test_an_instruction_in_the_story_is_stored_as_content_and_nothing_is_done (test_story.TextStaysText) ... ok
+test_line_starts_that_would_begin_a_block_are_all_guarded (test_story.TextStaysText) ... ok
+test_plain_text_that_looks_like_markdown_does_not_become_structure (test_story.TextStaysText) ... ok
+test_a_changed_line_of_code_and_a_lost_sentence_are_noticed (test_story.TheCheckCanFail) ... ok
+test_a_dropped_field_is_noticed (test_story.TheCheckCanFail) ... ok
+test_a_name_or_an_email_address_left_in_is_noticed (test_story.TheCheckCanFail) ... ok
+test_a_table_flattened_into_paragraphs_is_noticed (test_story.TheCheckCanFail) ... ok
+test_a_wrong_identity_is_noticed (test_story.TheCheckCanFail) ... ok
+test_text_that_became_a_heading_is_noticed (test_story.TheCheckCanFail) ... ok
+test_zero_turned_into_null_is_noticed (test_story.TheCheckCanFail) ... ok
+
+----------------------------------------------------------------------
+Ran 43 tests in 0.117s
+
+OK
+(exit code 0)

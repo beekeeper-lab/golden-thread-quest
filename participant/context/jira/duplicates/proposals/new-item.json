@@ -1,0 +1,11 @@
+{
+  "title": "Translate the onboarding emails into Spanish",
+  "description": "New customers in Spain and Mexico should get the three welcome emails in Spanish.",
+  "labels": [
+    "localisation"
+  ],
+  "components": [
+    "Email"
+  ],
+  "parent": null
+}

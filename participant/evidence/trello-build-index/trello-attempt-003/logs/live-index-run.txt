@@ -1,0 +1,58 @@
+The index built from the real sandbox board's records: trello-build-index, attempt trello-attempt-003
+Recorded by scripts/live_run.py, started by the participant in their own terminal.
+Trello was contacted by the approved card reader only, with GET requests only. Nothing was written to Trello.
+The records and the index are in a scratch folder outside the repository, shown here as SCRATCH.
+This log holds counts, list names, card ids and fingerprints. Card names and member ids are left out.
+
+STEP 1. The approved card reader reads each of the 7 cards the board record, participant/context/trello/board.json, holds as on the board.
+  Left out: card 6afdf65aa3a5b8d67f9c9a21. The board record marks it not_returned: Trello stopped returning it for this board on an
+  earlier sync. The first run of this script asked for it anyway and the reader stopped (exit code 1). That run
+  is kept as logs/live-index-run-first.txt.
+  card 6afdf6548fe01fabfda31f8c: reader exit code 0
+  card 6afdf6556fec70bd2959905f: reader exit code 0
+  card 6afdf655971ad373884d985b: reader exit code 0
+  card 6afdf656247d17022a5c57a8: reader exit code 0
+  card 6afdf65638df50999c980d80: reader exit code 0
+  card 6afdf6592253e548ed311415: reader exit code 0
+  card 6afdf65a3f4459240c50778b: reader exit code 0
+  ok   the reader wrote a record for all 7 cards
+
+STEP 2. The index is built from SCRATCH/sandbox-board.
+$ python3 participant/skills/trello-build-index/index.py build --records SCRATCH/sandbox-board --out SCRATCH/out
+------------------------------------------------------------------------------
+BOARD INDEX BUILD. Reads local files only.
+Records folder: SCRATCH/sandbox-board
+Files found in cards/: 7
+  indexed, one row each:               7
+  repeating a card already indexed:    0
+  not indexed:                         0
+  accounted for: 7 of 7
+Cards with a gap: 0
+Fingerprint of the records: b431dd4975c0f337d36c82043fe6400d57183f6049ca06c983e71efcb1d2c3e7
+index.json: WRITTEN, 3826 bytes, SHA-256 e893a29d097c08f3117e5ba0723f8fcd92537fd81226d495e8afbc8151ef422d
+index.md:   WRITTEN, 4115 bytes, SHA-256 6a80c01b31fafaffb774605d2a910c9f64e294d89d368cb0119d57a502555f8c
+------------------------------------------------------------------------------
+exit code: 0 (lines naming a board, a card or a gap's file are left out of this log)
+
+Counted by this script, not by the generator:
+  record files in SCRATCH/sandbox-board/cards/: 7
+  card rows in SCRATCH/out/index.md:            7, holding 7 different card ids
+  ok   the row count equals the record count: 7 rows, 7 records
+  ok   no card is repeated
+  ok   the card ids in the rows are exactly the card ids the records are named by
+
+STEP 3. Board order. The board record gives these positions: Backlog 16384, Doing 32768, Review 49152, Done 65536.
+  list headings in index.md, in order: Backlog, Doing, Review, Done
+  ok   the lists are in position order, which is not their order by name
+
+STEP 4. One lookup for each list, and the check.
+  lookup --list "Backlog": exit code 0, 4 card(s): 6afdf6548fe01fabfda31f8c, 6afdf6556fec70bd2959905f, 6afdf655971ad373884d985b, 6afdf656247d17022a5c57a8
+  lookup --list "Doing": exit code 0, 1 card(s): 6afdf65638df50999c980d80
+  lookup --list "Review": exit code 1, 0 card(s): none
+  lookup --list "Done": exit code 0, 2 card(s): 6afdf65a3f4459240c50778b, 6afdf6592253e548ed311415
+  ok   the four lookups together return every card once: 7 of 7
+  check: exit code 0
+  ok   the check passes on the index just built
+  ok   a second build finds both files unchanged
+
+RESULT: ALL CHECKS PASSED. 8 checks.

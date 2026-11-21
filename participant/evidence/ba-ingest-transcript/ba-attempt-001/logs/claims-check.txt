@@ -1,0 +1,9 @@
+# Claims check: each line of SKILL.md and PROOF.md that the checker recognizes as claiming a test names a planted bug caught in planted-bugs.txt, each planted bug in a list after named tests makes one of them fail, and each test is made to fail by at least one planted bug
+# Recorded 2026-10-30T19:02:41Z from the repository root on branch pilot/beau.
+# Raw transcripts are in local-data/transcripts/, which git ignores. Paths are repository-relative.
+
+$ .venv/bin/python participant/skills/ba-ingest-transcript/tests/check_claims.py
+18 line(s) with a test named before a planted-bug list, 73 planted-bug reference(s) checked against the tests named before their list
+77 line(s) claiming a test, 331 planted-bug reference(s), 1111 planted bugs caught in the log, 134 of 134 tests made to fail by at least one planted bug, 0 problem(s)
+[exit code: 0]
+

@@ -1,0 +1,7 @@
+{
+ "title": "Export the customer list as CSV",
+ "description": "Admins keep asking support for their customer list. Add an Export button to the customers page that downloads the customer list as a CSV file with the account name, plan and signup date columns. Stream the download so large accounts do not time out.",
+ "component": "Customers",
+ "labels": ["export", "customer-request"],
+ "sources": ["support-review-2026-11#item-4"]
+}

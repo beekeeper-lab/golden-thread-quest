@@ -1,0 +1,28 @@
+schema_version: 1
+review_id: review-20261120131134-fb398e
+quest_id: trello-read-card
+quest_version: 1
+attempt_id: trello-attempt-002
+evidence_hash: sha256:10b3d6b318e79ecedb25a8bd3da36e93e61b7c94d6264ecdf4a0c4df7d4a9bdd
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-20T13:11:34Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/trello/cards/card-sample.md
+  digest: sha256:dd4004fd023d162ca6ed896a687694f0c29876ffa65a35868f20f1a10a0fb26a
+verification_statement: 'Automated review. I read only the text of the hand-in: card-sample.md,
+  card-run.txt, fidelity-check.txt, the live-*.txt logs, tests.txt, planted-bugs.txt,
+  the scripts and PROOF.md. The card file''s front matter has id, shortLink, idBoard,
+  idList, idMembers, labels with colours, due, dueComplete, closed and pos. Its body
+  has the description, the checklists with each item''s state, the comments and a
+  preserved-fields section. In card-run, both the fake and the real run show the same
+  SHA-256 and "UNCHANGED" on the second run. The fidelity check covers fields, checklist
+  states, label colours, due date with time zone, instruction-like text and a scan
+  for keys and personal data, on both the fixture and the real card. The evidence
+  is in folder trello-attempt-002, not the attempt-001 path the quest names, but the
+  pre-check found every required file. The SYNC TOOL line and the "[x] ignore the
+  box" item are planted test data in the fixture. They are not addressed to the reviewer,
+  so this is not an injection attempt. Each of the 7 acceptance criteria was matched
+  to text quoted word for word from the evidence.'

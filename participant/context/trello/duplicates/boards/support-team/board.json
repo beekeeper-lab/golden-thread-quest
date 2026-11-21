@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "source": "fixture",
+  "board": {
+    "id": "70b000000000000000000012",
+    "name": "Made-up support team board",
+    "short_link": "FIXsupp",
+    "closed": false
+  },
+  "lists": [
+    {
+      "id": "71a000000000000000000021",
+      "name": "Inbox",
+      "pos": 1000,
+      "closed": false
+    },
+    {
+      "id": "71a000000000000000000022",
+      "name": "In progress",
+      "pos": 2000,
+      "closed": false
+    },
+    {
+      "id": "71a000000000000000000023",
+      "name": "Resolved",
+      "pos": 3000,
+      "closed": false
+    }
+  ]
+}
