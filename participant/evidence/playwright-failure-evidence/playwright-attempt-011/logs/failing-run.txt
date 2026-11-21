@@ -1,0 +1,74 @@
+# Failing run: the same test against the broken copy (the orders list answers 500 to the app's own page)
+# Recorded 11-16-2026 10:38:23 AM on branch pilot/tom at commit d0d100a (with uncommitted quest-19 files).
+# The API key was a made-up value, new for this recording; it is not shown. The home folder is shown as ~.
+
+$ node tools/break-orders-list.ts <a new temporary folder>
+Broken copy of the demo app in <temporary folder>. Changes:
+  server.js: the list fails with a 500 when the app's own page asks for it:
+    - if (path === "/api/orders" && request.method === "GET") return send(response, 200, readOrders());
+    + if (path === "/api/orders" && request.method === "GET" && fromOwnPage(request)) return send(response, 500, { error: "Something went wrong on our side. Please try again later." }); // BROKEN COPY
+    + if (path === "/api/orders" && request.method === "GET") return send(response, 200, readOrders());
+  orders.html: the page writes the failure to the browser console:
+    - if (answer.ok && Array.isArray(result)) return result;
+    + if (answer.ok && Array.isArray(result)) return result;
+    + console.error(`Loading orders failed: GET /api/orders answered ${answer.status}`); // BROKEN COPY
+$ TIXLY_DEMO_PORT=4192 node <temporary folder>/server.js   (started in the background)
+$ TIXLY_BASE_URL=http://127.0.0.1:4192 npx playwright test --config evidence.config.ts
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › evidence-tests/orders-list.evidence.ts:12:1 › a saved order shows on Your orders @saved-orders @risk-medium @writes-data @layer-mixed @fast (5.1s)
+
+
+  1) [chromium] › evidence-tests/orders-list.evidence.ts:12:1 › a saved order shows on Your orders @saved-orders @risk-medium @writes-data @layer-mixed @fast 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('cell', { name: 'Test User qa-a155b3a3-c782824f', exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('cell', { name: 'Test User qa-a155b3a3-c782824f', exact: true }) with timeout 5000ms
+      - waiting for getByRole('cell', { name: 'Test User qa-a155b3a3-c782824f', exact: true })
+
+
+      16 |     const order = await orders.create({ quantity: 2 });
+      17 |     await page.goto("/orders");
+    > 18 |     await expect(page.getByRole("cell", { name: order.name, exact: true })).toBeVisible();
+         |                                                                             ^
+      19 |   },
+      20 | );
+      21 |
+        at ~/golden-thread-quest/participant/tests/playwright/evidence-tests/orders-list.evidence.ts:18:77
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/orders-list.evidence.ts-a-saved-order-shows-on-Your-orders-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/orders-list.evidence.ts-a-saved-order-shows-on-Your-orders-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/orders-list.evidence.ts-a-saved-order-shows-on-Your-orders-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/orders-list.evidence.ts-a-saved-order-shows-on-Your-orders-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › evidence-tests/orders-list.evidence.ts:12:1 › a saved order shows on Your orders @saved-orders @risk-medium @writes-data @layer-mixed @fast 
+(exit 1)
+
+test-results/ after the run:
+  test-results/.last-run.json
+  test-results/orders-list.evidence.ts-a-saved-order-shows-on-Your-orders-chromium
+  test-results/orders-list.evidence.ts-a-saved-order-shows-on-Your-orders-chromium/console.txt
+  test-results/orders-list.evidence.ts-a-saved-order-shows-on-Your-orders-chromium/error-context.md
+  test-results/orders-list.evidence.ts-a-saved-order-shows-on-Your-orders-chromium/error.txt
+  test-results/orders-list.evidence.ts-a-saved-order-shows-on-Your-orders-chromium/failed-requests.txt
+  test-results/orders-list.evidence.ts-a-saved-order-shows-on-Your-orders-chromium/test-failed-1.png
+  test-results/orders-list.evidence.ts-a-saved-order-shows-on-Your-orders-chromium/trace.zip
+
+Orders made by this run still saved in the broken copy (0 means cleanup cancelled them): 0

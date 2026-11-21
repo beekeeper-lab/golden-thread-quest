@@ -1,0 +1,27 @@
+$ npm run check-setup   (11-05-2026 04:55 PM)
+
+> tixly-playwright-tests@1.0.0 check-setup
+> node tools/project-setup-check.ts
+
+project-setup-check 1.0.0
+project: participant/tests/playwright
+PASS  generated output and environment files are ignored by Git (12 of 12)
+      installed packages: participant/tests/playwright/node_modules/@playwright/test/package.json (rule participant/tests/playwright/.gitignore:2:node_modules/)
+      a trace: participant/tests/playwright/test-results/smoke-chromium/trace.zip (rule participant/tests/playwright/.gitignore:5:test-results/)
+      a failure screenshot: participant/tests/playwright/test-results/smoke-chromium/test-failed-1.png (rule participant/tests/playwright/.gitignore:5:test-results/)
+      a file downloaded during a test: participant/tests/playwright/test-results/smoke-chromium/downloads/ticket.pdf (rule participant/tests/playwright/.gitignore:5:test-results/)
+      the HTML report: participant/tests/playwright/playwright-report/index.html (rule participant/tests/playwright/.gitignore:6:playwright-report/)
+      a merged-report blob: participant/tests/playwright/blob-report/report.zip (rule participant/tests/playwright/.gitignore:7:blob-report/)
+      Playwright's build cache: participant/tests/playwright/playwright/.cache/component.js (rule participant/tests/playwright/.gitignore:8:playwright/.cache/)
+      an environment file: participant/tests/playwright/.env (rule participant/tests/playwright/.gitignore:15:*.env)
+      a local environment file: participant/tests/playwright/.env.local (rule participant/tests/playwright/.gitignore:12:.env.*)
+      an environment file named with a dash: participant/tests/playwright/.env-local (rule participant/tests/playwright/.gitignore:13:.env-*)
+      an environment file named with an underscore: participant/tests/playwright/.env_production (rule participant/tests/playwright/.gitignore:14:.env_*)
+      an environment file ending in .env: participant/tests/playwright/production.env (rule participant/tests/playwright/.gitignore:15:*.env)
+PASS  the project's own files are not ignored (10 of 10)
+PASS  downloaded browsers are kept out of Git (Playwright's own cache folder, outside the repository)
+PASS  no environment file is among the 603 files Git would commit
+PASS  no output from this project's runs, installed package or downloaded browser is among the files Git would commit
+PASS  no credential found in the files Git would commit (1131 files scanned, 0 finding(s), including the staged copies of all 590 tracked files)
+RESULT: PASSED
+exit code: 0

@@ -1,0 +1,248 @@
+Change record: a deliberate interface change absorbed by editing the page model only
+Started: 11-09-2026 10:08:21 AM
+Node v22.23.3, Playwright 1.63.0, browser: Chromium
+Application: the local Tixly demo app in participant/tests/playwright/demo-app (made-up data,
+served on 127.0.0.1 only). No login, token or cookie is used.
+Redaction: personal home-folder paths shown as ~.
+
+The change: the events page's button "Review order" is renamed "Continue to review".
+
+--- 1. Baseline commit of the quest work: stage
+Recorded: 11-09-2026 10:08:22 AM
+Folder: repository root
+Command: git add -- participant/ACTIVITY.md participant/progress.yaml participant/evidence/playwright-page-model/playwright-attempt-005/PROOF.md participant/evidence/playwright-page-model/playwright-attempt-005/manifest.yaml participant/tests/playwright/demo-app/index.html participant/tests/playwright/demo-app/review.html participant/tests/playwright/demo-app/server.js participant/tests/playwright/pages/models.ts participant/tests/playwright/model-usage.spec.ts
+Exit code: 0
+
+
+
+--- 1. Baseline commit of the quest work: commit
+Recorded: 11-09-2026 10:08:22 AM
+Folder: repository root
+Command: git commit -m "Page-model quest: order review screen, page models and tests (baseline)"
+Exit code: 0
+
+[pilot/tom bd20a18] Page-model quest: order review screen, page models and tests (baseline)
+ 9 files changed, 267 insertions(+), 17 deletions(-)
+ create mode 100644 participant/evidence/playwright-page-model/playwright-attempt-005/PROOF.md
+ create mode 100644 participant/evidence/playwright-page-model/playwright-attempt-005/manifest.yaml
+ create mode 100644 participant/tests/playwright/demo-app/review.html
+ create mode 100644 participant/tests/playwright/model-usage.spec.ts
+ create mode 100644 participant/tests/playwright/pages/models.ts
+
+--- 2. Before the change: whole suite
+Recorded: 11-09-2026 10:08:24 AM
+Folder: participant/tests/playwright
+Command: npx playwright test
+Exit code: 0
+
+Running 5 tests using 3 workers
+
+  ✓  1 [chromium] › tests/smoke.spec.ts:4:1 › a visitor sees the Spring Concert and its ticket price on the Tixly home page (305ms)
+  ✓  3 [chromium] › model-usage.spec.ts:14:1 › a buyer reviewing 2 Spring Concert tickets sees the event, 2 tickets and a total of $55.00 @order-review @risk-high @read-only @fast (377ms)
+  ✓  2 [chromium] › first-independent-test.spec.ts:18:1 › a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket @ticket-total @risk-high @read-only @fast (401ms)
+  ✓  4 [chromium] › model-usage.spec.ts:30:1 › a buyer who goes back from the review to choose 4 tickets instead sees the new total of $110.00 @order-review @risk-high @read-only @fast (285ms)
+  ✓  5 [chromium] › model-usage.spec.ts:46:1 › a review link asking for 9 tickets explains the 1 to 6 limit instead of showing a total @order-review @risk-medium @read-only @fast (90ms)
+
+  5 passed (1.5s)
+
+--- 3. The interface change, made in the demo app only
+Recorded: 11-09-2026 10:08:24 AM
+Folder: repository root
+Command: git diff -- participant/tests/playwright/demo-app/index.html
+Exit code: 0
+
+diff --git a/participant/tests/playwright/demo-app/index.html b/participant/tests/playwright/demo-app/index.html
+index 9ba86cc..f876113 100644
+--- a/participant/tests/playwright/demo-app/index.html
++++ b/participant/tests/playwright/demo-app/index.html
+@@ -17,7 +17,7 @@
+         <p>Riverside Hall, 04-18-2027, 7:30 PM</p>
+         <p>Tickets from $25.00</p>
+         <p>Service fee: $2.50 per ticket</p>
+-        <!-- Choosing a quantity only works out the price on this page. "Review order" opens the
++        <!-- Choosing a quantity only works out the price on this page. "Continue to review" opens the
+              review page with the event and quantity in its address; nothing is saved. -->
+         <form action="/review" method="get">
+           <input type="hidden" name="event" value="spring-concert">
+@@ -31,7 +31,7 @@
+             <option>6</option>
+           </select>
+           <p role="status" aria-label="Order total"></p>
+-          <button type="submit">Review order</button>
++          <button type="submit">Continue to review</button>
+         </form>
+       </article>
+     </main>
+
+--- 3. Commit the interface change: stage
+Recorded: 11-09-2026 10:08:24 AM
+Folder: repository root
+Command: git add -- participant/tests/playwright/demo-app/index.html
+Exit code: 0
+
+
+
+--- 3. Commit the interface change: commit
+Recorded: 11-09-2026 10:08:24 AM
+Folder: repository root
+Command: git commit -m "Page-model quest: rename the events page button to Continue to review"
+Exit code: 0
+
+[pilot/tom 9609398] Page-model quest: rename the events page button to Continue to review
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- 4. After the interface change, before any fix: whole suite
+Recorded: 11-09-2026 10:09:26 AM
+Folder: participant/tests/playwright
+Command: npx playwright test
+Exit code: 1
+
+Running 5 tests using 3 workers
+
+  ✓  3 [chromium] › tests/smoke.spec.ts:4:1 › a visitor sees the Spring Concert and its ticket price on the Tixly home page (204ms)
+  ✓  1 [chromium] › first-independent-test.spec.ts:18:1 › a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket @ticket-total @risk-high @read-only @fast (268ms)
+  ✘  2 [chromium] › model-usage.spec.ts:14:1 › a buyer reviewing 2 Spring Concert tickets sees the event, 2 tickets and a total of $55.00 @order-review @risk-high @read-only @fast (30.1s)
+  ✘  4 [chromium] › model-usage.spec.ts:30:1 › a buyer who goes back from the review to choose 4 tickets instead sees the new total of $110.00 @order-review @risk-high @read-only @fast (30.1s)
+  ✓  5 [chromium] › model-usage.spec.ts:46:1 › a review link asking for 9 tickets explains the 1 to 6 limit instead of showing a total @order-review @risk-medium @read-only @fast (106ms)
+
+
+  1) [chromium] › model-usage.spec.ts:14:1 › a buyer reviewing 2 Spring Concert tickets sees the event, 2 tickets and a total of $55.00 @order-review @risk-high @read-only @fast 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('article', { name: 'Spring Concert' }).getByRole('button', { name: 'Review order' })
+
+
+       at pages/models.ts:31
+
+      29 |   // Go on to the review screen for the tickets chosen on an event's card.
+      30 |   async reviewOrder(eventName: string): Promise<void> {
+    > 31 |     await this.event(eventName).getByRole("button", { name: "Review order" }).click();
+         |                                                                               ^
+      32 |   }
+      33 |
+      34 |   // Choose tickets and go straight to the review screen, the most common path through this page.
+        at EventsScreen.reviewOrder (~/golden-thread-quest/participant/tests/playwright/pages/models.ts:31:79)
+        at EventsScreen.chooseTicketsAndReview (~/golden-thread-quest/participant/tests/playwright/pages/models.ts:37:16)
+        at ~/golden-thread-quest/participant/tests/playwright/model-usage.spec.ts:21:20
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/model-usage-a-buyer-review-5a774-ickets-and-a-total-of-55-00-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/model-usage-a-buyer-review-5a774-ickets-and-a-total-of-55-00-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/model-usage-a-buyer-review-5a774-ickets-and-a-total-of-55-00-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/model-usage-a-buyer-review-5a774-ickets-and-a-total-of-55-00-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › model-usage.spec.ts:30:1 › a buyer who goes back from the review to choose 4 tickets instead sees the new total of $110.00 @order-review @risk-high @read-only @fast 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('article', { name: 'Spring Concert' }).getByRole('button', { name: 'Review order' })
+
+
+       at pages/models.ts:31
+
+      29 |   // Go on to the review screen for the tickets chosen on an event's card.
+      30 |   async reviewOrder(eventName: string): Promise<void> {
+    > 31 |     await this.event(eventName).getByRole("button", { name: "Review order" }).click();
+         |                                                                               ^
+      32 |   }
+      33 |
+      34 |   // Choose tickets and go straight to the review screen, the most common path through this page.
+        at EventsScreen.reviewOrder (~/golden-thread-quest/participant/tests/playwright/pages/models.ts:31:79)
+        at EventsScreen.chooseTicketsAndReview (~/golden-thread-quest/participant/tests/playwright/pages/models.ts:37:16)
+        at ~/golden-thread-quest/participant/tests/playwright/model-usage.spec.ts:36:25
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/model-usage-a-buyer-who-go-2752d-ees-the-new-total-of-110-00-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/model-usage-a-buyer-who-go-2752d-ees-the-new-total-of-110-00-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/model-usage-a-buyer-who-go-2752d-ees-the-new-total-of-110-00-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/model-usage-a-buyer-who-go-2752d-ees-the-new-total-of-110-00-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [chromium] › model-usage.spec.ts:14:1 › a buyer reviewing 2 Spring Concert tickets sees the event, 2 tickets and a total of $55.00 @order-review @risk-high @read-only @fast 
+    [chromium] › model-usage.spec.ts:30:1 › a buyer who goes back from the review to choose 4 tickets instead sees the new total of $110.00 @order-review @risk-high @read-only @fast 
+  3 passed (1.0m)
+
+--- 5. After fixing pages/models.ts only: whole suite
+Recorded: 11-09-2026 10:09:28 AM
+Folder: participant/tests/playwright
+Command: npx playwright test
+Exit code: 0
+
+Running 5 tests using 3 workers
+
+  ✓  1 [chromium] › tests/smoke.spec.ts:4:1 › a visitor sees the Spring Concert and its ticket price on the Tixly home page (194ms)
+  ✓  2 [chromium] › model-usage.spec.ts:14:1 › a buyer reviewing 2 Spring Concert tickets sees the event, 2 tickets and a total of $55.00 @order-review @risk-high @read-only @fast (247ms)
+  ✓  3 [chromium] › first-independent-test.spec.ts:18:1 › a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket @ticket-total @risk-high @read-only @fast (275ms)
+  ✓  4 [chromium] › model-usage.spec.ts:30:1 › a buyer who goes back from the review to choose 4 tickets instead sees the new total of $110.00 @order-review @risk-high @read-only @fast (290ms)
+  ✓  5 [chromium] › model-usage.spec.ts:46:1 › a review link asking for 9 tickets explains the 1 to 6 limit instead of showing a total @order-review @risk-medium @read-only @fast (89ms)
+
+  5 passed (1.3s)
+
+--- 6. What the fix changed: files
+Recorded: 11-09-2026 10:09:28 AM
+Folder: repository root
+Command: git status --short
+Exit code: 0
+
+M participant/tests/playwright/pages/models.ts
+
+--- 6. What the fix changed: files and lines
+Recorded: 11-09-2026 10:09:28 AM
+Folder: repository root
+Command: git diff --stat
+Exit code: 0
+
+participant/tests/playwright/pages/models.ts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- 6. What the fix changed: the diff
+Recorded: 11-09-2026 10:09:28 AM
+Folder: repository root
+Command: git diff
+Exit code: 0
+
+diff --git a/participant/tests/playwright/pages/models.ts b/participant/tests/playwright/pages/models.ts
+index ee726e8..d28a75e 100644
+--- a/participant/tests/playwright/pages/models.ts
++++ b/participant/tests/playwright/pages/models.ts
+@@ -9,7 +9,7 @@ import type { Locator, Page } from "@playwright/test";
+ // models find and do, and the tests decide whether the result is right.
+ 
+ // The events page (/): one card per event, with a ticket quantity, a running total and a
+-// "Review order" button.
++// "Continue to review" button.
+ export class EventsScreen {
+   constructor(private readonly page: Page) {}
+ 
+@@ -28,7 +28,7 @@ export class EventsScreen {
+ 
+   // Go on to the review screen for the tickets chosen on an event's card.
+   async reviewOrder(eventName: string): Promise<void> {
+-    await this.event(eventName).getByRole("button", { name: "Review order" }).click();
++    await this.event(eventName).getByRole("button", { name: "Continue to review" }).click();
+   }
+ 
+   // Choose tickets and go straight to the review screen, the most common path through this page.
+
+Finished: 11-09-2026 10:09:28 AM

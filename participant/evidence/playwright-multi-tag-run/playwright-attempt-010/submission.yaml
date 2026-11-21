@@ -1,0 +1,13 @@
+schema_version: 1
+submission_id: submission-20261113145237-02e46f
+quest_id: playwright-multi-tag-run
+quest_version: 1
+attempt_id: playwright-attempt-010
+content_hash: sha256:dbd3c718991cc34b5be15037a0a30b2cddf94b8cd17e261be0d0a08736dbf8f5
+evidence_hash: sha256:b1c165a83738d8736e020e93c35e145c49e98d2616ae962003039be4c01a609e
+submitted_at: '2026-11-13T14:52:37Z'
+submitted_by: thomascarter
+secret_scan_clean: true
+proof_files:
+- path: participant/context/playwright/selections.md
+  digest: sha256:62d179f8f7123c71e322a01fa739c93303d8978b0da85d5f1f19e1012e6bb3ea

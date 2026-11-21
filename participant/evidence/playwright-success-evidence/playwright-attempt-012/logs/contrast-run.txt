@@ -1,0 +1,128 @@
+# Contrast run: the same test, with the rule broken (a copy of the app whose total leaves out the fee)
+# Recorded 11-17-2026 11:07:17 AM on branch pilot/tom at commit f73dcd7 (with uncommitted quest-20 files).
+# The API key was a made-up value, new for this recording; it is not shown. The home folder is shown as ~.
+
+## 1. The broken copy
+$ node tools/break-ticket-fee.ts <a new temporary folder>
+Broken copy of the demo app made in the folder given. Change:
+  review.html: the total leaves out the fee:
+    - const cents = quantity * (event.ticketCents + event.feeCents);
+    + const cents = quantity * event.ticketCents; // BROKEN COPY: the fee is left out
+
+## 2. The run
+$ TIXLY_DEMO_PORT=4193 node <temporary folder>/server.js   (started in the background)
+$ TIXLY_BASE_URL=http://127.0.0.1:4193 npx playwright test meaningful-evidence.spec.ts
+
+Running 1 test using 1 worker
+
+Captured (proof): order total, shown $150.00, expected $165.00 -> order-total.png, order-total.txt
+Not captured: opening the review page (navigation)
+Not captured: the page heading (navigation)
+Not captured: the event name and ticket count (navigation: shown in the proof's picture)
+  ✘  1 [chromium] › meaningful-evidence.spec.ts:34:1 › the review page total for 6 tickets is (ticket + fee) x 6 = $165.00 @order-review @risk-high @read-only @layer-ui @fast (239ms)
+
+
+  1) [chromium] › meaningful-evidence.spec.ts:34:1 › the review page total for 6 tickets is (ticket + fee) x 6 = $165.00 @order-review @risk-high @read-only @layer-ui @fast 
+
+    Error: the total captured in the evidence
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "$165.00"
+    Received: "$150.00"
+
+      89 |     for (const step of notCaptured) console.log(`Not captured: ${step}`);
+      90 |     expect(afterPicture, "the total stayed the same while the evidence was captured").toBe(shown);
+    > 91 |     expect(shown, "the total captured in the evidence").toBe(expected);
+         |                                                         ^
+      92 |   },
+      93 | );
+      94 |
+        at ~/golden-thread-quest/participant/tests/playwright/meaningful-evidence.spec.ts:91:57
+
+    attachment #1: proof: order summary (image/png) ────────────────────────────────────────────────
+    test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/attachments/proof-order-summary-f87db5ac8b128b5ee0307eeba935f4cc7cf67bc6.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: proof: checked values (text/plain) ──────────────────────────────────────────────
+    test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/attachments/proof-checked-values-62cca1a4be584a470daa495d7d07b0398a744147.txt
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › meaningful-evidence.spec.ts:34:1 › the review page total for 6 tickets is (ticket + fee) x 6 = $165.00 @order-review @risk-high @read-only @layer-ui @fast 
+(exit 1: expected 1, the total check fails)
+
+test-results/ after the run:
+  test-results/.last-run.json
+  test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium
+  test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/attachments
+  test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/attachments/proof-checked-values-62cca1a4be584a470daa495d7d07b0398a744147.txt
+  test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/attachments/proof-order-summary-f87db5ac8b128b5ee0307eeba935f4cc7cf67bc6.png
+  test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/error-context.md
+  test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/order-total.png
+  test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/order-total.txt
+  test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/test-failed-1.png
+  test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/trace.zip
+
+## 3. The evidence at the validation point, in this run (order-total.txt)
+  Rule: the order total is (ticket $25.00 + fee $2.50) x the number of tickets
+  Event: Spring Concert
+  Tickets: 6
+  Expected total: $165.00   (($25.00 + $2.50) x 6)
+  Shown total: $150.00
+  Result: RULE BROKEN
+  Captured: 11-17-2026 11:07:18 AM, right before the check
+  (its picture is saved beside this log as contrast-order-total.png)
+
+## 4. Compared with the passing run's evidence (validated/order-total.txt)
+  5,7c5,7
+  < Shown total: $165.00
+  < Result: rule held
+  < Captured: 11-17-2026 11:07:17 AM, right before the check
+  ---
+  > Shown total: $150.00
+  > Result: RULE BROKEN
+  > Captured: 11-17-2026 11:07:18 AM, right before the check
+
+## 5. Scan of validated/ for credentials and the home-folder address (quest 19's check)
+$ node tools/failure-evidence-check.ts <attempt>/validated
+Scanned 3 file(s) in <attempt>/validated, including 0 member(s) inside zip files.
+Found: nothing (no API key, no token, cookie or credential, no home-folder address).
+Not text, so check these by eye for personal data:
+  order-total.png
+PASS
+(exit 0)
+
+## 6. Scan of validated/ for buyers' names
+$ node tools/personal-data-check.ts <attempt>/validated
+Checked 3 file(s) for 3 saved buyer name(s) and the test-name shape.
+  Not text, check by eye: order-total.png
+PASS: no buyer's name found.
+(exit 0)
+
+## 7. Self-test of the name check: every saved name, a Test User name and a bare marker planted in a temporary copy of validated/, each must be found
+$ node tools/personal-data-check.ts --self-test <attempt>/validated
+Planted every saved buyer's name (3), a made-up Test User name and a made-up bare qa- marker, one per line, in a temporary copy.
+Checked 4 file(s) for 3 saved buyer name(s) and the test-name shape.
+  FOUND a saved buyer's name: 7b40468ba0dbc670, line 2
+  FOUND a saved buyer's name: 7b40468ba0dbc670, line 3
+  FOUND a saved buyer's name: 7b40468ba0dbc670, line 4
+  FOUND a test order's name (Test User qa-…): 7b40468ba0dbc670, line 5
+  FOUND a test order's run-marked name (qa-…): 7b40468ba0dbc670, line 6
+  Not text, check by eye: order-total.png
+PASS: all 5 planted names were found, each at its line by its own rule, and nothing else.
+(exit 0)

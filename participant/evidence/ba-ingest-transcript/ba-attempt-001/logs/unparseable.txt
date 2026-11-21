@@ -1,0 +1,13 @@
+$ .venv/bin/python participant/skills/ba-ingest-transcript/ingest.py local-data/transcripts/raw/garbled-meeting.raw.txt garbled-meeting --capture-source "Synthetic transcript written for this exercise; no recording exists" --transcription-tool "None; typed by hand" --log participant/evidence/ba-ingest-transcript/ba-attempt-001/logs/unparseable.txt
+# run at 2026-10-19T15:08:38Z by ba-ingest-transcript/ingest.py 1.1.0
+REFUSED: line 6: not an utterance of the form '[HH:MM:SS] Speaker: text'
+no record written: participant/context/transcripts/garbled-meeting.md does not exist
+exit status 1
+
+$ ls -a participant/context/transcripts
+.
+..
+redaction-notes.md
+sample-meeting.analysis.md
+sample-meeting.md
+sample-meeting.provenance.yaml

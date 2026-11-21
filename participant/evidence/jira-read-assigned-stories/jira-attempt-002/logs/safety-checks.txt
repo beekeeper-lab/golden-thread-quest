@@ -1,0 +1,97 @@
+jira-read-assigned-stories: safety checks of the synchronization and its demonstration
+Recorded 11-20-2026 5:39 PM with Node v22.23.3, by participant/tools/jira-sync-safety-demo.mjs.
+Every case runs on throwaway copies inside one temp folder (shown as <temp>); the real folder is not changed.
+Cases that need a failure at one exact point use a copy of a tool with one marked TEST ONLY line added.
+
+== 1. a validator that fails: the copy's real folder is put back byte-identical ==
+  as expected: exit code = 1
+  as expected: changes to the folder = none
+  as expected: log written = false
+
+== 2. notes made by Part B's runs are removed; a person's new note is kept ==
+  as expected: exit code = 1
+  as expected: changes to the folder = + file notes/GTQ-777.md
+  as expected: says new notes were left = true
+
+== 3. putting back made to fail: copies and lock kept, a recovery note written ==
+  as expected: exit code = 1
+  as expected: lock left in the folder = true
+  as expected: recovery note names the saved copies = true
+  as expected: saved copies kept = true
+
+== 4. interrupted (TERM) during Part B: put back byte-identical ==
+  as expected: signal sent during Part B = true
+  as expected: exit code = 130
+  as expected: changes to the folder = none
+
+== 5. terminal closed (HUP) during Part B: put back byte-identical ==
+  as expected: signal sent during Part B = true
+  as expected: exit code = 129
+  as expected: changes to the folder = none
+
+== 6. another synchronization started during Part B is refused ==
+  as expected: exit codes of the other runs = 2,2,2,2
+  as expected: changes to the folder = none
+
+== 7. a hand-written index.md, or a stories.json with a key twice: Part B leaves the folder alone ==
+  as expected: exit code (index.md) = 1
+  as expected: Part B left the folder alone = true
+  as expected: changes to the folder = none
+  as expected: exit code (stories.json) = 1
+  as expected: Part B left the folder alone = true
+  as expected: changes to the folder = none
+
+== 8. the second rename forced to fail: the folder is put back byte-identical ==
+  as expected: exit code = 2
+  as expected: changes to the folder = none
+
+== 9. the put-back of a previous file forced to fail: the lock stays and the kept copy is named ==
+  as expected: exit code = 2
+  as expected: message names the kept copy = true
+  as expected: lock left = true
+  as expected: next run refused = 2
+
+== 10. killed outright after making notes: the notes list records every notes file made ==
+  as expected: killed = SIGKILL
+  as expected: notes made = GTQ-101,GTQ-102,GTQ-201,GTQ-202
+  as expected: listed as created = GTQ-101,GTQ-102,GTQ-201,GTQ-202
+
+== 11. a notes list that would alias a notes file is refused, and the note is unchanged ==
+  as expected: exit codes (the note, a link, a hard link, a linked folder, another file) = 2,2,2,2,2
+  as expected: the note unchanged = true
+
+== 12. twenty pairs of runs started together on one folder: never both refused, never mixed ==
+  (pairs that met at the lock: 20; pairs that ran one after the other: 0)
+  as expected: pairs where neither finished, or another exit code = 0
+  as expected: pairs that met at the lock, at least one = true
+  as expected: times the folder held files from two runs = 0
+  as expected: lock left = false
+
+== 13. changes made between the first checks and the lock are caught ==
+  as expected: notes-swapped: exit code = 2
+  as expected: notes-swapped: message = true
+  as expected: notes-swapped: notes/GTQ-102.md made = false
+  as expected: notes-swapped: files written where a link points = 0
+  as expected: index-replaced: exit code = 2
+  as expected: index-replaced: message = true
+  as expected: index-replaced: notes/GTQ-102.md made = false
+  as expected: index-replaced: files written where a link points = 0
+  as expected: stories-changed: exit code = 2
+  as expected: stories-changed: message = true
+  as expected: stories-changed: notes/GTQ-102.md made = false
+  as expected: stories-changed: files written where a link points = 0
+
+== 14. a notes file that fails partway, and a read-only notes folder: the folder is unchanged ==
+  as expected: partial write: exit code = 2
+  as expected: partial write: changes to the folder = none
+  as expected: read-only notes: exit code = 2
+  as expected: read-only notes: changes to the folder = none
+
+== 15. folders a failed run made are removed, and a folder that can't be made leaves nothing ==
+  as expected: failure after making new folders: exit code = 2
+  as expected: failure after making new folders: entries left = 0
+  as expected: a folder that can't be made: exit code = 2
+  as expected: a folder that can't be made: entries left = 0
+
+59 expectations, 0 unexpected.
+End of record.

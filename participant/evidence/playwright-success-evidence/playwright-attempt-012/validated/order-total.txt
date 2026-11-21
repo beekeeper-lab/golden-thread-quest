@@ -1,0 +1,7 @@
+Rule: the order total is (ticket $25.00 + fee $2.50) x the number of tickets
+Event: Spring Concert
+Tickets: 6
+Expected total: $165.00   (($25.00 + $2.50) x 6)
+Shown total: $165.00
+Result: rule held
+Captured: 11-17-2026 11:07:17 AM, right before the check

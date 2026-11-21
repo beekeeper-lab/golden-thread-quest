@@ -1,0 +1,41 @@
+schema_version: 1
+review_id: review-20261119202543-9c85cc
+quest_id: context-decision-log
+quest_version: 1
+attempt_id: context-attempt-002
+evidence_hash: sha256:82f1a5f496c52ab7bba8ac41ab53fb3c4682bd17b2748f6e762081bb1e77c02d
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-19T20:25:43Z'
+decision: needs_changes
+findings:
+- id: finding-1
+  severity: high
+  summary: 'Not shown in the evidence: A superseded decision links to the one that
+    replaced it.'
+  evidence: The review found that no quote from the evidence was found word for word
+    in the file named.
+  criterion: ac-5
+  required_change: Add evidence that shows this, then submit again.
+proof_files:
+- path: participant/context/decisions/log.md
+  digest: sha256:bda3247ae189cd2145fb0275500b94e48ec711323705ea73316cfe7d8e830866
+- path: participant/context/decisions/rules.md
+  digest: sha256:6febe4e7fb47693ef163ac17f4a3598bf31be1c57c935f4682c291c44a3d2909
+verification_statement: 'I read log.md, rules.md, PROOF.md and log-check.txt (under
+  context-attempt-002). The log has 13 entries: 7 decisions, 3 proposals and 3 questions,
+  each with one Status line, a Date and a Source. Every decision has an Approver,
+  an Area and a verbatim Approval line, and each line matches the sources.md text
+  included in log-check.txt. D-02 is superseded by D-07, and the two link to each
+  other ("Replaced by" / "Replaces"). P-02 was promoted to D-05 through a new entry,
+  with "Became: D-05" added to P-02, which is otherwise unchanged. P-03 shows agreement
+  in a meeting but no approval, and it stays a proposal. The generated Current decisions
+  table lists D-01, D-03, D-04, D-05, D-06 and D-07, and leaves out D-02 and all proposals
+  and questions. log-check.txt shows the real log passing every check. It also shows
+  27 deliberately broken copies, each failing the check named for it, including agreement
+  recorded as an approval, a missing approver and a status changed by rewriting an
+  entry. The real files'' SHA-256 hashes match before and after. PROOF.md explains
+  how an approval differs from agreement and cites the criteria by number. Advisory:
+  the evidence path uses context-attempt-002 rather than the attempt-001 path named
+  in the brief, but the pre-check found all required files present. The evidence contains
+  no text aimed at the reviewer.'

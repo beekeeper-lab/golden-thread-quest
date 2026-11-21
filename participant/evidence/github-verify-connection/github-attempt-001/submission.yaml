@@ -1,0 +1,13 @@
+schema_version: 1
+submission_id: submission-20261106174542-f330ad
+quest_id: github-verify-connection
+quest_version: 1
+attempt_id: github-attempt-001
+content_hash: sha256:ff7bce5706db45529918ca582bb73533edc1b0a5722037e5579459366dc18aa2
+evidence_hash: sha256:9f547cbe9fe6b5e50a88a0ac919c7fc0f5f47fa4cae8b14505b46c86e93a6756
+submitted_at: '2026-11-06T17:45:42Z'
+submitted_by: thomascarter
+secret_scan_clean: true
+proof_files:
+- path: participant/context/github/verify-notes.md
+  digest: sha256:be64987e2969201831b565ed2fd210b1b2af8835b85736bfdb323856671c0fc7

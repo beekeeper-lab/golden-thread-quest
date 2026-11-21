@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tixly: upcoming events</title>
+  </head>
+  <body>
+    <!-- Tixly is an invented ticket app. This page is a local demo for the tests, with made-up data. -->
+    <!-- REDESIGNED COPY for the stable-locators quest: the same product, built differently. Compared
+         with demo-app/index.html: a new event card above the Spring Concert, a "Doors open" line in
+         its card, its form wrapped in a new box, and a new build that renamed the generated names. -->
+    <header>
+      <h1>Tixly</h1>
+      <p>Upcoming events</p>
+    </header>
+    <main>
+      <article aria-labelledby="summer-jazz" data-ticket-cents="4000" data-fee-cents="300">
+        <h2 id="summer-jazz">Summer Jazz Night</h2>
+        <p>Lakeside Pavilion, 06-12-2027, 8:00 PM</p>
+        <p>Tickets from $40.00</p>
+        <p class="css-5jr0t">Service fee: $3.00 per ticket</p>
+        <div class="css-8tz1m">
+          <form action="/review" method="get">
+            <input type="hidden" name="event" value="summer-jazz">
+            <label for="r-3hd8x">Number of tickets</label>
+            <select id="r-3hd8x" name="quantity">
+              <option>1</option>
+              <option>2</option>
+              <option>3</option>
+              <option>4</option>
+              <option>5</option>
+              <option>6</option>
+            </select>
+            <p role="status" aria-label="Order total"></p>
+            <button type="submit">Continue to review</button>
+          </form>
+        </div>
+      </article>
+      <article aria-labelledby="spring-concert" data-ticket-cents="2500" data-fee-cents="250">
+        <h2 id="spring-concert">Spring Concert</h2>
+        <p>Riverside Hall, 04-18-2027, 7:30 PM</p>
+        <p>Doors open 6:30 PM</p>
+        <p>Tickets from $25.00</p>
+        <!-- "r-9wq4d" and "css-2mv8p" imitate names a build tool generates. No one has promised
+             to keep them, and a change to the page, its styling or the build tools can rename them
+             without warning. This "new build" renamed them: brittle.spec.ts still looks for the old
+             names (r-7f3k2, css-q81zk), so this redesign breaks it, on purpose. -->
+        <p class="css-2mv8p">Service fee: $2.50 per ticket</p>
+        <!-- Choosing a quantity only works out the price on this page. "Continue to review" opens the
+             review page with the event and quantity in its address; nothing is saved. -->
+        <div class="css-8tz1m">
+          <form action="/review" method="get">
+            <input type="hidden" name="event" value="spring-concert">
+            <label for="r-9wq4d">Number of tickets</label>
+            <select id="r-9wq4d" name="quantity">
+              <option>1</option>
+              <option>2</option>
+              <option>3</option>
+              <option>4</option>
+              <option>5</option>
+              <option>6</option>
+            </select>
+            <p role="status" aria-label="Order total"></p>
+            <button type="submit">Continue to review</button>
+          </form>
+        </div>
+      </article>
+    </main>
+    <script>
+      // The order total is the ticket price plus the service fee, for every ticket. Amounts are
+      // whole cents, so no rounding error can creep into the total. It is worked out when the page
+      // opens, again whenever the quantity changes, and again whenever the page is shown (after the
+      // browser's Back button the quantity chosen before is put back without a change event), so
+      // it always follows the card's own price and fee (data-ticket-cents, data-fee-cents) and the
+      // quantity on screen rather than a number typed into the page.
+      for (const card of document.querySelectorAll("article[data-ticket-cents]")) {
+        const ticketCents = Number(card.dataset.ticketCents);
+        const feeCents = Number(card.dataset.feeCents);
+        const quantity = card.querySelector("select");
+        const total = card.querySelector('[role="status"]');
+        const showTotal = () => {
+          const cents = Number(quantity.value) * (ticketCents + feeCents);
+          total.textContent = `Total: $${(cents / 100).toFixed(2)}`;
+        };
+        quantity.addEventListener("change", showTotal);
+        window.addEventListener("pageshow", showTotal);
+        showTotal();
+      }
+    </script>
+  </body>
+</html>

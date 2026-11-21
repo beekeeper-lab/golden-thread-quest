@@ -1,0 +1,10 @@
+# Copying the failing test's evidence out of test-results/, with the home folder replaced by ~
+# Recorded 11-16-2026 10:38:29 AM on branch pilot/tom at commit d0d100a (with uncommitted quest-19 files).
+# The API key was a made-up value, new for this recording; it is not shown. The home folder is shown as ~.
+
+$ node tools/copy-failure-bundle.ts test-results/<the test's folder> <attempt>/failure-bundle
+Copied test-results/orders-list.evidence.ts-a-saved-order-shows-on-Your-orders-chromium to <attempt>/failure-bundle.
+The home-folder address was replaced with ~ in 18 place(s):
+  test-failed-1.png: copied as it is (not text: check it by eye)
+  trace.zip: 4 member(s) changed, 3 source file(s) renamed in src/
+(exit 0)

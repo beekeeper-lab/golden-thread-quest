@@ -1,0 +1,29 @@
+# Passing run: meaningful-evidence.spec.ts against the working demo app
+# Recorded 11-17-2026 11:07:15 AM on branch pilot/tom at commit f73dcd7 (with uncommitted quest-20 files).
+# The API key was a made-up value, new for this recording; it is not shown. The home folder is shown as ~.
+
+$ npx playwright test meaningful-evidence.spec.ts
+
+Running 1 test using 1 worker
+
+Captured (proof): order total, shown $165.00, expected $165.00 -> order-total.png, order-total.txt
+Not captured: opening the review page (navigation)
+Not captured: the page heading (navigation)
+Not captured: the event name and ticket count (navigation: shown in the proof's picture)
+  ✓  1 [chromium] › meaningful-evidence.spec.ts:34:1 › the review page total for 6 tickets is (ticket + fee) x 6 = $165.00 @order-review @risk-high @read-only @layer-ui @fast (397ms)
+
+  1 passed (1.1s)
+(exit 0)
+
+test-results/ after the run:
+  test-results/.last-run.json
+  test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium
+  test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/attachments
+  test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/attachments/proof-checked-values-62cca1a4be584a470daa495d7d07b0398a744147.txt
+  test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/attachments/proof-order-summary-f87db5ac8b128b5ee0307eeba935f4cc7cf67bc6.png
+  test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/order-total.png
+  test-results/meaningful-evidence-the-re-94451-ts-is-ticket-fee-x-6-165-00-chromium/order-total.txt
+
+Copied into validated/ (the proof only; attachments/ holds the report's copies of the same two files):
+  order-total.png
+  order-total.txt

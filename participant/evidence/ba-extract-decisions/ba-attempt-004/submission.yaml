@@ -1,0 +1,15 @@
+schema_version: 1
+submission_id: submission-20261120152846-10bca4
+quest_id: ba-extract-decisions
+quest_version: 1
+attempt_id: ba-attempt-004
+content_hash: sha256:df3f835c09e57dee712d5cefbe1b13863ee8a31d722721d793c5bb6e55f374bd
+evidence_hash: sha256:9d3e970dace94a513d7c0565167e5ff46450d606940744f864bc5a6ee67b3ae2
+submitted_at: '2026-11-20T15:28:46Z'
+submitted_by: thomascarter
+secret_scan_clean: true
+proof_files:
+- path: participant/context/decision-rules.md
+  digest: sha256:aed1d2978fb113d99b522ffc86b85b9cda1ed29781686c6c0b7167e3a8bef671
+- path: participant/context/transcripts/sample-meeting.decisions.md
+  digest: sha256:c1c5c6df5beeaedb9037435bebe253f7c6a8cf2bca23d7f2ac1c3fea026f5fc9

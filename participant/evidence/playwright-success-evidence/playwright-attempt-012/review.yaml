@@ -1,0 +1,26 @@
+schema_version: 1
+review_id: review-20261117163449-122517
+quest_id: playwright-success-evidence
+quest_version: 1
+attempt_id: playwright-attempt-012
+evidence_hash: sha256:1835b9a68d8b9dead7b6c0923b06879659880c1dcc4fb43c06a9a53c4c2c386b
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-17T16:34:49Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/tests/playwright/meaningful-evidence.spec.ts
+  digest: sha256:7e37c5178afbe83b345804e0de3202eaf2cfcf1d51a4efc3a9ef09a88df40443
+verification_statement: 'Automated review. I read all five text files: the test, PROOF.md,
+  validated/order-total.txt, validated/run-output.txt and logs/contrast-run.txt. I
+  could not open the two PNG files, so for those I relied on their presence and the
+  participant''s description. The files agree with each other. The contrast log shows
+  code lines 89–91, and they match the test file. The failure is reported at line
+  91, which is the PROOF assertion. The diff in the contrast log matches the passing
+  values file. The scan reports 3 files, and validated/ holds 3 (order-total.png,
+  order-total.txt, run-output.txt). The hand-in uses the folder playwright-attempt-012,
+  not attempt-001 as the brief names it. The automatic pre-check reported the required
+  files present, so I treat the name difference as minor and raise no finding. No
+  text in the evidence is addressed to the reviewer, so I suspect no injection. Each
+  of the 7 acceptance criteria was matched to text quoted word for word from the evidence.'

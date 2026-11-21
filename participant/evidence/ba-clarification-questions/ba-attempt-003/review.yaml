@@ -1,0 +1,21 @@
+schema_version: 1
+review_id: review-20261028163636-198607
+quest_id: ba-clarification-questions
+quest_version: 1
+attempt_id: ba-attempt-003
+evidence_hash: sha256:5386bbd98250f8d22ce40ee2d440734f2d951464234abce12dd4451cee1ed39a
+reviewer:
+  display_name: Gregg Reed
+reviewed_at: '2026-10-28T16:36:36Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/clarification/dropped.md
+  digest: sha256:1f72f31fee5621f019edfe299f670d238192ab80790c726f53f0ff3e0e74a759
+- path: participant/context/clarification/questions.md
+  digest: sha256:88fa3ada050bd3c13afa85224296fee4aad795296e2824f904278628233be0a0
+verification_statement: 'Read all 13 questions and the dropped entry against ACs 1-7.
+  Every question cites a real finding, has 2-3 answers each with distinct work, and
+  is one short sentence. D-01 is a sound drop with a rewrite as Q-11. Ordering is
+  justified per question. Reran check-questions.py (PASSED) and the validator, and
+  read the participant code first: no network, no writes outside participant/.'

@@ -1,0 +1,19 @@
+schema_version: 1
+review_id: review-20261029195307-9d7806
+quest_id: base-camp-write-preview
+quest_version: 1
+attempt_id: base-attempt-002
+evidence_hash: sha256:d55c046313a817e13404eb707b452548da403f52ea82b6400dd9c85b3e93a470
+reviewer:
+  display_name: Gregg Reed
+reviewed_at: '2026-10-29T19:53:07Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/write-preview-rules.md
+  digest: sha256:7984f082ee0860b4c37061d1dedd026e6d28f54f8e3da7504fd33c652c3343c2
+verification_statement: 'Read all participant code (no network, only git and its own
+  tool as subprocesses, writes confined to local-data/ and a temp dir). Re-ran check-write-preview.py
+  with the fixed clock: PASSED, output identical to logs/check.txt. Read preview,
+  refused (changed file; 20-minute-old preview) and confirmed logs plus the rules:
+  all seven criteria met, fake target, no credentials.'

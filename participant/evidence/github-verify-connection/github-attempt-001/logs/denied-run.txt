@@ -1,0 +1,21 @@
+$ .venv/bin/python participant/tools/verify-github-connection.py --denied octocat/not-a-repository-for-this-check
+verify-github-connection 1.0.0, run 11-06-2026 09:00 AM
+Read of a repository outside this connection's reach: repos/octocat/not-a-repository-for-this-check
+  INACCESSIBLE: GitHub answered 404. GitHub gives the same answer for a repository that
+  doesn't exist and for a private one this connection may not see, so the check can't tell
+  which; either way nothing can be read from it, and it is reported as inaccessible, not as empty.
+
+For comparison, a list this connection can read: repos/Hoosiertom50/golden-thread-quest/releases
+  REACHABLE, EMPTY: GitHub answered 200 with 0 items. This is what empty looks like.
+
+Requests made (2), every one a read:
+  GET repos/octocat/not-a-repository-for-this-check
+  GET repos/Hoosiertom50/golden-thread-quest/releases
+Only read operations were issued: yes; no write was attempted.
+
+PASS  octocat/not-a-repository-for-this-check is reported as inaccessible
+PASS  an empty list is reported as reachable and empty, unlike the inaccessible repository
+PASS  only read operations were issued
+PASS  no credential in this output (scanned 17 lines, 0 finding(s))
+RESULT: PASSED
+exit code: 0

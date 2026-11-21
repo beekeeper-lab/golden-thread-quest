@@ -1,0 +1,15 @@
+schema_version: 1
+submission_id: submission-20261109164259-eabe1e
+quest_id: playwright-page-model
+quest_version: 1
+attempt_id: playwright-attempt-005
+content_hash: sha256:3da6a870d684227d881ed6148b4a12ab413149f627a1cc6bf36f5cf22553a380
+evidence_hash: sha256:ab335ff6692bc8dc36df40cb8fbba22181562ffb7e388997f849f78bd33293d3
+submitted_at: '2026-11-09T16:42:59Z'
+submitted_by: thomascarter
+secret_scan_clean: true
+proof_files:
+- path: participant/tests/playwright/model-usage.spec.ts
+  digest: sha256:77c866d7086ce8e918bd02aac3820a6e99369a81ca2921b05dfb95f37aad9656
+- path: participant/tests/playwright/pages/models.ts
+  digest: sha256:4031174c2a53c2a19400ca2eba4db5c7166072f19a21adada3f93ed46b1f9c0a

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tixly: your orders</title>
+    <style>
+      /* Not shown on screen, but still read out by screen readers. */
+      .visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+        overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+    </style>
+  </head>
+  <body>
+    <!-- Tixly is an invented ticket app. This page is a local demo for the tests, with made-up data.
+         It lists the orders saved in data/orders.json and can cancel one. -->
+    <header>
+      <h1>Tixly</h1>
+    </header>
+    <main>
+      <h2>Your orders</h2>
+      <table aria-label="Saved orders">
+        <thead>
+          <tr><th scope="col">Name</th><th scope="col">Event</th><th scope="col">Tickets</th><th scope="col">Total</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr>
+        </thead>
+        <tbody id="orders"></tbody>
+      </table>
+      <p id="orders-empty" tabindex="-1" hidden>You have no saved orders.</p>
+      <p role="status" id="orders-message" tabindex="-1"></p>
+      <p><a href="/">Back to events</a></p>
+    </main>
+    <script>
+      // The same made-up event as the other pages, with its price and fee in whole cents.
+      const EVENTS = {
+        "spring-concert": { name: "Spring Concert", ticketCents: 2500, feeCents: 250 },
+      };
+      const list = document.getElementById("orders");
+      const message = document.getElementById("orders-message");
+      const empty = document.getElementById("orders-empty");
+      // Holding Enter (or Space) down repeats the key; after a cancellation focus moves to the next
+      // order's Cancel button, so a repeat would cancel that one too. Repeats are ignored: each
+      // cancellation needs a fresh key press.
+      list.addEventListener("keydown", (event) => {
+        if (event.repeat && (event.key === "Enter" || event.key === " ")) event.preventDefault();
+      });
+
+      // The saved orders, or null after saying why they couldn't be loaded (the orders service's
+      // own message, such as a damaged file, or that the app couldn't be reached).
+      async function loadOrders() {
+        try {
+          const answer = await fetch("/api/orders");
+          const result = await answer.json();
+          if (answer.ok && Array.isArray(result)) return result;
+          message.textContent = result?.error ?? "Your orders couldn't be loaded.";
+        } catch {
+          message.textContent = "Your orders couldn't be loaded. Is the demo app running?";
+        }
+        return null;
+      }
+
+      // One cancellation at a time: while one is on its way, every Cancel button is disabled, and
+      // they come back only once the list has been refreshed, so two quick clicks can't send the
+      // same cancellation twice or show an out-of-date list.
+            // After a cancellation the list is rebuilt and the next order's Cancel button moves up under the
+      // pointer, so for a moment afterwards pointer clicks on Cancel are ignored: a quick second click
+      // (as in a double-click) can't cancel a different order. A slower second click doesn't either:
+            // a click at the spot of the last pointer cancellation counts only once the pointer has moved
+      // away from it (more than a few pixels) and come back, so the buyer has aimed at the new order.
+      // A click there on the SAME order (its cancellation failed and it is still listed) is a retry,
+      // so it counts once the moment has passed.
+      // Keyboard and screen-reader activations aren't affected (they don't come from the pointer),
+      // and focus still moves as described below.
+      let ignoreClicksUntil = 0;
+      let lastPointerSpot = null;
+      const awayFrom = (spot, event) => Math.hypot(event.clientX - spot.x, event.clientY - spot.y) > 4;
+      for (const kind of ["pointermove", "pointerdown"]) {
+        document.addEventListener(kind, (event) => {
+          if (lastPointerSpot && awayFrom(lastPointerSpot, event)) lastPointerSpot = null;
+        });
+      }
+
+      async function cancelOrder(order, event) {
+        const fromPointer = event.detail > 0;
+        if (fromPointer && Date.now() < ignoreClicksUntil) return;
+                if (fromPointer && lastPointerSpot && lastPointerSpot.orderId !== order.id && !awayFrom(lastPointerSpot, event)) return;
+        lastPointerSpot = fromPointer ? { x: event.clientX, y: event.clientY, orderId: order.id } : null;
+        const buttons = [...list.querySelectorAll("button")];
+        const position = buttons.findIndex((button) => button.dataset.orderId === order.id);
+        for (const button of buttons) button.disabled = true;
+        try {
+          const answer = await fetch(`/api/orders/${encodeURIComponent(order.id)}`, { method: "DELETE" });
+          // 404: it's already gone (cancelled from another page, for example).
+          message.textContent =
+            answer.ok ? `Order for ${order.name} cancelled.`
+            : answer.status === 404 ? `Order for ${order.name} was already cancelled.`
+            : "That order couldn't be cancelled.";
+        } catch {
+          // No answer: it may or may not have been cancelled; the refreshed list shows which.
+          message.textContent = `Couldn't confirm the cancellation of the order for ${order.name}; the list below shows what's saved now.`;
+        }
+        await showOrders();
+        ignoreClicksUntil = Date.now() + 600;
+                // The list was rebuilt, so put a keyboard or screen-reader user back where they were: on the
+        // same order if it's still there (the cancel failed), otherwise on the Cancel button that
+        // took its place (or the one before, if it was last), or on the "no saved orders" note.
+        // Only if focus was lost with the old list (or is still in it): a buyer who moved on while
+        // waiting (to "Back to events", say) stays there, so Enter does what they expect.
+        const active = document.activeElement;
+        if (active && active !== document.body && !list.contains(active)) return;
+        const after = [...list.querySelectorAll("button")];
+        const same = after.find((button) => button.dataset.orderId === order.id);
+        const next = same ?? after[Math.min(position, after.length - 1)];
+        if (next) next.focus();
+        else if (!empty.hidden) empty.focus();
+        else message.focus(); // the list couldn't be loaded: the message says why
+      }
+
+      // One row per saved order: name, event, tickets, total and a Cancel button named after the
+      // buyer ("Cancel order for Maria Lopez"), so a person or a test can tell the buttons apart.
+      async function showOrders() {
+        const orders = await loadOrders();
+        list.replaceChildren();
+        if (orders === null) {
+          empty.hidden = true;
+          return;
+        }
+        for (const order of orders) {
+          const event = Object.hasOwn(EVENTS, order.event) ? EVENTS[order.event] : null;
+          const row = document.createElement("tr");
+          const cells = [
+            order.name,
+            event ? event.name : order.event,
+            String(order.quantity),
+            event ? `$${((order.quantity * (event.ticketCents + event.feeCents)) / 100).toFixed(2)}` : "",
+          ];
+          for (const text of cells) {
+            const cell = document.createElement("td");
+            cell.textContent = text;
+            row.append(cell);
+          }
+          const actions = document.createElement("td");
+          const cancel = document.createElement("button");
+          cancel.type = "button";
+          cancel.textContent = "Cancel order";
+          cancel.setAttribute("aria-label", `Cancel order for ${order.name}`);
+          cancel.dataset.orderId = order.id;
+          cancel.addEventListener("click", (event) => cancelOrder(order, event));
+          actions.append(cancel);
+          row.append(actions);
+          list.append(row);
+        }
+        // Its own line, so it never replaces a message such as "Order for ... cancelled.".
+        empty.hidden = orders.length !== 0;
+      }
+      showOrders();
+    </script>
+  </body>
+</html>

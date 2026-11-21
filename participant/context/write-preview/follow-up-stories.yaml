@@ -1,0 +1,51 @@
+# Follow-up stories for Tixly checkout: the proposed change the preview shows.
+#
+# Each story is the work that follows one of the clarification questions in
+# participant/context/clarification/questions.md, using an answer invented for this exercise
+# (Tixly and every answer here are synthetic; no real product owner was asked).
+#
+# Decisions by Tom Carter; wording drafted with Claude (Claude Code), 10-29-2026.
+
+target:
+  system: Fake story tracker (local stand-in for Jira; nothing real is touched)
+  project: TIX
+action: create
+stories:
+  - from_question: Q-02
+    answer_assumed: Never selling the same seat twice.
+    type: Story
+    priority: High
+    title: Lock each seat while it is held so two buyers can't hold the same seat
+    description: >-
+      When a buyer holds a seat, no other buyer can hold or buy that seat until the hold is
+      released or the order is paid.
+    acceptance_criteria:
+      - Two buyers who choose the same seat at the same moment get one hold between them; the other buyer is told the seat is no longer available.
+      - A held seat shows as unavailable on every other buyer's seat map.
+      - When a hold is released (CHK-03's 10 minutes), the seat can be held again.
+
+  - from_question: Q-03
+    answer_assumed: Refunds are available until the venue doors open.
+    type: Story
+    priority: High
+    title: Keep refunds open until the venue doors open for each event
+    description: >-
+      Store a doors-open time for every event, and allow a full refund at any time before it.
+      This replaces the 48-hour cutoff in CHK-05.
+    acceptance_criteria:
+      - Every event has a doors-open date and time, entered when the event is set up.
+      - A refund requested before the doors-open time is accepted in full.
+      - A refund requested at or after the doors-open time is refused, and the buyer is told why.
+
+  - from_question: Q-07
+    answer_assumed: After a declined payment, the buyer can try again.
+    type: Story
+    priority: Medium
+    title: Let the buyer retry a declined payment without losing their seats
+    description: >-
+      After a payment is declined, keep the payment page open and the seats held, so the buyer
+      can try the same card again or use another one.
+    acceptance_criteria:
+      - After a decline, the buyer stays on the payment page with their seats still held.
+      - The buyer can pay with the same card or a different one.
+      - The seats are still released when CHK-03's 10-minute hold ends, even if the buyer is still retrying.

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tixly: review your order</title>
+  </head>
+  <body>
+    <!-- Tixly is an invented ticket app. This page is a local demo for the tests, with made-up data.
+         It shows the order described in its address (event and quantity). Saving it, with a name,
+         adds it to the saved orders (data/orders.json, through the demo server's orders service). -->
+    <header>
+      <h1>Tixly</h1>
+    </header>
+    <main>
+      <h2>Review your order</h2>
+      <table aria-label="Order summary">
+        <tr><th scope="row">Event</th><td id="order-event"></td></tr>
+        <tr><th scope="row">Tickets</th><td id="order-quantity"></td></tr>
+        <tr><th scope="row">Total</th><td id="order-total"></td></tr>
+      </table>
+      <p role="alert" id="order-problem" hidden></p>
+      <!-- Shown only for an order that can be bought. -->
+      <form id="save-order" hidden>
+        <label for="buyer-name">Your name</label>
+        <input id="buyer-name" name="name" maxlength="60" required>
+        <button type="submit">Save order</button>
+      </form>
+      <p role="status" id="save-message"></p>
+            <p><a href="/">Back to events</a> · <a href="/orders">Your orders</a></p>
+    </main>
+    <script>
+      // The same made-up event as the events page, with its price and fee in whole cents. A real
+      // app would get these from its server; this demo keeps one copy per page.
+      const EVENTS = {
+        "spring-concert": { name: "Spring Concert", ticketCents: 2500, feeCents: 250 },
+      };
+      const params = new URLSearchParams(location.search);
+      // Only the events listed above: a name like "constructor" or "toString" is part of every
+      // JavaScript object, so it would otherwise be taken for an event.
+      const eventId = params.get("event") ?? "";
+      const event = Object.hasOwn(EVENTS, eventId) ? EVENTS[eventId] : undefined;
+      const quantityText = params.get("quantity") ?? "";
+      const quantity = /^[1-6]$/.test(quantityText) ? Number(quantityText) : null;
+      const problem = document.getElementById("order-problem");
+      if (!event) {
+        problem.textContent = "That event isn't on sale. Go back to events to choose one.";
+        problem.hidden = false;
+      } else if (quantity === null) {
+        problem.textContent = "Choose from 1 to 6 tickets.";
+        problem.hidden = false;
+      } else {
+        const cents = quantity * (event.ticketCents + event.feeCents);
+        document.getElementById("order-event").textContent = event.name;
+        document.getElementById("order-quantity").textContent = String(quantity);
+        document.getElementById("order-total").textContent = `$${(cents / 100).toFixed(2)}`;
+        showSaveForm(eventId, quantity);
+      }
+
+      // Saving: the name and the order go to the demo server, which answers with the saved order
+      // (and its id) or says what's wrong. The message says which, and links to the saved orders.
+      function showSaveForm(eventId, quantity) {
+        const form = document.getElementById("save-order");
+        const message = document.getElementById("save-message");
+        form.hidden = false;
+        const saveButton = form.querySelector("button");
+        form.addEventListener("submit", async (submitted) => {
+          submitted.preventDefault();
+          // One save at a time: a second click while saving does nothing, so a double-click can't
+          // save the order twice. The button comes back only if the save fails.
+          if (saveButton.disabled) return;
+          saveButton.disabled = true;
+          const name = document.getElementById("buyer-name").value;
+          let answer;
+          let result;
+          try {
+            answer = await fetch("/api/orders", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ name, event: eventId, quantity }),
+            });
+            result = await answer.json();
+          } catch {
+            // No usable answer: the order may or may not have been saved. The button stays off, so
+            // a retry can't save it twice; the buyer checks Your orders instead.
+            const link = document.createElement("a");
+            link.href = "/orders";
+            link.textContent = "Check Your orders";
+            message.replaceChildren("Couldn't confirm the save. ", link, " before trying again.");
+            return;
+          }
+          message.replaceChildren();
+          if (answer.ok) {
+            const link = document.createElement("a");
+            link.href = "/orders";
+            link.textContent = "See your orders";
+            message.append(`Order saved for ${result.name}. `, link);
+                        // The form disappears, so keyboard and screen-reader users are taken to the new link,
+            // unless they moved on while waiting (to "Back to events", say): they stay there.
+            const active = document.activeElement;
+            if (!active || active === document.body || form.contains(active)) link.focus();
+            form.hidden = true;
+          } else {
+            message.textContent = result.error;
+            saveButton.disabled = false;
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

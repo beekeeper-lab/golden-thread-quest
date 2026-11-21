@@ -1,0 +1,15 @@
+# Passing run: the evidence configuration against the working demo app
+# Recorded 11-16-2026 10:38:21 AM on branch pilot/tom at commit d0d100a (with uncommitted quest-19 files).
+# The API key was a made-up value, new for this recording; it is not shown. The home folder is shown as ~.
+
+$ npx playwright test --config evidence.config.ts
+
+Running 1 test using 1 worker
+
+  ✓  1 [chromium] › evidence-tests/orders-list.evidence.ts:12:1 › a saved order shows on Your orders @saved-orders @risk-medium @writes-data @layer-mixed @fast (130ms)
+
+  1 passed (672ms)
+(exit 0)
+
+test-results/ after the run:
+  test-results/.last-run.json

@@ -1,0 +1,13 @@
+$ .venv/bin/python participant/tools/fake-bug-tracker.py file --key BUG-102 --severity Medium --title "Name rule allows all-caps titles like MR. ME"
+# run at 2026-10-21T15:07:50Z by participant/tools/fake-bug-tracker.py 1.2.0
+recovery: an earlier run was cut off after filing BUG-102; it is there, so it is not filed again
+BUG-102 is already filed (2026-10-21T15:07:29Z): nothing to file, nothing written
+exit status 0
+$ .venv/bin/python participant/tools/fake-bug-tracker.py list
+# run at 2026-10-21T15:07:58Z by participant/tools/fake-bug-tracker.py 1.2.0
+read 2 defect(s) from the fake bug tracker
+  BUG-101 [High]: Firefox warns about a typed password nobody typed (Account page) (filed 2026-10-21T15:06:47Z)
+  BUG-102 [Medium]: Name rule allows all-caps titles like MR. ME (filed 2026-10-21T15:07:29Z)
+exit status 0
+$ ls local-data/fake-bug-tracker
+defects.json

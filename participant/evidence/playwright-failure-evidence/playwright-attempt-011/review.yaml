@@ -1,0 +1,32 @@
+schema_version: 1
+review_id: review-20261116155142-27c035
+quest_id: playwright-failure-evidence
+quest_version: 1
+attempt_id: playwright-attempt-011
+evidence_hash: sha256:73a141defb3ec0cc3b3a3a74e867c240b4a8266194bf91319ce2aa60328238ce
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-16T15:51:42Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/playwright/diagnosis.md
+  digest: sha256:5f09a2fb186e98d481faba4040aaab024d4d3fa69af5ff68c7cfe94353b00eed
+- path: participant/tests/playwright/evidence.config.ts
+  digest: sha256:84ea76b4784c86107598189637a7eda2cd8446513d644ce7969731f9c0ef302a
+- path: participant/tests/playwright/tools/failure-evidence-check.ts
+  digest: sha256:a363e352f8943d6a5829e71acc8d2af1a65e158314759f56b745d789b4d88681
+verification_statement: 'Automated review. I read the configuration, the passing and
+  failing run logs, the copy log, the redaction-check log, the bundle''s text files,
+  the trace.zip member listing, the diagnosis and the check script. I checked that
+  they agree. The planted-line numbers match the files: console.txt has 2 lines so
+  the fake is on line 3, and error.txt has 16 lines so the fake is on line 17. trace.zip
+  lists 17 members, matching the scan''s count. The 6 files in the failing run''s
+  test-results listing match the scan''s file count. After the passing run, test-results
+  holds only .last-run.json. I cannot view the PNG or the JPEGs inside the trace,
+  so for those I accept the participant''s statement that they were checked by eye.
+  The participant''s text does not address the reviewer. error-context.md contains
+  Playwright''s standard instruction template for an AI ("Explain why, be concise").
+  That text is aimed at whoever reads the error, not at this review, so I did not
+  treat it as injection. Each of the 7 acceptance criteria was matched to text quoted
+  word for word from the evidence.'

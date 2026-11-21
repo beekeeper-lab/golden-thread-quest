@@ -1,0 +1,50 @@
+base-camp-ownership-zones: allowed writes
+Recorded 11-19-2026 11:10 AM with Node v22.23.3, by participant/tools/zone-guard-demo.sh.
+Sandbox: a new temp folder holding repo/ (the zone layout, with the real zone-rules.md copied in)
+and outside/ (a folder outside that repository). Paths below are relative to the sandbox.
+The rules copy is identical to participant/context/zone-rules.md:
+  repository: 63eb8bd2a54992931bae02c48ce03726d9d1cde22d370e2981836bea3493a09a
+  sandbox:    63eb8bd2a54992931bae02c48ce03726d9d1cde22d370e2981836bea3493a09a
+
+The same operation as refused-write.txt, aimed at participant-owned folders.
+
+== 1. Into participant/ (the Participant zone) ==
+$ node zone-guard.mjs write participant/notes.md "Notes: draft seating plan, table 4 has two open seats."
+WRITTEN: "participant/notes.md" (54 bytes)
+  zone: Participant (entry `participant/`), Agent may write: yes
+exit code: 0
+
+== 2. Into participant/notes/ (a folder inside it) ==
+$ node zone-guard.mjs write participant/notes/notes.md "Notes: draft seating plan, table 4 has two open seats."
+WRITTEN: "participant/notes/notes.md" (54 bytes)
+  zone: Participant (entry `participant/`), Agent may write: yes
+exit code: 0
+
+== 3. Raw data into local-data/ (Private data: Agent may write yes) ==
+$ node zone-guard.mjs write local-data/notes.md "Notes: draft seating plan, table 4 has two open seats."
+WRITTEN: "local-data/notes.md" (54 bytes)
+  zone: Private data (entry `local-data/`), Agent may write: yes
+exit code: 0
+
+== 4. The same write again: an existing file is never overwritten ==
+$ node zone-guard.mjs write participant/notes.md "Different text"
+REFUSED: "participant/notes.md"
+  real path: "participant/notes.md"
+  rule: rule 4: only a brand-new file, never overwriting or following a link
+  why: something (a file, folder or link) already stands at that path
+  nothing was written.
+exit code: 1
+
+== What was created (every entry now in the sandbox that wasn't before) ==
+  ./repo/local-data/notes.md
+  ./repo/participant/notes.md
+  ./repo/participant/notes/notes.md
+  (end of list)
+
+== The contents of participant/notes.md (unchanged by write 4) ==
+Notes: draft seating plan, table 4 has two open seats.
+
+== Nothing else changed ==
+Every entry in the before list is still there, unchanged (only the three new files and their
+folders' entries differ):
+  identical

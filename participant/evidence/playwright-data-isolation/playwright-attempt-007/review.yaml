@@ -1,0 +1,32 @@
+schema_version: 1
+review_id: review-20261111225120-60fcc8
+quest_id: playwright-data-isolation
+quest_version: 1
+attempt_id: playwright-attempt-007
+evidence_hash: sha256:aa76d63d28710437f70ea173ab1c644ddc87856f627d403b0858436af0e236e5
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-11T22:51:20Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/tests/playwright/coupled.spec.ts
+  digest: sha256:c1cb1bc57350bc70acb1fca44d76defcfc6162845fe4559f4c71bfd1ba292f47
+- path: participant/tests/playwright/isolated.spec.ts
+  digest: sha256:2dacb5b5c14ddeb90a9916328289837e116345d39a466c76b58c846d173cba81
+- path: participant/tests/playwright/tools/data-isolation-check.ts
+  digest: sha256:4667164d99dbf352e5e5967759ad6c019878e3d7d6a2de12b94fa4477e695ac3
+verification_statement: 'Automated review. I read PROOF.md, shuffle-run.txt, cleanup-check.txt,
+  coupled.spec.ts, isolated.spec.ts and data-isolation-check.ts. - Shuffle run: the
+  isolated tests pass forward, reversed and in five random orders (2 distinct orders,
+  neither forward nor reversed). They also pass in parallel: 15 runs on 4 workers,
+  and the same against an app copy with no saved orders. - Coupled pair: passes forward.
+  In reversed order the cancel test fails waiting for its button, and the save test
+  leaves an order behind. - Cleanup check: the three existing orders are unchanged
+  by fingerprint after every run. The coupled leftover is caught (FAIL), cancelled
+  by its id, then PASS. - Consistency: time stamps and ids agree across the logs.
+  - Paths: the files are in ''playwright-attempt-007'', not the ''attempt-001'' the
+  quest lists. PROOF.md and the logs agree, and the pre-check found the required files,
+  so this is advisory only. - No text in the evidence is addressed to the reviewer.
+  Each of the 7 acceptance criteria was matched to text quoted word for word from
+  the evidence.'

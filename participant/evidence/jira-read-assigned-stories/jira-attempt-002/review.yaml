@@ -1,0 +1,39 @@
+schema_version: 1
+review_id: review-20261121001620-7a9539
+quest_id: jira-read-assigned-stories
+quest_version: 2
+attempt_id: jira-attempt-002
+evidence_hash: sha256:a4dc6ac6d1a156cb6fbc2004baf05695d96b4e78dbc7d2a7d8f45b6bfd9b66ff
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-21T00:16:20Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/jira/assigned/index.md
+  digest: sha256:6cffcf5290252a038e8157ba353e49adc20540275c880d37546c8bd3931515fd
+- path: participant/context/jira/assigned/stories.json
+  digest: sha256:31ee6538f1cebd576d1df5ca196a71b6fb29b57b1897bdaf470833e9be3679da
+- path: participant/skills/jira-read-assigned/SKILL.md
+  digest: sha256:6d19f60b206745ea5501a47f84953eb10783707fadfa1fd0b2960f72462751d0
+verification_statement: 'Automated review. I read PROOF.md, SKILL.md, index.md, stories.json,
+  both log records and the four validator result JSONs. Identity comes from Jira''s
+  `myself` call and the code holds no hardcoded user. The query is documented. Pagination
+  is shown with 2 pages and 4 stories, plus eleven fault cases where the pretend Jira
+  misbehaves. Every criterion-4 field is in stories.json, and the Jira-only field
+  sits under `jira_fields`. Notes files have the same SHA-256 hash before and after
+  the second run. Duplicate comments are skipped by id. GTQ-100 is listed under `removed`
+  with its last known status. The validator passed on all four practice sets, with
+  the network denied. The times in the logs, the validator results and stories.json
+  agree (5:38 PM EST is 22:38Z, and stories.json says 22:39:17Z). Advisory point:
+  in Part B of sync-run.txt, the counts when switching from one practice set to the
+  next don''t match a merge with the previous stories.json. Each first run reports
+  ''new 3'' or ''new 4'' and ''still removed: 0''. That suggests the tool starts fresh
+  when the practice set changes, but PROOF.md doesn''t say so. I found no text addressed
+  to the reviewer. Each of the 10 acceptance criteria was matched to text quoted word
+  for word from the evidence.'
+validation_result_ids:
+- validate-jira-read-assigned-20261120223833002240-c68fff
+- validate-jira-read-assigned-20261120223848354637-ff5457
+- validate-jira-read-assigned-20261120223903362528-61d5a8
+- validate-jira-read-assigned-20261120223918389553-bc1056

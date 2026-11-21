@@ -1,0 +1,13 @@
+schema_version: 1
+submission_id: submission-20261117162314-94f998
+quest_id: playwright-success-evidence
+quest_version: 1
+attempt_id: playwright-attempt-012
+content_hash: sha256:d159e7b2ead1177ef99035b6883d1ad5f01fe061b0bd6567f6400be08782a917
+evidence_hash: sha256:1835b9a68d8b9dead7b6c0923b06879659880c1dcc4fb43c06a9a53c4c2c386b
+submitted_at: '2026-11-17T16:23:14Z'
+submitted_by: thomascarter
+secret_scan_clean: true
+proof_files:
+- path: participant/tests/playwright/meaningful-evidence.spec.ts
+  digest: sha256:7e37c5178afbe83b345804e0de3202eaf2cfcf1d51a4efc3a9ef09a88df40443

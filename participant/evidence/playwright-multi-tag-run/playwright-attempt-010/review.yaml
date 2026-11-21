@@ -1,0 +1,28 @@
+schema_version: 1
+review_id: review-20261113202631-35fcaf
+quest_id: playwright-multi-tag-run
+quest_version: 1
+attempt_id: playwright-attempt-010
+evidence_hash: sha256:b1c165a83738d8736e020e93c35e145c49e98d2616ae962003039be4c01a609e
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-13T20:26:31Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/playwright/selections.md
+  digest: sha256:62d179f8f7123c71e322a01fa739c93303d8978b0da85d5f1f19e1012e6bb3ea
+verification_statement: 'Automated review. I read selections.md, list-run.txt, execution-run.txt
+  and PROOF.md. The table has seven selections: single tag, union, exclusion, three
+  intersections (one also excludes a tag) and one that matches nothing. Each lists
+  the exact tests it expects. I compared every listing in list-run.txt with the table,
+  test by test, and they agree (26, 15, 14, 15, 10, 3, 0). In execution-run.txt, the
+  single-tag, intersection, union and exclusion selections are each listed and checked
+  before they run. Each run''s summary accounts for every listed test, and nothing
+  else ran. The empty selection exits with code 1 and an error. A plain Playwright
+  comparison shows that `--pass-with-no-tests` would hide it. The evidence sits under
+  playwright-attempt-010 instead of the attempt-001 path named in the quest, but the
+  pre-check found all required files present. The counts, timestamps and test names
+  agree across all files. Nothing in the evidence is addressed to the reviewer, so
+  I found no prompt injection. Each of the 7 acceptance criteria was matched to text
+  quoted word for word from the evidence.'

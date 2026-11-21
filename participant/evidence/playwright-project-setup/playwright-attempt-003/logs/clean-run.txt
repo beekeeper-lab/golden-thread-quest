@@ -1,0 +1,28 @@
+Thu Nov  5 16:55:07 EST 2026
+git version 2.39.2
+v22.23.3
+10.9.9
+
+added 3 packages, and audited 4 packages in 517ms
+
+found 0 vulnerabilities
+
+> tixly-playwright-tests@1.0.0 test
+> playwright test
+
+
+Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/smoke.spec.ts:4:1 › a visitor sees the Spring Concert and its ticket price on the Tixly home page (152ms)
+
+  1 passed (756ms)
+
+To open last HTML report run:
+
+  npx playwright show-report
+
+
+> tixly-playwright-tests@1.0.0 check-setup
+> node tools/project-setup-check.ts
+
+project-setup-check 1.0.0: the repository's secret scanner (.venv and tools/secret_scan.py) isn't set up

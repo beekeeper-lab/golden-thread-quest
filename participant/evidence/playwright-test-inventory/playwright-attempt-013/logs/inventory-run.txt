@@ -1,0 +1,119 @@
+# Run record: generating the test inventory (criteria 1 to 6)
+# Recorded 11-18-2026 10:03:17 AM on branch pilot/tom at commit 915123b (with uncommitted quest-21 files).
+# The API key was a made-up value, new for this recording; it is not shown. The home folder is shown as ~.
+# Every temporary test is only listed by Playwright, never run, and its file is removed at the end.
+
+## 1. Generated twice from the same tests: identical (criteria 1 and 5)
+$ node tools/inventory.ts
+Wrote participant/context/playwright/inventory.md: 29 tests; 0 incomplete; 10 known gaps; 4 groups of possible duplicates.
+  POSSIBLE DUPLICATES: T-01, T-06, T-09, T-28: "A buyer can cancel a saved order from Your orders, and it is then cancelled."
+  POSSIBLE DUPLICATES: T-02, T-07, T-18: "The events page total for 2 Spring Concert tickets is $55.00, the $2.50 fee included on each ticket."
+  POSSIBLE DUPLICATES: T-05, T-08, T-29: "A saved order appears on Your orders."
+  POSSIBLE DUPLICATES: T-15, T-22: "A review link for an event that isn't on sale says so and shows no total."
+(exit 0)
+$ node tools/inventory.ts
+Wrote participant/context/playwright/inventory.md: 29 tests; 0 incomplete; 10 known gaps; 4 groups of possible duplicates.
+  POSSIBLE DUPLICATES: T-01, T-06, T-09, T-28: "A buyer can cancel a saved order from Your orders, and it is then cancelled."
+  POSSIBLE DUPLICATES: T-02, T-07, T-18: "The events page total for 2 Spring Concert tickets is $55.00, the $2.50 fee included on each ticket."
+  POSSIBLE DUPLICATES: T-05, T-08, T-29: "A saved order appears on Your orders."
+  POSSIBLE DUPLICATES: T-15, T-22: "A review link for an event that isn't on sale says so and shows no total."
+(exit 0)
+$ cmp <first run's inventory.md> participant/context/playwright/inventory.md
+identical: the same 15916 bytes, SHA-256 aa8b83b9ee994338…
+
+## 2. Tests with no purpose, no source, or a requirement that doesn't exist: incomplete (criteria 3 and 6)
+Temporary test file tests/inventory-demo.spec.ts (three tests with something missing or wrong):
+    import { test } from "@playwright/test";
+    // Temporary, for the inventory's run record only: listed, never run.
+    test("demo: a test with no purpose", { tag: ["@events", "@risk-low", "@read-only", "@layer-ui", "@fast"], annotation: [{ type: "id", description: "T-90" }, { type: "source", description: "CHK-09" }] }, async () => {});
+    test("demo: a test with no source", { tag: ["@events", "@risk-low", "@read-only", "@layer-ui", "@fast"], annotation: [{ type: "id", description: "T-91" }, { type: "purpose", description: "Demo only: a purpose with no source." }] }, async () => {});
+    test("demo: a test whose requirement doesn't exist", { tag: ["@events", "@risk-low", "@read-only", "@layer-ui", "@fast"], annotation: [{ type: "id", description: "T-92" }, { type: "purpose", description: "Demo only: a source that isn't a requirement." }, { type: "source", description: "CHK-99" }] }, async () => {});
+
+$ node tools/inventory.ts --out <temporary folder>/inventory.md
+Wrote the --out file: 32 tests; 3 incomplete; 10 known gaps; 4 groups of possible duplicates.
+  INCOMPLETE T-90 (tests/inventory-demo.spec.ts:3): no purpose
+  INCOMPLETE T-91 (tests/inventory-demo.spec.ts:4): no source
+  INCOMPLETE T-92 (tests/inventory-demo.spec.ts:5): source "CHK-99" isn't a requirement in requirements.md
+  POSSIBLE DUPLICATES: T-01, T-06, T-09, T-28: "A buyer can cancel a saved order from Your orders, and it is then cancelled."
+  POSSIBLE DUPLICATES: T-02, T-07, T-18: "The events page total for 2 Spring Concert tickets is $55.00, the $2.50 fee included on each ticket."
+  POSSIBLE DUPLICATES: T-05, T-08, T-29: "A saved order appears on Your orders."
+  POSSIBLE DUPLICATES: T-15, T-22: "A review link for an event that isn't on sale says so and shows no total."
+(exit 1)
+Its Incomplete section:
+    
+    - T-90 (`tests/inventory-demo.spec.ts:3`): no purpose
+    - T-91 (`tests/inventory-demo.spec.ts:4`): no source
+    - T-92 (`tests/inventory-demo.spec.ts:5`): source "CHK-99" isn't a requirement in requirements.md
+    
+The three new tests have rows without any hand edit (criterion 6):
+    | T-90 | demo: a test with no purpose | (none) | `@events` `@risk-low` `@read-only` `@layer-ui` `@fast` | CHK-09 | **medium** | `tests/inven
+    | T-91 | demo: a test with no source | Demo only: a purpose with no source. | `@events` `@risk-low` `@read-only` `@layer-ui` `@fast` | (none
+    | T-92 | demo: a test whose requirement doesn't exist | Demo only: a source that isn't a requirement. | `@events` `@risk-low` `@read-only` `
+
+## 3. Two tests with the same identifier: rejected, and the existing inventory left as it was
+Temporary test file tests/inventory-demo.spec.ts (a new test that reuses T-07):
+    import { test } from "@playwright/test";
+    // Temporary, for the inventory's run record only: listed, never run.
+    test("demo: a new test that reuses an existing identifier", { tag: ["@events", "@risk-low", "@read-only", "@layer-ui", "@fast"], annotation: [{ type: "id", description: "T-07" }, { type: "purpose", description: "Demo only: reuses T-07." }, { type: "source", description: "CHK-09" }] }, async () => {});
+
+participant/context/playwright/inventory.md before: SHA-256 aa8b83b9ee994338…, changed 11-18-2026 10:03:18 AM
+$ node tools/inventory.ts
+REJECTED: two or more tests share an identifier, so no inventory can be written:
+  T-7:
+    T-07: first-independent-test.spec.ts:18 › a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket
+    T-07: tests/inventory-demo.spec.ts:3 › demo: a new test that reuses an existing identifier
+Give each test its own identifier and run this again.
+Nothing was written.
+(exit 2)
+participant/context/playwright/inventory.md after:  SHA-256 aa8b83b9ee994338…, changed 11-18-2026 10:03:18 AM
+unchanged: still identical to the inventory from section 1
+
+## 4. Two tests with the same purpose, in different letters and punctuation: possible duplicates (criterion 4)
+Temporary test file tests/inventory-demo.spec.ts (a new test whose purpose matches T-20's once letter case and punctuation are ignored):
+    import { test } from "@playwright/test";
+    // Temporary, for the inventory's run record only: listed, never run.
+    test("demo: a new test with T-20's purpose, written differently", { tag: ["@events", "@risk-low", "@read-only", "@layer-ui", "@fast"], annotation: [{ type: "id", description: "T-93" }, { type: "purpose", description: "choosing 3 tickets on the events page shows a total of $82.50 !" }, { type: "source", description: "CHK-07" }] }, async () => {});
+
+$ node tools/inventory.ts --out <temporary folder>/inventory.md
+Wrote the --out file: 30 tests; 0 incomplete; 10 known gaps; 5 groups of possible duplicates.
+  POSSIBLE DUPLICATES: T-01, T-06, T-09, T-28: "A buyer can cancel a saved order from Your orders, and it is then cancelled."
+  POSSIBLE DUPLICATES: T-02, T-07, T-18: "The events page total for 2 Spring Concert tickets is $55.00, the $2.50 fee included on each ticket."
+  POSSIBLE DUPLICATES: T-05, T-08, T-29: "A saved order appears on Your orders."
+  POSSIBLE DUPLICATES: T-15, T-22: "A review link for an event that isn't on sale says so and shows no total."
+  POSSIBLE DUPLICATES: T-20, T-93: "Choosing 3 tickets on the events page shows a total of $82.50."
+(exit 0)
+Its Possible duplicates section:
+    
+    Same text once letter case, spaces and punctuation are ignored. A person decides what each group means.
+    
+    1. "A buyer can cancel a saved order from Your orders, and it is then cancelled."
+       - T-01: a buyer cancels an order (API-assisted: API setup, cancel on screen, API check), value **high**
+       - T-06: a buyer cancels Test User's order (coupled: relies on the order the test above saved), value **low** (worked out high; set to low: coupled on purpose and skipped; same check as T-01)
+       - T-09: a buyer cancels their own order (isolated: makes the order it cancels), value **low** (worked out high; set to low: same check as T-01; kept to show a test making its own data)
+       - T-28: a buyer cancels an order (UI-only: saved and cancelled through the screen), value **low** (worked out high; set to low: same check as T-01 but can't see the server; kept to compare)
+    2. "The events page total for 2 Spring Concert tickets is $55.00, the $2.50 fee included on each ticket."
+       - T-02: a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (brittle locators), value **low** (worked out medium; set to low: same check as T-18; kept only to show brittle locators)
+       - T-07: a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket, value **low** (worked out medium; set to low: same check as T-18; kept as the project's first test)
+       - T-18: a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (stable locators), value **medium**
+    3. "A saved order appears on Your orders."
+       - T-05: a buyer saves an order for Test User and sees it in Your orders (coupled), value **low** (worked out medium; set to low: coupled on purpose and skipped; same check as T-08)
+       - T-08: a buyer saves an order and sees it in Your orders (isolated), value **medium**
+       - T-29: a saved order shows on Your orders, value **low** (worked out medium; set to low: same check as T-08; runs only with the evidence settings, to show failure evidence)
+    4. "A review link for an event that isn't on sale says so and shows no total."
+       - T-15: a review link naming an event that isn't on sale says so instead of showing a total, value **medium**
+       - T-22: a review link for an event not on sale says so instead of showing a total, value **low** (worked out medium; set to low: same check as T-15, which also tries a second event and checks every line; kept so the tag scheme uses every tag)
+    5. "Choosing 3 tickets on the events page shows a total of $82.50."
+       - T-20: choosing 3 tickets on the events page shows a total of $82.50, value **medium**
+       - T-93: demo: a new test with T-20's purpose, written differently, value **low**
+    
+
+## 5. After the temporary files are removed: the inventory is the same as in section 1
+$ node tools/inventory.ts
+Wrote participant/context/playwright/inventory.md: 29 tests; 0 incomplete; 10 known gaps; 4 groups of possible duplicates.
+  POSSIBLE DUPLICATES: T-01, T-06, T-09, T-28: "A buyer can cancel a saved order from Your orders, and it is then cancelled."
+  POSSIBLE DUPLICATES: T-02, T-07, T-18: "The events page total for 2 Spring Concert tickets is $55.00, the $2.50 fee included on each ticket."
+  POSSIBLE DUPLICATES: T-05, T-08, T-29: "A saved order appears on Your orders."
+  POSSIBLE DUPLICATES: T-15, T-22: "A review link for an event that isn't on sale says so and shows no total."
+(exit 0)
+identical to section 1: SHA-256 aa8b83b9ee994338…
+the temporary test file is gone

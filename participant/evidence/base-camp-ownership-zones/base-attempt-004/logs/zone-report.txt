@@ -1,0 +1,66 @@
+base-camp-ownership-zones: zone report and a broken rules table (stretch goals)
+Recorded 11-19-2026 11:10 AM with Node v22.23.3, by participant/tools/zone-guard-demo.sh.
+Sandbox: a new temp folder holding repo/ (the zone layout, with the real zone-rules.md copied in)
+and outside/ (a folder outside that repository). Paths below are relative to the sandbox.
+The rules copy is identical to participant/context/zone-rules.md:
+  repository: 63eb8bd2a54992931bae02c48ce03726d9d1cde22d370e2981836bea3493a09a
+  sandbox:    63eb8bd2a54992931bae02c48ce03726d9d1cde22d370e2981836bea3493a09a
+
+== zone <path>: which zone, and may an agent write there (writes nothing) ==
+$ node zone-guard.mjs zone content/quest.md
+"content/quest.md" is in the Program zone (entry `content/`). Agent may write: no.
+exit code: 0
+
+$ node zone-guard.mjs zone participant/notes.md
+"participant/notes.md" is in the Participant zone (entry `participant/`). Agent may write: yes.
+  (Something already stands at that path, so `write` would refuse it: the guard only creates new files.)
+exit code: 0
+
+$ node zone-guard.mjs zone local-data/raw-response.json
+"local-data/raw-response.json" is in the Private data zone (entry `local-data/`). Agent may write: yes.
+exit code: 0
+
+$ node zone-guard.mjs zone generated/index.html
+"generated/index.html" is in the Generated zone (entry `generated/`). Agent may write: no.
+exit code: 0
+
+$ node zone-guard.mjs zone participant/tests/playwright/test-results/a.txt
+"participant/tests/playwright/test-results/a.txt" is in the Generated zone (entry `**/test-results/`). Agent may write: no.
+exit code: 0
+
+$ node zone-guard.mjs zone README.md
+"README.md" is in the Program zone (entry `*`). Agent may write: no.
+exit code: 0
+
+$ node zone-guard.mjs zone scratch/notes.md
+"scratch/notes.md" is in no zone: an agent may not write there until it is added to the rules.
+exit code: 1
+
+$ node zone-guard.mjs zone participant/outside-link/notes.md
+"participant/outside-link/notes.md" leads outside the repository: in no zone, and never writable.
+exit code: 1
+
+$ node zone-guard.mjs zone participant/content-link/notes.md
+"participant/content-link/notes.md" really lands at "content/notes.md".
+"content/notes.md" is in the Program zone (entry `content/`). Agent may write: no.
+exit code: 0
+
+== A broken rules table refuses every write ==
+(the sandbox's zone-rules.md copy has its Participant row's "Agent may write" changed to "maybe")
+$ node zone-guard.mjs write participant/notes2.md "Notes: draft seating plan, table 4 has two open seats."
+REFUSED: "participant/notes2.md"
+  rule: rule 3: a missing or broken rules table refuses every write
+  why: participant/context/zone-rules.md: zone "Participant": "Agent may write" must be yes or no
+  nothing was written.
+exit code: 1
+
+== A missing rules table refuses every write ==
+$ node zone-guard.mjs write participant/notes2.md "Notes: draft seating plan, table 4 has two open seats."
+REFUSED: "participant/notes2.md"
+  rule: rule 3: a missing or broken rules table refuses every write
+  why: participant/context/zone-rules.md: the file is missing
+  nothing was written.
+exit code: 1
+
+Files named notes2.md anywhere in the sandbox:
+  (end of list)

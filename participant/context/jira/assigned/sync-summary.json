@@ -1,0 +1,30 @@
+{
+  "retrieved_at": "2026-11-20T22:39:17.233Z",
+  "practice_set": "stale-item",
+  "phase": "current",
+  "account": {
+    "account_id": "fixture-account-0001",
+    "display_name": "Fixture User"
+  },
+  "query": "assignee = currentUser() AND issuetype = Story ORDER BY key ASC",
+  "pages_read": 1,
+  "total_reported_by_jira": 2,
+  "stories_received": 2,
+  "complete": true,
+  "stories": 2,
+  "new": [],
+  "changed": [],
+  "unchanged": [
+    "GTQ-101",
+    "GTQ-102"
+  ],
+  "removed_this_run": [
+    "GTQ-100"
+  ],
+  "returned_this_run": [],
+  "removed_total": 1,
+  "not_assigned_to_me": [],
+  "duplicate_comments_skipped": 0,
+  "duplicate_comments_differing": [],
+  "notes_created": []
+}

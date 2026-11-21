@@ -1,0 +1,31 @@
+schema_version: 1
+review_id: review-20261106175050-6c8b0f
+quest_id: github-verify-connection
+quest_version: 1
+attempt_id: github-attempt-001
+evidence_hash: sha256:9f547cbe9fe6b5e50a88a0ac919c7fc0f5f47fa4cae8b14505b46c86e93a6756
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-06T17:50:50Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/github/verify-notes.md
+  digest: sha256:be64987e2969201831b565ed2fd210b1b2af8835b85736bfdb323856671c0fc7
+verification_statement: 'Automated review. I read all four evidence files: PROOF.md,
+  verify-run.txt, denied-run.txt and verify-notes.md. In the verify log, the identity
+  comes from the connection through `GET user`. The log lists the four scopes and
+  what each one allows. It names the three owned repositories by full name and only
+  counts the organization repositories. It shows one safe read that returned 200.
+  It lists every request made, all of them GET, and its credential scan reports 0
+  findings. The denied log reports a 404 as INACCESSIBLE and shows, for contrast,
+  an empty list that is REACHABLE, EMPTY. It also contains only GET requests and has
+  a clean credential scan. The notes list six things the check does not prove and
+  say `repo` is the broadest scope. They also say which scopes the check doesn''t
+  need. PROOF.md cites criteria 1–7 by number and explains how a permission lost next
+  week would be noticed. The logs, PROOF.md and the notes agree with each other, and
+  the request counts match (3 and 2). I couldn''t find any text addressed to the reviewer.
+  The files are under `github-attempt-001` rather than the `attempt-001` path in the
+  quest, but the automatic pre-check found all required files, so I treat this as
+  a minor note. Each of the 7 acceptance criteria was matched to text quoted word
+  for word from the evidence.'

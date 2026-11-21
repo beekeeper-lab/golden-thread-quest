@@ -1,0 +1,16 @@
+Test: a saved order shows on Your orders
+File: orders-list.evidence.ts
+Result: failed (expected passed) after 5.1s
+
+Error: expect(locator).toBeVisible() failed
+
+Locator: getByRole('cell', { name: 'Test User qa-a155b3a3-c782824f', exact: true })
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" getByRole('cell', { name: 'Test User qa-a155b3a3-c782824f', exact: true }) with timeout 5000ms
+  - waiting for getByRole('cell', { name: 'Test User qa-a155b3a3-c782824f', exact: true })
+
+    at evidence-tests/orders-list.evidence.ts:18:77

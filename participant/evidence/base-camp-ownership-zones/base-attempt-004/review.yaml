@@ -1,0 +1,30 @@
+schema_version: 1
+review_id: review-20261119164431-362840
+quest_id: base-camp-ownership-zones
+quest_version: 1
+attempt_id: base-attempt-004
+evidence_hash: sha256:10739b382b962bce9c3bebcd1c61e45fcdd415b7b77f56d5a6aead3e7da5fbd0
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-19T16:44:31Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/zone-rules.md
+  digest: sha256:2511504f5407f24ae69ef2aeaab2a6b30adbd95bbe8d68fff59dc57732ef51ba
+verification_statement: 'Automated review. I read PROOF.md, zone-rules.md and the
+  four logs: refused-write, allowed-write, os-lock and zone-report. The zone rules
+  table lists four zones. For each one it gives the folders it covers, who may write
+  there, its Git status and whether an agent may write there. It also has a five-step
+  "Where does a new file go?" guide. refused-write.txt shows nine refused writes,
+  and each refusal names the rule that stopped it. They include a write into content/,
+  `..` paths both into Program and out of the repository, two symbolic-link escapes,
+  and a link standing where the new file would go. The before and after listings and
+  fingerprints are identical, and no notes.md exists anywhere afterward. allowed-write.txt
+  shows the same command succeeding in participant/, participant/notes/ and local-data/.
+  os-lock.txt shows the OS sandbox refusing direct writes that skip the guard. PROOF.md
+  explains how the check handles a path that tries to leave the folder and cites the
+  criteria by number. The logs agree with each other: the same timestamp and rules
+  hash appear in every one. Nothing in the evidence addresses the reviewer, so I found
+  no prompt injection. Each of the 6 acceptance criteria was matched to text quoted
+  word for word from the evidence.'

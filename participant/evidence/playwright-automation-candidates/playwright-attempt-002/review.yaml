@@ -1,0 +1,37 @@
+schema_version: 1
+review_id: review-20261105153342-c785f4
+quest_id: playwright-automation-candidates
+quest_version: 1
+attempt_id: playwright-attempt-002
+evidence_hash: sha256:bac4964a9f5639f6c3804a1d79474820a41878f2e294fa3d1501f28e99908d37
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-05T15:33:42Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/playwright/automation-criteria.md
+  digest: sha256:93388d4cf3039463d291be840439a53bc978f9a25b7a632330434bb45e72af13
+- path: participant/context/playwright/candidate-decisions.md
+  digest: sha256:ec39faf12dea9e061c657fa5b1cdb2cdf58a5ef5665e5bec2d154bb34492a5a3
+- path: participant/tests/playwright/tools/automation-candidates-check.ts
+  digest: sha256:1a06bebeebb518b2f1bccc86e9a7b7e41f3b108bdb80428db070962753e93559
+verification_statement: 'Automated review. I read the criteria file, the decisions
+  file, the check script, the check log and PROOF.md. The criteria file sets out six
+  criteria, each with a question and fixed answers, plus a six-step decision rule.
+  The decisions file has 15 ideas: 8 automate, 6 manual and 1 drop. Each idea gives
+  its criteria answers, the rule step, a reason, and for the manual ones a "Checked
+  instead" line. I applied the rule by hand to several ideas: I-06 and I-07 reach
+  D6 manual (value 2, high cost), I-13 reaches D6 manual (not regression), I-14 reaches
+  D3 manual and I-11 reaches D1 drop. All agree with the stated decisions. The check
+  script re-applies the rule as written, tests every answer combination to make sure
+  no step decides on cost alone, compares the brief with the decisions file, and works
+  out how many of the second person''s decisions match. The log shows it PASSED, with
+  10 of 10 matching Gregg Reed''s decisions. A rerun on the first attempt''s files
+  fails at 4 of 10, which matches what PROOF.md says. PROOF.md cites the acceptance
+  criteria by number and openly states its limitations: I-08 was left out of the second
+  person''s set on purpose, and the matching reviewer is also the pilot''s reviewer.
+  The folder is named playwright-attempt-002 rather than attempt-001, but the pre-check
+  confirmed the required files are present. There is no text aimed at the reviewer.
+  Each of the 7 acceptance criteria was matched to text quoted word for word from
+  the evidence.'

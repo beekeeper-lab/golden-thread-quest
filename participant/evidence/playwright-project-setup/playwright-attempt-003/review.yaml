@@ -1,0 +1,32 @@
+schema_version: 1
+review_id: review-20261105221100-3cb2af
+quest_id: playwright-project-setup
+quest_version: 1
+attempt_id: playwright-attempt-003
+evidence_hash: sha256:73d08a59e5111a8576d859fc1a86872b1c3a2d201007adb698c20df2214513c5
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-05T22:11:00Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/tests/playwright/README.md
+  digest: sha256:c19ca9bce25eb9054f816a972588a3634eb4d6b47d64d2da6c465e5c779b9857
+- path: participant/tests/playwright/package.json
+  digest: sha256:b75069fe089c8f4fb415be7a5594e8a9f6723a26ba96071c940785f75679656e
+- path: participant/tests/playwright/playwright.config.ts
+  digest: sha256:f6ad41320cf170a724dd652a3fc23d09cea94c513a8a7baaeebd46633477364e
+- path: participant/tests/playwright/tools/project-setup-check.ts
+  digest: sha256:50005fb97ec2611ccfc2b87ba91821e03887c5375b62f9791e3cf15da9985e18
+verification_statement: 'Automated review. I read the README, package.json, playwright.config.ts,
+  the check script, both logs and PROOF.md. The README lists macOS, Git, Node.js and
+  npm, each with the version used, and has a first-run failure table. package.json
+  pins @playwright/test to exactly 1.63.0. The config takes baseURL from TIXLY_BASE_URL/TIXLY_DEMO_PORT,
+  uses the Chromium project and sets retries: 0 with a comment and outputDir ./test-results.
+  clean-run.txt shows matching versions, npm ci, and npm test ending ''1 passed''.
+  ignore-check.txt shows 12/12 generated/env paths ignored with their rules, and the
+  secret scan finding 0 in 1131 files. The evidence is under playwright-attempt-003
+  rather than the attempt-001 paths the quest names; the pre-check reported required
+  files present. clean-run.txt does not show the clone/cd commands, so the clean checkout
+  rests partly on PROOF.md. No text addressed to the reviewer was found. Each of the
+  7 acceptance criteria was matched to text quoted word for word from the evidence.'

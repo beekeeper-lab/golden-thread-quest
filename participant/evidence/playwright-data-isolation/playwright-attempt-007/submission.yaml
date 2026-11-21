@@ -1,0 +1,17 @@
+schema_version: 1
+submission_id: submission-20261111224407-7495a0
+quest_id: playwright-data-isolation
+quest_version: 1
+attempt_id: playwright-attempt-007
+content_hash: sha256:6969c8aed0ecf6d47055241e0dc839f23aa2caf93a6a166edb811ea5dc2a544c
+evidence_hash: sha256:aa76d63d28710437f70ea173ab1c644ddc87856f627d403b0858436af0e236e5
+submitted_at: '2026-11-11T22:44:07Z'
+submitted_by: thomascarter
+secret_scan_clean: true
+proof_files:
+- path: participant/tests/playwright/coupled.spec.ts
+  digest: sha256:c1cb1bc57350bc70acb1fca44d76defcfc6162845fe4559f4c71bfd1ba292f47
+- path: participant/tests/playwright/isolated.spec.ts
+  digest: sha256:2dacb5b5c14ddeb90a9916328289837e116345d39a466c76b58c846d173cba81
+- path: participant/tests/playwright/tools/data-isolation-check.ts
+  digest: sha256:4667164d99dbf352e5e5967759ad6c019878e3d7d6a2de12b94fa4477e695ac3

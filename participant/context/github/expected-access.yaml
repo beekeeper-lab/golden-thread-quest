@@ -1,0 +1,29 @@
+# What the GitHub connection on this computer is expected to reach. The read-only check
+# participant/tools/verify-github-connection.py compares every run with this file, so a lost
+# repository or a changed scope shows up as a FAIL instead of as an empty answer.
+#
+# The identity and scopes are always read from the connection itself; the values here are only
+# what they are compared with.
+
+login: Hoosiertom50
+
+# The scopes the connection reported on 11-05-2026. A scope added or removed is reported.
+scopes:
+  - gist
+  - read:org
+  - repo
+  - workflow
+
+# Repositories owned by the login that must stay reachable, by full name. Repositories owned by
+# anyone else are only counted in the output, never named, because some of them are private.
+repositories:
+  - Hoosiertom50/clean-house
+  - Hoosiertom50/golden-thread-quest
+  - Hoosiertom50/seatwise
+
+# The one safe read: repository details, which change nothing.
+safe_read: Hoosiertom50/golden-thread-quest
+
+# A list that is reachable but empty, shown beside an inaccessible repository so the two can be
+# told apart.
+empty_read: repos/Hoosiertom50/golden-thread-quest/releases

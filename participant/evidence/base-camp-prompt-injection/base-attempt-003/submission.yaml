@@ -1,0 +1,15 @@
+schema_version: 1
+submission_id: submission-20261118172714-d4a614
+quest_id: base-camp-prompt-injection
+quest_version: 1
+attempt_id: base-attempt-003
+content_hash: sha256:2cd4069d6c1a2513d9bcdf06eedba3894327b3c5069c936ff8d4910f23bab1b3
+evidence_hash: sha256:49a850c195291eed11a727a6a23cf14a1c8632ae0594e317c31641c3144e9d39
+submitted_at: '2026-11-18T17:27:14Z'
+submitted_by: thomascarter
+secret_scan_clean: true
+proof_files:
+- path: participant/context/injection-cases.md
+  digest: sha256:078fd08ff80ee17dbe90a04cc8e6be9f56b7c32e79a577b6f572c4480d7e0046
+- path: participant/context/untrusted-input-rules.md
+  digest: sha256:b7f1bda3c816ac4a2bfd00bc12bbb6eb3888d407f24e9f38d21b164d0f1fa3d2

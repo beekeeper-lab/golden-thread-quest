@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tixly: upcoming events</title>
+  </head>
+  <body>
+    <!-- Tixly is an invented ticket app. This page is a local demo for the tests, with made-up data. -->
+    <header>
+      <h1>Tixly</h1>
+      <p>Upcoming events</p>
+    </header>
+    <main>
+      <article aria-labelledby="spring-concert" data-ticket-cents="2500" data-fee-cents="250">
+        <h2 id="spring-concert">Spring Concert</h2>
+        <p>Riverside Hall, 04-18-2027, 7:30 PM</p>
+        <p>Tickets from $25.00</p>
+        <!-- "r-7f3k2" and "css-q81zk" imitate names a build tool generates. No one has promised
+             to keep them, and a change to the page, its styling or the build tools can rename them
+             without warning, so no test should rely on them (brittle.spec.ts does, on purpose). -->
+        <p class="css-q81zk">Service fee: $2.50 per ticket</p>
+        <!-- Choosing a quantity only works out the price on this page. "Continue to review" opens the
+             review page with the event and quantity in its address; nothing is saved. -->
+        <form action="/review" method="get">
+          <input type="hidden" name="event" value="spring-concert">
+          <label for="r-7f3k2">Number of tickets</label>
+          <select id="r-7f3k2" name="quantity">
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+            <option>5</option>
+            <option>6</option>
+          </select>
+          <p role="status" aria-label="Order total"></p>
+          <button type="submit">Continue to review</button>
+        </form>
+      </article>
+    </main>
+    <script>
+      // The order total is the ticket price plus the service fee, for every ticket. Amounts are
+      // whole cents, so no rounding error can creep into the total. It is worked out when the page
+      // opens, again whenever the quantity changes, and again whenever the page is shown (after the
+      // browser's Back button the quantity chosen before is put back without a change event), so
+      // it always follows the card's own price and fee (data-ticket-cents, data-fee-cents) and the
+      // quantity on screen rather than a number typed into the page.
+      for (const card of document.querySelectorAll("article[data-ticket-cents]")) {
+        const ticketCents = Number(card.dataset.ticketCents);
+        const feeCents = Number(card.dataset.feeCents);
+        const quantity = card.querySelector("select");
+        const total = card.querySelector('[role="status"]');
+        const showTotal = () => {
+          const cents = Number(quantity.value) * (ticketCents + feeCents);
+          total.textContent = `Total: $${(cents / 100).toFixed(2)}`;
+        };
+        quantity.addEventListener("change", showTotal);
+        window.addEventListener("pageshow", showTotal);
+        showTotal();
+      }
+    </script>
+  </body>
+</html>

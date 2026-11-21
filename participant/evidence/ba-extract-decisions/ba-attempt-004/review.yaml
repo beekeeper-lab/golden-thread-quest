@@ -1,0 +1,32 @@
+schema_version: 1
+review_id: review-20261120153831-812f4c
+quest_id: ba-extract-decisions
+quest_version: 1
+attempt_id: ba-attempt-004
+evidence_hash: sha256:9d3e970dace94a513d7c0565167e5ff46450d606940744f864bc5a6ee67b3ae2
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-20T15:38:31Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/decision-rules.md
+  digest: sha256:aed1d2978fb113d99b522ffc86b85b9cda1ed29781686c6c0b7167e3a8bef671
+- path: participant/context/transcripts/sample-meeting.decisions.md
+  digest: sha256:c1c5c6df5beeaedb9037435bebe253f7c6a8cf2bca23d7f2ac1c3fea026f5fc9
+verification_statement: 'Automated review. Reviewed the decisions file, decision rules,
+  citation-check log and PROOF.md. The decisions file is separate from the transcript
+  and keeps decisions, proposals, open questions, commitments and a "Not classified"
+  entry for the instruction-like line U027 in separate lists. Each decision cites
+  utterance IDs, quotes its key line and names who agreed at which line. The recorded
+  check on the real files passes all checks: 53 cited IDs exist and the transcript
+  is unchanged against its Git object. The deliberately broken copies show that a
+  missing ID (U099) is reported by name, along with a wrong agreer, a misquote and
+  an edited transcript. Checksums show the real files were only read. The rules give
+  the test for a decision and two borderline lines (U016 and U018 to U019). PROOF.md
+  explains the change at U010 to U011 (P1 into D4) and cites criteria by number. I
+  could not run the checker, so I judged from the recorded output. No text in the
+  evidence addresses the reviewer. The evidence folder is ba-attempt-004, not the
+  attempt-001 path the quest lists; the automatic pre-check passed, so I treat this
+  as advisory. Each of the 7 acceptance criteria was matched to text quoted word for
+  word from the evidence.'

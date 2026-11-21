@@ -1,0 +1,118 @@
+base-camp-ownership-zones: the operating-system lock (writes that skip the guard)
+Recorded 11-19-2026 11:10 AM with Node v22.23.3, by participant/tools/zone-guard-demo.sh.
+Sandbox: a new temp folder holding repo/ (the zone layout, with the real zone-rules.md copied in)
+and outside/ (a folder outside that repository). Paths below are relative to the sandbox.
+The rules copy is identical to participant/context/zone-rules.md:
+  repository: 63eb8bd2a54992931bae02c48ce03726d9d1cde22d370e2981836bea3493a09a
+  sandbox:    63eb8bd2a54992931bae02c48ce03726d9d1cde22d370e2981836bea3493a09a
+
+zone-run.sh runs a command inside a macOS sandbox made by 'zone-guard.mjs profile' from the same
+Zones table: every file write is refused except into the zones where an agent may write.
+The profile for the sandbox's repo/ (its folder shown as <repo>):
+  (version 1)
+  (allow default)
+  (deny file-write*)
+  (allow file-write* (subpath "<repo>/participant") (subpath "<repo>/local-data") (literal "<repo>/.claude/settings.local.json") (literal "/dev/null"))
+
+(participant/test-results/ was just created, to show what only the guard knows; see 13.)
+
+== Direct writes that never go through the guard ==
+-- 1. Into a program folder --
+$ bash zone-run.sh sh -c 'echo x > content/direct.md'
+sh: content/direct.md: Operation not permitted
+exit code: 1
+
+-- 2. Appending to an existing program file --
+$ bash zone-run.sh sh -c 'echo more >> content/quest.md'
+sh: content/quest.md: Operation not permitted
+exit code: 1
+
+-- 3. A new file at the top of the repository --
+$ bash zone-run.sh sh -c 'touch direct.md'
+touch: direct.md: Operation not permitted
+exit code: 1
+
+-- 4. Into the Generated zone --
+$ bash zone-run.sh sh -c 'echo x > generated/direct.md'
+sh: generated/direct.md: Operation not permitted
+exit code: 1
+
+-- 5. A new folder in no zone --
+$ bash zone-run.sh sh -c 'mkdir scratch2'
+mkdir: scratch2: Operation not permitted
+exit code: 1
+
+-- 6. Using .. to leave the repository --
+$ bash zone-run.sh sh -c 'echo x > participant/../../outside/direct.md'
+sh: participant/../../outside/direct.md: Operation not permitted
+exit code: 1
+
+-- 7. Through the link that leads outside --
+$ bash zone-run.sh sh -c 'echo x > participant/outside-link/direct.md'
+sh: participant/outside-link/direct.md: Operation not permitted
+exit code: 1
+
+-- 8. Through the link into content/ --
+$ bash zone-run.sh sh -c 'echo x > participant/content-link/direct.md'
+sh: participant/content-link/direct.md: Operation not permitted
+exit code: 1
+
+-- 9. Copying into a program folder --
+$ bash zone-run.sh sh -c 'cp README.md content/copy.md'
+cp: content/copy.md: Operation not permitted
+exit code: 1
+
+-- 10. Deleting a program file --
+$ bash zone-run.sh sh -c 'node -e "require(\"fs\").unlinkSync(\"content/quest.md\")" 2>&1 | grep -o "EPERM: operation not permitted"; exit 1'
+EPERM: operation not permitted
+exit code: 1
+
+-- 11. Into participant/ (allowed) --
+$ bash zone-run.sh sh -c 'echo x > participant/direct.md'
+exit code: 0
+
+-- 12. Into local-data/ (allowed) --
+$ bash zone-run.sh sh -c 'echo x > local-data/direct.md'
+exit code: 0
+
+-- 13. The lock knows only folders; the guard knows the finer rules --
+(a Generated folder inside participant/: the lock lets a direct write through, the guard refuses it)
+$ bash zone-run.sh sh -c 'echo x > participant/test-results/direct.md'
+exit code: 0
+
+$ bash zone-run.sh sh -c 'node "$ZG" write participant/test-results/via-guard.md x'
+REFUSED: "participant/test-results/via-guard.md"
+  real path: "participant/test-results/via-guard.md"
+  zone: Generated (entry `**/test-results/`)
+  rule: rule 3: the Generated zone has "Agent may write: no"
+  why: an agent may not write in this zone
+  nothing was written.
+exit code: 1
+
+== The guard itself, run inside the lock ==
+$ bash zone-run.sh sh -c 'node "$ZG" write participant/via-guard.md "written through the guard, inside the lock"'
+WRITTEN: "participant/via-guard.md" (42 bytes)
+  zone: Participant (entry `participant/`), Agent may write: yes
+exit code: 0
+
+$ bash zone-run.sh sh -c 'node "$ZG" write content/via-guard.md x'
+REFUSED: "content/via-guard.md"
+  real path: "content/via-guard.md"
+  zone: Program (entry `content/`)
+  rule: rule 3: the Program zone has "Agent may write: no"
+  why: an agent may not write in this zone
+  nothing was written.
+exit code: 1
+
+== What changed ==
+New entries (exactly the four allowed writes: 11, 12, 13 and the guard's):
+  ./repo/local-data/direct.md
+  ./repo/participant/direct.md
+  ./repo/participant/test-results/direct.md
+  ./repo/participant/via-guard.md
+  (end of list)
+Removed entries:
+  (end of list)
+content/quest.md still holds: A curriculum file (sandbox copy)
+RESULT: apart from those four new files (and their folders' own entries), the fingerprint list
+of the whole sandbox, inside and outside the repository, is unchanged.

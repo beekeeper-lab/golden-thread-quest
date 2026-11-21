@@ -1,0 +1,171 @@
+# Activity
+
+Every change this application made to your files, newest last.
+
+- `2026-10-19T14:13:10Z` Started ba-ingest-transcript as attempt ba-attempt-001.
+- `2026-10-19T16:26:40Z` ba-ingest-transcript: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-10-19T16:27:37Z` ba-ingest-transcript: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-10-19T16:28:45Z` ba-ingest-transcript: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-10-19T16:28:45Z` Submitted ba-ingest-transcript for review as submission-20261019162845-0a428e.
+- `2026-10-20T18:28:05Z` Review of ba-ingest-transcript: approved by Gregg Reed.
+- `2026-10-20T19:14:21Z` Started base-camp-repository-safety as attempt base-attempt-001.
+- `2026-10-21T15:21:36Z` base-camp-repository-safety: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-10-21T15:22:48Z` base-camp-repository-safety: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-10-21T15:23:17Z` base-camp-repository-safety: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-10-21T15:23:17Z` Submitted base-camp-repository-safety for review as submission-20261021152317-5bbdaa.
+- `2026-10-21T17:28:04Z` Review of base-camp-repository-safety: approved by Gregg Reed.
+- `2026-10-23T12:59:16Z` Started context-staleness as attempt context-attempt-001.
+- `2026-10-23T16:15:16Z` context-staleness: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-10-23T16:16:00Z` context-staleness: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-10-23T16:16:41Z` context-staleness: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-10-23T16:16:41Z` Submitted context-staleness for review as submission-20261023161641-d369b9.
+- `2026-10-23T17:40:53Z` Review of context-staleness: approved by Gregg Reed.
+- `2026-10-26T12:30:07Z` Started ba-detect-ambiguity as attempt ba-attempt-002.
+- `2026-10-26T18:12:17Z` ba-detect-ambiguity: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-10-26T18:12:56Z` ba-detect-ambiguity: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-10-26T18:13:37Z` ba-detect-ambiguity: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-10-26T18:13:37Z` Submitted ba-detect-ambiguity for review as submission-20261026181337-db2eaf.
+- `2026-10-27T12:52:39Z` ba-detect-ambiguity: submitted → in_progress (Withdraw a submission before a reviewer has decided.)
+- `2026-10-27T13:08:35Z` ba-detect-ambiguity: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-10-27T13:08:51Z` ba-detect-ambiguity: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-10-27T13:09:21Z` ba-detect-ambiguity: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-10-27T13:09:21Z` Submitted ba-detect-ambiguity for review as submission-20261027130921-27fd61.
+- `2026-10-27T20:46:41Z` Review of ba-detect-ambiguity: approved by Gregg Reed.
+- `2026-10-28T12:44:25Z` Started ba-clarification-questions as attempt ba-attempt-003.
+- `2026-10-28T16:07:19Z` ba-clarification-questions: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-10-28T16:07:28Z` ba-clarification-questions: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-10-28T16:07:53Z` ba-clarification-questions: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-10-28T16:07:53Z` Submitted ba-clarification-questions for review as submission-20261028160753-c52ce5.
+- `2026-10-28T16:36:36Z` Review of ba-clarification-questions: approved by Gregg Reed.
+- `2026-10-29T12:36:14Z` Started base-camp-write-preview as attempt base-attempt-002.
+- `2026-10-29T16:38:25Z` base-camp-write-preview: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-10-29T16:38:40Z` base-camp-write-preview: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-10-29T16:38:58Z` base-camp-write-preview: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-10-29T16:38:58Z` Submitted base-camp-write-preview for review as submission-20261029163858-c502f2.
+- `2026-10-29T19:53:07Z` Review of base-camp-write-preview: approved by Gregg Reed.
+- `2026-10-30T12:18:06Z` Started playwright-risk-strategy as attempt playwright-attempt-001.
+- `2026-10-30T16:56:16Z` playwright-risk-strategy: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-10-30T16:56:25Z` playwright-risk-strategy: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-10-30T16:56:38Z` playwright-risk-strategy: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-10-30T16:56:38Z` Submitted playwright-risk-strategy for review as submission-20261030165638-016a55.
+- `2026-11-02T14:37:50Z` Started jira-compare-access-methods as attempt jira-attempt-001.
+- `2026-11-02T16:27:02Z` jira-compare-access-methods: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-02T16:27:21Z` jira-compare-access-methods: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-02T16:27:35Z` jira-compare-access-methods: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-02T16:27:35Z` Submitted jira-compare-access-methods for review as submission-20261102162735-9f75fd.
+- `2026-11-02T16:29:45Z` Review of playwright-risk-strategy: approved by Claude (automated reviewer).
+- `2026-11-02T16:40:36Z` Review of jira-compare-access-methods: approved by Claude (automated reviewer).
+- `2026-11-02T17:19:06Z` Started playwright-automation-candidates as attempt playwright-attempt-002.
+- `2026-11-05T15:21:35Z` playwright-automation-candidates: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-05T15:21:53Z` playwright-automation-candidates: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-05T15:22:08Z` playwright-automation-candidates: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-05T15:22:08Z` Submitted playwright-automation-candidates for review as submission-20261105152208-467163.
+- `2026-11-05T15:33:42Z` Review of playwright-automation-candidates: approved by Claude (automated reviewer).
+- `2026-11-05T15:42:02Z` Started playwright-project-setup as attempt playwright-attempt-003.
+- `2026-11-05T22:03:38Z` playwright-project-setup: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-05T22:03:49Z` playwright-project-setup: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-05T22:04:02Z` playwright-project-setup: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-05T22:04:02Z` Submitted playwright-project-setup for review as submission-20261105220402-a7b862.
+- `2026-11-05T22:11:00Z` Review of playwright-project-setup: approved by Claude (automated reviewer).
+- `2026-11-05T22:19:40Z` Started github-verify-connection as attempt github-attempt-001.
+- `2026-11-06T17:45:10Z` github-verify-connection: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-06T17:45:21Z` github-verify-connection: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-06T17:45:42Z` github-verify-connection: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-06T17:45:42Z` Submitted github-verify-connection for review as submission-20261106174542-f330ad.
+- `2026-11-06T17:50:50Z` Review of github-verify-connection: approved by Claude (automated reviewer).
+- `2026-11-06T18:00:11Z` Started playwright-first-independent-test as attempt playwright-attempt-004.
+- `2026-11-06T19:29:13Z` playwright-first-independent-test: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-06T19:29:23Z` playwright-first-independent-test: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-06T19:29:36Z` playwright-first-independent-test: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-06T19:29:36Z` Submitted playwright-first-independent-test for review as submission-20261106192936-b82fb0.
+- `2026-11-06T19:36:13Z` Review of playwright-first-independent-test: approved by Claude (automated reviewer).
+- `2026-11-09T14:02:44Z` Started playwright-page-model as attempt playwright-attempt-005.
+- `2026-11-09T16:42:32Z` playwright-page-model: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-09T16:42:45Z` playwright-page-model: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-09T16:42:59Z` playwright-page-model: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-09T16:42:59Z` Submitted playwright-page-model for review as submission-20261109164259-eabe1e.
+- `2026-11-09T19:30:30Z` Review of playwright-page-model: approved by Claude (automated reviewer).
+- `2026-11-10T14:05:44Z` Started playwright-stable-locators as attempt playwright-attempt-006.
+- `2026-11-10T18:48:48Z` playwright-stable-locators: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-10T18:49:12Z` playwright-stable-locators: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-10T18:49:46Z` playwright-stable-locators: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-10T18:49:46Z` Submitted playwright-stable-locators for review as submission-20261110184946-5bc2c3.
+- `2026-11-10T19:00:12Z` Review of playwright-stable-locators: approved by Claude (automated reviewer).
+- `2026-11-11T13:49:01Z` Started playwright-data-isolation as attempt playwright-attempt-007.
+- `2026-11-11T22:43:38Z` playwright-data-isolation: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-11T22:43:52Z` playwright-data-isolation: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-11T22:44:07Z` playwright-data-isolation: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-11T22:44:07Z` Submitted playwright-data-isolation for review as submission-20261111224407-7495a0.
+- `2026-11-11T22:51:20Z` Review of playwright-data-isolation: approved by Claude (automated reviewer).
+- `2026-11-12T14:09:38Z` Started playwright-api-assisted-test as attempt playwright-attempt-008.
+- `2026-11-12T16:24:20Z` playwright-api-assisted-test: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-12T16:24:31Z` playwright-api-assisted-test: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-12T16:24:45Z` playwright-api-assisted-test: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-12T16:24:45Z` Submitted playwright-api-assisted-test for review as submission-20261112162445-970909.
+- `2026-11-12T16:29:42Z` Review of playwright-api-assisted-test: approved by Claude (automated reviewer).
+- `2026-11-12T16:39:31Z` Started playwright-tagging as attempt playwright-attempt-009.
+- `2026-11-12T19:50:18Z` playwright-tagging: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-12T19:50:34Z` playwright-tagging: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-12T19:50:48Z` playwright-tagging: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-12T19:50:48Z` Submitted playwright-tagging for review as submission-20261112195048-6f8626.
+- `2026-11-12T20:00:12Z` Review of playwright-tagging: approved by Claude (automated reviewer).
+- `2026-11-13T13:57:28Z` Started playwright-multi-tag-run as attempt playwright-attempt-010.
+- `2026-11-13T14:52:12Z` playwright-multi-tag-run: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-13T14:52:23Z` playwright-multi-tag-run: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-13T14:52:37Z` playwright-multi-tag-run: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-13T14:52:37Z` Submitted playwright-multi-tag-run for review as submission-20261113145237-02e46f.
+- `2026-11-13T20:26:31Z` Review of playwright-multi-tag-run: approved by Claude (automated reviewer).
+- `2026-11-16T13:58:27Z` Started playwright-failure-evidence as attempt playwright-attempt-011.
+- `2026-11-16T15:48:49Z` playwright-failure-evidence: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-16T15:49:07Z` playwright-failure-evidence: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-16T15:49:45Z` playwright-failure-evidence: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-16T15:49:45Z` Submitted playwright-failure-evidence for review as submission-20261116154945-c585f4.
+- `2026-11-16T15:51:42Z` Review of playwright-failure-evidence: approved by Claude (automated reviewer).
+- `2026-11-17T13:55:20Z` Started playwright-success-evidence as attempt playwright-attempt-012.
+- `2026-11-17T16:22:47Z` playwright-success-evidence: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-17T16:22:59Z` playwright-success-evidence: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-17T16:23:14Z` playwright-success-evidence: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-17T16:23:14Z` Submitted playwright-success-evidence for review as submission-20261117162314-94f998.
+- `2026-11-17T16:34:49Z` Review of playwright-success-evidence: approved by Claude (automated reviewer).
+- `2026-11-18T13:32:44Z` Started playwright-test-inventory as attempt playwright-attempt-013.
+- `2026-11-18T15:18:06Z` playwright-test-inventory: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-18T15:18:22Z` playwright-test-inventory: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-18T15:18:39Z` playwright-test-inventory: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-18T15:18:39Z` Submitted playwright-test-inventory for review as submission-20261118151839-acf35b.
+- `2026-11-18T15:24:53Z` Review of playwright-test-inventory: approved by Claude (automated reviewer).
+- `2026-11-18T15:28:29Z` Started base-camp-prompt-injection as attempt base-attempt-003.
+- `2026-11-18T17:26:44Z` base-camp-prompt-injection: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-18T17:26:57Z` base-camp-prompt-injection: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-18T17:27:14Z` base-camp-prompt-injection: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-18T17:27:14Z` Submitted base-camp-prompt-injection for review as submission-20261118172714-d4a614.
+- `2026-11-18T17:30:40Z` Review of base-camp-prompt-injection: approved by Claude (automated reviewer).
+- `2026-11-19T13:37:09Z` Started base-camp-ownership-zones as attempt base-attempt-004.
+- `2026-11-19T16:36:45Z` base-camp-ownership-zones: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-19T16:37:18Z` base-camp-ownership-zones: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-19T16:37:36Z` base-camp-ownership-zones: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-19T16:37:36Z` Submitted base-camp-ownership-zones for review as submission-20261119163736-ec60d7.
+- `2026-11-19T16:44:26Z` Started context-decision-log as attempt context-attempt-002.
+- `2026-11-19T16:44:31Z` Review of base-camp-ownership-zones: approved by Claude (automated reviewer).
+- `2026-11-19T20:17:26Z` context-decision-log: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-19T20:17:39Z` context-decision-log: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-19T20:17:55Z` context-decision-log: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-19T20:17:55Z` Submitted context-decision-log for review as submission-20261119201755-9af643.
+- `2026-11-19T20:25:43Z` Review of context-decision-log: needs_changes by Claude (automated reviewer).
+- `2026-11-19T20:31:00Z` context-decision-log: needs_changes → in_progress (Resume after a reviewer asked for changes.)
+- `2026-11-19T23:31:19Z` context-decision-log: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-19T23:31:33Z` context-decision-log: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-19T23:31:51Z` context-decision-log: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-19T23:31:51Z` Submitted context-decision-log for review as submission-20261119233151-1d3cf0.
+- `2026-11-19T23:35:50Z` Review of context-decision-log: approved by Claude (automated reviewer).
+- `2026-11-20T13:41:55Z` Started ba-extract-decisions as attempt ba-attempt-004.
+- `2026-11-20T15:28:12Z` ba-extract-decisions: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-20T15:28:28Z` ba-extract-decisions: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-20T15:28:46Z` ba-extract-decisions: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-20T15:28:46Z` Submitted ba-extract-decisions for review as submission-20261120152846-10bca4.
+- `2026-11-20T15:38:31Z` Review of ba-extract-decisions: approved by Claude (automated reviewer).
+- `2026-11-20T15:46:55Z` Started jira-read-assigned-stories as attempt jira-attempt-002.
+- `2026-11-21T00:06:04Z` jira-read-assigned-stories: in_progress → evidence_ready (Assert that the required proof is assembled.)
+- `2026-11-21T00:06:18Z` jira-read-assigned-stories: evidence_ready → locally_validated (Record that every required validator returned a qualifying result.)
+- `2026-11-21T00:06:35Z` jira-read-assigned-stories: locally_validated → submitted (Ask a reviewer to decide.)
+- `2026-11-21T00:06:35Z` Submitted jira-read-assigned-stories for review as submission-20261121000635-26b2c3.
+- `2026-11-21T00:16:20Z` Review of jira-read-assigned-stories: approved by Claude (automated reviewer).

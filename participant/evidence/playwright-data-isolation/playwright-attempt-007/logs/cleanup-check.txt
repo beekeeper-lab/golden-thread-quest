@@ -1,0 +1,196 @@
+Cleanup check: no test data left after the runs, and the orders that were there before unchanged
+Started: 11-11-2026 05:10:36 PM
+Node v22.23.3, Playwright 1.63.0, browser: Chromium
+Application: the local Tixly demo app (made-up data, 127.0.0.1 only); saved orders are kept in
+demo-app/data/orders.json, which starts with three made-up "real" orders. No login, token or
+cookie is used. Redaction: personal home-folder paths shown as ~. Blank lines are left out of
+command output; nothing else is removed. Lines marked "Recording script:" are notes written by
+the script that recorded this log (it is not one of the handed-in tools).
+
+=== Part 1: around the isolated tests (whose runs are in shuffle-run.txt) and the cleanup proofs
+
+--- 1a. Before
+Recorded: 11-11-2026 05:10:36 PM
+Folder: participant/tests/playwright
+Command: node tools/data-isolation-check.ts before
+Exit code: 0
+
+Before: 3 order(s) fingerprinted:
+  o-real-0001 "Maria Lopez" (spring-concert, 2 tickets)  sha256 e42bd4f7dfe5
+  o-real-0002 "James Chen" (spring-concert, 4 tickets)  sha256 17201562ee37
+  o-real-0003 "Aisha Patel" (spring-concert, 1 ticket)  sha256 a60d5183b259
+
+--- 1b. The cleanup proofs: two tests that fail on purpose after saving an order
+Recorded: 11-11-2026 05:11:37 PM
+Folder: participant/tests/playwright
+Command: TIXLY_CLEANUP_PROOF=1 npx playwright test cleanup-proof.spec.ts --workers=1 --reporter=list
+Exit code: 1
+
+Running 2 tests using 1 worker
+proof 1 created o-4e2fde62 (Test User qa-9c1f0265-7ea60890), then fails on purpose
+  ✘  1 [chromium] › cleanup-proof.spec.ts:12:1 › proof 1: a test that fails after creating its order still has it cancelled by its cleanup (33ms)
+proof 2 saved an order for Test User qa-9c1f0265-756b9e73 through the screen, then fails before noting it
+  ✘  2 [chromium] › cleanup-proof.spec.ts:19:1 › proof 2: an order the test never got to note is cancelled by the run-end safety net (268ms)
+Safety net: cancelled 1 order(s) left with run marker qa-9c1f0265.
+  1) [chromium] › cleanup-proof.spec.ts:12:1 › proof 1: a test that fails after creating its order still has it cancelled by its cleanup 
+    Error: deliberate failure
+    expect(received).toBe(expected) // Object.is equality
+    Expected: "a different result"
+    Received: "the check this test was written to make"
+      14 |   console.log(`proof 1 created ${order.id} (${order.name}), then fails on purpose`);
+      15 |
+    > 16 |   expect("the check this test was written to make", "deliberate failure").toBe("a different result");
+         |                                                                           ^
+      17 | });
+      18 |
+      19 | test("proof 2: an order the test never got to note is cancelled by the run-end safety net", async ({ page, orders }) => {
+        at ~/golden-thread-quest/participant/tests/playwright/cleanup-proof.spec.ts:16:75
+    Error Context: test-results/cleanup-proof-proof-1-a-te-96985-it-cancelled-by-its-cleanup-chromium/error-context.md
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/cleanup-proof-proof-1-a-te-96985-it-cancelled-by-its-cleanup-chromium/trace.zip
+    Usage:
+        npx playwright show-trace test-results/cleanup-proof-proof-1-a-te-96985-it-cancelled-by-its-cleanup-chromium/trace.zip
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+  2) [chromium] › cleanup-proof.spec.ts:19:1 › proof 2: an order the test never got to note is cancelled by the run-end safety net 
+    Error: deliberate failure before the saved order was noted
+      27 |   // As if the test crashed at the worst moment: the order is saved, but the cleanup list never hears
+      28 |   // of it (orders.trackSavedBy is not called), so only the run marker in its name can find it.
+    > 29 |   throw new Error("deliberate failure before the saved order was noted");
+         |         ^
+      30 | });
+      31 |
+        at ~/golden-thread-quest/participant/tests/playwright/cleanup-proof.spec.ts:29:9
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/cleanup-proof-proof-2-an-o-607fd-d-by-the-run-end-safety-net-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+    Error Context: test-results/cleanup-proof-proof-2-an-o-607fd-d-by-the-run-end-safety-net-chromium/error-context.md
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/cleanup-proof-proof-2-an-o-607fd-d-by-the-run-end-safety-net-chromium/trace.zip
+    Usage:
+        npx playwright show-trace test-results/cleanup-proof-proof-2-an-o-607fd-d-by-the-run-end-safety-net-chromium/trace.zip
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+  2 failed
+    [chromium] › cleanup-proof.spec.ts:12:1 › proof 1: a test that fails after creating its order still has it cancelled by its cleanup 
+    [chromium] › cleanup-proof.spec.ts:19:1 › proof 2: an order the test never got to note is cancelled by the run-end safety net
+
+--- 1c. After the isolated runs and the cleanup proofs
+Recorded: 11-11-2026 05:11:37 PM
+Folder: participant/tests/playwright
+Command: node tools/data-isolation-check.ts after
+Exit code: 0
+
+1. Leftover test data: 0
+2. Orders from before: 3
+   unchanged o-real-0001 "Maria Lopez" (spring-concert, 2 tickets)
+   unchanged o-real-0002 "James Chen" (spring-concert, 4 tickets)
+   unchanged o-real-0003 "Aisha Patel" (spring-concert, 1 ticket)
+PASS: no test data left, and all 3 order(s) from before are unchanged.
+
+=== Part 2: around the coupled pair (whose runs are in shuffle-run.txt), to show the check catches a leak
+
+--- 2a. Before
+Recorded: 11-11-2026 05:11:37 PM
+Folder: participant/tests/playwright
+Command: node tools/data-isolation-check.ts before
+Exit code: 0
+
+Before: 3 order(s) fingerprinted:
+  o-real-0001 "Maria Lopez" (spring-concert, 2 tickets)  sha256 e42bd4f7dfe5
+  o-real-0002 "James Chen" (spring-concert, 4 tickets)  sha256 17201562ee37
+  o-real-0003 "Aisha Patel" (spring-concert, 1 ticket)  sha256 a60d5183b259
+
+--- 2b. After the coupled pair: expected to FAIL (the reversed run left its order)
+Recorded: 11-11-2026 05:12:14 PM
+Folder: participant/tests/playwright
+Command: node tools/data-isolation-check.ts after
+Exit code: 1
+
+1. Leftover test data: 1
+   LEFTOVER o-eb35b9a2 "Test User" (spring-concert, 2 tickets)
+2. Orders from before: 3
+   unchanged o-real-0001 "Maria Lopez" (spring-concert, 2 tickets)
+   unchanged o-real-0002 "James Chen" (spring-concert, 4 tickets)
+   unchanged o-real-0003 "Aisha Patel" (spring-concert, 1 ticket)
+FAIL: 1 leftover(s), 0 order(s) from before removed or changed.
+
+--- 2c. The leftover cancelled by its id through the orders service
+Recorded: 11-11-2026 05:12:14 PM
+Recording script: noted the order ids just before the coupled runs, then started the demo app
+on a spare port and sent DELETE /api/orders/<id> only for orders created since:
+
+DELETE /api/orders/o-eb35b9a2 (Test User): 200 {"cancelled":"o-eb35b9a2"}
+
+--- 2d. After cleaning up
+Recorded: 11-11-2026 05:12:14 PM
+Folder: participant/tests/playwright
+Command: node tools/data-isolation-check.ts after
+Exit code: 0
+
+1. Leftover test data: 0
+2. Orders from before: 3
+   unchanged o-real-0001 "Maria Lopez" (spring-concert, 2 tickets)
+   unchanged o-real-0002 "James Chen" (spring-concert, 4 tickets)
+   unchanged o-real-0003 "Aisha Patel" (spring-concert, 1 ticket)
+PASS: no test data left, and all 3 order(s) from before are unchanged.
+
+=== Part 3: the whole normal suite, and the project-setup check
+
+--- 3a. The whole normal suite (the coupled pair and the proofs are skipped unless asked for)
+Recorded: 11-11-2026 05:12:17 PM
+Folder: participant/tests/playwright
+Command: npx playwright test --reporter=list
+Exit code: 0
+
+Running 17 tests using 6 workers
+  -   1 [chromium] › cleanup-proof.spec.ts:12:1 › proof 1: a test that fails after creating its order still has it cancelled by its cleanup
+  -   2 [chromium] › cleanup-proof.spec.ts:19:1 › proof 2: an order the test never got to note is cancelled by the run-end safety net
+  -   3 [chromium] › coupled.spec.ts:18:1 › a buyer saves an order for Test User and sees it in Your orders (coupled) @data-coupled @risk-medium @writes-data @fast
+  -   4 [chromium] › coupled.spec.ts:32:1 › a buyer cancels Test User's order (coupled: relies on the order the test above saved) @data-coupled @risk-medium @writes-data @fast
+  ✓   9 [chromium] › tests/smoke.spec.ts:6:1 › a visitor sees the Spring Concert and its ticket price on the Tixly home page (321ms)
+  ✓   5 [chromium] › brittle.spec.ts:10:1 › a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (brittle locators) @locator-comparison @risk-high @read-only @fast (340ms)
+  ✓   8 [chromium] › stable.spec.ts:11:1 › a buyer choosing 2 Spring Concert tickets sees a total of $55.00 (stable locators) @locator-comparison @risk-high @read-only @fast (328ms)
+  ✓   6 [chromium] › model-usage.spec.ts:21:1 › a buyer reviewing 2 Spring Concert tickets sees the event, 2 tickets and a total of $55.00 @order-review @risk-high @read-only @fast (369ms)
+  ✓   7 [chromium] › first-independent-test.spec.ts:18:1 › a buyer choosing 2 Spring Concert tickets sees a total of $55.00, with the $2.50 service fee on each ticket @ticket-total @risk-high @read-only @fast (393ms)
+  ✓  10 [chromium] › isolated.spec.ts:10:1 › a buyer saves an order and sees it in Your orders (isolated) @data-isolated @risk-medium @writes-data @fast (613ms)
+  ✓  11 [chromium] › model-usage.spec.ts:38:1 › a buyer who goes back from the review to choose 4 tickets instead sees the new total of $110.00 @order-review @risk-high @read-only @fast (294ms)
+  ✓  12 [chromium] › isolated.spec.ts:53:1 › a buyer cancels their own order (isolated: makes the order it cancels) @data-isolated @risk-medium @writes-data @fast (202ms)
+  ✓  13 [chromium] › model-usage.spec.ts:54:1 › a review link asking for 0, a fraction, too many or no whole number of tickets explains the 1 to 6 limit instead of showing a total @order-review @risk-medium @read-only @fast (226ms)
+  ✓  15 [chromium] › model-usage.spec.ts:71:1 › a review link naming an event that isn't on sale says so instead of showing a total @order-review @risk-medium @read-only @fast (119ms)
+  ✓  16 [chromium] › model-usage.spec.ts:88:1 › a buyer who uses the browser's Back button from the review still sees 3 tickets and $82.50 @order-review @risk-high @read-only @fast (168ms)
+  ✓  17 [chromium] › model-usage.spec.ts:104:1 › review links for 1 and for 6 tickets, the smallest and largest orders, show totals of $27.50 and $165.00 @order-review @risk-high @read-only @fast (115ms)
+  ✓  14 [chromium] › isolated.spec.ts:71:1 › cancelling one buyer's order leaves another buyer's order in Your orders (isolated) @data-isolated @risk-medium @writes-data @fast (772ms)
+  4 skipped
+  13 passed (2.4s)
+
+--- 3b. The project-setup check
+Recorded: 11-11-2026 05:12:37 PM
+Folder: participant/tests/playwright
+Command: node tools/project-setup-check.ts
+Exit code: 0
+
+project-setup-check 1.0.0
+project: participant/tests/playwright
+PASS  generated output and environment files are ignored by Git (14 of 14)
+      installed packages: participant/tests/playwright/node_modules/@playwright/test/package.json (rule participant/tests/playwright/.gitignore:2:node_modules/)
+      a trace: participant/tests/playwright/test-results/smoke-chromium/trace.zip (rule participant/tests/playwright/.gitignore:5:test-results/)
+      a failure screenshot: participant/tests/playwright/test-results/smoke-chromium/test-failed-1.png (rule participant/tests/playwright/.gitignore:5:test-results/)
+      a file downloaded during a test: participant/tests/playwright/test-results/smoke-chromium/downloads/ticket.pdf (rule participant/tests/playwright/.gitignore:5:test-results/)
+      the HTML report: participant/tests/playwright/playwright-report/index.html (rule participant/tests/playwright/.gitignore:6:playwright-report/)
+      a merged-report blob: participant/tests/playwright/blob-report/report.zip (rule participant/tests/playwright/.gitignore:7:blob-report/)
+      Playwright's build cache: participant/tests/playwright/playwright/.cache/component.js (rule participant/tests/playwright/.gitignore:8:playwright/.cache/)
+      an environment file: participant/tests/playwright/.env (rule participant/tests/playwright/.gitignore:15:*.env)
+      a local environment file: participant/tests/playwright/.env.local (rule participant/tests/playwright/.gitignore:12:.env.*)
+      an environment file named with a dash: participant/tests/playwright/.env-local (rule participant/tests/playwright/.gitignore:13:.env-*)
+      an environment file named with an underscore: participant/tests/playwright/.env_production (rule participant/tests/playwright/.gitignore:14:.env_*)
+      an environment file ending in .env: participant/tests/playwright/production.env (rule participant/tests/playwright/.gitignore:15:*.env)
+      the demo app's lock on its orders file: participant/tests/playwright/demo-app/data/orders.json.lock (rule participant/tests/playwright/.gitignore:21:demo-app/data/orders.json.lock)
+      a half-written orders file: participant/tests/playwright/demo-app/data/orders.json.4242.tmp (rule participant/tests/playwright/.gitignore:19:demo-app/data/*.tmp)
+PASS  the project's own files are not ignored (31 of 31)
+PASS  downloaded browsers are kept out of Git (Playwright's own cache folder, outside the repository)
+PASS  no environment file is among the 661 files Git would commit
+PASS  no output from this project's runs, orders lock or half-written orders file, installed package or downloaded browser is among the files Git would commit
+PASS  no credential found in the files Git would commit (1240 files scanned, 0 finding(s), including the staged copies of all 647 tracked files)
+RESULT: PASSED
+
+Recording script: compared the orders file with its copy from before the first run, byte for byte: identical.
+Finished: 11-11-2026 05:12:37 PM

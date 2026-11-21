@@ -1,0 +1,35 @@
+schema_version: 1
+review_id: review-20261119233550-8809e3
+quest_id: context-decision-log
+quest_version: 1
+attempt_id: context-attempt-002
+evidence_hash: sha256:1b90cc3733c4cb956bbcac2605b92ea31ad881a91582dd157191f3accb4f5ebe
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-19T23:35:50Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/decisions/log.md
+  digest: sha256:1d9850b3bad44287ffbb3637b53c07631befc6a3fb4e9b3690c8c8066aba3fc5
+- path: participant/context/decisions/rules.md
+  digest: sha256:71c99815d522f7e91d00fc3e529724e4832b3ba86ad68615be9811af3efc0061
+verification_statement: 'Automated review. I read log.md, rules.md, PROOF.md, log-check.txt
+  and the earlier review.yaml, all under context-attempt-002. - **Log contents:**
+  13 entries (7 decisions, 3 proposals, 3 questions). Each entry has one Status, a
+  Date and a Source. Each decision has an Approver, an Area and an Approval line quoted
+  exactly from its source; the full sources.md text is in log-check.txt. - **Promotion:**
+  P-02 became D-05 through a new entry, with links in both directions. - **Supersession:**
+  D-02 was replaced by D-07, with links in both directions, and log-check.txt has
+  a quotable line confirming it. - **Agreement vs approval:** P-03 had the meeting''s
+  agreement but no approval, and stays a proposal. - **Current decisions:** the list
+  sits above the entries and shows only decisions in force (no D-02, no proposals
+  or questions). - **Check output:** the real log passes every check. The broken copies
+  fail as expected, including agreement recorded as an approval (case 2) and a status
+  changed by rewriting an entry (case 12). The real files'' hashes match before and
+  after. - **PROOF.md** explains how an approval is told apart from agreement and
+  cites the criteria by number. Low note: the files are under attempt-002, not the
+  attempt-001 path in the brief; the pre-check found all required files. The log.md
+  hash differs from the first review''s, which matches the changes PROOF.md describes.
+  I found no text aimed at the reviewer. Each of the 7 acceptance criteria was matched
+  to text quoted word for word from the evidence.'

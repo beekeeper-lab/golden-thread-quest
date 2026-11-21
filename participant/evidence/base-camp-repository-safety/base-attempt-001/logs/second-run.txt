@@ -1,0 +1,9 @@
+$ .venv/bin/python participant/tools/fake-bug-tracker.py file --key BUG-101 --severity High --title "Firefox warns about a typed password nobody typed (Account page)"
+# run at 2026-10-21T15:06:57Z by participant/tools/fake-bug-tracker.py 1.2.0
+BUG-101 is already filed (2026-10-21T15:06:47Z): nothing to file, nothing written
+exit status 0
+$ .venv/bin/python participant/tools/fake-bug-tracker.py list
+# run at 2026-10-21T15:07:08Z by participant/tools/fake-bug-tracker.py 1.2.0
+read 1 defect(s) from the fake bug tracker
+  BUG-101 [High]: Firefox warns about a typed password nobody typed (Account page) (filed 2026-10-21T15:06:47Z)
+exit status 0

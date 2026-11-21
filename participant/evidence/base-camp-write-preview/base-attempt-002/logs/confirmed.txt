@@ -1,0 +1,55 @@
+$ .venv/bin/python participant/tools/fake-story-tracker.py confirm --stories participant/context/write-preview/follow-up-stories.yaml
+# fake-story-tracker.py 1.11.0 confirm
+Type the fingerprint of the preview you approve: You typed: 22E3-E1CD-4D07
+Confirmed by Tom Carter at 10-29-2026 12:07:46 PM EDT, for preview 22E3-E1CD-4D07.
+Written:
+  TIX-1  High     Lock each seat while it is held so two buyers can't hold the same seat
+  TIX-2  High     Keep refunds open until the venue doors open for each event
+  TIX-3  Medium   Let the buyer retry a declined payment without losing their seats
+The tracker now has 3 stories.
+
+$ .venv/bin/python participant/tools/fake-story-tracker.py list
+# fake-story-tracker.py 1.11.0 list
+Tracker: 3 stories (tracker state 6FD3-390C-BF19)
+
+TIX-1
+    Type:        Story
+    Priority:    High
+    Title:       Lock each seat while it is held so two buyers can't hold the same seat
+    From:        Q-02 (answer assumed: Never selling the same seat twice.)
+    Description: When a buyer holds a seat, no other buyer can hold or buy that seat until the
+                 hold is released or the order is paid.
+    Acceptance criteria:
+      1. Two buyers who choose the same seat at the same moment get one hold between them; the
+         other buyer is told the seat is no longer available.
+      2. A held seat shows as unavailable on every other buyer's seat map.
+      3. When a hold is released (CHK-03's 10 minutes), the seat can be held again.
+    Confirmed:   by Tom Carter at 10-29-2026 12:07:46 PM EDT, under preview 22E3-E1CD-4D07
+
+TIX-2
+    Type:        Story
+    Priority:    High
+    Title:       Keep refunds open until the venue doors open for each event
+    From:        Q-03 (answer assumed: Refunds are available until the venue doors open.)
+    Description: Store a doors-open time for every event, and allow a full refund at any time
+                 before it. This replaces the 48-hour cutoff in CHK-05.
+    Acceptance criteria:
+      1. Every event has a doors-open date and time, entered when the event is set up.
+      2. A refund requested before the doors-open time is accepted in full.
+      3. A refund requested at or after the doors-open time is refused, and the buyer is told
+         why.
+    Confirmed:   by Tom Carter at 10-29-2026 12:07:46 PM EDT, under preview 22E3-E1CD-4D07
+
+TIX-3
+    Type:        Story
+    Priority:    Medium
+    Title:       Let the buyer retry a declined payment without losing their seats
+    From:        Q-07 (answer assumed: After a declined payment, the buyer can try again.)
+    Description: After a payment is declined, keep the payment page open and the seats held, so
+                 the buyer can try the same card again or use another one.
+    Acceptance criteria:
+      1. After a decline, the buyer stays on the payment page with their seats still held.
+      2. The buyer can pay with the same card or a different one.
+      3. The seats are still released when CHK-03's 10-minute hold ends, even if the buyer is
+         still retrying.
+    Confirmed:   by Tom Carter at 10-29-2026 12:07:46 PM EDT, under preview 22E3-E1CD-4D07

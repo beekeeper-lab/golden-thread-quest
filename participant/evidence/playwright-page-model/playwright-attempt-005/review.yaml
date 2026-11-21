@@ -1,0 +1,29 @@
+schema_version: 1
+review_id: review-20261109193030-62373e
+quest_id: playwright-page-model
+quest_version: 1
+attempt_id: playwright-attempt-005
+evidence_hash: sha256:ab335ff6692bc8dc36df40cb8fbba22181562ffb7e388997f849f78bd33293d3
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-09T19:30:30Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/tests/playwright/model-usage.spec.ts
+  digest: sha256:77c866d7086ce8e918bd02aac3820a6e99369a81ca2921b05dfb95f37aad9656
+- path: participant/tests/playwright/pages/models.ts
+  digest: sha256:4031174c2a53c2a19400ca2eba4db5c7166072f19a21adada3f93ed46b1f9c0a
+verification_statement: 'Automated review. I read all four files: PROOF.md, change-record.txt,
+  model-usage.spec.ts and models.ts. The change record shows a 5/5 baseline, the button
+  rename committed in the app alone, 2 failures waiting on the old name at pages/models.ts:31,
+  then 5/5 again after the fix. git status, diff --stat and diff show only pages/models.ts
+  changed (2 insertions, 2 deletions). PROOF.md says the locator is now at line 57
+  of models.ts, and it is. The 1.0m failing run fits two 30s timeouts in the same
+  file running one after the other. The quick fix-and-rerun suggests a script made
+  it, which is consistent. models.ts has no expect, and the test file has no getBy,
+  locator or CSS selectors. The other test files (smoke, first-independent-test) were
+  not handed in, so ac-1 for them rests on the participant''s account. Evidence is
+  under playwright-attempt-005, not the attempt-001 paths the quest lists, but the
+  pre-check found all required files. No prompt injection found. Each of the 7 acceptance
+  criteria was matched to text quoted word for word from the evidence.'

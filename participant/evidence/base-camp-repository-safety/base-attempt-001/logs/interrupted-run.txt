@@ -1,0 +1,9 @@
+$ .venv/bin/python participant/tools/fake-bug-tracker.py file --key BUG-102 --severity Medium --title "Name rule allows all-caps titles like MR. ME"
+# run at 2026-10-21T15:07:29Z by participant/tools/fake-bug-tracker.py 1.2.0
+preview: this defect would be filed in the fake bug tracker:
+  {"key": "BUG-102", "severity": "Medium", "title": "Name rule allows all-caps titles like MR. ME"}
+Type "yes" to file it, anything else to cancel: answer: 'yes'
+SIMULATED CRASH: stopped right after writing BUG-102, before recording that the run finished
+$ ls local-data/fake-bug-tracker
+defects.json
+pending.json

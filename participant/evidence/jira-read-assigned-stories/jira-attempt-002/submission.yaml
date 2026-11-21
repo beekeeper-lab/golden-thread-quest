@@ -1,0 +1,22 @@
+schema_version: 1
+submission_id: submission-20261121000635-26b2c3
+quest_id: jira-read-assigned-stories
+quest_version: 2
+attempt_id: jira-attempt-002
+content_hash: sha256:983e44712d01f69de6ca4b3dbe7eb180fdf0040ebb722453749e959d0dde5c0b
+evidence_hash: sha256:a4dc6ac6d1a156cb6fbc2004baf05695d96b4e78dbc7d2a7d8f45b6bfd9b66ff
+submitted_at: '2026-11-21T00:06:35Z'
+submitted_by: thomascarter
+secret_scan_clean: true
+validation_result_ids:
+- validate-jira-read-assigned-20261120223833002240-c68fff
+- validate-jira-read-assigned-20261120223848354637-ff5457
+- validate-jira-read-assigned-20261120223903362528-61d5a8
+- validate-jira-read-assigned-20261120223918389553-bc1056
+proof_files:
+- path: participant/context/jira/assigned/index.md
+  digest: sha256:6cffcf5290252a038e8157ba353e49adc20540275c880d37546c8bd3931515fd
+- path: participant/context/jira/assigned/stories.json
+  digest: sha256:31ee6538f1cebd576d1df5ca196a71b6fb29b57b1897bdaf470833e9be3679da
+- path: participant/skills/jira-read-assigned/SKILL.md
+  digest: sha256:6d19f60b206745ea5501a47f84953eb10783707fadfa1fd0b2960f72462751d0

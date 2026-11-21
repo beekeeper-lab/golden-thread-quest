@@ -1,0 +1,145 @@
+base-camp-ownership-zones: refused writes
+Recorded 11-19-2026 11:10 AM with Node v22.23.3, by participant/tools/zone-guard-demo.sh.
+Sandbox: a new temp folder holding repo/ (the zone layout, with the real zone-rules.md copied in)
+and outside/ (a folder outside that repository). Paths below are relative to the sandbox.
+The rules copy is identical to participant/context/zone-rules.md:
+  repository: 63eb8bd2a54992931bae02c48ce03726d9d1cde22d370e2981836bea3493a09a
+  sandbox:    63eb8bd2a54992931bae02c48ce03726d9d1cde22d370e2981836bea3493a09a
+
+== The sandbox before ==
+.
+./outside
+./repo
+./repo/README.md
+./repo/content
+./repo/content/quest.md
+./repo/generated
+./repo/local-data
+./repo/participant
+./repo/participant/content-link -> ../content
+./repo/participant/context
+./repo/participant/context/zone-rules.md
+./repo/participant/notes
+./repo/participant/notes/escape.md -> ../../../outside/escape.md
+./repo/participant/outside-link -> ../../outside
+./repo/scratch
+./repo/tools
+
+Fingerprint before (every entry: kind, mode, owner, size, contents, link target):
+  11 folders, 3 files, 3 links; fingerprint SHA-256 818ccdc14831f0296d54ef09e7677f597bdbb30b8b338a3cbe8900cc53c2b91f
+
+== 1. Into a program-owned zone ==
+$ node zone-guard.mjs write content/notes.md "Notes: draft seating plan, table 4 has two open seats."
+REFUSED: "content/notes.md"
+  real path: "content/notes.md"
+  zone: Program (entry `content/`)
+  rule: rule 3: the Program zone has "Agent may write: no"
+  why: an agent may not write in this zone
+  nothing was written.
+exit code: 1
+
+== 2. Using .. to leave the allowed folder (participant/) for a program folder ==
+$ node zone-guard.mjs write participant/../content/notes.md "Notes: draft seating plan, table 4 has two open seats."
+REFUSED: "participant/../content/notes.md"
+  real path: "content/notes.md" (".." resolved first)
+  zone: Program (entry `content/`)
+  rule: rule 3: the Program zone has "Agent may write: no"
+  why: an agent may not write in this zone
+  nothing was written.
+exit code: 1
+
+== 3. Using .. to leave the repository altogether ==
+$ node zone-guard.mjs write participant/../../outside/notes.md "Notes: draft seating plan, table 4 has two open seats."
+REFUSED: "participant/../../outside/notes.md"
+  real path: outside the repository
+  rule: rule 2: the real path must be inside the repository
+  why: ".." climbs out of the repository
+  nothing was written.
+exit code: 1
+
+== 4. Through a symbolic link that leads outside the repository ==
+(participant/outside-link -> ../../outside; the text looks like a participant path)
+$ node zone-guard.mjs write participant/outside-link/notes.md "Notes: draft seating plan, table 4 has two open seats."
+REFUSED: "participant/outside-link/notes.md"
+  real path: outside the repository
+  rule: rule 2: the real path must be inside the repository
+  why: a link on the way leads outside the repository
+  nothing was written.
+exit code: 1
+
+== 5. Through a symbolic link into a program folder ==
+(participant/content-link -> ../content)
+$ node zone-guard.mjs write participant/content-link/notes.md "Notes: draft seating plan, table 4 has two open seats."
+REFUSED: "participant/content-link/notes.md"
+  real path: "content/notes.md" (reached through a link)
+  zone: Program (entry `content/`)
+  rule: rule 3: the Program zone has "Agent may write: no"
+  why: an agent may not write in this zone
+  nothing was written.
+exit code: 1
+
+== 6. A link standing where the new file would go ==
+(participant/notes/escape.md -> ../../../outside/escape.md, which doesn't exist yet)
+$ node zone-guard.mjs write participant/notes/escape.md "Notes: draft seating plan, table 4 has two open seats."
+REFUSED: "participant/notes/escape.md"
+  real path: "participant/notes/escape.md"
+  rule: rule 4: only a brand-new file, never overwriting or following a link
+  why: something (a file, folder or link) already stands at that path
+  nothing was written.
+exit code: 1
+
+== 7. Into the Generated zone ==
+$ node zone-guard.mjs write generated/notes.md "Notes: draft seating plan, table 4 has two open seats."
+REFUSED: "generated/notes.md"
+  real path: "generated/notes.md"
+  zone: Generated (entry `generated/`)
+  rule: rule 3: the Generated zone has "Agent may write: no"
+  why: an agent may not write in this zone
+  nothing was written.
+exit code: 1
+
+== 8. Into a folder that belongs to no zone (stretch goal) ==
+$ node zone-guard.mjs write scratch/notes.md "Notes: draft seating plan, table 4 has two open seats."
+REFUSED: "scratch/notes.md"
+  real path: "scratch/notes.md"
+  rule: rule 3: a path in no zone is never written
+  why: no entry in the Zones table covers it
+  nothing was written.
+exit code: 1
+
+== 9. A new file at the top of the repository (Program, entry *) ==
+$ node zone-guard.mjs write notes.md "Notes: draft seating plan, table 4 has two open seats."
+REFUSED: "notes.md"
+  real path: "notes.md"
+  zone: Program (entry `*`)
+  rule: rule 3: the Program zone has "Agent may write: no"
+  why: an agent may not write in this zone
+  nothing was written.
+exit code: 1
+
+== The sandbox after ==
+.
+./outside
+./repo
+./repo/README.md
+./repo/content
+./repo/content/quest.md
+./repo/generated
+./repo/local-data
+./repo/participant
+./repo/participant/content-link -> ../content
+./repo/participant/context
+./repo/participant/context/zone-rules.md
+./repo/participant/notes
+./repo/participant/notes/escape.md -> ../../../outside/escape.md
+./repo/participant/outside-link -> ../../outside
+./repo/scratch
+./repo/tools
+
+Fingerprint after:
+  11 folders, 3 files, 3 links; fingerprint SHA-256 818ccdc14831f0296d54ef09e7677f597bdbb30b8b338a3cbe8900cc53c2b91f
+
+RESULT: the before and after lists are identical. No file, empty file or partial file was
+created anywhere in the sandbox, inside or outside the repository, and nothing changed.
+Files named notes.md or escape.md anywhere in the sandbox:
+  (end of list)

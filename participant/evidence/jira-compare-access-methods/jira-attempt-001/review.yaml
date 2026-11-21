@@ -1,0 +1,31 @@
+schema_version: 1
+review_id: review-20261102164036-6cd83e
+quest_id: jira-compare-access-methods
+quest_version: 1
+attempt_id: jira-attempt-001
+evidence_hash: sha256:cbe00d58fe3d4ae8aac6a9b33ca04701035b7b6436ced88979eabf9df9860094
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-02T16:40:36Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/jira/access-comparison.md
+  digest: sha256:1b6e5f06bb4c545b3db2d6f70d3c18efca9e6d3260b530aa8a60fae578e912b5
+- path: participant/context/jira/access-decision.md
+  digest: sha256:5fc91f1103f8f2068da7f1420f0567da92e0840b0a880e62804934e4fd311274
+verification_statement: 'Automated review. I read all three evidence files. The comparison
+  table has one column for each of the four methods: Atlassian CLI, REST API, Rovo
+  MCP Server and Claude''s Atlassian connector. It has rows for sign-in, whose name
+  is on the actions, reach, logging, rate limits, upkeep, failure behaviour, how to
+  switch it off and one named risk. Facts are linked to numbered public vendor sources,
+  and anything no source confirms is marked "not verified". The decision record states
+  a purpose, chooses the REST API with a service account, explains why, gives four
+  conditions that would change the choice and lists the rejected options. PROOF.md
+  maps each criterion by number and explains the method rejected most firmly, the
+  CLI, citing criteria 2, 3 and 7. I found no secrets or internal URLs, and nothing
+  in the evidence addresses the reviewer. One small point: PROOF.md sits under the
+  folder ''jira-attempt-001'', while the quest asks for ''attempt-001''. The automatic
+  pre-check still found all required files, so I am noting this as advisory only.
+  Each of the 7 acceptance criteria was matched to text quoted word for word from
+  the evidence.'

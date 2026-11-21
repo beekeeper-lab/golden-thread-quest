@@ -1,0 +1,51 @@
+# Secret check of the failure bundle (criteria 3 and 4)
+# Recorded 11-16-2026 10:38:29 AM on branch pilot/tom at commit d0d100a (with uncommitted quest-19 files).
+# The API key was a made-up value, new for this recording; it is not shown. The home folder is shown as ~.
+
+## 1. The bundle as copied out (what is handed in)
+$ node tools/failure-evidence-check.ts <attempt>/failure-bundle
+Scanned 6 file(s) in <attempt>/failure-bundle, including 17 member(s) inside zip files.
+Found: nothing (no API key, no token, cookie or credential, no home-folder address).
+Not text, so check these by eye for personal data:
+  test-failed-1.png
+  trace.zip › attachments/681ff9d3fb978b24674ffadcec6a6377581656e6
+  trace.zip › screencast/page@ea52849536d832378dd3a1e646e212d3-1794843504544.jpeg
+  trace.zip › screencast/page@ea52849536d832378dd3a1e646e212d3-1794843504556.jpeg
+  trace.zip › screencast/page@ea52849536d832378dd3a1e646e212d3-1794843509578.jpeg
+PASS
+(exit 0)
+
+## 2. Self-test: three fake values planted in a temporary copy of the bundle, each must be found
+$ node tools/failure-evidence-check.ts --self-test <attempt>/failure-bundle
+Self-test on a temporary copy of <attempt>/failure-bundle: planted 3 fake value(s).
+  found     console.txt:3  a bearer token
+  found     trace.zip › 1-trace.network:3  a credential header with a value
+  found     error.txt:17  the run's API key
+PASS: every planted value was found at its file and line, and no value was shown.
+(exit 0)
+
+## 3. For comparison: the original in test-results/, before the home folder was replaced
+$ node tools/failure-evidence-check.ts test-results/<the test's folder>
+Scanned 6 file(s) in test-results/orders-list.evidence.ts-a-saved-order-shows-on-Your-orders-chromium, including 17 member(s) inside zip files.
+Found 13 thing(s) (file:line and kind; the values are never shown):
+  trace.zip › test.trace:15  the home-folder address (shows the user name)
+  trace.zip › test.trace:17  the home-folder address (shows the user name)
+  trace.zip › test.trace:20  the home-folder address (shows the user name)
+  trace.zip › test.trace:22  the home-folder address (shows the user name)
+  trace.zip › test.trace:23  the home-folder address (shows the user name)
+  trace.zip › test.trace:25  the home-folder address (shows the user name)
+  trace.zip › test.trace:27  the home-folder address (shows the user name)
+  trace.zip › test.trace:28  the home-folder address (shows the user name)
+  trace.zip › test.trace:30  the home-folder address (shows the user name)
+  trace.zip › test.trace:32  the home-folder address (shows the user name)
+  trace.zip › 1-trace.trace:20  the home-folder address (shows the user name)
+  trace.zip › 1-trace.stacks:1  the home-folder address (shows the user name)
+  trace.zip › 0-trace.stacks:1  the home-folder address (shows the user name)
+Not text, so check these by eye for personal data:
+  test-failed-1.png
+  trace.zip › attachments/681ff9d3fb978b24674ffadcec6a6377581656e6
+  trace.zip › screencast/page@ea52849536d832378dd3a1e646e212d3-1794843504544.jpeg
+  trace.zip › screencast/page@ea52849536d832378dd3a1e646e212d3-1794843504556.jpeg
+  trace.zip › screencast/page@ea52849536d832378dd3a1e646e212d3-1794843509578.jpeg
+FAIL
+(exit 1: expected FAIL, home-folder address only)

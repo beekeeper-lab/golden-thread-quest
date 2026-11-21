@@ -1,0 +1,32 @@
+schema_version: 1
+review_id: review-20261118152453-2f2b5d
+quest_id: playwright-test-inventory
+quest_version: 1
+attempt_id: playwright-attempt-013
+evidence_hash: sha256:79d0d5d24db78654754333e29988d8dab606f6d016f01f9c52c6899769d2c3be
+reviewer:
+  display_name: Claude (automated reviewer)
+reviewed_at: '2026-11-18T15:24:53Z'
+decision: approved
+findings: []
+proof_files:
+- path: participant/context/playwright/inventory.md
+  digest: sha256:766abb728236a1a6b9c94a9ae8ab82861946e4bbebffde1feffe1447e1995c1b
+- path: participant/tests/playwright/tools/inventory.ts
+  digest: sha256:ff65206fd2e5766177f399e744c2ac7d14765de35e1de9541cfec8fe2a1af97d
+verification_statement: 'Automated review. Read all four evidence files and checked
+  them against each other. The generator reads tests through `playwright test --list`
+  and never runs or changes them. The inventory''s counts match its own rows: 29 tests,
+  3 high, 15 medium, 11 low, 10 known gaps, 4 duplicate groups. Spot-checked value
+  scores against the stated rule: T-08 high risk with no source is medium, T-19 is
+  low, T-90 is medium, T-93 is low. The run log matches the code. The rejection output
+  shows the identifier key "T-7" for "T-07", which is how the code drops leading zeros.
+  The demo tests sit on lines 3, 4 and 5 of the temporary file. The T-20/T-93 purposes
+  match once case and punctuation are ignored. The duplicate groups appear in identifier
+  order. The run record shows: two identical runs with the same byte count and fingerprint;
+  three tests reported as incomplete with exit 1; a shared identifier rejected with
+  nothing written and the fingerprint unchanged; a fifth duplicate group; and the
+  inventory restored afterwards. The submission folder is named playwright-attempt-013,
+  not attempt-001, but the pre-check found the files. No text addresses the reviewer.
+  Each of the 7 acceptance criteria was matched to text quoted word for word from
+  the evidence.'

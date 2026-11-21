@@ -1,0 +1,32 @@
+$ node --version
+v22.23.3
+$ node participant/tests/playwright/tools/risk-strategy-check.ts
+risk-strategy-check 1.0.0
+requirements: participant/context/playwright/requirements.md (12 requirements)
+strategy: participant/context/playwright/strategy.md (28 risks)
+PASS  both files are in the expected form
+PASS  the likelihood and impact scales are each stated at 3, 2 and 1
+PASS  the strategy states the scoring and ranking rules this check applies
+PASS  every risk has its own id and names only known requirements
+PASS  every risk has exactly one layer from unit, API, UI, manual, untested
+PASS  every risk gives a reason of at least 8 words for its layer
+PASS  every requirement appears in the strategy (12 of 12)
+      CHK-01: R-01 unit, R-02 UI, R-27 API
+      CHK-02: R-03 UI
+      CHK-03: R-04 unit, R-05 API, R-22 UI, R-23 UI, R-28 API
+      CHK-04: R-06 unit, R-07 API, R-25 UI
+      CHK-05: R-08 unit, R-09 API, R-26 UI
+      CHK-06: R-10 API, R-11 manual, R-12 untested
+      CHK-07: R-13 UI
+      CHK-08: R-08 unit, R-14 API, R-26 UI
+      CHK-09: R-15 unit, R-16 UI, R-22 UI
+      CHK-10: R-17 API, R-18 UI
+      CHK-11: R-19 API, R-22 UI, R-24 UI
+      CHK-12: R-20 API, R-21 untested
+PASS  browser risks are separated: 10 in "Risks that need a browser", 16 in "Risks that don't need a browser", each holding only the layers it allows
+PASS  every untested risk is listed in "Accepted as untested" with a reason and who accepted it (2: R-12, R-21)
+      R-12 accepted by Tom Carter, acting as the Tixly product owner for this exercise, 10-30-2026.
+      R-21 accepted by Tom Carter, acting as the Tixly product owner for this exercise, 10-30-2026.
+PASS  the ranking rebuilt from the stated scales matches the table (28 rows)
+PASS  the totals under the table match the risks (5 unit, 10 API, 10 UI, 1 manual, 2 untested) and the sentence after them is true
+RESULT: PASSED

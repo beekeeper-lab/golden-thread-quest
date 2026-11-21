@@ -1,0 +1,303 @@
+Timing run: the API-assisted and UI-only versions of "a buyer cancels an order", their durations,
+the API-assisted version failing when the UI behavior is broken, and credential checks.
+Started: 11-12-2026 10:35:02 AM
+Node v22.23.3, Playwright 1.63.0, browser: Chromium
+Application: the local Tixly demo app (made-up data, 127.0.0.1 only), started by Playwright for each
+command unless said otherwise; saved orders are in demo-app/data/orders.json, which starts with three
+made-up "real" orders.
+Credential: the orders service's API key, a new made-up random value for this recording, set in the
+environment (TIXLY_API_KEY) for every command and never shown; the commands below are run with it set.
+Redaction: personal home-folder paths shown as ~, the recording's temporary folder as <temporary
+folder>. Blank lines are left out of command output; for each run only its result lines are kept
+(the full output is still searched for the key at the end). Lines marked "Recording script:" are
+notes written by the script that recorded this log (it is not one of the handed-in tools).
+
+====================================================================================================
+Part 1: timing on this computer (no delay), 5 runs of each, taking turns
+====================================================================================================
+
+--- api-assisted.spec.ts, run 1 of 5
+Recorded: 11-12-2026 10:35:03 AM
+Folder: participant/tests/playwright
+Command: npx playwright test api-assisted.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › api-assisted.spec.ts:15:1 › a buyer cancels an order (API-assisted: API setup, cancel on screen, API check) @api-assisted @risk-medium @writes-data @fast (199ms)
+  1 passed (710ms)
+
+--- ui-only.spec.ts, run 1 of 5
+Recorded: 11-12-2026 10:35:04 AM
+Folder: participant/tests/playwright
+Command: npx playwright test ui-only.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › ui-only.spec.ts:13:1 › a buyer cancels an order (UI-only: saved and cancelled through the screen) @ui-only @risk-medium @writes-data (424ms)
+  1 passed (948ms)
+
+--- api-assisted.spec.ts, run 2 of 5
+Recorded: 11-12-2026 10:35:06 AM
+Folder: participant/tests/playwright
+Command: npx playwright test api-assisted.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › api-assisted.spec.ts:15:1 › a buyer cancels an order (API-assisted: API setup, cancel on screen, API check) @api-assisted @risk-medium @writes-data @fast (234ms)
+  1 passed (751ms)
+
+--- ui-only.spec.ts, run 2 of 5
+Recorded: 11-12-2026 10:35:07 AM
+Folder: participant/tests/playwright
+Command: npx playwright test ui-only.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › ui-only.spec.ts:13:1 › a buyer cancels an order (UI-only: saved and cancelled through the screen) @ui-only @risk-medium @writes-data (405ms)
+  1 passed (926ms)
+
+--- api-assisted.spec.ts, run 3 of 5
+Recorded: 11-12-2026 10:35:08 AM
+Folder: participant/tests/playwright
+Command: npx playwright test api-assisted.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › api-assisted.spec.ts:15:1 › a buyer cancels an order (API-assisted: API setup, cancel on screen, API check) @api-assisted @risk-medium @writes-data @fast (210ms)
+  1 passed (722ms)
+
+--- ui-only.spec.ts, run 3 of 5
+Recorded: 11-12-2026 10:35:10 AM
+Folder: participant/tests/playwright
+Command: npx playwright test ui-only.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › ui-only.spec.ts:13:1 › a buyer cancels an order (UI-only: saved and cancelled through the screen) @ui-only @risk-medium @writes-data (419ms)
+  1 passed (940ms)
+
+--- api-assisted.spec.ts, run 4 of 5
+Recorded: 11-12-2026 10:35:11 AM
+Folder: participant/tests/playwright
+Command: npx playwright test api-assisted.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › api-assisted.spec.ts:15:1 › a buyer cancels an order (API-assisted: API setup, cancel on screen, API check) @api-assisted @risk-medium @writes-data @fast (234ms)
+  1 passed (750ms)
+
+--- ui-only.spec.ts, run 4 of 5
+Recorded: 11-12-2026 10:35:12 AM
+Folder: participant/tests/playwright
+Command: npx playwright test ui-only.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › ui-only.spec.ts:13:1 › a buyer cancels an order (UI-only: saved and cancelled through the screen) @ui-only @risk-medium @writes-data (420ms)
+  1 passed (941ms)
+
+--- api-assisted.spec.ts, run 5 of 5
+Recorded: 11-12-2026 10:35:14 AM
+Folder: participant/tests/playwright
+Command: npx playwright test api-assisted.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › api-assisted.spec.ts:15:1 › a buyer cancels an order (API-assisted: API setup, cancel on screen, API check) @api-assisted @risk-medium @writes-data @fast (194ms)
+  1 passed (706ms)
+
+--- ui-only.spec.ts, run 5 of 5
+Recorded: 11-12-2026 10:35:15 AM
+Folder: participant/tests/playwright
+Command: npx playwright test ui-only.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › ui-only.spec.ts:13:1 › a buyer cancels an order (UI-only: saved and cancelled through the screen) @ui-only @risk-medium @writes-data (421ms)
+  1 passed (941ms)
+
+Recording script: each test's own duration as Playwright reports it (milliseconds; the browser and app starting up are not included):
+Recording script:   api-assisted.spec.ts: 199, 234, 210, 234, 194  (median 210)
+Recording script:   ui-only.spec.ts:      424, 405, 419, 420, 421  (median 420)
+Recording script:   the API-assisted median is 50% of the UI-only median (not under half).
+
+====================================================================================================
+Part 2: timing with a simulated network (TIXLY_DEMO_DELAY_MS=300: every answer, pages and API alike, waits 300 ms), 5 runs of each, taking turns
+====================================================================================================
+
+--- api-assisted.spec.ts, run 1 of 5
+Recorded: 11-12-2026 10:35:20 AM
+Folder: participant/tests/playwright
+Command: TIXLY_DEMO_DELAY_MS=300 npx playwright test api-assisted.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › api-assisted.spec.ts:15:1 › a buyer cancels an order (API-assisted: API setup, cancel on screen, API check) @api-assisted @risk-medium @writes-data @fast (3.1s)
+  1 passed (4.6s)
+
+--- ui-only.spec.ts, run 1 of 5
+Recorded: 11-12-2026 10:35:27 AM
+Folder: participant/tests/playwright
+Command: TIXLY_DEMO_DELAY_MS=300 npx playwright test ui-only.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › ui-only.spec.ts:13:1 › a buyer cancels an order (UI-only: saved and cancelled through the screen) @ui-only @risk-medium @writes-data (4.3s)
+  1 passed (5.8s)
+
+--- api-assisted.spec.ts, run 2 of 5
+Recorded: 11-12-2026 10:35:32 AM
+Folder: participant/tests/playwright
+Command: TIXLY_DEMO_DELAY_MS=300 npx playwright test api-assisted.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › api-assisted.spec.ts:15:1 › a buyer cancels an order (API-assisted: API setup, cancel on screen, API check) @api-assisted @risk-medium @writes-data @fast (3.1s)
+  1 passed (4.6s)
+
+--- ui-only.spec.ts, run 2 of 5
+Recorded: 11-12-2026 10:35:38 AM
+Folder: participant/tests/playwright
+Command: TIXLY_DEMO_DELAY_MS=300 npx playwright test ui-only.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › ui-only.spec.ts:13:1 › a buyer cancels an order (UI-only: saved and cancelled through the screen) @ui-only @risk-medium @writes-data (3.8s)
+  1 passed (5.3s)
+
+--- api-assisted.spec.ts, run 3 of 5
+Recorded: 11-12-2026 10:35:43 AM
+Folder: participant/tests/playwright
+Command: TIXLY_DEMO_DELAY_MS=300 npx playwright test api-assisted.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › api-assisted.spec.ts:15:1 › a buyer cancels an order (API-assisted: API setup, cancel on screen, API check) @api-assisted @risk-medium @writes-data @fast (3.1s)
+  1 passed (4.6s)
+
+--- ui-only.spec.ts, run 3 of 5
+Recorded: 11-12-2026 10:35:49 AM
+Folder: participant/tests/playwright
+Command: TIXLY_DEMO_DELAY_MS=300 npx playwright test ui-only.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › ui-only.spec.ts:13:1 › a buyer cancels an order (UI-only: saved and cancelled through the screen) @ui-only @risk-medium @writes-data (3.8s)
+  1 passed (5.3s)
+
+--- api-assisted.spec.ts, run 4 of 5
+Recorded: 11-12-2026 10:35:54 AM
+Folder: participant/tests/playwright
+Command: TIXLY_DEMO_DELAY_MS=300 npx playwright test api-assisted.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › api-assisted.spec.ts:15:1 › a buyer cancels an order (API-assisted: API setup, cancel on screen, API check) @api-assisted @risk-medium @writes-data @fast (3.1s)
+  1 passed (4.6s)
+
+--- ui-only.spec.ts, run 4 of 5
+Recorded: 11-12-2026 10:36:00 AM
+Folder: participant/tests/playwright
+Command: TIXLY_DEMO_DELAY_MS=300 npx playwright test ui-only.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › ui-only.spec.ts:13:1 › a buyer cancels an order (UI-only: saved and cancelled through the screen) @ui-only @risk-medium @writes-data (4.3s)
+  1 passed (5.8s)
+
+--- api-assisted.spec.ts, run 5 of 5
+Recorded: 11-12-2026 10:36:05 AM
+Folder: participant/tests/playwright
+Command: TIXLY_DEMO_DELAY_MS=300 npx playwright test api-assisted.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › api-assisted.spec.ts:15:1 › a buyer cancels an order (API-assisted: API setup, cancel on screen, API check) @api-assisted @risk-medium @writes-data @fast (2.8s)
+  1 passed (4.3s)
+
+--- ui-only.spec.ts, run 5 of 5
+Recorded: 11-12-2026 10:36:11 AM
+Folder: participant/tests/playwright
+Command: TIXLY_DEMO_DELAY_MS=300 npx playwright test ui-only.spec.ts --workers=1 --reporter=list,json
+Exit code: 0
+
+  ✓  1 [chromium] › ui-only.spec.ts:13:1 › a buyer cancels an order (UI-only: saved and cancelled through the screen) @ui-only @risk-medium @writes-data (4.3s)
+  1 passed (5.8s)
+
+Recording script: each test's own duration as Playwright reports it (milliseconds; the browser and app starting up are not included):
+Recording script:   api-assisted.spec.ts: 3141, 3142, 3147, 3150, 2818  (median 3142)
+Recording script:   ui-only.spec.ts:      4330, 3830, 3808, 4296, 4330  (median 4296)
+Recording script:   the API-assisted median is 73% of the UI-only median (not under half).
+
+====================================================================================================
+Part 3: the UI behavior broken (Cancel only pretends), both versions run against it
+====================================================================================================
+
+--- Make the broken copy
+Recorded: 11-12-2026 10:36:11 AM
+Folder: participant/tests/playwright
+Command: node tools/break-cancel.ts <temporary folder>/broken-app
+Exit code: 0
+
+Broken copy of the demo app in <temporary folder>/broken-app. Changes to its orders.html:
+  remember which orders were 'cancelled':
+    - const list = document.getElementById("orders");
+    + const list = document.getElementById("orders");
+    + const pretendCancelled = new Set(); // BROKEN COPY
+  Cancel sends nothing and reports success:
+    - const answer = await fetch(`/api/orders/${encodeURIComponent(order.id)}`, { method: "DELETE" });
+    + const answer = { ok: true, status: 200 }; pretendCancelled.add(order.id); // BROKEN COPY: nothing is sent
+  the list hides the 'cancelled' orders:
+    - const orders = await loadOrders();
+    + const orders = (await loadOrders())?.filter((saved) => !pretendCancelled.has(saved.id)) ?? null; // BROKEN COPY
+
+Recording script: the broken copy is started in the background: TIXLY_DEMO_PORT=4191 node <temporary folder>/broken-app/server.js
+--- api-assisted.spec.ts against the broken copy
+Recorded: 11-12-2026 10:36:18 AM
+Folder: participant/tests/playwright
+Command: TIXLY_BASE_URL=http://127.0.0.1:4191 npx playwright test api-assisted.spec.ts --workers=1 --reporter=list
+Exit code: 1
+
+  ✘  1 [chromium] › api-assisted.spec.ts:15:1 › a buyer cancels an order (API-assisted: API setup, cancel on screen, API check) @api-assisted @risk-medium @writes-data @fast (5.2s)
+    Error: the cancelled order is gone from the orders service
+    Expected: false
+    Received: true
+    > 48 |       .toBe(false);
+      49 |     const realAfter = after.filter((saved) => preexisting.has(saved.id));
+  1 failed
+
+Recording script: the failed run's screenshot and trace, searched now for the key's actual value: 25 files under test-results/ and playwright-report/ (1 trace.zip, searched file by file inside, and 2 screenshot(s)): found in 0. (A file search can't read text drawn into a screenshot; the key can't be drawn there, since the browser never receives it.)
+--- ui-only.spec.ts against the broken copy
+Recorded: 11-12-2026 10:36:19 AM
+Folder: participant/tests/playwright
+Command: TIXLY_BASE_URL=http://127.0.0.1:4191 npx playwright test ui-only.spec.ts --workers=1 --reporter=list
+Exit code: 0
+
+  ✓  1 [chromium] › ui-only.spec.ts:13:1 › a buyer cancels an order (UI-only: saved and cancelled through the screen) @ui-only @risk-medium @writes-data (386ms)
+  1 passed (791ms)
+
+Recording script: the broken copy's saved orders afterwards (asked through its orders service): Maria Lopez, James Chen, Aisha Patel
+
+====================================================================================================
+Part 4: the whole normal suite
+====================================================================================================
+
+--- All tests
+Recorded: 11-12-2026 10:36:22 AM
+Folder: participant/tests/playwright
+Command: npm test
+Exit code: 0
+
+  4 skipped
+  15 passed (2.3s)
+
+Recording script: demo-app/data/orders.json afterwards is byte for byte the committed file (the three real orders): yes
+
+====================================================================================================
+Part 5: credential checks
+====================================================================================================
+
+--- Both versions once more, with a trace of every test (so there are traces to search)
+Recorded: 11-12-2026 10:36:23 AM
+Folder: participant/tests/playwright
+Command: npx playwright test api-assisted.spec.ts ui-only.spec.ts --workers=1 --trace=on --reporter=list
+Exit code: 0
+
+  ✓  1 [chromium] › api-assisted.spec.ts:15:1 › a buyer cancels an order (API-assisted: API setup, cancel on screen, API check) @api-assisted @risk-medium @writes-data @fast (199ms)
+  ✓  2 [chromium] › ui-only.spec.ts:13:1 › a buyer cancels an order (UI-only: saved and cancelled through the screen) @ui-only @risk-medium @writes-data (419ms)
+  2 passed (1.2s)
+
+Recording script: searched for the key's actual value in 50 files under test-results/ and playwright-report/ (2 trace.zip, searched file by file inside, and 1 screenshot file(s)): found in 0
+Recording script: searched every command's full output in this recording (28 outputs, including the broken copy's server): found in 0
+
+--- The repository's credential scan of this log (everything above)
+Recorded: 11-12-2026 10:36:23 AM
+Folder: the repository root
+Command: .venv/bin/python tools/secret_scan.py participant/evidence/playwright-api-assisted-test/playwright-attempt-008/logs/timing-run.txt
+Exit code: 0
+
+secret-scan: 1 files scanned, 0 finding(s)
+
+Recording script: the key's actual value in this log: not found
+Finished: 11-12-2026 10:36:23 AM

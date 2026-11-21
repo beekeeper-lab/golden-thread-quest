@@ -1,0 +1,44 @@
+{
+  "attempt_id": "playwright-attempt-004",
+  "checks": [
+    {
+      "evidence": "1 file(s) checked.",
+      "id": "test-asserts-something",
+      "outcome": "pass",
+      "summary": "Every test file asserts something."
+    },
+    {
+      "evidence": "2 file(s) use accessible queries.",
+      "id": "selectors-target-behavior",
+      "outcome": "pass",
+      "summary": "The test queries by role, label or visible text."
+    },
+    {
+      "evidence": "The test waits on conditions.",
+      "id": "no-arbitrary-waits",
+      "outcome": "pass",
+      "summary": "No arbitrary wait was found."
+    },
+    {
+      "evidence": "participant/evidence/playwright-first-independent-test/playwright-attempt-004/logs/failure-run.txt, participant/evidence/playwright-first-independent-test/playwright-attempt-004/logs/failure-trace.zip, participant/evidence/playwright-first-independent-test/playwright-attempt-004/screenshots/failure-state.png",
+      "id": "failure-is-diagnosable",
+      "outcome": "pass",
+      "summary": "The evidence includes a record of the test failing."
+    }
+  ],
+  "completed_at": "2026-11-06T18:21:55Z",
+  "duration_ms": 61,
+  "environment": {
+    "network": "denied",
+    "validator_version": 2
+  },
+  "outcome": "pass",
+  "quest_id": "playwright-first-independent-test",
+  "redaction_applied": false,
+  "result_path": "participant/evidence/playwright-first-independent-test/playwright-attempt-004/validation/validate-playwright-quality-20261106182154967594-04b18c.json",
+  "run_id": "validate-playwright-quality-20261106182154967594-04b18c",
+  "schema_version": 1,
+  "started_at": "2026-11-06T18:21:54Z",
+  "validator_id": "validate-playwright-quality",
+  "validator_version": 2
+}

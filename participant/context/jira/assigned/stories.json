@@ -1,0 +1,85 @@
+{
+  "synchronized_at": "2026-11-20T22:39:17.233Z",
+  "account_id": "fixture-account-0001",
+  "stories": [
+    {
+      "key": "GTQ-101",
+      "source_url": "https://jira.example.invalid/browse/GTQ-101",
+      "summary": "Fixture story GTQ-101",
+      "status": "To Do",
+      "priority": "Medium",
+      "type": "Story",
+      "assignee": {
+        "account_id": "fixture-account-0001",
+        "display_name": "Fixture User"
+      },
+      "labels": [],
+      "description": null,
+      "acceptance_criteria": null,
+      "parent": null,
+      "created": "2026-09-01T09:00:00.000+0000",
+      "updated": "2026-09-15T09:00:00.000+0000",
+      "retrieved_at": "2026-11-20T22:39:17.233Z",
+      "comments": [],
+      "jira_fields": {
+        "customfield_10016": 3
+      }
+    },
+    {
+      "key": "GTQ-102",
+      "source_url": "https://jira.example.invalid/browse/GTQ-102",
+      "summary": "Fixture story GTQ-102",
+      "status": "To Do",
+      "priority": "Medium",
+      "type": "Story",
+      "assignee": {
+        "account_id": "fixture-account-0001",
+        "display_name": "Fixture User"
+      },
+      "labels": [],
+      "description": null,
+      "acceptance_criteria": null,
+      "parent": null,
+      "created": "2026-09-01T09:00:00.000+0000",
+      "updated": "2026-09-15T09:00:00.000+0000",
+      "retrieved_at": "2026-11-20T22:39:17.233Z",
+      "comments": [],
+      "jira_fields": {
+        "customfield_10016": 3
+      }
+    }
+  ],
+  "removed": [
+    {
+      "key": "GTQ-100",
+      "last_known_status": "In Progress",
+      "last_known_summary": "Fixture story GTQ-100, reassigned away between runs",
+      "source_url": "https://jira.example.invalid/browse/GTQ-100",
+      "removed_at": "2026-11-20T22:39:17.233Z",
+      "reason": "no longer returned for the authenticated user",
+      "last_known_record": {
+        "key": "GTQ-100",
+        "source_url": "https://jira.example.invalid/browse/GTQ-100",
+        "summary": "Fixture story GTQ-100, reassigned away between runs",
+        "status": "In Progress",
+        "priority": "Medium",
+        "type": "Story",
+        "assignee": {
+          "account_id": "fixture-account-0001",
+          "display_name": "Fixture User"
+        },
+        "labels": [],
+        "description": null,
+        "acceptance_criteria": null,
+        "parent": null,
+        "created": "2026-09-01T09:00:00.000+0000",
+        "updated": "2026-09-15T09:00:00.000+0000",
+        "retrieved_at": "2026-11-20T22:39:17.158Z",
+        "comments": [],
+        "jira_fields": {
+          "customfield_10016": 3
+        }
+      }
+    }
+  ]
+}

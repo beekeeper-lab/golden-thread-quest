@@ -1,0 +1,26 @@
+# Before-and-after check of the whole repository (criterion 6)
+# Every folder, file and link under the repository's top folder (and the top folder itself), Git's
+# own folder (.git: its settings, history and index) and ignored files included: path, permissions,
+# owner (user:group), size and SHA-256. Not covered: extended attributes, access-control lists, timestamps.
+# Made by participant/tools/workspace-fingerprint.mjs; compared with diff, not taken from the reader.
+# on branch pilot/tom at commit 42ae0fa (with uncommitted quest-22 files).
+
+Before the run (11-18-2026 12:01:10 PM): 1188 folders, 5978 files, 5 links; fingerprint SHA-256 2c296f4fed0f617449664ec91311a83c464cb639f703d530581044e4d50fa81b
+After the run  (11-18-2026 12:01:12 PM): 1188 folders, 5978 files, 5 links; fingerprint SHA-256 2c296f4fed0f617449664ec91311a83c464cb639f703d530581044e4d50fa81b
+
+$ diff <before list> <after list>
+(no output: the two lists are identical, line for line)
+
+Entries by kind (both lists): 1188 dir;5978 file; 5 link;
+Settings included, for example:
+    file 100600 501:20 72098427:1 9919 573393449b42e4e1… "participant/progress.yaml"
+    file 100644 501:20 66206590:1 1123 b0007b56c36a2eff… ".gitignore"
+    file 100644 501:20 66207147:1 26 a2ec369a8574fb88… ".git/HEAD"
+    file 100644 501:20 72095681:1 603 b46e3486e6c38734… ".git/config"
+
+The first 5 lines of the list, as a sample:
+    dir  040755 501:20 66206517:43 "."
+    dir  040755 501:20 66206518:15 ".git"
+    dir  040755 501:20 66206519:3 ".git/info"
+    dir  040755 501:20 66206522:15 ".git/hooks"
+    dir  040755 501:20 66206536:5 ".git/refs"

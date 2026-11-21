@@ -1,0 +1,17 @@
+schema_version: 1
+submission_id: submission-20261112162445-970909
+quest_id: playwright-api-assisted-test
+quest_version: 1
+attempt_id: playwright-attempt-008
+content_hash: sha256:811a1b17b71e46aed9d70ec283fb3281cb5461ff7a6744777103258d7ec4ecda
+evidence_hash: sha256:7e69bbacf51ac87b692209498deb141eb3759fa5a3ceb03ecd00cca80fcee3ea
+submitted_at: '2026-11-12T16:24:45Z'
+submitted_by: thomascarter
+secret_scan_clean: true
+proof_files:
+- path: participant/context/playwright/api-boundary.md
+  digest: sha256:4b3b2e6e2a349177902be2560cca8e582ac2d962394569ec9e22f044e7bcf1d6
+- path: participant/tests/playwright/api-assisted.spec.ts
+  digest: sha256:416c2ece51e0d91358ea6c819d2143eb084983172ee30849ce2b592b752a90c6
+- path: participant/tests/playwright/ui-only.spec.ts
+  digest: sha256:2a2ef6f9d967d5d46e83d9a31e5eb8eb95df9f228cd8de25f9e2b1b65c639b17
